@@ -2,7 +2,8 @@ package crypto
 
 import (
 	"fmt"
-	"github.com/tepleton/go-common"
+
+	. "github.com/tepleton/go-common"
 	"github.com/tepleton/go-wire"
 )
 

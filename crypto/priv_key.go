@@ -3,7 +3,7 @@ package crypto
 import (
 	"github.com/tepleton/ed25519"
 	"github.com/tepleton/ed25519/extra25519"
-	"github.com/tepleton/go-common"
+	. "github.com/tepleton/go-common"
 	"github.com/tepleton/go-wire"
 )
 

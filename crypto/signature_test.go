@@ -3,8 +3,8 @@ package crypto
 import (
 	"bytes"
 	"testing"
+
 	"github.com/tepleton/ed25519"
-	"github.com/tepleton/go-common"
 	"github.com/tepleton/go-wire"
 )
 

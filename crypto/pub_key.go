@@ -2,9 +2,10 @@ package crypto
 
 import (
 	"bytes"
+
 	"github.com/tepleton/ed25519"
 	"github.com/tepleton/ed25519/extra25519"
-	"github.com/tepleton/go-common"
+	. "github.com/tepleton/go-common"
 	"github.com/tepleton/go-wire"
 	"golang.org/x/crypto/ripemd160"
 )
@@ -14,6 +15,7 @@ type PubKey interface {
 	Address() []byte
 	KeyString() string
 	VerifyBytes(msg []byte, sig Signature) bool
+	Equals(PubKey) bool
 }
 
 // Types of PubKey implementations
