@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tendermint/ed25519"
-	data "github.com/tendermint/go-data"
+	"github.com/tepleton/ed25519"
+	data "github.com/tepleton/go-data"
 )
 
 func TestSignAndValidateEd25519(t *testing.T) {

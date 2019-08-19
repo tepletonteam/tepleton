@@ -8,7 +8,7 @@ import (
 	"io"
 	"sync"
 
-	. "github.com/tendermint/go-common"
+	. "github.com/tepleton/go-common"
 )
 
 var gRandInfo *randInfo
