@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"github.com/tepleton/blackstar/types"
 	"github.com/tepleton/go-crypto"
 	"github.com/tepleton/go-wire"
@@ -21,10 +22,12 @@ func NewBlackstar(eyesCli *eyes.MerkleEyesClient) *Blackstar {
 	}
 }
 
+// TMSP::Info
 func (app *Blackstar) Info() string {
 	return "Blackstar v" + version
 }
 
+// TMSP::SetOption
 func (app *Blackstar) SetOption(key string, value string) (log string) {
 	if key == "setAccount" {
 		var err error
@@ -44,6 +47,7 @@ func (app *Blackstar) SetOption(key string, value string) (log string) {
 	return "Unrecognized option key " + key
 }
 
+// TMSP::AppendTx
 func (app *Blackstar) AppendTx(txBytes []byte) (code tmsp.CodeType, result []byte, log string) {
 	if len(txBytes) > maxTxSize {
 		return tmsp.CodeType_EncodingError, nil, "Tx size exceeds maximum"
@@ -62,7 +66,7 @@ func (app *Blackstar) AppendTx(txBytes []byte) (code tmsp.CodeType, result []byt
 	// Load accounts
 	accMap := loadAccounts(app.eyesCli, allPubKeys(tx))
 	// Execute tx
-	accs, code, errStr := execTx(tx, accMap)
+	accs, code, errStr := execTx(tx, accMap, false)
 	if errStr != "" {
 		return code, nil, "Error executing tx: " + errStr
 	}
@@ -71,6 +75,7 @@ func (app *Blackstar) AppendTx(txBytes []byte) (code tmsp.CodeType, result []byt
 	return tmsp.CodeType_OK, nil, "Success"
 }
 
+// TMSP::CheckTx
 func (app *Blackstar) CheckTx(txBytes []byte) (code tmsp.CodeType, result []byte, log string) {
 	if len(txBytes) > maxTxSize {
 		return tmsp.CodeType_EncodingError, nil, "Tx size exceeds maximum"
@@ -89,13 +94,14 @@ func (app *Blackstar) CheckTx(txBytes []byte) (code tmsp.CodeType, result []byte
 	// Load accounts
 	accMap := loadAccounts(app.eyesCli, allPubKeys(tx))
 	// Execute tx
-	_, code, errStr = execTx(tx, accMap)
+	_, code, errStr = execTx(tx, accMap, false)
 	if errStr != "" {
 		return code, nil, "Error (mock) executing tx: " + errStr
 	}
 	return tmsp.CodeType_OK, nil, "Success"
 }
 
+// TMSP::Query
 func (app *Blackstar) Query(query []byte) (code tmsp.CodeType, result []byte, log string) {
 	return tmsp.CodeType_OK, nil, ""
 	value, err := app.eyesCli.GetSync(query)
@@ -105,6 +111,7 @@ func (app *Blackstar) Query(query []byte) (code tmsp.CodeType, result []byte, lo
 	return tmsp.CodeType_OK, value, "Success"
 }
 
+// TMSP::GetHash
 func (app *Blackstar) GetHash() (hash []byte, log string) {
 	hash, log, err := app.eyesCli.GetHashSync()
 	if err != nil {
@@ -225,7 +232,9 @@ func allPubKeys(tx types.Tx) (pubKeys []crypto.PubKey) {
 }
 
 // Returns accounts in order of types.Tx inputs and outputs
-func execTx(tx types.Tx, accMap map[string]types.PubAccount) (accs []types.PubAccount, code tmsp.CodeType, errStr string) {
+// appendTx: true if this is for AppendTx.
+// TODO: create more intelligent sequence-checking.  Current impl is just for a throughput demo.
+func execTx(tx types.Tx, accMap map[string]types.PubAccount, appendTx bool) (accs []types.PubAccount, code tmsp.CodeType, errStr string) {
 	accs = make([]types.PubAccount, 0, len(tx.Inputs)+len(tx.Outputs))
 	// Deduct from inputs
 	for _, input := range tx.Inputs {
@@ -233,8 +242,14 @@ func execTx(tx types.Tx, accMap map[string]types.PubAccount) (accs []types.PubAc
 		if !ok {
 			return nil, tmsp.CodeType_UnknownAccount, "Input account does not exist"
 		}
-		if acc.Sequence != input.Sequence {
-			return nil, tmsp.CodeType_BadNonce, "Invalid sequence"
+		if appendTx {
+			if acc.Sequence != input.Sequence {
+				return nil, tmsp.CodeType_BadNonce, "Invalid sequence"
+			}
+		} else {
+			if acc.Sequence > input.Sequence {
+				return nil, tmsp.CodeType_BadNonce, "Invalid sequence (too low)"
+			}
 		}
 		if acc.Balance < input.Amount {
 			return nil, tmsp.CodeType_InsufficientFunds, "Insufficient funds"
@@ -256,14 +271,15 @@ func execTx(tx types.Tx, accMap map[string]types.PubAccount) (accs []types.PubAc
 				},
 			}
 			accMap[output.PubKey.KeyString()] = acc
-			continue
+			accs = append(accs, acc)
+		} else {
+			// Good!
+			if (acc.Balance + output.Amount) < acc.Balance {
+				return nil, tmsp.CodeType_InternalError, "Output balance overflow in execTx"
+			}
+			acc.Balance += output.Amount
+			accs = append(accs, acc)
 		}
-		// Good!
-		if (acc.Balance + output.Amount) < acc.Balance {
-			return nil, tmsp.CodeType_InternalError, "Output balance overflow in execTx"
-		}
-		acc.Balance += output.Amount
-		accs = append(accs, acc)
 	}
 	return accs, tmsp.CodeType_OK, ""
 }
@@ -296,6 +312,7 @@ func loadAccounts(eyesCli *eyes.MerkleEyesClient, pubKeys []crypto.PubKey) (accM
 
 // NOTE: accs must be stored in deterministic order.
 func storeAccounts(eyesCli *eyes.MerkleEyesClient, accs []types.PubAccount) {
+	fmt.Println("STORE ACCOUNTS", accs)
 	for _, acc := range accs {
 		accBytes := wire.BinaryBytes(acc.Account)
 		err := eyesCli.SetSync([]byte(acc.PubKey.KeyString()), accBytes)
