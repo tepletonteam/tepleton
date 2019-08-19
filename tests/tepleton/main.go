@@ -5,13 +5,13 @@ import (
 	"fmt"
 
 	"github.com/gorilla/websocket"
-	"github.com/tepleton/blackstar/tests"
-	"github.com/tepleton/blackstar/types"
-	. "github.com/tepleton/go-common"
-	"github.com/tepleton/go-rpc/client"
-	"github.com/tepleton/go-rpc/types"
-	"github.com/tepleton/go-wire"
-	_ "github.com/tepleton/tepleton/rpc/core/types" // Register RPCResponse > Result types
+	"github.com/tendermint/blackstar/tests"
+	"github.com/tendermint/blackstar/types"
+	. "github.com/tendermint/go-common"
+	"github.com/tendermint/go-rpc/client"
+	"github.com/tendermint/go-rpc/types"
+	"github.com/tendermint/go-wire"
+	_ "github.com/tendermint/tendermint/rpc/core/types" // Register RPCResponse > Result types
 )
 
 func main() {
@@ -61,18 +61,14 @@ func main() {
 
 		// Sign request
 		signBytes := wire.BinaryBytes(tx)
-		fmt.Printf("SIGN: %X\n", signBytes)
 		sig := root.PrivKey.Sign(signBytes)
-		fmt.Println("VERIFY: ", root.PubKey.VerifyBytes(signBytes, sig))
 		tx.Inputs[0].Signature = sig
 		//fmt.Println("tx:", tx)
 
 		// Write request
 		txBytes := wire.BinaryBytes(tx)
-		fmt.Println("tx:", hex.EncodeToString(txBytes))
 		request := rpctypes.NewRPCRequest("fakeid", "broadcast_tx_sync", Arr(txBytes))
 		reqBytes := wire.JSONBytes(request)
-		fmt.Println("req:", hex.EncodeToString(reqBytes))
 		//fmt.Print(".")
 		err := ws.WriteMessage(websocket.TextMessage, reqBytes)
 		if err != nil {
