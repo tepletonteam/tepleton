@@ -4,11 +4,11 @@ import (
 	"bytes"
 
 	secp256k1 "github.com/btcsuite/btcd/btcec"
-	"github.com/tepleton/ed25519"
-	"github.com/tepleton/ed25519/extra25519"
-	. "github.com/tepleton/go-common"
-	data "github.com/tepleton/go-data"
-	"github.com/tepleton/go-wire"
+	"github.com/tendermint/ed25519"
+	"github.com/tendermint/ed25519/extra25519"
+	. "github.com/tendermint/go-common"
+	data "github.com/tendermint/go-data"
+	"github.com/tendermint/go-wire"
 	"golang.org/x/crypto/ripemd160"
 )
 

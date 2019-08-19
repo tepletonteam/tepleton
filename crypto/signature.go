@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"fmt"
 
-	. "github.com/tepleton/go-common"
-	data "github.com/tepleton/go-data"
-	"github.com/tepleton/go-wire"
+	. "github.com/tendermint/go-common"
+	data "github.com/tendermint/go-data"
+	"github.com/tendermint/go-wire"
 )
 
 // Signature is a part of Txs and consensus Votes.
