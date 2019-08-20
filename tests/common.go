@@ -1,7 +1,7 @@
 package tests
 
 import (
-	"github.com/tepleton/blackstar/types"
+	"github.com/tepleton/basecoin/types"
 	. "github.com/tepleton/go-common"
 	"github.com/tepleton/go-crypto"
 )

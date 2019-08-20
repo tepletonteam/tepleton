@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 
-	"github.com/tepleton/blackstar/app"
-	"github.com/tepleton/blackstar/types"
+	"github.com/tepleton/basecoin/app"
+	"github.com/tepleton/basecoin/types"
 	. "github.com/tepleton/go-common"
 	"github.com/tepleton/go-wire"
 	eyes "github.com/tepleton/merkleeyes/client"
@@ -24,8 +24,8 @@ func main() {
 		Exit("connect to MerkleEyes: " + err.Error())
 	}
 
-	// Create BlackStar app
-	app := app.NewBlackstar(eyesCli)
+	// Create Basecoin app
+	app := app.NewBasecoin(eyesCli)
 
 	// Load GenesisState
 	jsonBytes, err := ReadFile(*genPtr)
