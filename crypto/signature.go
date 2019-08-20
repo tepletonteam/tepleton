@@ -17,21 +17,13 @@ type Signature interface {
 	Equals(Signature) bool
 }
 
-// Types of Signature implementations
-const (
-	SignatureTypeEd25519   = byte(0x01)
-	SignatureTypeSecp256k1 = byte(0x02)
-	SignatureNameEd25519   = "ed25519"
-	SignatureNameSecp256k1 = "secp256k1"
-)
-
 var sigMapper data.Mapper
 
 // register both public key types with go-data (and thus go-wire)
 func init() {
 	sigMapper = data.NewMapper(SignatureS{}).
-		RegisterInterface(SignatureEd25519{}, SignatureNameEd25519, SignatureTypeEd25519).
-		RegisterInterface(SignatureSecp256k1{}, SignatureNameSecp256k1, SignatureTypeSecp256k1)
+		RegisterInterface(SignatureEd25519{}, NameEd25519, TypeEd25519).
+		RegisterInterface(SignatureSecp256k1{}, NameSecp256k1, TypeSecp256k1)
 }
 
 // SignatureS add json serialization to Signature
@@ -45,10 +37,14 @@ func (p SignatureS) MarshalJSON() ([]byte, error) {
 
 func (p *SignatureS) UnmarshalJSON(data []byte) (err error) {
 	parsed, err := sigMapper.FromJSON(data)
-	if err == nil {
+	if err == nil && parsed != nil {
 		p.Signature = parsed.(Signature)
 	}
 	return
+}
+
+func (p SignatureS) Empty() bool {
+	return p.Signature == nil
 }
 
 func SignatureFromBytes(sigBytes []byte) (sig Signature, err error) {

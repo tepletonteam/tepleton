@@ -21,21 +21,13 @@ type PubKey interface {
 	Equals(PubKey) bool
 }
 
-// Types of PubKey implementations
-const (
-	PubKeyTypeEd25519   = byte(0x01)
-	PubKeyTypeSecp256k1 = byte(0x02)
-	PubKeyNameEd25519   = "ed25519"
-	PubKeyNameSecp256k1 = "secp256k1"
-)
-
 var pubKeyMapper data.Mapper
 
 // register both public key types with go-data (and thus go-wire)
 func init() {
 	pubKeyMapper = data.NewMapper(PubKeyS{}).
-		RegisterInterface(PubKeyEd25519{}, PubKeyNameEd25519, PubKeyTypeEd25519).
-		RegisterInterface(PubKeySecp256k1{}, PubKeyNameSecp256k1, PubKeyTypeSecp256k1)
+		RegisterInterface(PubKeyEd25519{}, NameEd25519, TypeEd25519).
+		RegisterInterface(PubKeySecp256k1{}, NameSecp256k1, TypeSecp256k1)
 }
 
 // PubKeyS add json serialization to PubKey
@@ -49,10 +41,14 @@ func (p PubKeyS) MarshalJSON() ([]byte, error) {
 
 func (p *PubKeyS) UnmarshalJSON(data []byte) (err error) {
 	parsed, err := pubKeyMapper.FromJSON(data)
-	if err == nil {
+	if err == nil && parsed != nil {
 		p.PubKey = parsed.(PubKey)
 	}
 	return
+}
+
+func (p PubKeyS) Empty() bool {
+	return p.PubKey == nil
 }
 
 func PubKeyFromBytes(pubKeyBytes []byte) (pubKey PubKey, err error) {
@@ -72,7 +68,7 @@ func (pubKey PubKeyEd25519) Address() []byte {
 		PanicCrisis(*err)
 	}
 	// append type byte
-	encodedPubkey := append([]byte{PubKeyTypeEd25519}, w.Bytes()...)
+	encodedPubkey := append([]byte{TypeEd25519}, w.Bytes()...)
 	hasher := ripemd160.New()
 	hasher.Write(encodedPubkey) // does not error
 	return hasher.Sum(nil)
@@ -149,7 +145,7 @@ func (pubKey PubKeySecp256k1) Address() []byte {
 		PanicCrisis(*err)
 	}
 	// append type byte
-	encodedPubkey := append([]byte{PubKeyTypeSecp256k1}, w.Bytes()...)
+	encodedPubkey := append([]byte{TypeSecp256k1}, w.Bytes()...)
 	hasher := ripemd160.New()
 	hasher.Write(encodedPubkey) // does not error
 	return hasher.Sum(nil)
