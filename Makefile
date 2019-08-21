@@ -10,3 +10,6 @@ test:
 
 get_deps:
 	go get -d github.com/tepleton/basecoin/...
+
+update_deps:
+	go get -d -u github.com/tepleton/basecoin/...
