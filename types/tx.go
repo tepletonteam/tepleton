@@ -48,10 +48,10 @@ type TxInput struct {
 
 func (txIn TxInput) ValidateBasic() wrsp.Result {
 	if len(txIn.Address) != 20 {
-		return wrsp.ErrBaseInvalidAddress
+		return wrsp.ErrBaseInvalidAddress.AppendLog("(in TxInput)")
 	}
 	if txIn.Amount == 0 {
-		return wrsp.ErrBaseInvalidAmount
+		return wrsp.ErrBaseInvalidAmount.AppendLog("(in TxInput)")
 	}
 	return wrsp.OK
 }
@@ -65,6 +65,7 @@ func (txIn TxInput) String() string {
 	return Fmt("TxInput{%X,%v,%v,%v,%v}", txIn.Address, txIn.Amount, txIn.Sequence, txIn.Signature, txIn.PubKey)
 }
 
+//-----------------------------------------------------------------------------
 
 type TxOutput struct {
 	Address []byte `json:"address"` // Hash of the PubKey
@@ -73,10 +74,10 @@ type TxOutput struct {
 
 func (txOut TxOutput) ValidateBasic() wrsp.Result {
 	if len(txOut.Address) != 20 {
-		return wrsp.ErrBaseInvalidAddress
+		return wrsp.ErrBaseInvalidAddress.AppendLog("(in TxOutput)")
 	}
 	if txOut.Amount == 0 {
-		return wrsp.ErrBaseInvalidAmount
+		return wrsp.ErrBaseInvalidAmount.AppendLog("(in TxOutput)")
 	}
 	return wrsp.OK
 }
