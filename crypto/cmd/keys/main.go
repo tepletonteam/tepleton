@@ -14,8 +14,15 @@
 
 package main
 
-import "github.com/tepleton/go-keys/cmd"
+import (
+	"os"
+
+	"github.com/tepleton/go-keys/cmd"
+)
 
 func main() {
-	cmd.Execute()
+	cmd.RootCmd.PersistentPreRunE = cmd.SetupKeys
+	cmd.PrepareMainCmd(cmd.RootCmd, "TM", os.ExpandEnv("$HOME/.tlc"))
+	cmd.RootCmd.Execute()
+	// exec()
 }
