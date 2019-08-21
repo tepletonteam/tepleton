@@ -8,7 +8,7 @@ import (
 	. "github.com/tepleton/go-common"
 	"github.com/tepleton/go-wire"
 	eyes "github.com/tepleton/merkleeyes/client"
-	"github.com/tepleton/tmsp/server"
+	"github.com/tepleton/wrsp/server"
 )
 
 func main() {

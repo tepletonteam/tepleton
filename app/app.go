@@ -1,14 +1,13 @@
 package app
 
 import (
-	"fmt"
 	"github.com/tepleton/basecoin/state"
 	"github.com/tepleton/basecoin/types"
 	. "github.com/tepleton/go-common"
 	"github.com/tepleton/go-wire"
 	"github.com/tepleton/governmint/gov"
 	eyes "github.com/tepleton/merkleeyes/client"
-	tmsp "github.com/tepleton/tmsp/types"
+	wrsp "github.com/tepleton/wrsp/types"
 )
 
 const version = "0.1"
@@ -29,12 +28,12 @@ func NewBasecoin(eyesCli *eyes.Client) *Basecoin {
 	}
 }
 
-// TMSP::Info
+// wrsp::Info
 func (app *Basecoin) Info() string {
 	return Fmt("Basecoin v%v", version)
 }
 
-// TMSP::SetOption
+// wrsp::SetOption
 func (app *Basecoin) SetOption(key string, value string) (log string) {
 	switch key {
 	case "chainID":
@@ -57,70 +56,70 @@ func (app *Basecoin) SetOption(key string, value string) (log string) {
 	return "Unrecognized option key " + key
 }
 
-// TMSP::AppendTx
-func (app *Basecoin) AppendTx(txBytes []byte) (res tmsp.Result) {
+// wrsp::AppendTx
+func (app *Basecoin) AppendTx(txBytes []byte) (res wrsp.Result) {
 	if len(txBytes) > maxTxSize {
-		return types.ErrEncodingError.AppendLog("Tx size exceeds maximum")
+		return wrsp.ErrBaseEncodingError.AppendLog("Tx size exceeds maximum")
 	}
 	// Decode tx
 	var tx types.Tx
 	err := wire.ReadBinaryBytes(txBytes, &tx)
 	if err != nil {
-		return types.ErrEncodingError.AppendLog("Error decoding tx: " + err.Error())
+		return wrsp.ErrBaseEncodingError.AppendLog("Error decoding tx: " + err.Error())
 	}
 	// Validate and exec tx
 	res = state.ExecTx(app.state, tx, false, nil)
-	if !res.IsOK() {
+	if res.IsErr() {
 		return res.PrependLog("Error in AppendTx")
 	}
-	return types.ResultOK
+	return wrsp.OK
 }
 
-// TMSP::CheckTx
-func (app *Basecoin) CheckTx(txBytes []byte) (res tmsp.Result) {
+// wrsp::CheckTx
+func (app *Basecoin) CheckTx(txBytes []byte) (res wrsp.Result) {
 	if len(txBytes) > maxTxSize {
-		return types.ErrEncodingError.AppendLog("Tx size exceeds maximum")
+		return wrsp.ErrBaseEncodingError.AppendLog("Tx size exceeds maximum")
 	}
 	// Decode tx
 	var tx types.Tx
 	err := wire.ReadBinaryBytes(txBytes, &tx)
 	if err != nil {
-		return types.ErrEncodingError.AppendLog("Error decoding tx: " + err.Error())
+		return wrsp.ErrBaseEncodingError.AppendLog("Error decoding tx: " + err.Error())
 	}
 	// Validate tx
 	res = state.ExecTx(app.state, tx, true, nil)
-	if !res.IsOK() {
+	if res.IsErr() {
 		return res.PrependLog("Error in CheckTx")
 	}
-	return types.ResultOK
+	return wrsp.OK
 }
 
-// TMSP::Query
-func (app *Basecoin) Query(query []byte) (res tmsp.Result) {
-	return types.ResultOK
-	value, err := app.eyesCli.GetSync(query)
-	if err != nil {
-		panic("Error making query: " + err.Error())
+// wrsp::Query
+func (app *Basecoin) Query(query []byte) (res wrsp.Result) {
+	return wrsp.OK
+	res = app.eyesCli.GetSync(query)
+	if res.IsErr() {
+		return res.PrependLog("Error querying eyesCli")
 	}
-	return types.ResultOK.SetData(value).SetLog("Success")
+	return res
 }
 
-// TMSP::Commit
-func (app *Basecoin) Commit() (hash []byte, log string) {
-	hash, log, err := app.eyesCli.CommitSync()
-	if err != nil {
-		panic("Error getting hash: " + err.Error())
+// wrsp::Commit
+func (app *Basecoin) Commit() (res wrsp.Result) {
+	res = app.eyesCli.CommitSync()
+	if res.IsErr() {
+		panic("Error getting hash: " + res.Error())
 	}
-	return hash, "Success"
+	return res
 }
 
-// TMSP::InitChain
-func (app *Basecoin) InitChain(validators []*tmsp.Validator) {
+// wrsp::InitChain
+func (app *Basecoin) InitChain(validators []*wrsp.Validator) {
 	app.govMint.InitChain(validators)
 }
 
-// TMSP::EndBlock
-func (app *Basecoin) EndBlock(height uint64) []*tmsp.Validator {
+// wrsp::EndBlock
+func (app *Basecoin) EndBlock(height uint64) []*wrsp.Validator {
 	app.state.ResetCacheState()
 	return app.govMint.EndBlock(height)
 }

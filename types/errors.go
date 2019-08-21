@@ -1,22 +1,22 @@
 package types
 
 import (
-	tmsp "github.com/tepleton/tmsp/types"
+	wrsp "github.com/tepleton/wrsp/types"
 )
 
 var (
-	ErrInternalError        = tmsp.NewError(tmsp.CodeType_InternalError, "Internal error")
-	ErrDuplicateAddress     = tmsp.NewError(tmsp.CodeType_BaseDuplicateAddress, "Error duplicate address")
-	ErrEncodingError        = tmsp.NewError(tmsp.CodeType_BaseEncodingError, "Error encoding error")
-	ErrInsufficientFees     = tmsp.NewError(tmsp.CodeType_BaseInsufficientFees, "Error insufficient fees")
-	ErrInsufficientFunds    = tmsp.NewError(tmsp.CodeType_BaseInsufficientFunds, "Error insufficient funds")
-	ErrInsufficientGasPrice = tmsp.NewError(tmsp.CodeType_BaseInsufficientGasPrice, "Error insufficient gas price")
-	ErrInvalidAddress       = tmsp.NewError(tmsp.CodeType_BaseInvalidAddress, "Error invalid address")
-	ErrInvalidAmount        = tmsp.NewError(tmsp.CodeType_BaseInvalidAmount, "Error invalid amount")
-	ErrInvalidPubKey        = tmsp.NewError(tmsp.CodeType_BaseInvalidPubKey, "Error invalid pubkey")
-	ErrInvalidSequence      = tmsp.NewError(tmsp.CodeType_BaseInvalidSequence, "Error invalid sequence")
-	ErrInvalidSignature     = tmsp.NewError(tmsp.CodeType_BaseInvalidSignature, "Error invalid signature")
-	ErrUnknownPubKey        = tmsp.NewError(tmsp.CodeType_BaseUnknownPubKey, "Error unknown pubkey")
+	ErrInternalError        = wrsp.NewError(wrsp.CodeType_InternalError, "Internal error")
+	ErrDuplicateAddress     = wrsp.NewError(wrsp.CodeType_BaseDuplicateAddress, "Error duplicate address")
+	ErrEncodingError        = wrsp.NewError(wrsp.CodeType_BaseEncodingError, "Error encoding error")
+	ErrInsufficientFees     = wrsp.NewError(wrsp.CodeType_BaseInsufficientFees, "Error insufficient fees")
+	ErrInsufficientFunds    = wrsp.NewError(wrsp.CodeType_BaseInsufficientFunds, "Error insufficient funds")
+	ErrInsufficientGasPrice = wrsp.NewError(wrsp.CodeType_BaseInsufficientGasPrice, "Error insufficient gas price")
+	ErrInvalidAddress       = wrsp.NewError(wrsp.CodeType_BaseInvalidAddress, "Error invalid address")
+	ErrInvalidAmount        = wrsp.NewError(wrsp.CodeType_BaseInvalidAmount, "Error invalid amount")
+	ErrInvalidPubKey        = wrsp.NewError(wrsp.CodeType_BaseInvalidPubKey, "Error invalid pubkey")
+	ErrInvalidSequence      = wrsp.NewError(wrsp.CodeType_BaseInvalidSequence, "Error invalid sequence")
+	ErrInvalidSignature     = wrsp.NewError(wrsp.CodeType_BaseInvalidSignature, "Error invalid signature")
+	ErrUnknownPubKey        = wrsp.NewError(wrsp.CodeType_BaseUnknownPubKey, "Error unknown pubkey")
 
-	ResultOK = tmsp.NewResultOK(nil, "")
+	ResultOK = wrsp.NewResultOK(nil, "")
 )

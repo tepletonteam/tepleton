@@ -7,7 +7,7 @@ import (
 	. "github.com/tepleton/go-common"
 	"github.com/tepleton/go-crypto"
 	"github.com/tepleton/go-wire"
-	tmsp "github.com/tepleton/tmsp/types"
+	wrsp "github.com/tepleton/wrsp/types"
 	"golang.org/x/crypto/ripemd160"
 )
 
@@ -46,14 +46,14 @@ type TxInput struct {
 	PubKey    crypto.PubKey    `json:"pub_key"`   // May be nil
 }
 
-func (txIn TxInput) ValidateBasic() tmsp.Result {
+func (txIn TxInput) ValidateBasic() wrsp.Result {
 	if len(txIn.Address) != 20 {
-		return ErrInvalidAddress
+		return wrsp.ErrBaseInvalidAddress
 	}
 	if txIn.Amount == 0 {
-		return ErrInvalidAmount
+		return wrsp.ErrBaseInvalidAmount
 	}
-	return ResultOK
+	return wrsp.OK
 }
 
 func (txIn TxInput) SignBytes() []byte {
@@ -65,21 +65,20 @@ func (txIn TxInput) String() string {
 	return Fmt("TxInput{%X,%v,%v,%v,%v}", txIn.Address, txIn.Amount, txIn.Sequence, txIn.Signature, txIn.PubKey)
 }
 
-//-----------------------------------------------------------------------------
 
 type TxOutput struct {
 	Address []byte `json:"address"` // Hash of the PubKey
 	Amount  int64  `json:"amount"`  // The sum of all outputs must not exceed the inputs.
 }
 
-func (txOut TxOutput) ValidateBasic() tmsp.Result {
+func (txOut TxOutput) ValidateBasic() wrsp.Result {
 	if len(txOut.Address) != 20 {
-		return ErrInvalidAddress
+		return wrsp.ErrBaseInvalidAddress
 	}
 	if txOut.Amount == 0 {
-		return ErrInvalidAmount
+		return wrsp.ErrBaseInvalidAmount
 	}
-	return ResultOK
+	return wrsp.OK
 }
 
 func (txOut TxOutput) SignBytes() []byte {
