@@ -2,7 +2,6 @@ package state
 
 import (
 	"bytes"
-	"strings"
 
 	"github.com/tepleton/basecoin/types"
 	. "github.com/tepleton/go-common"
@@ -10,8 +9,8 @@ import (
 	wrsp "github.com/tepleton/wrsp/types"
 )
 
-// If the tx is invalid, a wrsp error will be returned.
-func ExecTx(state *State, tx types.Tx, isCheckTx bool, evc events.Fireable) wrsp.Result {
+// If the tx is invalid, a TMSP error will be returned.
+func ExecTx(state *State, pgz *types.Plugins, tx types.Tx, isCheckTx bool, evc events.Fireable) wrsp.Result {
 
 	// TODO: do something with fees
 	fees := int64(0)
@@ -69,7 +68,7 @@ func ExecTx(state *State, tx types.Tx, isCheckTx bool, evc events.Fireable) wrsp
 
 		return wrsp.OK
 
-	case *types.CallTx:
+	case *types.AppTx:
 		// First, get input account
 		inAcc := state.GetAccount(tx.Input.Address)
 		if inAcc == nil {
@@ -94,10 +93,10 @@ func ExecTx(state *State, tx types.Tx, isCheckTx bool, evc events.Fireable) wrsp
 		}
 
 		// Validate call address
-		if strings.HasPrefix(string(tx.Address), "gov/") {
-			// This is a gov call.
-		} else {
-			return wrsp.ErrBaseUnknownAddress.AppendLog(Fmt("Unrecognized address %X", tx.Address))
+		plugin := pgz.GetByByte(tx.Type)
+		if plugin != nil {
+			return wrsp.ErrBaseUnknownAddress.AppendLog(
+				Fmt("Unrecognized type byte %v", tx.Type))
 		}
 
 		// Good!
@@ -105,16 +104,21 @@ func ExecTx(state *State, tx types.Tx, isCheckTx bool, evc events.Fireable) wrsp
 		inAcc.Sequence += 1
 		inAcc.Balance -= tx.Input.Amount
 		state.SetCheckAccount(tx.Input.Address, inAcc.Sequence, inAcc.Balance)
+		inAccCopy := inAcc.Copy()
 
-		// If this is AppendTx, actually save accounts
-		if !isCheckTx {
-			state.SetAccount(tx.Input.Address, inAcc)
-			// NOTE: value is dangling.
-			// XXX: don't just give it back
-			inAcc.Balance += value
-			// TODO: logic.
-			// TODO: persist
-			// state.SetAccount(tx.Input.Address, inAcc)
+		// If this is a CheckTx, stop now.
+		if isCheckTx {
+			return wrsp.OK
+		}
+
+		// Run the tx.
+		cache := NewAccountCache(state)
+		cache.SetAccount(tx.Input.Address, inAcc)
+		gas := int64(1) // TODO
+		ctx := types.NewCallContext(cache, inAcc, value, &gas)
+		res = plugin.RunTx(ctx, tx.Data)
+		if res.IsOK() {
+			cache.Sync()
 			log.Info("Successful execution")
 			// Fire events
 			/*
@@ -127,9 +131,14 @@ func ExecTx(state *State, tx types.Tx, isCheckTx bool, evc events.Fireable) wrsp
 					evc.FireEvent(types.EventStringAccOutput(tx.Address), types.EventDataTx{tx, ret, exception})
 				}
 			*/
+		} else {
+			log.Info("AppTx failed", "error", res)
+			// Just return the value and return.
+			// TODO: return gas?
+			inAccCopy.Balance += value
+			state.SetAccount(tx.Input.Address, inAccCopy)
 		}
-
-		return wrsp.OK
+		return res
 
 	default:
 		return wrsp.ErrBaseEncodingError.SetLog("Unknown tx type")

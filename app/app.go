@@ -1,6 +1,8 @@
 package app
 
 import (
+	"strings"
+
 	"github.com/tepleton/basecoin/state"
 	"github.com/tepleton/basecoin/types"
 	. "github.com/tepleton/go-common"
@@ -10,53 +12,77 @@ import (
 	wrsp "github.com/tepleton/wrsp/types"
 )
 
-const version = "0.1"
-const maxTxSize = 10240
+const (
+	version   = "0.1"
+	maxTxSize = 10240
+
+	typeByteBase = 0x01
+	typeByteGov  = 0x02
+
+	pluginNameBase = "base"
+	pluginNameGov  = "gov"
+)
 
 type Basecoin struct {
 	eyesCli *eyes.Client
 	govMint *gov.Governmint
 	state   *state.State
+	plugins *types.Plugins
 }
 
 func NewBasecoin(eyesCli *eyes.Client) *Basecoin {
 	govMint := gov.NewGovernmint(eyesCli)
+	state_ := state.NewState(eyesCli)
+	plugins := types.NewPlugins()
+	plugins.RegisterPlugin(typeByteGov, pluginNameGov, govMint) // TODO: make constants
 	return &Basecoin{
 		eyesCli: eyesCli,
 		govMint: govMint,
-		state:   state.NewState(eyesCli),
+		state:   state_,
+		plugins: plugins,
 	}
 }
 
-// wrsp::Info
+// TMSP::Info
 func (app *Basecoin) Info() string {
 	return Fmt("Basecoin v%v", version)
 }
 
-// wrsp::SetOption
+// TMSP::SetOption
 func (app *Basecoin) SetOption(key string, value string) (log string) {
-	switch key {
-	case "chainID":
-		app.state.SetChainID(value)
-		return "Success"
-	case "account":
-		var err error
-		var setAccount types.Account
-		wire.ReadJSONPtr(&setAccount, []byte(value), &err)
-		if err != nil {
-			return "Error decoding setAccount message: " + err.Error()
+	pluginName, key := splitKey(key)
+	if pluginName != pluginNameBase {
+		// Set option on plugin
+		plugin := app.plugins.GetByName(pluginName)
+		if plugin == nil {
+			return "Invalid plugin name: " + pluginName
 		}
-		accBytes := wire.BinaryBytes(setAccount)
-		res := app.eyesCli.SetSync(setAccount.PubKey.Address(), accBytes)
-		if res.IsErr() {
-			return "Error saving account: " + res.Error()
+		return plugin.SetOption(key, value)
+	} else {
+		// Set option on basecoin
+		switch key {
+		case "chainID":
+			app.state.SetChainID(value)
+			return "Success"
+		case "account":
+			var err error
+			var setAccount types.Account
+			wire.ReadJSONPtr(&setAccount, []byte(value), &err)
+			if err != nil {
+				return "Error decoding setAccount message: " + err.Error()
+			}
+			accBytes := wire.BinaryBytes(setAccount)
+			res := app.eyesCli.SetSync(setAccount.PubKey.Address(), accBytes)
+			if res.IsErr() {
+				return "Error saving account: " + res.Error()
+			}
+			return "Success"
 		}
-		return "Success"
+		return "Unrecognized option key " + key
 	}
-	return "Unrecognized option key " + key
 }
 
-// wrsp::AppendTx
+// TMSP::AppendTx
 func (app *Basecoin) AppendTx(txBytes []byte) (res wrsp.Result) {
 	if len(txBytes) > maxTxSize {
 		return wrsp.ErrBaseEncodingError.AppendLog("Tx size exceeds maximum")
@@ -68,14 +94,14 @@ func (app *Basecoin) AppendTx(txBytes []byte) (res wrsp.Result) {
 		return wrsp.ErrBaseEncodingError.AppendLog("Error decoding tx: " + err.Error())
 	}
 	// Validate and exec tx
-	res = state.ExecTx(app.state, tx, false, nil)
+	res = state.ExecTx(app.state, app.plugins, tx, false, nil)
 	if res.IsErr() {
 		return res.PrependLog("Error in AppendTx")
 	}
 	return wrsp.OK
 }
 
-// wrsp::CheckTx
+// TMSP::CheckTx
 func (app *Basecoin) CheckTx(txBytes []byte) (res wrsp.Result) {
 	if len(txBytes) > maxTxSize {
 		return wrsp.ErrBaseEncodingError.AppendLog("Tx size exceeds maximum")
@@ -87,38 +113,68 @@ func (app *Basecoin) CheckTx(txBytes []byte) (res wrsp.Result) {
 		return wrsp.ErrBaseEncodingError.AppendLog("Error decoding tx: " + err.Error())
 	}
 	// Validate tx
-	res = state.ExecTx(app.state, tx, true, nil)
+	res = state.ExecTx(app.state, app.plugins, tx, true, nil)
 	if res.IsErr() {
 		return res.PrependLog("Error in CheckTx")
 	}
 	return wrsp.OK
 }
 
-// wrsp::Query
+// TMSP::Query
 func (app *Basecoin) Query(query []byte) (res wrsp.Result) {
-	res = app.eyesCli.GetSync(query)
-	if res.IsErr() {
-		return res.PrependLog("Error querying eyesCli")
+	pluginName, queryStr := splitKey(string(query))
+	if pluginName != pluginNameBase {
+		plugin := app.plugins.GetByName(pluginName)
+		if plugin == nil {
+			return wrsp.ErrBaseUnknownPlugin.SetLog(Fmt("Unknown plugin %v", pluginName))
+		}
+		return plugin.Query([]byte(queryStr))
+	} else {
+		// TODO turn Basecoin ops into a plugin?
+		res = app.eyesCli.GetSync([]byte(queryStr))
+		if res.IsErr() {
+			return res.PrependLog("Error querying eyesCli")
+		}
+		return res
 	}
-	return res
 }
 
-// wrsp::Commit
+// TMSP::Commit
 func (app *Basecoin) Commit() (res wrsp.Result) {
+	// First, commit all the plugins
+	for _, plugin := range app.plugins.GetList() {
+		res = plugin.Commit()
+		if res.IsErr() {
+			PanicSanity(Fmt("Error committing plugin %v", plugin.Name))
+		}
+	}
+	// Then, commit eyes.
 	res = app.eyesCli.CommitSync()
 	if res.IsErr() {
-		panic("Error getting hash: " + res.Error())
+		PanicSanity("Error getting hash: " + res.Error())
 	}
 	return res
 }
 
-// wrsp::InitChain
+// TMSP::InitChain
 func (app *Basecoin) InitChain(validators []*wrsp.Validator) {
 	app.govMint.InitChain(validators)
 }
 
-// wrsp::EndBlock
+// TMSP::EndBlock
 func (app *Basecoin) EndBlock(height uint64) []*wrsp.Validator {
 	app.state.ResetCacheState()
 	return app.govMint.EndBlock(height)
+}
+
+//----------------------------------------
+
+// Splits the string at the first :.
+// if there are none, the second string is nil.
+func splitKey(key string) (prefix string, sufix string) {
+	if strings.Contains(key, "/") {
+		keyParts := strings.SplitN(key, "/", 2)
+		return keyParts[0], keyParts[1]
+	}
+	return key, ""
 }
