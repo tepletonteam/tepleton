@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	BlockType = "tepleton Light Client"
+	BlockType = "Tendermint Light Client"
 	PrivExt   = "tlc"
 	PubExt    = "pub"
 	keyPerm   = os.FileMode(0600)
@@ -35,8 +35,8 @@ type FileStore struct {
 // dir should be an absolute path of a directory owner by this user. It will
 // be created if it doesn't exist already.
 func New(dir string) FileStore {
-	err := os.Mkdir(dir, dirPerm)
-	if err != nil && !os.IsExist(err) {
+	err := os.MkdirAll(dir, dirPerm)
+	if err != nil {
 		panic(err)
 	}
 	return FileStore{dir}
