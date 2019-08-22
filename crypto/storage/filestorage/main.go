@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	BlockType = "tepleton Light Client"
+	BlockType = "Tendermint Light Client"
 	PrivExt   = "tlc"
 	PubExt    = "pub"
 	keyPerm   = os.FileMode(0600)
