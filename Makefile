@@ -7,6 +7,7 @@ install: get_deps
 
 test:
 	go test github.com/tepleton/basecoin/...
+	go run tests/wrsp/*.go
 
 get_deps:
 	go get -d github.com/tepleton/basecoin/...

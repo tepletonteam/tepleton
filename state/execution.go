@@ -1,8 +1,6 @@
 package state
 
 import (
-	"bytes"
-
 	"github.com/tepleton/basecoin/types"
 	. "github.com/tepleton/go-common"
 	"github.com/tepleton/go-events"
@@ -28,28 +26,35 @@ func ExecTx(s *State, pgz *types.Plugins, tx types.Tx, isCheckTx bool, evc event
 	// Exec tx
 	switch tx := tx.(type) {
 	case *types.SendTx:
-		// First, get inputs
+		// Validate inputs and outputs, basic
+		res := validateInputsBasic(tx.Inputs)
+		if res.IsErr() {
+			return res.PrependLog("in validateInputsBasic()")
+		}
+		res = validateOutputsBasic(tx.Outputs)
+		if res.IsErr() {
+			return res.PrependLog("in validateOutputsBasic()")
+		}
+
+		// Get inputs
 		accounts, res := getInputs(state, tx.Inputs)
 		if res.IsErr() {
 			return res.PrependLog("in getInputs()")
 		}
 
-		// Then, get or make outputs.
+		// Get or make outputs.
 		accounts, res = getOrMakeOutputs(state, accounts, tx.Outputs)
 		if res.IsErr() {
 			return res.PrependLog("in getOrMakeOutputs()")
 		}
 
-		// Validate inputs and outputs
+		// Validate inputs and outputs, advanced
 		signBytes := tx.SignBytes(chainID)
-		inTotal, res := validateInputs(accounts, signBytes, tx.Inputs)
+		inTotal, res := validateInputsAdvanced(accounts, signBytes, tx.Inputs)
 		if res.IsErr() {
-			return res.PrependLog("in validateInputs()")
+			return res.PrependLog("in validateInputsAdvanced()")
 		}
-		outTotal, res := validateOutputs(tx.Outputs)
-		if res.IsErr() {
-			return res.PrependLog("in validateOutputs()")
-		}
+		outTotal := sumOutputs(tx.Outputs)
 		if !inTotal.IsEqual(outTotal.Plus(types.Coins{{"", tx.Fee}})) {
 			return wrsp.ErrBaseInvalidOutput.AppendLog("Input total != output total + fees")
 		}
@@ -78,23 +83,27 @@ func ExecTx(s *State, pgz *types.Plugins, tx types.Tx, isCheckTx bool, evc event
 		return wrsp.OK
 
 	case *types.AppTx:
-		// First, get input account
+		// Validate input, basic
+		res := tx.Input.ValidateBasic()
+		if res.IsErr() {
+			return res
+		}
+
+		// Get input account
 		inAcc := state.GetAccount(tx.Input.Address)
 		if inAcc == nil {
 			return wrsp.ErrBaseUnknownAddress
 		}
-
-		// Validate input
-		// pubKey should be present in either "inAcc" or "tx.Input"
-		if res := checkInputPubKey(tx.Input.Address, inAcc, tx.Input); res.IsErr() {
-			log.Info(Fmt("Can't find pubkey for %X", tx.Input.Address))
-			return res
+		if tx.Input.PubKey != nil {
+			inAcc.PubKey = tx.Input.PubKey
 		}
+
+		// Validate input, advanced
 		signBytes := tx.SignBytes(chainID)
-		res := validateInput(inAcc, signBytes, tx.Input)
+		res = validateInputAdvanced(inAcc, signBytes, tx.Input)
 		if res.IsErr() {
-			log.Info(Fmt("validateInput failed on %X: %v", tx.Input.Address, res))
-			return res.PrependLog("in validateInput()")
+			log.Info(Fmt("validateInputAdvanced failed on %X: %v", tx.Input.Address, res))
+			return res.PrependLog("in validateInputAdvanced()")
 		}
 		if !tx.Input.Coins.IsGTE(types.Coins{{"", tx.Fee}}) {
 			log.Info(Fmt("Sender did not send enough to cover the fee %X", tx.Input.Address))
@@ -160,8 +169,7 @@ func ExecTx(s *State, pgz *types.Plugins, tx types.Tx, isCheckTx bool, evc event
 
 // The accounts from the TxInputs must either already have
 // crypto.PubKey.(type) != nil, (it must be known),
-// or it must be specified in the TxInput.  If redeclared,
-// the TxInput is modified and input.PubKey set to nil.
+// or it must be specified in the TxInput.
 func getInputs(state types.AccountGetter, ins []types.TxInput) (map[string]*types.Account, wrsp.Result) {
 	accounts := map[string]*types.Account{}
 	for _, in := range ins {
@@ -173,9 +181,8 @@ func getInputs(state types.AccountGetter, ins []types.TxInput) (map[string]*type
 		if acc == nil {
 			return nil, wrsp.ErrBaseUnknownAddress
 		}
-		// PubKey should be present in either "account" or "in"
-		if res := checkInputPubKey(in.Address, acc, in); res.IsErr() {
-			return nil, res
+		if in.PubKey != nil {
+			acc.PubKey = in.PubKey
 		}
 		accounts[string(in.Address)] = acc
 	}
@@ -205,37 +212,25 @@ func getOrMakeOutputs(state types.AccountGetter, accounts map[string]*types.Acco
 	return accounts, wrsp.OK
 }
 
-// Input must not have a redundant PubKey (i.e. Account already has PubKey).
-// NOTE: Account has PubKey if Sequence > 0
-func checkInputPubKey(address []byte, acc *types.Account, in types.TxInput) wrsp.Result {
-	if acc.PubKey == nil {
-		if in.PubKey == nil {
-			return wrsp.ErrBaseUnknownPubKey.AppendLog("PubKey not present in either acc or input")
-		}
-		if !bytes.Equal(in.PubKey.Address(), address) {
-			return wrsp.ErrBaseInvalidPubKey.AppendLog("Input PubKey address does not match address")
-		}
-		acc.PubKey = in.PubKey
-	} else {
-		if in.PubKey != nil {
-			// NOTE: allow redundant pubkey.
-			if !bytes.Equal(in.PubKey.Address(), address) {
-				return wrsp.ErrBaseInvalidPubKey.AppendLog("Input PubKey address does not match address")
-			}
+// Validate inputs basic structure
+func validateInputsBasic(ins []types.TxInput) (res wrsp.Result) {
+	for _, in := range ins {
+		// Check TxInput basic
+		if res := in.ValidateBasic(); res.IsErr() {
+			return res
 		}
 	}
 	return wrsp.OK
 }
 
 // Validate inputs and compute total amount of coins
-func validateInputs(accounts map[string]*types.Account, signBytes []byte, ins []types.TxInput) (total types.Coins, res wrsp.Result) {
-
+func validateInputsAdvanced(accounts map[string]*types.Account, signBytes []byte, ins []types.TxInput) (total types.Coins, res wrsp.Result) {
 	for _, in := range ins {
 		acc := accounts[string(in.Address)]
 		if acc == nil {
-			PanicSanity("validateInputs() expects account in accounts")
+			PanicSanity("validateInputsAdvanced() expects account in accounts")
 		}
-		res = validateInput(acc, signBytes, in)
+		res = validateInputAdvanced(acc, signBytes, in)
 		if res.IsErr() {
 			return
 		}
@@ -245,11 +240,7 @@ func validateInputs(accounts map[string]*types.Account, signBytes []byte, ins []
 	return total, wrsp.OK
 }
 
-func validateInput(acc *types.Account, signBytes []byte, in types.TxInput) (res wrsp.Result) {
-	// Check TxInput basic
-	if res := in.ValidateBasic(); res.IsErr() {
-		return res
-	}
+func validateInputAdvanced(acc *types.Account, signBytes []byte, in types.TxInput) (res wrsp.Result) {
 	// Check sequence/coins
 	seq, balance := acc.Sequence, acc.Balance
 	if seq+1 != in.Sequence {
@@ -266,16 +257,21 @@ func validateInput(acc *types.Account, signBytes []byte, in types.TxInput) (res 
 	return wrsp.OK
 }
 
-func validateOutputs(outs []types.TxOutput) (total types.Coins, res wrsp.Result) {
+func validateOutputsBasic(outs []types.TxOutput) (res wrsp.Result) {
 	for _, out := range outs {
 		// Check TxOutput basic
 		if res := out.ValidateBasic(); res.IsErr() {
-			return nil, res
+			return res
 		}
-		// Good. Add amount to total
+	}
+	return wrsp.OK
+}
+
+func sumOutputs(outs []types.TxOutput) (total types.Coins) {
+	for _, out := range outs {
 		total = total.Plus(out.Coins)
 	}
-	return total, wrsp.OK
+	return total
 }
 
 func adjustByInputs(state types.AccountSetter, accounts map[string]*types.Account, ins []types.TxInput) {

@@ -16,13 +16,13 @@ const (
 	version   = "0.1"
 	maxTxSize = 10240
 
-	typeByteBase = 0x01
-	typeByteEyes = 0x02
-	typeByteGov  = 0x03
+	PluginTypeByteBase = 0x01
+	PluginTypeByteEyes = 0x02
+	PluginTypeByteGov  = 0x03
 
-	pluginNameBase = "base"
-	pluginNameEyes = "eyes"
-	pluginNameGov  = "gov"
+	PluginNameBase = "base"
+	PluginNameEyes = "eyes"
+	PluginNameGov  = "gov"
 )
 
 type Basecoin struct {
@@ -36,7 +36,7 @@ func NewBasecoin(eyesCli *eyes.Client) *Basecoin {
 	govMint := gov.NewGovernmint(eyesCli)
 	state_ := state.NewState(eyesCli)
 	plugins := types.NewPlugins()
-	plugins.RegisterPlugin(typeByteGov, pluginNameGov, govMint) // TODO: make constants
+	plugins.RegisterPlugin(PluginTypeByteGov, PluginNameGov, govMint)
 	return &Basecoin{
 		eyesCli: eyesCli,
 		govMint: govMint,
@@ -52,12 +52,12 @@ func (app *Basecoin) Info() string {
 
 // TMSP::SetOption
 func (app *Basecoin) SetOption(key string, value string) (log string) {
-	pluginName, key := splitKey(key)
-	if pluginName != pluginNameBase {
+	PluginName, key := splitKey(key)
+	if PluginName != PluginNameBase {
 		// Set option on plugin
-		plugin := app.plugins.GetByName(pluginName)
+		plugin := app.plugins.GetByName(PluginName)
 		if plugin == nil {
-			return "Invalid plugin name: " + pluginName
+			return "Invalid plugin name: " + PluginName
 		}
 		return plugin.SetOption(key, value)
 	} else {
@@ -126,11 +126,11 @@ func (app *Basecoin) Query(query []byte) (res wrsp.Result) {
 	typeByte := query[0]
 	query = query[1:]
 	switch typeByte {
-	case typeByteBase:
+	case PluginTypeByteBase:
 		return wrsp.OK.SetLog("This type of query not yet supported")
-	case typeByteEyes:
+	case PluginTypeByteEyes:
 		return app.eyesCli.QuerySync(query)
-	case typeByteGov:
+	case PluginTypeByteGov:
 		return app.govMint.Query(query)
 	}
 	return wrsp.ErrBaseUnknownPlugin.SetLog(
@@ -156,27 +156,42 @@ func (app *Basecoin) Commit() (res wrsp.Result) {
 
 // TMSP::InitChain
 func (app *Basecoin) InitChain(validators []*wrsp.Validator) {
-	app.govMint.InitChain(validators)
+	for _, plugin := range app.plugins.GetList() {
+		if _, ok := plugin.Plugin.(wrsp.BlockchainAware); ok {
+			plugin.Plugin.(wrsp.BlockchainAware).InitChain(validators)
+		}
+	}
 }
 
 // TMSP::BeginBlock
 func (app *Basecoin) BeginBlock(height uint64) {
-	// app.govMint.BeginBlock(height)
-	// TODO other plugins?
+	app.state.ResetCacheState()
+	for _, plugin := range app.plugins.GetList() {
+		if _, ok := plugin.Plugin.(wrsp.BlockchainAware); ok {
+			plugin.Plugin.(wrsp.BlockchainAware).BeginBlock(height)
+		}
+	}
 }
 
 // TMSP::EndBlock
-func (app *Basecoin) EndBlock(height uint64) []*wrsp.Validator {
-	app.state.ResetCacheState()
-	return app.govMint.EndBlock(height)
-	// TODO other plugins?
+func (app *Basecoin) EndBlock(height uint64) (vals []*wrsp.Validator) {
+	for _, plugin := range app.plugins.GetList() {
+		if plugin.Plugin == app.govMint {
+			vals = plugin.Plugin.(wrsp.BlockchainAware).EndBlock(height)
+		} else {
+			if _, ok := plugin.Plugin.(wrsp.BlockchainAware); ok {
+				plugin.Plugin.(wrsp.BlockchainAware).EndBlock(height)
+			}
+		}
+	}
+	return
 }
 
 //----------------------------------------
 
-// Splits the string at the first :.
+// Splits the string at the first '/'.
 // if there are none, the second string is nil.
-func splitKey(key string) (prefix string, sufix string) {
+func splitKey(key string) (prefix string, suffix string) {
 	if strings.Contains(key, "/") {
 		keyParts := strings.SplitN(key, "/", 2)
 		return keyParts[0], keyParts[1]
