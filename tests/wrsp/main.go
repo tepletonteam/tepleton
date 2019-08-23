@@ -9,7 +9,6 @@ import (
 	. "github.com/tepleton/go-common"
 	"github.com/tepleton/go-crypto"
 	"github.com/tepleton/go-wire"
-	"github.com/tepleton/go-wire/expr"
 	govtypes "github.com/tepleton/governmint/types"
 	eyescli "github.com/tepleton/merkleeyes/client"
 	wrsp "github.com/tepleton/wrsp/types"
@@ -113,7 +112,7 @@ func testGov() {
 	})
 
 	// Query for validator set
-	res := bcApp.Query(expr.MustCompile(`x02 x01 "gov/g/validators"`))
+	res := bcApp.Query([]byte("XXX"))
 	if res.IsErr() {
 		Exit(Fmt("Failed to query validators: %v", res.Error()))
 	}
