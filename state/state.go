@@ -4,6 +4,8 @@ import (
 	"github.com/tepleton/basecoin/types"
 	. "github.com/tepleton/go-common"
 	"github.com/tepleton/go-wire"
+	eyes "github.com/tepleton/merkleeyes/client"
+	wrsp "github.com/tepleton/wrsp/types"
 )
 
 // CONTRACT: State should be quick to copy.
@@ -73,6 +75,11 @@ func (s *State) CacheWrap() *State {
 // NOTE: errors if s is not from CacheWrap()
 func (s *State) CacheSync() {
 	s.writeCache.Sync()
+}
+
+func (s *State) Commit() wrsp.Result {
+	s.readCache = make(map[string][]byte)
+	return s.store.(*eyes.Client).CommitSync()
 }
 
 //----------------------------------------

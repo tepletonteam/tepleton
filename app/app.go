@@ -17,9 +17,11 @@ const (
 
 	PluginTypeByteBase = 0x01
 	PluginTypeByteEyes = 0x02
+	PluginTypeByteVote = 0x03
 
 	PluginNameBase = "base"
 	PluginNameEyes = "eyes"
+	PluginNameVote = "vote"
 )
 
 type Basecoin struct {
@@ -43,6 +45,10 @@ func NewBasecoin(eyesCli *eyes.Client) *Basecoin {
 // TMSP::Info
 func (app *Basecoin) Info() string {
 	return Fmt("Basecoin v%v", version)
+}
+
+func (app *Basecoin) RegisterPlugin(typeByte byte, name string, plugin types.Plugin) {
+	app.plugins.RegisterPlugin(typeByte, name, plugin)
 }
 
 // TMSP::SetOption
@@ -128,8 +134,9 @@ func (app *Basecoin) Query(query []byte) (res wrsp.Result) {
 
 // TMSP::Commit
 func (app *Basecoin) Commit() (res wrsp.Result) {
-	// Commit eyes.
-	res = app.eyesCli.CommitSync()
+
+	// Commit state
+	res = app.state.Commit()
 
 	// Wrap the committed state in cache for CheckTx
 	app.cacheState = app.state.CacheWrap()
