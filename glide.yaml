@@ -1,0 +1,28 @@
+package: github.com/tepleton/basecoin
+import:
+- package: github.com/gorilla/websocket
+  version: v1.1.0
+- package: github.com/tepleton/go-common
+- package: github.com/tepleton/go-crypto
+- package: github.com/tepleton/go-events
+- package: github.com/tepleton/go-logger
+- package: github.com/tepleton/go-rpc
+  subpackages:
+  - client
+  - types
+- package: github.com/tepleton/go-wire
+- package: github.com/tepleton/governmint
+  subpackages:
+  - gov
+  - types
+- package: github.com/tepleton/merkleeyes
+  subpackages:
+  - client
+- package: github.com/tepleton/tepleton
+  version: ~0.7.4
+  subpackages:
+  - rpc/core/types
+- package: github.com/tepleton/wrsp
+  subpackages:
+  - server
+  - types
