@@ -4,12 +4,12 @@ import (
 	wrsp "github.com/tepleton/wrsp/types"
 )
 
-// Value is any floating value.  It must be given to someone.
 type Plugin interface {
-	SetOption(key string, value string) (log string)
-	RunTx(ctx CallContext, txBytes []byte) (res wrsp.Result)
-	Query(query []byte) (res wrsp.Result)
-	Commit() (res wrsp.Result)
+	SetOption(store KVStore, key string, value string) (log string)
+	RunTx(store KVStore, ctx CallContext, txBytes []byte) (res wrsp.Result)
+	InitChain(store KVStore, vals []*wrsp.Validator)
+	BeginBlock(store KVStore, height uint64)
+	EndBlock(store KVStore, height uint64) []*wrsp.Validator
 }
 
 type NamedPlugin struct {
@@ -21,14 +21,12 @@ type NamedPlugin struct {
 //----------------------------------------
 
 type CallContext struct {
-	Cache  AccountCacher
-	Caller *Account
+	Caller []byte
 	Coins  Coins
 }
 
-func NewCallContext(cache AccountCacher, caller *Account, coins Coins) CallContext {
+func NewCallContext(caller []byte, coins Coins) CallContext {
 	return CallContext{
-		Cache:  cache,
 		Caller: caller,
 		Coins:  coins,
 	}
