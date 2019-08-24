@@ -1,17 +1,15 @@
 package state
 
 import (
+	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/basecoin/types"
 	. "github.com/tepleton/go-common"
 	"github.com/tepleton/go-events"
-	wrsp "github.com/tepleton/wrsp/types"
 )
 
 // If the tx is invalid, a TMSP error will be returned.
 func ExecTx(state *State, pgz *types.Plugins, tx types.Tx, isCheckTx bool, evc events.Fireable) wrsp.Result {
 
-	// TODO: do something with fees
-	fees := types.Coins{}
 	chainID := state.GetChainID()
 
 	// Exec tx
@@ -46,10 +44,9 @@ func ExecTx(state *State, pgz *types.Plugins, tx types.Tx, isCheckTx bool, evc e
 			return res.PrependLog("in validateInputsAdvanced()")
 		}
 		outTotal := sumOutputs(tx.Outputs)
-		if !inTotal.IsEqual(outTotal.Plus(types.Coins{{"", tx.Fee}})) {
+		if !inTotal.IsEqual(outTotal.Plus(types.Coins{tx.Fee})) {
 			return wrsp.ErrBaseInvalidOutput.AppendLog("Input total != output total + fees")
 		}
-		fees = fees.Plus(types.Coins{{"", tx.Fee}})
 
 		// TODO: Fee validation for SendTx
 
@@ -96,20 +93,20 @@ func ExecTx(state *State, pgz *types.Plugins, tx types.Tx, isCheckTx bool, evc e
 			log.Info(Fmt("validateInputAdvanced failed on %X: %v", tx.Input.Address, res))
 			return res.PrependLog("in validateInputAdvanced()")
 		}
-		if !tx.Input.Coins.IsGTE(types.Coins{{"", tx.Fee}}) {
+		if !tx.Input.Coins.IsGTE(types.Coins{tx.Fee}) {
 			log.Info(Fmt("Sender did not send enough to cover the fee %X", tx.Input.Address))
 			return wrsp.ErrBaseInsufficientFunds
 		}
 
 		// Validate call address
-		plugin := pgz.GetByByte(tx.Type)
+		plugin := pgz.GetByName(tx.Name)
 		if plugin == nil {
 			return wrsp.ErrBaseUnknownAddress.AppendLog(
-				Fmt("Unrecognized type byte %v", tx.Type))
+				Fmt("Unrecognized plugin name%v", tx.Name))
 		}
 
 		// Good!
-		coins := tx.Input.Coins.Minus(types.Coins{{"", tx.Fee}})
+		coins := tx.Input.Coins.Minus(types.Coins{tx.Fee})
 		inAcc.Sequence += 1
 		inAcc.Balance = inAcc.Balance.Minus(tx.Input.Coins)
 
@@ -120,13 +117,12 @@ func ExecTx(state *State, pgz *types.Plugins, tx types.Tx, isCheckTx bool, evc e
 		}
 
 		// Create inAcc checkpoint
-		inAccDeducted := inAcc.Copy()
+		inAccCopy := inAcc.Copy()
 
 		// Run the tx.
-		// XXX cache := types.NewStateCache(state)
 		cache := state.CacheWrap()
 		cache.SetAccount(tx.Input.Address, inAcc)
-		ctx := types.NewCallContext(tx.Input.Address, coins)
+		ctx := types.NewCallContext(tx.Input.Address, inAcc, coins)
 		res = plugin.RunTx(cache, ctx, tx.Data)
 		if res.IsOK() {
 			cache.CacheSync()
@@ -145,10 +141,10 @@ func ExecTx(state *State, pgz *types.Plugins, tx types.Tx, isCheckTx bool, evc e
 		} else {
 			log.Info("AppTx failed", "error", res)
 			// Just return the coins and return.
-			inAccDeducted.Balance = inAccDeducted.Balance.Plus(coins)
+			inAccCopy.Balance = inAccCopy.Balance.Plus(coins)
 			// But take the gas
 			// TODO
-			state.SetAccount(tx.Input.Address, inAccDeducted)
+			state.SetAccount(tx.Input.Address, inAccCopy)
 		}
 		return res
 

@@ -1,5 +1,5 @@
-hash: 3550b32be3d9224dd67ec367be27ba3e4c1ca93b3f01d80e08e00e262e9af486
-updated: 2017-01-11T17:17:20.813714637-05:00
+hash: 3869944d14a8df914ffcad02c2ef3548173daba51c5ea697767f8af77c07b348
+updated: 2017-01-28T09:14:54.898268931-08:00
 imports:
 - name: github.com/btcsuite/btcd
   version: afec1bd1245a4a19e6dfe1306974b733e7cbb9b8
@@ -25,6 +25,8 @@ imports:
   version: ed8eb9e318d7a84ce5915b495b7d35e0cfe7b5a8
 - name: github.com/mattn/go-isatty
   version: 66b8e73f3f5cda9f96b69efd03dd3d7fc4a5cdb8
+- name: github.com/pkg/errors
+  version: 248dadf4e9068a0b3e79f02ed0a610d935de5302
 - name: github.com/syndtr/goleveldb
   version: 6ae1797c0b42b9323fc27ff7dcf568df88f2f33d
   subpackages:
@@ -40,13 +42,19 @@ imports:
   - leveldb/storage
   - leveldb/table
   - leveldb/util
+- name: github.com/tepleton/wrsp
+  version: 8df0bc3a40ccad0d2be10e33c62c404e65c92502
+  subpackages:
+  - client
+  - server
+  - types
 - name: github.com/tepleton/ed25519
   version: 1f52c6f8b8a5c7908aff4497c186af344b428925
   subpackages:
   - edwards25519
   - extra25519
 - name: github.com/tepleton/go-common
-  version: 47e06734f6ee488cc2e61550a38642025e1d4227
+  version: 339e135776142939d82bc8e699db0bf391fd938d
 - name: github.com/tepleton/go-config
   version: e64b424499acd0eb9856b88e10c0dff41628c0d6
 - name: github.com/tepleton/go-crypto
@@ -54,7 +62,7 @@ imports:
 - name: github.com/tepleton/go-db
   version: 2645626c33d8702739e52a61a55d705c2dfe4530
 - name: github.com/tepleton/go-events
-  version: 1c85cb98a4e8ca9e92fe585bc9687fd69b98f841
+  version: 2337086736a6adeb2de6f66739b66ecd77535997
 - name: github.com/tepleton/go-flowrate
   version: a20c98e61957faa93b4014fbd902f20ab9317a6a
   subpackages:
@@ -62,42 +70,31 @@ imports:
 - name: github.com/tepleton/go-logger
   version: cefb3a45c0bf3c493a04e9bcd9b1540528be59f2
 - name: github.com/tepleton/go-merkle
-  version: 1bc9a24706d715cd45403593c6d0a870d70011bb
+  version: 653cb1f631528351ddbc359b994eb0c96f0341cd
 - name: github.com/tepleton/go-p2p
-  version: eab2baa363de01b052b88c559e803776cd2c7dd6
+  version: 67c9086b7458eb45b1970483decd01cd744c477a
   subpackages:
   - upnp
 - name: github.com/tepleton/go-rpc
-  version: e6e3853dc711b8ad92109cf9ea31319588b94fe0
+  version: 6177eb8398ebd4613fbecb71fd96d7c7d97303ec
   subpackages:
   - client
   - types
 - name: github.com/tepleton/go-wire
-  version: 3b0adbc86ed8425eaed98516165b6788d9f4de7a
-- name: github.com/tepleton/governmint
-  version: 0494fad1424082b9d472608a002583bce3076a70
-  subpackages:
-  - gov
-  - types
+  version: 2f3b7aafe21c80b19b6ee3210ecb3e3d07c7a471
 - name: github.com/tepleton/log15
   version: 9545b249b3aacafa97f79e0838b02b274adc6f5f
   subpackages:
   - term
 - name: github.com/tepleton/merkleeyes
-  version: 6d5fd62a5783fc87a3b6edcdbc9980ee140a414d 
+  version: 00d915af3e425cf57c10afe502fd9e0a6a70acd4
   subpackages:
   - app
   - client
 - name: github.com/tepleton/tepleton
-  version: 55b47bcb8e2369c49898930bf68bec2c3357409a
+  version: 7c15b54cccac574cfe673c473d4edff01c2503ec
   subpackages:
   - rpc/core/types
-  - types
-- name: github.com/tepleton/wrsp
-  version: fe96cfc56da22842c185bd84601b156f8ecee78a
-  subpackages:
-  - client
-  - server
   - types
 - name: golang.org/x/crypto
   version: aa2481cbfe81d911eb62b642b7a6b5ec58bbea71
@@ -124,7 +121,7 @@ imports:
   subpackages:
   - unix
 - name: google.golang.org/grpc
-  version: 28707e14b1d2b2f5da81474dea2790d71e526987
+  version: 50955793b0183f9de69bd78e2ec251cf20aab121
   subpackages:
   - codes
   - credentials
@@ -133,5 +130,19 @@ imports:
   - metadata
   - naming
   - peer
+  - stats
+  - tap
   - transport
-testImports: []
+testImports:
+- name: github.com/davecgh/go-spew
+  version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
+  subpackages:
+  - spew
+- name: github.com/pmezard/go-difflib
+  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  subpackages:
+  - difflib
+- name: github.com/stretchr/testify
+  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
+  subpackages:
+  - assert

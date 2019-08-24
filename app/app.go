@@ -1,25 +1,22 @@
 package app
 
 import (
+	"fmt"
 	"strings"
 
+	wrsp "github.com/tepleton/wrsp/types"
 	sm "github.com/tepleton/basecoin/state"
 	"github.com/tepleton/basecoin/types"
 	. "github.com/tepleton/go-common"
 	"github.com/tepleton/go-wire"
 	eyes "github.com/tepleton/merkleeyes/client"
-	wrsp "github.com/tepleton/wrsp/types"
 )
 
 const (
 	version   = "0.1"
 	maxTxSize = 10240
 
-	PluginTypeByteBase = 0x01
-	PluginTypeByteEyes = 0x02
-
 	PluginNameBase = "base"
-	PluginNameEyes = "eyes"
 )
 
 type Basecoin struct {
@@ -41,8 +38,12 @@ func NewBasecoin(eyesCli *eyes.Client) *Basecoin {
 }
 
 // TMSP::Info
-func (app *Basecoin) Info() string {
-	return Fmt("Basecoin v%v", version)
+func (app *Basecoin) Info() wrsp.ResponseInfo {
+	return wrsp.ResponseInfo{Data: Fmt("Basecoin v%v", version)}
+}
+
+func (app *Basecoin) RegisterPlugin(plugin types.Plugin) {
+	app.plugins.RegisterPlugin(plugin)
 }
 
 // TMSP::SetOption
@@ -75,8 +76,8 @@ func (app *Basecoin) SetOption(key string, value string) (log string) {
 	}
 }
 
-// TMSP::AppendTx
-func (app *Basecoin) AppendTx(txBytes []byte) (code wrsp.CodeType, result []byte, log string) {
+// TMSP::DeliverTx
+func (app *Basecoin) DeliverTx(txBytes []byte) (res wrsp.Result) {
 	if len(txBytes) > maxTxSize {
 		return wrsp.CodeType_BaseEncodingError, nil, "Tx size exceeds maximum"
 	}
@@ -91,7 +92,7 @@ func (app *Basecoin) AppendTx(txBytes []byte) (code wrsp.CodeType, result []byte
 	// Validate and exec tx
 	res = sm.ExecTx(app.state, app.plugins, tx, false, nil)
 	if res.IsErr() {
-		return res.PrependLog("Error in AppendTx")
+		return res.PrependLog("Error in DeliverTx")
 	}
 	// Store accounts
 	storeAccounts(app.eyesCli, accs)
@@ -103,6 +104,8 @@ func (app *Basecoin) CheckTx(txBytes []byte) (code wrsp.CodeType, result []byte,
 	if len(txBytes) > maxTxSize {
 		return wrsp.CodeType_BaseEncodingError, nil, "Tx size exceeds maximum"
 	}
+
+	fmt.Printf("%X\n", txBytes)
 
 	// Decode tx
 	var tx types.Tx
@@ -120,18 +123,27 @@ func (app *Basecoin) CheckTx(txBytes []byte) (code wrsp.CodeType, result []byte,
 }
 
 // TMSP::Query
-func (app *Basecoin) Query(query []byte) (res wrsp.Result) {
-	if len(query) == 0 {
-		return wrsp.ErrEncodingError.SetLog("Query cannot be zero length")
+func (app *Basecoin) Query(reqQuery wrsp.RequestQuery) (resQuery wrsp.ResponseQuery) {
+	if len(reqQuery.Data) == 0 {
+		resQuery.Log = "Query cannot be zero length"
+		resQuery.Code = wrsp.CodeType_EncodingError
+		return
 	}
 
-	return app.eyesCli.QuerySync(query)
+	resQuery, err := app.eyesCli.QuerySync(reqQuery)
+	if err != nil {
+		resQuery.Log = "Failed to query MerkleEyes: " + err.Error()
+		resQuery.Code = wrsp.CodeType_InternalError
+		return
+	}
+	return
 }
 
 // TMSP::Commit
 func (app *Basecoin) Commit() (res wrsp.Result) {
-	// Commit eyes.
-	res = app.eyesCli.CommitSync()
+
+	// Commit state
+	res = app.state.Commit()
 
 	// Wrap the committed state in cache for CheckTx
 	app.cacheState = app.state.CacheWrap()
@@ -145,21 +157,21 @@ func (app *Basecoin) Commit() (res wrsp.Result) {
 // TMSP::InitChain
 func (app *Basecoin) InitChain(validators []*wrsp.Validator) {
 	for _, plugin := range app.plugins.GetList() {
-		plugin.Plugin.InitChain(app.state, validators)
+		plugin.InitChain(app.state, validators)
 	}
 }
 
 // TMSP::BeginBlock
 func (app *Basecoin) BeginBlock(height uint64) {
 	for _, plugin := range app.plugins.GetList() {
-		plugin.Plugin.BeginBlock(app.state, height)
+		plugin.BeginBlock(app.state, height)
 	}
 }
 
 // TMSP::EndBlock
 func (app *Basecoin) EndBlock(height uint64) (diffs []*wrsp.Validator) {
 	for _, plugin := range app.plugins.GetList() {
-		moreDiffs := plugin.Plugin.EndBlock(app.state, height)
+		moreDiffs := plugin.EndBlock(app.state, height)
 		diffs = append(diffs, moreDiffs...)
 	}
 	return
