@@ -181,4 +181,43 @@ var (
 		Usage: "hex-encoded proof of IBC packet from source chain",
 		Value: "",
 	}
+
+	ibcSequenceFlag = cli.IntFlag{
+		Name:  "sequence",
+		Usage: "sequence number for IBC packet",
+		Value: 0,
+	}
+
+	ibcHeightFlag = cli.IntFlag{
+		Name:  "height",
+		Usage: "Height the packet became egress in source chain",
+		Value: 0,
+	}
+)
+
+// proof flags
+var (
+	proofFlag = cli.StringFlag{
+		Name:  "proof",
+		Usage: "hex-encoded IAVL proof",
+		Value: "",
+	}
+
+	keyFlag = cli.StringFlag{
+		Name:  "key",
+		Usage: "key to the IAVL tree",
+		Value: "",
+	}
+
+	valueFlag = cli.StringFlag{
+		Name:  "value",
+		Usage: "value in the IAVL tree",
+		Value: "",
+	}
+
+	rootFlag = cli.StringFlag{
+		Name:  "root",
+		Usage: "root hash of the IAVL tree",
+		Value: "",
+	}
 )
