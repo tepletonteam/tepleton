@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"strings"
 
 	wrsp "github.com/tepleton/wrsp/types"
@@ -101,6 +102,8 @@ func (app *Basecoin) CheckTx(txBytes []byte) (res wrsp.Result) {
 	if len(txBytes) > maxTxSize {
 		return wrsp.ErrBaseEncodingError.AppendLog("Tx size exceeds maximum")
 	}
+
+	fmt.Printf("%X\n", txBytes)
 
 	// Decode tx
 	var tx types.Tx
