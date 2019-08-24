@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/tepleton/basecoin/app"
-	"github.com/tepleton/basecoin/tests"
+	cmn "github.com/tepleton/basecoin/common"
 	"github.com/tepleton/basecoin/types"
 	. "github.com/tepleton/go-common"
 	"github.com/tepleton/go-wire"
@@ -21,7 +21,7 @@ func TestVote(t *testing.T) {
 	fmt.Println(bcApp.Info())
 
 	//account initialization
-	test1PrivAcc := tests.PrivAccountFromSecret("test1")
+	test1PrivAcc := cmn.PrivAccountFromSecret("test1")
 
 	// Seed Basecoin with account
 	test1Acc := test1PrivAcc.Account
@@ -53,7 +53,7 @@ func TestVote(t *testing.T) {
 			Fee:   fees,
 			Gas:   0,
 			Type:  typeByte,
-			Input: tests.MakeInput(test1Acc.PubKey, types.Coins{{"", sendCoins}}, seqNum),
+			Input: cmn.MakeInput(test1Acc.PubKey, types.Coins{{"", sendCoins}}, seqNum),
 			Data:  wire.BinaryBytes(struct{ Tx }{Tx{voteYes: true}}), //a vote for human rights
 		}
 

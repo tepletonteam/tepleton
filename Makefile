@@ -9,7 +9,7 @@ install:
 
 test:
 	go test --race `${NOVENDOR}`
-	go run tests/wrsp/*.go
+	#go run tests/tepleton/*.go
 
 get_deps:
 	go get -d github.com/tepleton/basecoin/...

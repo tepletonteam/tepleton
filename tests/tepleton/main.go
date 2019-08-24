@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/tepleton/basecoin/tests"
+	cmn "github.com/tepleton/basecoin/common"
 	"github.com/tepleton/basecoin/types"
 	. "github.com/tepleton/go-common"
 	"github.com/tepleton/go-rpc/client"
@@ -37,10 +37,10 @@ func main() {
 	}()
 
 	// Get the root account
-	root := tests.PrivAccountFromSecret("test")
+	root := cmn.PrivAccountFromSecret("test")
 	sequence := int(0)
 	// Make a bunch of PrivAccounts
-	privAccounts := tests.RandAccounts(1000, 1000000, 0)
+	privAccounts := cmn.RandAccounts(1000, 1000000, 0)
 	privAccountSequences := make(map[string]int)
 
 	// Send coins to each account
