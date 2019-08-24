@@ -18,6 +18,5 @@ import:
   version: develop
 - package: github.com/tepleton/wrsp
   version: develop
-
 - package: github.com/gorilla/websocket
   version: v1.1.0

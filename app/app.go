@@ -118,12 +118,20 @@ func (app *Basecoin) CheckTx(txBytes []byte) (res wrsp.Result) {
 }
 
 // TMSP::Query
-func (app *Basecoin) Query(query []byte) (res wrsp.Result) {
-	if len(query) == 0 {
-		return wrsp.ErrEncodingError.SetLog("Query cannot be zero length")
+func (app *Basecoin) Query(reqQuery wrsp.RequestQuery) (resQuery wrsp.ResponseQuery) {
+	if len(reqQuery.Data) == 0 {
+		resQuery.Log = "Query cannot be zero length"
+		resQuery.Code = wrsp.CodeType_EncodingError
+		return
 	}
 
-	return app.eyesCli.QuerySync(query)
+	resQuery, err := app.eyesCli.QuerySync(reqQuery)
+	if err != nil {
+		resQuery.Log = "Failed to query MerkleEyes: " + err.Error()
+		resQuery.Code = wrsp.CodeType_InternalError
+		return
+	}
+	return
 }
 
 // TMSP::Commit
