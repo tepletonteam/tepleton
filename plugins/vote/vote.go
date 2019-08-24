@@ -1,9 +1,9 @@
 package vote
 
 import (
+	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/basecoin/types"
 	"github.com/tepleton/go-wire"
-	wrsp "github.com/tepleton/wrsp/types"
 )
 
 type Vote struct {

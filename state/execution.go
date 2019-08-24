@@ -1,10 +1,10 @@
 package state
 
 import (
+	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/basecoin/types"
 	. "github.com/tepleton/go-common"
 	"github.com/tepleton/go-events"
-	wrsp "github.com/tepleton/wrsp/types"
 )
 
 // If the tx is invalid, a TMSP error will be returned.

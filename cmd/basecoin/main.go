@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/tepleton/wrsp/server"
 	"github.com/tepleton/basecoin/app"
 	. "github.com/tepleton/go-common"
 	eyes "github.com/tepleton/merkleeyes/client"
-	"github.com/tepleton/wrsp/server"
 )
 
 func main() {

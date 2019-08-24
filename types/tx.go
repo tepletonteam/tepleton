@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 
+	wrsp "github.com/tepleton/wrsp/types"
 	. "github.com/tepleton/go-common"
 	"github.com/tepleton/go-crypto"
 	"github.com/tepleton/go-wire"
-	wrsp "github.com/tepleton/wrsp/types"
 )
 
 /*

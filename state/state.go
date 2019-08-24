@@ -1,11 +1,11 @@
 package state
 
 import (
+	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/basecoin/types"
 	. "github.com/tepleton/go-common"
 	"github.com/tepleton/go-wire"
 	eyes "github.com/tepleton/merkleeyes/client"
-	wrsp "github.com/tepleton/wrsp/types"
 )
 
 // CONTRACT: State should be quick to copy.

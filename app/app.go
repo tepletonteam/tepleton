@@ -3,12 +3,12 @@ package app
 import (
 	"strings"
 
+	wrsp "github.com/tepleton/wrsp/types"
 	sm "github.com/tepleton/basecoin/state"
 	"github.com/tepleton/basecoin/types"
 	. "github.com/tepleton/go-common"
 	"github.com/tepleton/go-wire"
 	eyes "github.com/tepleton/merkleeyes/client"
-	wrsp "github.com/tepleton/wrsp/types"
 )
 
 const (
@@ -37,8 +37,8 @@ func NewBasecoin(eyesCli *eyes.Client) *Basecoin {
 }
 
 // TMSP::Info
-func (app *Basecoin) Info() string {
-	return Fmt("Basecoin v%v", version)
+func (app *Basecoin) Info() wrsp.ResponseInfo {
+	return wrsp.ResponseInfo{Data: Fmt("Basecoin v%v", version)}
 }
 
 func (app *Basecoin) RegisterPlugin(name string, plugin types.Plugin) {
@@ -75,8 +75,8 @@ func (app *Basecoin) SetOption(key string, value string) (log string) {
 	}
 }
 
-// TMSP::AppendTx
-func (app *Basecoin) AppendTx(txBytes []byte) (res wrsp.Result) {
+// TMSP::DeliverTx
+func (app *Basecoin) DeliverTx(txBytes []byte) (res wrsp.Result) {
 	if len(txBytes) > maxTxSize {
 		return wrsp.ErrBaseEncodingError.AppendLog("Tx size exceeds maximum")
 	}
@@ -91,7 +91,7 @@ func (app *Basecoin) AppendTx(txBytes []byte) (res wrsp.Result) {
 	// Validate and exec tx
 	res = sm.ExecTx(app.state, app.plugins, tx, false, nil)
 	if res.IsErr() {
-		return res.PrependLog("Error in AppendTx")
+		return res.PrependLog("Error in DeliverTx")
 	}
 	return wrsp.OK
 }
