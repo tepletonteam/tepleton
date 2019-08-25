@@ -20,7 +20,7 @@ Basecoin is a sample [WRSP application](https://github.com/tepleton/wrsp) design
 We use glide for dependency management.  The prefered way of compiling from source is the following:
 
 ```
-go get github.com/tepleton/basecoin
+go get -d github.com/tepleton/basecoin/cmd/basecoin
 cd $GOPATH/src/github.com/tepleton/basecoin
 make get_vendor_deps
 make install
