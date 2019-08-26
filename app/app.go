@@ -196,9 +196,3 @@ func splitKey(key string) (prefix string, suffix string) {
 	}
 	return key, ""
 }
-
-// (not meant to be called)
-// assert that Basecoin implements `wrsp.Application` at compile-time
-func _assertWRSPApplication(basecoin *Basecoin) wrsp.Application {
-	return basecoin
-}

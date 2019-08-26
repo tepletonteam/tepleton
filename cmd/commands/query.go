@@ -92,13 +92,13 @@ func cmdQuery(c *cli.Context) error {
 
 	val := resp.Value
 	proof := resp.Proof
-	height := resp.Height
+	lastHeight := resp.LastHeight
 
 	fmt.Println(string(wire.JSONBytes(struct {
-		Value  []byte `json:"value"`
-		Proof  []byte `json:"proof"`
-		Height uint64 `json:"height"`
-	}{val, proof, height})))
+		Value      []byte `json:"value"`
+		Proof      []byte `json:"proof"`
+		LastHeight uint64 `json:"last_height"`
+	}{val, proof, lastHeight})))
 
 	return nil
 }
@@ -133,11 +133,7 @@ func cmdBlock(c *cli.Context) error {
 		return errors.New(cmn.Fmt("Height must be an int, got %v: %v", heightString, err))
 	}
 
-	/*block, err := getBlock(c, height)
-	if err != nil {
-		return err
-	}*/
-	nextBlock, err := getBlock(c, height+1)
+	nextBlock, err := getBlock(c, height)
 	if err != nil {
 		return err
 	}
