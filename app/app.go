@@ -37,6 +37,11 @@ func NewBasecoin(eyesCli *eyes.Client) *Basecoin {
 	}
 }
 
+// For testing, not thread safe!
+func (app *Basecoin) GetState() *sm.State {
+	return app.state.CacheWrap()
+}
+
 // TMSP::Info
 func (app *Basecoin) Info() wrsp.ResponseInfo {
 	return wrsp.ResponseInfo{Data: Fmt("Basecoin v%v", version)}
