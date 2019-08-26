@@ -1,6 +1,6 @@
 #! /bin/bash
 
-killall -9 basecoin tepleton
+killall -9 adam tepleton
 TMROOT=./data/chain1/tepleton tepleton unsafe_reset_all
 TMROOT=./data/chain2/tepleton tepleton unsafe_reset_all
 
