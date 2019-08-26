@@ -1,76 +1,70 @@
 package types
 
 import (
+	"fmt"
 	wrsp "github.com/tepleton/wrsp/types"
 )
 
-// Value is any floating value.  It must be given to someone.
-// Gas is a pointer to remainig gas.  Decrement as you go,
-// if any gas is left the user is
 type Plugin interface {
-	SetOption(key string, value string) (log string)
-	RunTx(ctx CallContext, txBytes []byte) (res wrsp.Result)
-	Query(query []byte) (res wrsp.Result)
-	Commit() (res wrsp.Result)
-}
 
-type NamedPlugin struct {
-	Byte byte
-	Name string
-	Plugin
+	// Name of this plugin, should be short.
+	Name() string
+
+	// Run a transaction from WRSP DeliverTx
+	RunTx(store KVStore, ctx CallContext, txBytes []byte) (res wrsp.Result)
+
+	// Other WRSP message handlers
+	SetOption(store KVStore, key string, value string) (log string)
+	InitChain(store KVStore, vals []*wrsp.Validator)
+	BeginBlock(store KVStore, height uint64)
+	EndBlock(store KVStore, height uint64) []*wrsp.Validator
 }
 
 //----------------------------------------
 
 type CallContext struct {
-	Cache  AccountCacher
-	Caller *Account
-	Value  int64
-	Gas    *int64
+	CallerAddress []byte   // Caller's Address (hash of PubKey)
+	CallerAccount *Account // Caller's Account, w/ fee & TxInputs deducted
+	Coins         Coins    // The coins that the caller wishes to spend, excluding fees
 }
 
-func NewCallContext(cache AccountCacher, caller *Account, value int64, gas *int64) CallContext {
+func NewCallContext(callerAddress []byte, callerAccount *Account, coins Coins) CallContext {
 	return CallContext{
-		Cache:  cache,
-		Caller: caller,
-		Value:  value,
-		Gas:    gas,
+		CallerAddress: callerAddress,
+		CallerAccount: callerAccount,
+		Coins:         coins,
 	}
 }
 
 //----------------------------------------
 
 type Plugins struct {
-	byByte map[byte]Plugin
 	byName map[string]Plugin
-	plist  []NamedPlugin
+	plist  []Plugin
 }
 
 func NewPlugins() *Plugins {
 	return &Plugins{
-		byByte: make(map[byte]Plugin),
 		byName: make(map[string]Plugin),
 	}
 }
 
-func (pgz *Plugins) RegisterPlugin(typeByte byte, name string, plugin Plugin) {
-	pgz.byByte[typeByte] = plugin
+func (pgz *Plugins) RegisterPlugin(plugin Plugin) {
+	name := plugin.Name()
+	if name == "" {
+		panic("Plugin name cannot be blank")
+	}
+	if _, exists := pgz.byName[name]; exists {
+		panic(fmt.Sprintf("Plugin already exists by the name of %v", name))
+	}
 	pgz.byName[name] = plugin
-	pgz.plist = append(pgz.plist, NamedPlugin{
-		Byte:   typeByte,
-		Name:   name,
-		Plugin: plugin,
-	})
-}
-
-func (pgz *Plugins) GetByByte(typeByte byte) Plugin {
-	return pgz.byByte[typeByte]
+	pgz.plist = append(pgz.plist, plugin)
 }
 
 func (pgz *Plugins) GetByName(name string) Plugin {
 	return pgz.byName[name]
 }
 
-func (pgz *Plugins) GetList() []NamedPlugin {
+func (pgz *Plugins) GetList() []Plugin {
 	return pgz.plist
 }

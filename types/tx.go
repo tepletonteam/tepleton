@@ -1,12 +1,13 @@
 package types
 
 import (
+	"bytes"
 	"encoding/json"
 
+	wrsp "github.com/tepleton/wrsp/types"
 	. "github.com/tepleton/go-common"
 	"github.com/tepleton/go-crypto"
 	"github.com/tepleton/go-wire"
-	wrsp "github.com/tepleton/wrsp/types"
 )
 
 /*
@@ -42,50 +43,80 @@ var _ = wire.RegisterInterface(
 
 type TxInput struct {
 	Address   []byte           `json:"address"`   // Hash of the PubKey
-	Amount    int64            `json:"amount"`    // Must not exceed account balance
+	Coins     Coins            `json:"coins"`     //
 	Sequence  int              `json:"sequence"`  // Must be 1 greater than the last committed TxInput
 	Signature crypto.Signature `json:"signature"` // Depends on the PubKey type and the whole Tx
-	PubKey    crypto.PubKey    `json:"pub_key"`   // May be nil
+	PubKey    crypto.PubKey    `json:"pub_key"`   // Is present iff Sequence == 0
 }
 
 func (txIn TxInput) ValidateBasic() wrsp.Result {
 	if len(txIn.Address) != 20 {
-		return wrsp.ErrBaseInvalidAddress.AppendLog("(in TxInput)")
+		return wrsp.ErrBaseInvalidInput.AppendLog("Invalid address length")
 	}
-	if txIn.Amount == 0 {
-		return wrsp.ErrBaseInvalidAmount.AppendLog("(in TxInput)")
+	if !txIn.Coins.IsValid() {
+		return wrsp.ErrBaseInvalidInput.AppendLog(Fmt("Invalid coins %v", txIn.Coins))
+	}
+	if txIn.Coins.IsZero() {
+		return wrsp.ErrBaseInvalidInput.AppendLog("Coins cannot be zero")
+	}
+	if txIn.Sequence <= 0 {
+		return wrsp.ErrBaseInvalidInput.AppendLog("Sequence must be greater than 0")
+	}
+	if txIn.Sequence == 1 && txIn.PubKey == nil {
+		return wrsp.ErrBaseInvalidInput.AppendLog("PubKey must be present when Sequence == 1")
+	}
+	if txIn.Sequence > 1 && txIn.PubKey != nil {
+		return wrsp.ErrBaseInvalidInput.AppendLog("PubKey must be nil when Sequence > 1")
 	}
 	return wrsp.OK
 }
 
 func (txIn TxInput) String() string {
-	return Fmt("TxInput{%X,%v,%v,%v,%v}", txIn.Address, txIn.Amount, txIn.Sequence, txIn.Signature, txIn.PubKey)
+	return Fmt("TxInput{%X,%v,%v,%v,%v}", txIn.Address, txIn.Coins, txIn.Sequence, txIn.Signature, txIn.PubKey)
+}
+
+func NewTxInput(pubKey crypto.PubKey, coins Coins, sequence int) TxInput {
+	input := TxInput{
+		Address:  pubKey.Address(),
+		PubKey:   pubKey,
+		Coins:    coins,
+		Sequence: sequence,
+	}
+	if sequence > 1 {
+		input.PubKey = nil
+	}
+	return input
 }
 
 //-----------------------------------------------------------------------------
 
 type TxOutput struct {
 	Address []byte `json:"address"` // Hash of the PubKey
-	Amount  int64  `json:"amount"`  // The sum of all outputs must not exceed the inputs.
+	Coins   Coins  `json:"coins"`   //
 }
 
 func (txOut TxOutput) ValidateBasic() wrsp.Result {
 	if len(txOut.Address) != 20 {
-		return wrsp.ErrBaseInvalidAddress.AppendLog("(in TxOutput)")
+		return wrsp.ErrBaseInvalidOutput.AppendLog("Invalid address length")
 	}
-	if txOut.Amount == 0 {
-		return wrsp.ErrBaseInvalidAmount.AppendLog("(in TxOutput)")
+	if !txOut.Coins.IsValid() {
+		return wrsp.ErrBaseInvalidOutput.AppendLog(Fmt("Invalid coins %v", txOut.Coins))
+	}
+	if txOut.Coins.IsZero() {
+		return wrsp.ErrBaseInvalidOutput.AppendLog("Coins cannot be zero")
 	}
 	return wrsp.OK
 }
 
 func (txOut TxOutput) String() string {
-	return Fmt("TxOutput{%X,%v}", txOut.Address, txOut.Amount)
+	return Fmt("TxOutput{%X,%v}", txOut.Address, txOut.Coins)
 }
 
 //-----------------------------------------------------------------------------
 
 type SendTx struct {
+	Gas     int64      `json:"gas"` // Gas
+	Fee     Coin       `json:"fee"` // Fee
 	Inputs  []TxInput  `json:"inputs"`
 	Outputs []TxOutput `json:"outputs"`
 }
@@ -104,17 +135,27 @@ func (tx *SendTx) SignBytes(chainID string) []byte {
 	return signBytes
 }
 
+func (tx *SendTx) SetSignature(addr []byte, sig crypto.Signature) bool {
+	for i, input := range tx.Inputs {
+		if bytes.Equal(input.Address, addr) {
+			tx.Inputs[i].Signature = sig
+			return true
+		}
+	}
+	return false
+}
+
 func (tx *SendTx) String() string {
-	return Fmt("SendTx{%v -> %v}", tx.Inputs, tx.Outputs)
+	return Fmt("SendTx{%v/%v %v->%v}", tx.Gas, tx.Fee, tx.Inputs, tx.Outputs)
 }
 
 //-----------------------------------------------------------------------------
 
 type AppTx struct {
-	Type  byte    `json:"type"` // Which app
-	Gas   int64   `json:"gas"`
-	Fee   int64   `json:"fee"`
-	Input TxInput `json:"input"`
+	Gas   int64   `json:"gas"`   // Gas
+	Fee   Coin    `json:"fee"`   // Fee
+	Name  string  `json:"type"`  // Which plugin
+	Input TxInput `json:"input"` // Hmmm do we want coins?
 	Data  []byte  `json:"data"`
 }
 
@@ -127,8 +168,13 @@ func (tx *AppTx) SignBytes(chainID string) []byte {
 	return signBytes
 }
 
+func (tx *AppTx) SetSignature(sig crypto.Signature) bool {
+	tx.Input.Signature = sig
+	return true
+}
+
 func (tx *AppTx) String() string {
-	return Fmt("AppTx{%v %v %v %v -> %X}", tx.Type, tx.Gas, tx.Fee, tx.Input, tx.Data)
+	return Fmt("AppTx{%v/%v %v %v %X}", tx.Gas, tx.Fee, tx.Name, tx.Input, tx.Data)
 }
 
 //-----------------------------------------------------------------------------

@@ -1,94 +1,25 @@
 package main
 
 import (
-	"encoding/json"
-	"flag"
-	"fmt"
-	"reflect"
+	"os"
 
-	"github.com/tepleton/basecoin/app"
-	. "github.com/tepleton/go-common"
-	eyes "github.com/tepleton/merkleeyes/client"
-	"github.com/tepleton/wrsp/server"
+	"github.com/urfave/cli"
 )
 
 func main() {
-
-	addrPtr := flag.String("address", "tcp://0.0.0.0:46658", "Listen address")
-	eyesPtr := flag.String("eyes", "local", "MerkleEyes address, or 'local' for embedded")
-	genFilePath := flag.String("genesis", "", "Genesis file, if any")
-	flag.Parse()
-
-	// Connect to MerkleEyes
-	eyesCli, err := eyes.NewClient(*eyesPtr)
-	if err != nil {
-		Exit("connect to MerkleEyes: " + err.Error())
+	app := cli.NewApp()
+	app.Name = "basecoin"
+	app.Usage = "basecoin [command] [args...]"
+	app.Version = "0.1.0"
+	app.Commands = []cli.Command{
+		startCmd,
+		sendTxCmd,
+		appTxCmd,
+		ibcCmd,
+		queryCmd,
+		verifyCmd,
+		blockCmd,
+		accountCmd,
 	}
-
-	// Create Basecoin app
-	app := app.NewBasecoin(eyesCli)
-
-	// If genesis file was specified, set key-value options
-	if *genFilePath != "" {
-		kvz := loadGenesis(*genFilePath)
-		for _, kv := range kvz {
-			log := app.SetOption(kv.Key, kv.Value)
-			fmt.Println(Fmt("Set %v=%v. Log: %v", kv.Key, kv.Value, log))
-		}
-	}
-
-	// Start the listener
-	svr, err := server.NewServer(*addrPtr, app)
-	if err != nil {
-		Exit("create listener: " + err.Error())
-	}
-
-	// Wait forever
-	TrapSignal(func() {
-		// Cleanup
-		svr.Stop()
-	})
-
-}
-
-//----------------------------------------
-
-type KeyValue struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
-}
-
-func loadGenesis(filePath string) (kvz []KeyValue) {
-	kvz_ := []interface{}{}
-	bytes, err := ReadFile(filePath)
-	if err != nil {
-		Exit("loading genesis file: " + err.Error())
-	}
-	err = json.Unmarshal(bytes, &kvz_)
-	if err != nil {
-		Exit("parsing genesis file: " + err.Error())
-	}
-	if len(kvz_)%2 != 0 {
-		Exit("genesis cannot have an odd number of items.  Format = [key1, value1, key2, value2, ...]")
-	}
-	for i := 0; i < len(kvz_); i += 2 {
-		keyIfc := kvz_[i]
-		valueIfc := kvz_[i+1]
-		var key, value string
-		key, ok := keyIfc.(string)
-		if !ok {
-			Exit(Fmt("genesis had invalid key %v of type %v", keyIfc, reflect.TypeOf(keyIfc)))
-		}
-		if value_, ok := valueIfc.(string); ok {
-			value = value_
-		} else {
-			valueBytes, err := json.Marshal(valueIfc)
-			if err != nil {
-				Exit(Fmt("genesis had invalid value %v: %v", value_, err.Error()))
-			}
-			value = string(valueBytes)
-		}
-		kvz = append(kvz, KeyValue{key, value})
-	}
-	return kvz
+	app.Run(os.Args)
 }

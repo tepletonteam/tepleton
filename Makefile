@@ -2,14 +2,25 @@
 
 all: test install
 
-install: get_deps
+NOVENDOR = go list github.com/tepleton/basecoin/... | grep -v /vendor/
+
+build:
+	go build github.com/tepleton/basecoin/cmd/...
+
+install:
 	go install github.com/tepleton/basecoin/cmd/...
 
 test:
-	go test github.com/tepleton/basecoin/...
+	go test --race `${NOVENDOR}`
+	#go run tests/tepleton/*.go
 
 get_deps:
 	go get -d github.com/tepleton/basecoin/...
 
 update_deps:
 	go get -d -u github.com/tepleton/basecoin/...
+
+get_vendor_deps:
+	go get github.com/Masterminds/glide
+	glide install
+

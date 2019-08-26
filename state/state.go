@@ -1,29 +1,29 @@
 package state
 
 import (
+	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/basecoin/types"
 	. "github.com/tepleton/go-common"
 	"github.com/tepleton/go-wire"
 	eyes "github.com/tepleton/merkleeyes/client"
 )
 
+// CONTRACT: State should be quick to copy.
+// See CacheWrap().
 type State struct {
 	chainID    string
-	eyesCli    *eyes.Client
-	checkCache *types.AccountCache
-
-	LastBlockHeight uint64
-	LastBlockHash   []byte
-	GasLimit        int64
+	store      types.KVStore
+	readCache  map[string][]byte // optional, for caching writes to store
+	writeCache *types.KVCache    // optional, for caching writes w/o writing to store
 }
 
-func NewState(eyesCli *eyes.Client) *State {
-	s := &State{
-		chainID: "",
-		eyesCli: eyesCli,
+func NewState(store types.KVStore) *State {
+	return &State{
+		chainID:    "",
+		store:      store,
+		readCache:  make(map[string][]byte),
+		writeCache: nil,
 	}
-	s.checkCache = types.NewAccountCache(s)
-	return s
 }
 
 func (s *State) SetChainID(chainID string) {
@@ -37,34 +37,72 @@ func (s *State) GetChainID() string {
 	return s.chainID
 }
 
-func (s *State) GetAccount(addr []byte) *types.Account {
-	res := s.eyesCli.GetSync(addr)
-	if res.IsErr() {
-		panic(Fmt("Error loading account addr %X error: %v", addr, res.Error()))
+func (s *State) Get(key []byte) (value []byte) {
+	if s.readCache != nil {
+		value, ok := s.readCache[string(key)]
+		if ok {
+			return value
+		}
 	}
-	if len(res.Data) == 0 {
+	return s.store.Get(key)
+}
+
+func (s *State) Set(key []byte, value []byte) {
+	if s.readCache != nil {
+		s.readCache[string(key)] = value
+	}
+	s.store.Set(key, value)
+}
+
+func (s *State) GetAccount(addr []byte) *types.Account {
+	return GetAccount(s, addr)
+}
+
+func (s *State) SetAccount(addr []byte, acc *types.Account) {
+	SetAccount(s, addr, acc)
+}
+
+func (s *State) CacheWrap() *State {
+	cache := types.NewKVCache(s)
+	return &State{
+		chainID:    s.chainID,
+		store:      cache,
+		readCache:  nil,
+		writeCache: cache,
+	}
+}
+
+// NOTE: errors if s is not from CacheWrap()
+func (s *State) CacheSync() {
+	s.writeCache.Sync()
+}
+
+func (s *State) Commit() wrsp.Result {
+	s.readCache = make(map[string][]byte)
+	return s.store.(*eyes.Client).CommitSync()
+}
+
+//----------------------------------------
+
+func AccountKey(addr []byte) []byte {
+	return append([]byte("base/a/"), addr...)
+}
+
+func GetAccount(store types.KVStore, addr []byte) *types.Account {
+	data := store.Get(AccountKey(addr))
+	if len(data) == 0 {
 		return nil
 	}
 	var acc *types.Account
-	err := wire.ReadBinaryBytes(res.Data, &acc)
+	err := wire.ReadBinaryBytes(data, &acc)
 	if err != nil {
-		panic(Fmt("Error reading account %X error: %v", res.Data, err.Error()))
+		panic(Fmt("Error reading account %X error: %v",
+			data, err.Error()))
 	}
 	return acc
 }
 
-func (s *State) SetAccount(address []byte, acc *types.Account) {
+func SetAccount(store types.KVStore, addr []byte, acc *types.Account) {
 	accBytes := wire.BinaryBytes(acc)
-	res := s.eyesCli.SetSync(address, accBytes)
-	if res.IsErr() {
-		panic(Fmt("Error storing account addr %X error: %v", address, res.Error()))
-	}
-}
-
-func (s *State) GetCheckCache() *types.AccountCache {
-	return s.checkCache
-}
-
-func (s *State) ResetCacheState() {
-	s.checkCache = types.NewAccountCache(s)
+	store.Set(AccountKey(addr), accBytes)
 }
