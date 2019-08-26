@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	crypto "github.com/tepleton/go-crypto"
-	data "github.com/tepleton/go-data"
+	data "github.com/tepleton/go-wire/data"
 	"github.com/tepleton/go-crypto/keys/cryptostore"
 	"github.com/tepleton/go-crypto/keys/storage/memstorage"
 )

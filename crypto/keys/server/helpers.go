@@ -12,7 +12,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	data "github.com/tepleton/go-data"
+	data "github.com/tepleton/go-wire/data"
 	"github.com/tepleton/go-crypto/keys/server/types"
 
 	"github.com/pkg/errors"

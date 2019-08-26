@@ -4,14 +4,14 @@ import (
 	"sort"
 
 	crypto "github.com/tepleton/go-crypto"
-	data "github.com/tepleton/go-data"
+	data "github.com/tepleton/go-wire/data"
 )
 
 // Info is the public information about a key
 type Info struct {
 	Name    string         `json:"name"`
 	Address data.Bytes     `json:"address"`
-	PubKey  crypto.PubKeyS `json:"pubkey"`
+	PubKey  crypto.PubKey `json:"pubkey"`
 }
 
 func (i *Info) Format() Info {

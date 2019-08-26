@@ -2,8 +2,8 @@ package tx
 
 import (
 	crypto "github.com/tepleton/go-crypto"
-	data "github.com/tepleton/go-data"
 	keys "github.com/tepleton/go-crypto/keys"
+	data "github.com/tepleton/go-wire/data"
 )
 
 const (
@@ -18,8 +18,8 @@ var TxMapper data.Mapper
 
 func init() {
 	TxMapper = data.NewMapper(Sig{}).
-		RegisterInterface(&OneSig{}, nameOneSig, typeOneSig).
-		RegisterInterface(&MultiSig{}, nameMultiSig, typeMultiSig)
+		RegisterImplementation(&OneSig{}, nameOneSig, typeOneSig).
+		RegisterImplementation(&MultiSig{}, nameMultiSig, typeMultiSig)
 }
 
 /*
