@@ -48,10 +48,10 @@ var (
 		Usage: "Destination address for the transaction",
 	}
 
-	AmountFlag = cli.StringFlag{
+	AmountFlag = cli.IntFlag{
 		Name:  "amount",
-		Value: "",
-		Usage: "Coins to send in transaction of the format <amt><coin>,<amt2><coin2>,... (eg: 1btc,2gold,5silver)",
+		Value: 0,
+		Usage: "Amount of coins to send in the transaction",
 	}
 
 	FromFlag = cli.StringFlag{
@@ -66,16 +66,22 @@ var (
 		Usage: "Sequence number for the account",
 	}
 
+	CoinFlag = cli.StringFlag{
+		Name:  "coin",
+		Value: "mycoin",
+		Usage: "Specify a coin denomination",
+	}
+
 	GasFlag = cli.IntFlag{
 		Name:  "gas",
 		Value: 0,
 		Usage: "The amount of gas for the transaction",
 	}
 
-	FeeFlag = cli.StringFlag{
+	FeeFlag = cli.IntFlag{
 		Name:  "fee",
-		Value: "",
-		Usage: "Coins for the transaction fee of the format <amt><coin>",
+		Value: 0,
+		Usage: "The transaction fee",
 	}
 
 	DataFlag = cli.StringFlag{

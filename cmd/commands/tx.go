@@ -23,6 +23,7 @@ var TxFlags = []cli.Flag{
 	FromFlag,
 
 	AmountFlag,
+	CoinFlag,
 	GasFlag,
 	FeeFlag,
 	SeqFlag,
@@ -70,9 +71,9 @@ func RegisterTxSubcommand(cmd cli.Command) {
 func cmdSendTx(c *cli.Context) error {
 	toHex := c.String("to")
 	fromFile := c.String("from")
-	amount := c.String("amount")
-	gas := int64(c.Int("gas"))
-	fee := c.String("fee")
+	amount := int64(c.Int("amount"))
+	coin := c.String("coin")
+	gas, fee := c.Int("gas"), int64(c.Int("fee"))
 	chainID := c.String("chain_id")
 
 	// convert destination address to bytes
@@ -90,22 +91,12 @@ func cmdSendTx(c *cli.Context) error {
 		return err
 	}
 
-	//parse the fee and amounts into coin types
-	feeCoin, err := ParseCoin(fee)
-	if err != nil {
-		return err
-	}
-	amountCoins, err := ParseCoins(amount)
-	if err != nil {
-		return err
-	}
-
 	// craft the tx
-	input := types.NewTxInput(privKey.PubKey, amountCoins, sequence)
-	output := newOutput(to, amountCoins)
+	input := types.NewTxInput(privKey.PubKey, types.Coins{types.Coin{coin, amount}}, sequence)
+	output := newOutput(to, coin, amount)
 	tx := &types.SendTx{
-		Gas:     gas,
-		Fee:     feeCoin,
+		Gas:     int64(gas),
+		Fee:     types.Coin{coin, fee},
 		Inputs:  []types.TxInput{input},
 		Outputs: []types.TxOutput{output},
 	}
@@ -137,9 +128,9 @@ func cmdAppTx(c *cli.Context) error {
 
 func AppTx(c *cli.Context, name string, data []byte) error {
 	fromFile := c.String("from")
-	amount := c.String("amount")
-	fee := c.String("fee")
-	gas := int64(c.Int("gas"))
+	amount := int64(c.Int("amount"))
+	coin := c.String("coin")
+	gas, fee := c.Int("gas"), int64(c.Int("fee"))
 	chainID := c.String("chain_id")
 
 	privKey := tmtypes.LoadPrivValidator(fromFile)
@@ -149,20 +140,10 @@ func AppTx(c *cli.Context, name string, data []byte) error {
 		return err
 	}
 
-	//parse the fee and amounts into coin types
-	feeCoin, err := ParseCoin(fee)
-	if err != nil {
-		return err
-	}
-	amountCoins, err := ParseCoins(amount)
-	if err != nil {
-		return err
-	}
-
-	input := types.NewTxInput(privKey.PubKey, amountCoins, sequence)
+	input := types.NewTxInput(privKey.PubKey, types.Coins{types.Coin{coin, amount}}, sequence)
 	tx := &types.AppTx{
-		Gas:   gas,
-		Fee:   feeCoin,
+		Gas:   int64(gas),
+		Fee:   types.Coin{coin, fee},
 		Name:  name,
 		Input: input,
 		Data:  data,
@@ -224,10 +205,15 @@ func getSeq(c *cli.Context, address []byte) (int, error) {
 	return acc.Sequence + 1, nil
 }
 
-func newOutput(to []byte, amount types.Coins) types.TxOutput {
+func newOutput(to []byte, coin string, amount int64) types.TxOutput {
 	return types.TxOutput{
 		Address: to,
-		Coins:   amount,
+		Coins: types.Coins{
+			types.Coin{
+				Denom:  coin,
+				Amount: amount,
+			},
+		},
 	}
 
 }

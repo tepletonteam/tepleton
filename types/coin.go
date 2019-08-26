@@ -100,7 +100,7 @@ func (coinsA Coins) IsGTE(coinsB Coins) bool {
 	if len(diff) == 0 {
 		return true
 	}
-	return diff.IsNonnegative()
+	return diff.IsPositive()
 }
 
 func (coins Coins) IsZero() bool {
