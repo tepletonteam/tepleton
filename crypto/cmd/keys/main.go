@@ -18,10 +18,11 @@ import (
 	"os"
 
 	"github.com/tepleton/go-crypto/cmd"
+	"github.com/tepleton/tmlibs/cli"
 )
 
 func main() {
-	cmd.PrepareMainCmd(cmd.RootCmd, "TM", os.ExpandEnv("$HOME/.tlc"))
+	cli.PrepareMainCmd(cmd.RootCmd, "TM", os.ExpandEnv("$HOME/.tlc"))
 	cmd.RootCmd.Execute()
 	// exec()
 }
