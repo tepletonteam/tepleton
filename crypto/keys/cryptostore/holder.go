@@ -1,6 +1,6 @@
 package cryptostore
 
-import keys "github.com/tepleton/go-keys"
+import keys "github.com/tepleton/go-crypto/keys"
 
 // Manager combines encyption and storage implementation to provide
 // a full-featured key manager

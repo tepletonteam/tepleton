@@ -19,9 +19,9 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	keys "github.com/tepleton/go-keys"
-	"github.com/tepleton/go-keys/cryptostore"
-	"github.com/tepleton/go-keys/storage/filestorage"
+	keys "github.com/tepleton/go-crypto/keys"
+	"github.com/tepleton/go-crypto/keys/cryptostore"
+	"github.com/tepleton/go-crypto/keys/storage/filestorage"
 )
 
 const KeySubdir = "keys"

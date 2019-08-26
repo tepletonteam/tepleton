@@ -8,7 +8,7 @@ import (
 	"io"
 	"sync"
 
-	. "github.com/tepleton/go-common"
+	. "github.com/tepleton/tmlibs/common"
 )
 
 var gRandInfo *randInfo

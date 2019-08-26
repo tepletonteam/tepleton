@@ -6,9 +6,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	crypto "github.com/tepleton/go-crypto"
-	keys "github.com/tepleton/go-keys"
-	"github.com/tepleton/go-keys/cryptostore"
-	"github.com/tepleton/go-keys/storage/memstorage"
+	keys "github.com/tepleton/go-crypto/keys"
+	"github.com/tepleton/go-crypto/keys/cryptostore"
+	"github.com/tepleton/go-crypto/keys/storage/memstorage"
 )
 
 func TestMultiSig(t *testing.T) {

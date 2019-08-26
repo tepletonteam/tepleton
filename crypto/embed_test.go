@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	data "github.com/tepleton/go-data"
+	data "github.com/tepleton/go-wire/data"
 )
 
 type PubName struct {

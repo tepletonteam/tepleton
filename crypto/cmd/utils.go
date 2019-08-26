@@ -6,8 +6,8 @@ import (
 	"github.com/bgentry/speakeasy"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
-	data "github.com/tepleton/go-data"
-	keys "github.com/tepleton/go-keys"
+	keys "github.com/tepleton/go-crypto/keys"
+	data "github.com/tepleton/go-wire/data"
 )
 
 const PassLength = 10

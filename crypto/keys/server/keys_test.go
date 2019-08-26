@@ -10,11 +10,11 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	keys "github.com/tepleton/go-keys"
-	"github.com/tepleton/go-keys/cryptostore"
-	"github.com/tepleton/go-keys/server"
-	"github.com/tepleton/go-keys/server/types"
-	"github.com/tepleton/go-keys/storage/memstorage"
+	keys "github.com/tepleton/go-crypto/keys"
+	"github.com/tepleton/go-crypto/keys/cryptostore"
+	"github.com/tepleton/go-crypto/keys/server"
+	"github.com/tepleton/go-crypto/keys/server/types"
+	"github.com/tepleton/go-crypto/keys/storage/memstorage"
 )
 
 func TestKeyServer(t *testing.T) {

@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 
-	. "github.com/tepleton/go-common"
-	data "github.com/tepleton/go-data"
+	. "github.com/tepleton/tmlibs/common"
+	data "github.com/tepleton/go-wire/data"
 	"github.com/tepleton/go-wire"
 )
 

@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 	crypto "github.com/tepleton/go-crypto"
 	data "github.com/tepleton/go-data"
-	"github.com/tepleton/go-keys/cryptostore"
-	"github.com/tepleton/go-keys/storage/memstorage"
+	"github.com/tepleton/go-crypto/keys/cryptostore"
+	"github.com/tepleton/go-crypto/keys/storage/memstorage"
 )
 
 func TestReader(t *testing.T) {

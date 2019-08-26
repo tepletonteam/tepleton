@@ -17,7 +17,7 @@ package main
 import (
 	"os"
 
-	"github.com/tepleton/go-keys/cmd"
+	"github.com/tepleton/go-crypto/cmd"
 )
 
 func main() {

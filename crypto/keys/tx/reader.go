@@ -3,7 +3,7 @@ package tx
 import (
 	crypto "github.com/tepleton/go-crypto"
 	data "github.com/tepleton/go-data"
-	keys "github.com/tepleton/go-keys"
+	keys "github.com/tepleton/go-crypto/keys"
 )
 
 const (

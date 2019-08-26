@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tepleton/go-keys/cryptostore"
+	"github.com/tepleton/go-crypto/keys/cryptostore"
 )
 
 func TestNoopEncoder(t *testing.T) {

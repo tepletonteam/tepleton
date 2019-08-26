@@ -14,7 +14,7 @@ import (
 
 	"github.com/pkg/errors"
 	crypto "github.com/tepleton/go-crypto"
-	keys "github.com/tepleton/go-keys"
+	keys "github.com/tepleton/go-crypto/keys"
 )
 
 const (

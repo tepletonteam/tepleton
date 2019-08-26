@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	keys "github.com/tepleton/go-keys"
-	"github.com/tepleton/go-keys/server/types"
+	keys "github.com/tepleton/go-crypto/keys"
+	"github.com/tepleton/go-crypto/keys/server/types"
 )
 
 type Keys struct {

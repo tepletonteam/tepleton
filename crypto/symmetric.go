@@ -3,7 +3,7 @@ package crypto
 import (
 	"errors"
 
-	. "github.com/tepleton/go-common"
+	. "github.com/tepleton/tmlibs/common"
 	"golang.org/x/crypto/nacl/secretbox"
 )
 

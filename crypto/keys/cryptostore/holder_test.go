@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	crypto "github.com/tepleton/go-crypto"
-	"github.com/tepleton/go-keys/cryptostore"
-	"github.com/tepleton/go-keys/storage/memstorage"
+	"github.com/tepleton/go-crypto/keys/cryptostore"
+	"github.com/tepleton/go-crypto/keys/storage/memstorage"
 )
 
 // TestKeyManagement makes sure we can manipulate these keys well

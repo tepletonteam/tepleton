@@ -7,8 +7,8 @@ import (
 	secp256k1 "github.com/btcsuite/btcd/btcec"
 	"github.com/tepleton/ed25519"
 	"github.com/tepleton/ed25519/extra25519"
-	. "github.com/tepleton/go-common"
-	data "github.com/tepleton/go-data"
+	. "github.com/tepleton/tmlibs/common"
+	data "github.com/tepleton/go-wire/data"
 	"github.com/tepleton/go-wire"
 	"golang.org/x/crypto/ripemd160"
 )

@@ -13,7 +13,7 @@ import (
 	"net/http"
 
 	data "github.com/tepleton/go-data"
-	"github.com/tepleton/go-keys/server/types"
+	"github.com/tepleton/go-crypto/keys/server/types"
 
 	"github.com/pkg/errors"
 )
