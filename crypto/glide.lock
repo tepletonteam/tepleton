@@ -1,32 +1,40 @@
 hash: 3bcee9fbccf29d21217b24b6a83ec51e1514f37b2ae5d8718cf6c5df80f4fb2c
-updated: 2017-04-21T16:09:28.762932633-04:00
+updated: 2017-05-15T09:40:53.073691731-04:00
 imports:
 - name: github.com/bgentry/speakeasy
-  version: 675b82c74c0ed12283ee81ba8a534c8982c07b85
+  version: 4aabc24848ce5fd31929f7d1e4ea74d3709c14cd
 - name: github.com/btcsuite/btcd
-  version: 583684b21bfbde9b5fc4403916fd7c807feb0289
+  version: b8df516b4b267acf2de46be593a9d948d1d2c420
   subpackages:
   - btcec
   - chaincfg
   - chaincfg/chainhash
   - wire
 - name: github.com/btcsuite/btcutil
-  version: a5ecb5d9547afe8d1672073dbdc348203de744a0
+  version: 66871daeb12123ece012a9628d2798d01195c4b3
   subpackages:
   - base58
   - hdkeychain
-- name: github.com/btcsuite/golangcrypto
-  version: 53f62d9b43e87a6c56975cf862af7edf33a8d0df
-  subpackages:
-  - ripemd160
+- name: github.com/btcsuite/fastsha256
+  version: 637e656429416087660c84436a2a035d69d54e2e
+- name: github.com/clipperhouse/typewriter
+  version: c1a48da378ebb7db1db9f35981b5cc24bf2e5b85
 - name: github.com/fsnotify/fsnotify
   version: 4da3e2cfbabc9f751898f250b49f2439785783a1
+- name: github.com/go-kit/kit
+  version: d67bb4c202e3b91377d1079b110a6c9ce23ab2f8
+  subpackages:
+  - log
+  - log/level
+  - log/term
+- name: github.com/go-logfmt/logfmt
+  version: 390ab7935ee28ec6b286364bba9b4dd6410cb3d5
 - name: github.com/go-playground/locales
-  version: 084b0226cf88d891a2bdeccac01d592af13a8f7b
+  version: 1e5f1161c6416a5ff48840eb8724a394e48cc534
   subpackages:
   - currency
 - name: github.com/go-playground/universal-translator
-  version: b32fa301c9fe55953584134cb6853a13c87ec0a1
+  version: 71201497bace774495daed26a3874fd339e0b538
 - name: github.com/go-stack/stack
   version: 100eb0c0a9c5b306ca2fb4f165df21d80ada4b82
 - name: github.com/gorilla/context
@@ -36,7 +44,7 @@ imports:
 - name: github.com/gorilla/mux
   version: 392c28fe23e1c45ddba891b0320b3b5df220beea
 - name: github.com/hashicorp/hcl
-  version: 630949a3c5fa3c613328e1b8256052cbc2327c9b
+  version: a4b07c25de5ff55ad3b8936cea69a79a3d95a855
   subpackages:
   - hcl/ast
   - hcl/parser
@@ -48,20 +56,18 @@ imports:
   - json/token
 - name: github.com/inconshreveable/mousetrap
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
+- name: github.com/kr/logfmt
+  version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
 - name: github.com/magiconair/properties
   version: 51463bfca2576e06c62a8504b5c0f06d61312647
-- name: github.com/mattn/go-colorable
-  version: d228849504861217f796da67fae4f6e347643f15
-- name: github.com/mattn/go-isatty
-  version: 30a891c33c7cde7b02a981314b4228ec99380cca
 - name: github.com/mitchellh/mapstructure
-  version: 53818660ed4955e899c0bcafa97299a388bd7c8e
+  version: cc8532a8e9a55ea36402aa21efdf403a60d34096
 - name: github.com/pelletier/go-buffruneio
   version: c37440a7cf42ac63b919c752ca73a85067e05992
 - name: github.com/pelletier/go-toml
   version: 13d49d4606eb801b8f01ae542b4afc4c6ee3d84a
 - name: github.com/pkg/errors
-  version: bfd5150e4e41705ded2129ec33379de1cb90b513
+  version: ff09b135c25aae272398c51a07235b90a75aa4f0
 - name: github.com/spf13/afero
   version: 9be650865eab0c12963d8753212f4f9c66cdcf12
   subpackages:
@@ -69,35 +75,31 @@ imports:
 - name: github.com/spf13/cast
   version: acbeb36b902d72a7a4c18e8f3241075e7ab763e4
 - name: github.com/spf13/cobra
-  version: fcd0c5a1df88f5d6784cb4feead962c3f3d0b66c
+  version: db6b9a8b3f3f400c8ecb4a4d7d02245b8facad66
 - name: github.com/spf13/jwalterweatherman
   version: fa7ca7e836cf3a8bb4ebf799f472c12d7e903d66
 - name: github.com/spf13/pflag
-  version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
+  version: 80fe0fb4eba54167e2ccae1c6c950e72abf61b73
 - name: github.com/spf13/viper
-  version: 5d46e70da8c0b6f812e0b170b7a985753b5c63cb
+  version: 0967fc9aceab2ce9da34061253ac10fb99bba5b2
 - name: github.com/tepleton/ed25519
   version: 1f52c6f8b8a5c7908aff4497c186af344b428925
   subpackages:
   - edwards25519
   - extra25519
 - name: github.com/tepleton/go-wire
-  version: 334005c236d19c632fb5f073f9de3b0fab6a522b
+  version: 59ba5af720a8cbaf5594595e1d8aae23bfd18e31
   subpackages:
   - data
   - data/base58
-- name: github.com/tepleton/log15
-  version: ae0f3d6450da9eac7074b439c8e1c3cabf0d5ce6
-  subpackages:
-  - term
 - name: github.com/tepleton/tmlibs
-  version: d4ab9679d71c8fc174284696d15930cb799fa24f
+  version: 8f5a175ff4c869fedde710615a11f5745ff69bf3
   subpackages:
-  - common
-  - logger
   - cli
+  - common
+  - log
 - name: golang.org/x/crypto
-  version: 7c6cc321c680f03b9ef0764448e780704f486b51
+  version: c7af5bf2638a1164f2eb5467c39c6cffbd13a02e
   subpackages:
   - bcrypt
   - blowfish
@@ -109,16 +111,21 @@ imports:
   - ripemd160
   - salsa20/salsa
 - name: golang.org/x/sys
-  version: d75a52659825e75fff6158388dddc6a5b04f9ba5
+  version: 9ccfe848b9db8435a24c424abbc07a921adf1df5
   subpackages:
   - unix
 - name: golang.org/x/text
-  version: f4b4367115ec2de254587813edaa901bc1c723a8
+  version: 470f45bf29f4147d6fbd7dfd0a02a848e49f5bf4
   subpackages:
   - transform
   - unicode/norm
+- name: golang.org/x/tools
+  version: 144c6642b5d832d6c44a53dad6ee61665dd432ce
+  subpackages:
+  - go/ast/astutil
+  - imports
 - name: gopkg.in/go-playground/validator.v9
-  version: 4bd19358521c53f09639f21e2a9d6883d6890f24
+  version: 6d8c18553ea1ac493d049edd6f102f52e618f085
 - name: gopkg.in/yaml.v2
   version: cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b
 testImports:
