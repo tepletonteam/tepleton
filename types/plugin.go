@@ -2,7 +2,6 @@ package types
 
 import (
 	"fmt"
-
 	wrsp "github.com/tepleton/wrsp/types"
 )
 
@@ -17,8 +16,8 @@ type Plugin interface {
 	// Other WRSP message handlers
 	SetOption(store KVStore, key string, value string) (log string)
 	InitChain(store KVStore, vals []*wrsp.Validator)
-	BeginBlock(store KVStore, hash []byte, header *wrsp.Header)
-	EndBlock(store KVStore, height uint64) wrsp.ResponseEndBlock
+	BeginBlock(store KVStore, height uint64)
+	EndBlock(store KVStore, height uint64) []*wrsp.Validator
 }
 
 //----------------------------------------
