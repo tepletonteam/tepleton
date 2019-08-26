@@ -94,7 +94,7 @@ func (app *Basecoin) DeliverTx(txBytes []byte) (res wrsp.Result) {
 	if res.IsErr() {
 		return res.PrependLog("Error in DeliverTx")
 	}
-	return wrsp.OK
+	return res
 }
 
 // TMSP::CheckTx
