@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"strings"
 
 	wrsp "github.com/tepleton/wrsp/types"
@@ -42,7 +41,7 @@ func (app *Basecoin) GetState() *sm.State {
 	return app.state.CacheWrap()
 }
 
-// TMSP::Info
+// WRSP::Info
 func (app *Basecoin) Info() wrsp.ResponseInfo {
 	return wrsp.ResponseInfo{Data: Fmt("Basecoin v%v", version)}
 }
@@ -51,7 +50,7 @@ func (app *Basecoin) RegisterPlugin(plugin types.Plugin) {
 	app.plugins.RegisterPlugin(plugin)
 }
 
-// TMSP::SetOption
+// WRSP::SetOption
 func (app *Basecoin) SetOption(key string, value string) (log string) {
 	PluginName, key := splitKey(key)
 	if PluginName != PluginNameBase {
@@ -81,7 +80,7 @@ func (app *Basecoin) SetOption(key string, value string) (log string) {
 	}
 }
 
-// TMSP::DeliverTx
+// WRSP::DeliverTx
 func (app *Basecoin) DeliverTx(txBytes []byte) (res wrsp.Result) {
 	if len(txBytes) > maxTxSize {
 		return wrsp.ErrBaseEncodingError.AppendLog("Tx size exceeds maximum")
@@ -102,13 +101,11 @@ func (app *Basecoin) DeliverTx(txBytes []byte) (res wrsp.Result) {
 	return res
 }
 
-// TMSP::CheckTx
+// WRSP::CheckTx
 func (app *Basecoin) CheckTx(txBytes []byte) (res wrsp.Result) {
 	if len(txBytes) > maxTxSize {
 		return wrsp.ErrBaseEncodingError.AppendLog("Tx size exceeds maximum")
 	}
-
-	fmt.Printf("%X\n", txBytes)
 
 	// Decode tx
 	var tx types.Tx
@@ -125,7 +122,7 @@ func (app *Basecoin) CheckTx(txBytes []byte) (res wrsp.Result) {
 	return wrsp.OK
 }
 
-// TMSP::Query
+// WRSP::Query
 func (app *Basecoin) Query(reqQuery wrsp.RequestQuery) (resQuery wrsp.ResponseQuery) {
 	if len(reqQuery.Data) == 0 {
 		resQuery.Log = "Query cannot be zero length"
@@ -142,7 +139,7 @@ func (app *Basecoin) Query(reqQuery wrsp.RequestQuery) (resQuery wrsp.ResponseQu
 	return
 }
 
-// TMSP::Commit
+// WRSP::Commit
 func (app *Basecoin) Commit() (res wrsp.Result) {
 
 	// Commit state
@@ -157,25 +154,25 @@ func (app *Basecoin) Commit() (res wrsp.Result) {
 	return res
 }
 
-// TMSP::InitChain
+// WRSP::InitChain
 func (app *Basecoin) InitChain(validators []*wrsp.Validator) {
 	for _, plugin := range app.plugins.GetList() {
 		plugin.InitChain(app.state, validators)
 	}
 }
 
-// TMSP::BeginBlock
-func (app *Basecoin) BeginBlock(height uint64) {
+// WRSP::BeginBlock
+func (app *Basecoin) BeginBlock(hash []byte, header *wrsp.Header) {
 	for _, plugin := range app.plugins.GetList() {
-		plugin.BeginBlock(app.state, height)
+		plugin.BeginBlock(app.state, hash, header)
 	}
 }
 
-// TMSP::EndBlock
-func (app *Basecoin) EndBlock(height uint64) (diffs []*wrsp.Validator) {
+// WRSP::EndBlock
+func (app *Basecoin) EndBlock(height uint64) (res wrsp.ResponseEndBlock) {
 	for _, plugin := range app.plugins.GetList() {
-		moreDiffs := plugin.EndBlock(app.state, height)
-		diffs = append(diffs, moreDiffs...)
+		pluginRes := plugin.EndBlock(app.state, height)
+		res.Diffs = append(res.Diffs, pluginRes.Diffs...)
 	}
 	return
 }
@@ -190,4 +187,10 @@ func splitKey(key string) (prefix string, suffix string) {
 		return keyParts[0], keyParts[1]
 	}
 	return key, ""
+}
+
+// (not meant to be called)
+// assert that Basecoin implements `wrsp.BlockchainAware` at compile-time
+func _assertWRSPBlockchainAware(basecoin *Basecoin) wrsp.BlockchainAware {
+	return basecoin
 }
