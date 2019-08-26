@@ -69,7 +69,7 @@ func (ep *ExamplePlugin) RunTx(store types.KVStore, ctx types.CallContext, txByt
 	return wrsp.OK
 }
 
-func (ep *ExamplePlugin) InitChain(store types.KVStore, vals []*wrsp.Validator) {
+func (cp *ExamplePlugin) InitChain(store types.KVStore, vals []*wrsp.Validator) {
 }
 
 func (ep *ExamplePlugin) BeginBlock(store types.KVStore, hash []byte, header *wrsp.Header) {
