@@ -10,9 +10,9 @@ import:
   subpackages:
   - extra25519
 - package: github.com/tepleton/tmlibs
-  version: unstable
+  version: develop
 - package: github.com/tepleton/go-wire
-  version: unstable
+  version: develop
   subpackages:
   - data
   - data/base58
