@@ -38,7 +38,7 @@ func (s *State) GetChainID() string {
 }
 
 func (s *State) Get(key []byte) (value []byte) {
-	if s.readCache != nil { //if not a cachewrap
+	if s.readCache != nil {
 		value, ok := s.readCache[string(key)]
 		if ok {
 			return value
@@ -48,7 +48,7 @@ func (s *State) Get(key []byte) (value []byte) {
 }
 
 func (s *State) Set(key []byte, value []byte) {
-	if s.readCache != nil { //if not a cachewrap
+	if s.readCache != nil {
 		s.readCache[string(key)] = value
 	}
 	s.store.Set(key, value)
@@ -78,14 +78,8 @@ func (s *State) CacheSync() {
 }
 
 func (s *State) Commit() wrsp.Result {
-	switch s.store.(type) {
-	case *eyes.Client:
-		s.readCache = make(map[string][]byte)
-		return s.store.(*eyes.Client).CommitSync()
-	default:
-		return wrsp.NewError(wrsp.CodeType_InternalError, "can only use Commit if store is merkleeyes")
-	}
-
+	s.readCache = make(map[string][]byte)
+	return s.store.(*eyes.Client).CommitSync()
 }
 
 //----------------------------------------
