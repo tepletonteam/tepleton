@@ -8,7 +8,6 @@ import (
 )
 
 func main() {
-	//Initialize an instance of basecoin with default basecoin commands
 	app := cli.NewApp()
 	app.Name = "example-plugin"
 	app.Usage = "example-plugin [command] [args...]"

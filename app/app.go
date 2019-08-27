@@ -196,7 +196,7 @@ func splitKey(key string) (prefix string, suffix string) {
 }
 
 // (not meant to be called)
-// assert that Basecoin implements `wrsp.Application` at compile-time
-func _assertWRSPApplication(basecoin *Basecoin) wrsp.Application {
+// assert that Basecoin implements `wrsp.BlockchainAware` at compile-time
+func _assertWRSPBlockchainAware(basecoin *Basecoin) wrsp.BlockchainAware {
 	return basecoin
 }
