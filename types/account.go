@@ -13,9 +13,6 @@ type Account struct {
 }
 
 func (acc *Account) Copy() *Account {
-	if acc == nil {
-		return nil
-	}
 	accCopy := *acc
 	return &accCopy
 }

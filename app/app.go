@@ -83,14 +83,14 @@ func (app *Basecoin) SetOption(key string, value string) (log string) {
 // WRSP::DeliverTx
 func (app *Basecoin) DeliverTx(txBytes []byte) (res wrsp.Result) {
 	if len(txBytes) > maxTxSize {
-		return wrsp.CodeType_BaseEncodingError, nil, "Tx size exceeds maximum"
+		return wrsp.ErrBaseEncodingError.AppendLog("Tx size exceeds maximum")
 	}
 
 	// Decode tx
 	var tx types.Tx
 	err := wire.ReadBinaryBytes(txBytes, &tx)
 	if err != nil {
-		return wrsp.CodeType_BaseEncodingError, nil, "Error decoding tx: " + err.Error()
+		return wrsp.ErrBaseEncodingError.AppendLog("Error decoding tx: " + err.Error())
 	}
 
 	// Validate and exec tx
@@ -98,22 +98,20 @@ func (app *Basecoin) DeliverTx(txBytes []byte) (res wrsp.Result) {
 	if res.IsErr() {
 		return res.PrependLog("Error in DeliverTx")
 	}
-	// Store accounts
-	storeAccounts(app.eyesCli, accs)
-	return wrsp.CodeType_OK, nil, "Success"
+	return res
 }
 
-// TMSP::CheckTx
-func (app *Basecoin) CheckTx(txBytes []byte) (code wrsp.CodeType, result []byte, log string) {
+// WRSP::CheckTx
+func (app *Basecoin) CheckTx(txBytes []byte) (res wrsp.Result) {
 	if len(txBytes) > maxTxSize {
-		return wrsp.CodeType_BaseEncodingError, nil, "Tx size exceeds maximum"
+		return wrsp.ErrBaseEncodingError.AppendLog("Tx size exceeds maximum")
 	}
 
 	// Decode tx
 	var tx types.Tx
 	err := wire.ReadBinaryBytes(txBytes, &tx)
 	if err != nil {
-		return wrsp.CodeType_BaseEncodingError, nil, "Error decoding tx: " + err.Error()
+		return wrsp.ErrBaseEncodingError.AppendLog("Error decoding tx: " + err.Error())
 	}
 
 	// Validate tx
@@ -121,7 +119,7 @@ func (app *Basecoin) CheckTx(txBytes []byte) (code wrsp.CodeType, result []byte,
 	if res.IsErr() {
 		return res.PrependLog("Error in CheckTx")
 	}
-	return wrsp.CodeType_OK, nil, "Success"
+	return wrsp.OK
 }
 
 // WRSP::Query
@@ -159,7 +157,7 @@ func (app *Basecoin) Commit() (res wrsp.Result) {
 	if res.IsErr() {
 		PanicSanity("Error getting hash: " + res.Error())
 	}
-	return hash, "Success"
+	return res
 }
 
 // WRSP::InitChain
@@ -198,7 +196,7 @@ func splitKey(key string) (prefix string, suffix string) {
 }
 
 // (not meant to be called)
-// assert that Basecoin implements `wrsp.BlockchainAware` at compile-time
-func _assertWRSPBlockchainAware(basecoin *Basecoin) wrsp.BlockchainAware {
+// assert that Basecoin implements `wrsp.Application` at compile-time
+func _assertWRSPApplication(basecoin *Basecoin) wrsp.Application {
 	return basecoin
 }

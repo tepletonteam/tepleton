@@ -15,7 +15,7 @@ It also provides a general purpose framework for extending the feature-set of th
 by implementing plugins.
 
 Basecoin serves as a reference implementation for how we build WRSP applications in Go,
-and is the framework in which we implement the [Cosmos Hub](https://cosmos.network).
+and is the framework in which we implement the [Cosmos Hub](https://tepleton.network).
 It's easy to use, and doesn't require any forking - just implement your plugin, import the basecoin libraries,
 and away you go with a full-stack blockchain and command line tool for transacting.
 
