@@ -13,9 +13,9 @@ import:
 - package: github.com/tepleton/go-wire
   version: develop
 - package: github.com/tepleton/merkleeyes
-  version: last_height
+  version: develop
 - package: github.com/tepleton/tepleton
-  version: last_height
+  version: rpc-commit
 - package: github.com/tepleton/wrsp
   version: develop
 - package: github.com/gorilla/websocket
