@@ -83,14 +83,14 @@ func (app *Basecoin) SetOption(key string, value string) (log string) {
 // WRSP::DeliverTx
 func (app *Basecoin) DeliverTx(txBytes []byte) (res wrsp.Result) {
 	if len(txBytes) > maxTxSize {
-		return wrsp.ErrBaseEncodingError.AppendLog("Tx size exceeds maximum")
+		return wrsp.CodeType_BaseEncodingError, nil, "Tx size exceeds maximum"
 	}
 
 	// Decode tx
 	var tx types.Tx
 	err := wire.ReadBinaryBytes(txBytes, &tx)
 	if err != nil {
-		return wrsp.ErrBaseEncodingError.AppendLog("Error decoding tx: " + err.Error())
+		return wrsp.CodeType_BaseEncodingError, nil, "Error decoding tx: " + err.Error()
 	}
 
 	// Validate and exec tx
@@ -98,20 +98,22 @@ func (app *Basecoin) DeliverTx(txBytes []byte) (res wrsp.Result) {
 	if res.IsErr() {
 		return res.PrependLog("Error in DeliverTx")
 	}
-	return res
+	// Store accounts
+	storeAccounts(app.eyesCli, accs)
+	return wrsp.CodeType_OK, nil, "Success"
 }
 
-// WRSP::CheckTx
-func (app *Basecoin) CheckTx(txBytes []byte) (res wrsp.Result) {
+// TMSP::CheckTx
+func (app *Basecoin) CheckTx(txBytes []byte) (code wrsp.CodeType, result []byte, log string) {
 	if len(txBytes) > maxTxSize {
-		return wrsp.ErrBaseEncodingError.AppendLog("Tx size exceeds maximum")
+		return wrsp.CodeType_BaseEncodingError, nil, "Tx size exceeds maximum"
 	}
 
 	// Decode tx
 	var tx types.Tx
 	err := wire.ReadBinaryBytes(txBytes, &tx)
 	if err != nil {
-		return wrsp.ErrBaseEncodingError.AppendLog("Error decoding tx: " + err.Error())
+		return wrsp.CodeType_BaseEncodingError, nil, "Error decoding tx: " + err.Error()
 	}
 
 	// Validate tx
@@ -119,7 +121,7 @@ func (app *Basecoin) CheckTx(txBytes []byte) (res wrsp.Result) {
 	if res.IsErr() {
 		return res.PrependLog("Error in CheckTx")
 	}
-	return wrsp.OK
+	return wrsp.CodeType_OK, nil, "Success"
 }
 
 // WRSP::Query
@@ -157,7 +159,7 @@ func (app *Basecoin) Commit() (res wrsp.Result) {
 	if res.IsErr() {
 		PanicSanity("Error getting hash: " + res.Error())
 	}
-	return res
+	return hash, "Success"
 }
 
 // WRSP::InitChain
