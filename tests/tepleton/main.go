@@ -8,6 +8,7 @@ import (
 	"github.com/tepleton/basecoin/testutils"
 	"github.com/tepleton/basecoin/types"
 	cmn "github.com/tepleton/go-common"
+	crypto "github.com/tepleton/go-crypto"
 	"github.com/tepleton/go-rpc/client"
 	"github.com/tepleton/go-rpc/types"
 	"github.com/tepleton/go-wire"
@@ -66,8 +67,8 @@ func main() {
 
 		// Sign request
 		signBytes := tx.SignBytes(chainID)
-		sig := root.PrivKey.Sign(signBytes)
-		tx.Inputs[0].Signature = sig
+		sig := root.Sign(signBytes)
+		tx.Inputs[0].Signature = crypto.SignatureS{sig}
 		//fmt.Println("tx:", tx)
 
 		// Write request
@@ -116,8 +117,8 @@ func main() {
 
 		// Sign request
 		signBytes := tx.SignBytes(chainID)
-		sig := privAccountA.PrivKey.Sign(signBytes)
-		tx.Inputs[0].Signature = sig
+		sig := privAccountA.Sign(signBytes)
+		tx.Inputs[0].Signature = crypto.SignatureS{sig}
 		//fmt.Println("tx:", tx)
 
 		// Write request

@@ -8,6 +8,7 @@ import (
 	"github.com/tepleton/basecoin/app"
 	"github.com/tepleton/basecoin/testutils"
 	"github.com/tepleton/basecoin/types"
+	crypto "github.com/tepleton/go-crypto"
 	"github.com/tepleton/go-wire"
 	eyescli "github.com/tepleton/merkleeyes/client"
 )
@@ -47,8 +48,8 @@ func TestCounterPlugin(t *testing.T) {
 		// Sign request
 		signBytes := tx.SignBytes(chainID)
 		t.Logf("Sign bytes: %X\n", signBytes)
-		sig := test1PrivAcc.PrivKey.Sign(signBytes)
-		tx.Input.Signature = sig
+		sig := test1PrivAcc.Sign(signBytes)
+		tx.Input.Signature = crypto.SignatureS{sig}
 		t.Logf("Signed TX bytes: %X\n", wire.BinaryBytes(struct{ types.Tx }{tx}))
 
 		// Write request
