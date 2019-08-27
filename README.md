@@ -73,7 +73,3 @@ or to start basecoin with tepleton in the same process (`basecoin start --in-pro
 It can also be used to send transactions, eg. `basecoin sendtx --to 0x4793A333846E5104C46DD9AB9A00E31821B2F301 --amount 100`
 See `basecoin --help` and `basecoin [cmd] --help` for more details`.
 
-## Tutorials and Other Reading
-
-See our [introductory blog post](https://cosmos.network/blog/cosmos-creating-interoperable-blockchains-part-1), which explains the motivation behind Basecoin.
-
