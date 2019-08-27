@@ -9,6 +9,7 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/tepleton/basecoin/plugins/ibc"
+	"github.com/tepleton/basecoin/types"
 
 	cmn "github.com/tepleton/go-common"
 	"github.com/tepleton/go-merkle"
@@ -16,9 +17,10 @@ import (
 	tmtypes "github.com/tepleton/tepleton/types"
 )
 
-// returns a new IBC plugin to be registered with Basecoin
-func NewIBCPlugin() *ibc.IBCPlugin {
-	return ibc.New()
+// Register the IBC plugin at start and for transactions
+func RegisterIBC() {
+	RegisterTxSubcommand(IbcCmd)
+	RegisterStartPlugin("ibc", func() types.Plugin { return ibc.New() })
 }
 
 //---------------------------------------------------------------------
@@ -102,9 +104,9 @@ var (
 // ibc commands
 
 var (
-	IbcTxCmd = cli.Command{
+	IbcCmd = cli.Command{
 		Name:  "ibc",
-		Usage: "an IBC transaction, for InterBlockchain Communication",
+		Usage: "Send a transaction to the interblockchain (ibc) plugin",
 		Flags: TxFlags,
 		Subcommands: []cli.Command{
 			IbcRegisterTxCmd,

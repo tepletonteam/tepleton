@@ -2,7 +2,6 @@ package commands
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path"
 
@@ -72,10 +71,7 @@ func cmdStart(c *cli.Context) error {
 	// Create Basecoin app
 	basecoinApp := app.NewBasecoin(eyesCli)
 
-	// register IBC plugn
-	basecoinApp.RegisterPlugin(NewIBCPlugin())
-
-	// register all other plugins
+	// register all plugins
 	for _, p := range plugins {
 		basecoinApp.RegisterPlugin(p.newPlugin())
 	}
@@ -87,16 +83,12 @@ func cmdStart(c *cli.Context) error {
 		if err != nil {
 			return errors.New(cmn.Fmt("%+v", err))
 		}
-	} else {
-		fmt.Printf("No genesis file at %s, skipping...\n", genesisFile)
 	}
 
 	if c.Bool("in-proc") {
 		startTendermint(c, basecoinApp)
 	} else {
-		if err := startBasecoinWRSP(c, basecoinApp); err != nil {
-			return err
-		}
+		startBasecoinWRSP(c, basecoinApp)
 	}
 
 	return nil

@@ -51,15 +51,14 @@ func (app *Basecoin) RegisterPlugin(plugin types.Plugin) {
 }
 
 // WRSP::SetOption
-func (app *Basecoin) SetOption(key string, value string) string {
-	pluginName, key := splitKey(key)
-	if pluginName != PluginNameBase {
+func (app *Basecoin) SetOption(key string, value string) (log string) {
+	PluginName, key := splitKey(key)
+	if PluginName != PluginNameBase {
 		// Set option on plugin
-		plugin := app.plugins.GetByName(pluginName)
+		plugin := app.plugins.GetByName(PluginName)
 		if plugin == nil {
-			return "Invalid plugin name: " + pluginName
+			return "Invalid plugin name: " + PluginName
 		}
-		log.Info("SetOption on plugin", "plugin", pluginName, "key", key, "value", value)
 		return plugin.SetOption(app.state, key, value)
 	} else {
 		// Set option on basecoin
@@ -75,7 +74,6 @@ func (app *Basecoin) SetOption(key string, value string) string {
 				return "Error decoding acc message: " + err.Error()
 			}
 			app.state.SetAccount(acc.PubKey.Address(), acc)
-			log.Info("SetAccount", "addr", acc.PubKey.Address(), "acc", acc)
 			return "Success"
 		}
 		return "Unrecognized option key " + key
@@ -195,4 +193,10 @@ func splitKey(key string) (prefix string, suffix string) {
 		return keyParts[0], keyParts[1]
 	}
 	return key, ""
+}
+
+// (not meant to be called)
+// assert that Basecoin implements `wrsp.BlockchainAware` at compile-time
+func _assertWRSPBlockchainAware(basecoin *Basecoin) wrsp.BlockchainAware {
+	return basecoin
 }

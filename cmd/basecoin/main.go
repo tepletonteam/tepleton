@@ -17,8 +17,8 @@ func main() {
 		commands.TxCmd,
 		commands.QueryCmd,
 		commands.KeyCmd,
-		commands.VerifyCmd,
-		commands.BlockCmd,
+		commands.VerifyCmd, // TODO: move to merkleeyes?
+		commands.BlockCmd,  // TODO: move to adam?
 		commands.AccountCmd,
 	}
 	app.Run(os.Args)
