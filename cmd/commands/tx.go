@@ -14,6 +14,7 @@ import (
 	client "github.com/tepleton/go-rpc/client"
 	"github.com/tepleton/go-wire"
 	ctypes "github.com/tepleton/tepleton/rpc/core/types"
+	tmtypes "github.com/tepleton/tepleton/types"
 )
 
 var TxFlags = []cli.Flag{
@@ -143,7 +144,7 @@ func AppTx(c *cli.Context, name string, data []byte) error {
 	gas := int64(c.Int("gas"))
 	chainID := c.String("chain_id")
 
-	privKey := LoadKey(fromFile)
+	privKey := tmtypes.LoadPrivValidator(fromFile)
 
 	sequence, err := getSeq(c, privKey.Address)
 	if err != nil {

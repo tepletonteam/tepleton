@@ -14,7 +14,6 @@ func main() {
 	app.Usage = "basecoin [command] [args...]"
 	app.Version = version.Version
 	app.Commands = []cli.Command{
-		commands.InitCmd,
 		commands.StartCmd,
 		commands.TxCmd,
 		commands.QueryCmd,
@@ -22,7 +21,6 @@ func main() {
 		commands.VerifyCmd,
 		commands.BlockCmd,
 		commands.AccountCmd,
-		commands.UnsafeResetAllCmd,
 	}
 	app.Run(os.Args)
 }

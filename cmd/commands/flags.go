@@ -21,9 +21,15 @@ var (
 	// TODO: move to config file
 	// eyesCacheSizePtr := flag.Int("eyes-cache-size", 10000, "MerkleEyes db cache size, for embedded")
 
-	WRSPServerFlag = cli.BoolFlag{
-		Name:  "wrsp-server",
-		Usage: "Run the Basecoin app and WRSP server, but not Tendermint (run Tendermint in another process)",
+	DirFlag = cli.StringFlag{
+		Name:  "dir",
+		Value: ".",
+		Usage: "Root directory",
+	}
+
+	InProcTMFlag = cli.BoolFlag{
+		Name:  "in-proc",
+		Usage: "Run Tendermint in-process with the App",
 	}
 )
 
