@@ -10,8 +10,6 @@ import (
 
 	"github.com/tepleton/wrsp/server"
 	cmn "github.com/tepleton/go-common"
-	cfg "github.com/tepleton/go-config"
-	//logger "github.com/tepleton/go-logger"
 	eyes "github.com/tepleton/merkleeyes/client"
 
 	tmcfg "github.com/tepleton/tepleton/config/tepleton"
@@ -22,8 +20,6 @@ import (
 	"github.com/tepleton/basecoin/app"
 	"github.com/tepleton/basecoin/types"
 )
-
-var config cfg.Config
 
 const EyesCacheSize = 10000
 
@@ -37,8 +33,7 @@ var StartCmd = cli.Command{
 	Flags: []cli.Flag{
 		AddrFlag,
 		EyesFlag,
-		DirFlag,
-		InProcTMFlag,
+		WRSPServerFlag,
 		ChainIDFlag,
 	},
 }
@@ -56,11 +51,12 @@ func RegisterStartPlugin(name string, newPlugin func() types.Plugin) {
 }
 
 func cmdStart(c *cli.Context) error {
+	basecoinDir := BasecoinRoot("")
 
 	// Connect to MerkleEyes
 	var eyesCli *eyes.Client
 	if c.String("eyes") == "local" {
-		eyesCli = eyes.NewLocalClient(path.Join(c.String("dir"), "merkleeyes.db"), EyesCacheSize)
+		eyesCli = eyes.NewLocalClient(path.Join(basecoinDir, "merkleeyes.db"), EyesCacheSize)
 	} else {
 		var err error
 		eyesCli, err = eyes.NewClient(c.String("eyes"))
@@ -81,7 +77,7 @@ func cmdStart(c *cli.Context) error {
 	}
 
 	// If genesis file exists, set key-value options
-	genesisFile := path.Join(c.String("dir"), "genesis.json")
+	genesisFile := path.Join(basecoinDir, "genesis.json")
 	if _, err := os.Stat(genesisFile); err == nil {
 		err := basecoinApp.LoadGenesis(genesisFile)
 		if err != nil {
@@ -91,12 +87,14 @@ func cmdStart(c *cli.Context) error {
 		fmt.Printf("No genesis file at %s, skipping...\n", genesisFile)
 	}
 
-	if c.Bool("in-proc") {
-		startTendermint(c, basecoinApp)
-	} else {
+	if c.Bool("wrsp-server") {
+		// run just the wrsp app/server
 		if err := startBasecoinWRSP(c, basecoinApp); err != nil {
 			return err
 		}
+	} else {
+		// start the app with tepleton in-process
+		startTendermint(basecoinDir, basecoinApp)
 	}
 
 	return nil
@@ -117,17 +115,18 @@ func startBasecoinWRSP(c *cli.Context, basecoinApp *app.Basecoin) error {
 
 }
 
-func startTendermint(c *cli.Context, basecoinApp *app.Basecoin) {
+func startTendermint(dir string, basecoinApp *app.Basecoin) {
 	// Get configuration
-	config = tmcfg.GetConfig("")
+	tmConfig := tmcfg.GetConfig(path.Join(dir, "tepleton"))
+
 	// logger.SetLogLevel("notice") //config.GetString("log_level"))
 
 	// parseFlags(config, args[1:]) // Command line overrides
 
 	// Create & start tepleton node
-	privValidatorFile := config.GetString("priv_validator_file")
+	privValidatorFile := tmConfig.GetString("priv_validator_file")
 	privValidator := tmtypes.LoadOrGenPrivValidator(privValidatorFile)
-	n := node.NewNode(config, privValidator, proxy.NewLocalClientCreator(basecoinApp))
+	n := node.NewNode(tmConfig, privValidator, proxy.NewLocalClientCreator(basecoinApp))
 
 	n.Start()
 

@@ -15,7 +15,7 @@ import:
 - package: github.com/tepleton/merkleeyes
   version: develop
 - package: github.com/tepleton/tepleton
-  version: release-0.9.0
+  version: develop
 - package: github.com/tepleton/wrsp
   version: develop
 - package: github.com/gorilla/websocket
