@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	crypto "github.com/tepleton/go-crypto"
+	"github.com/tepleton/go-crypto/keys"
 	"github.com/tepleton/go-crypto/keys/cryptostore"
 	"github.com/tepleton/go-crypto/keys/storage/memstorage"
 	data "github.com/tepleton/go-wire/data"
@@ -18,6 +19,7 @@ func TestReader(t *testing.T) {
 	cstore := cryptostore.New(
 		cryptostore.SecretBox,
 		memstorage.New(),
+		keys.MustLoadCodec("english"),
 	)
 	type sigs struct{ name, pass string }
 	u := sigs{"alice", "1234"}
