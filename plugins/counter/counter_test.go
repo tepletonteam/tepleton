@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/basecoin/app"
-	"github.com/tepleton/basecoin/testutils"
 	"github.com/tepleton/basecoin/types"
 	crypto "github.com/tepleton/go-crypto"
 	"github.com/tepleton/go-wire"
@@ -27,7 +26,7 @@ func TestCounterPlugin(t *testing.T) {
 	bcApp.RegisterPlugin(counterPlugin)
 
 	// Account initialization
-	test1PrivAcc := testutils.PrivAccountFromSecret("test1")
+	test1PrivAcc := types.PrivAccountFromSecret("test1")
 
 	// Seed Basecoin with account
 	test1Acc := test1PrivAcc.Account

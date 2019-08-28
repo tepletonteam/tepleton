@@ -8,7 +8,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	wrsp "github.com/tepleton/wrsp/types"
-	"github.com/tepleton/basecoin/testutils"
 	"github.com/tepleton/basecoin/types"
 	cmn "github.com/tepleton/go-common"
 	crypto "github.com/tepleton/go-crypto"
@@ -29,7 +28,7 @@ func genGenesisDoc(chainID string, numVals int) (*tm.GenesisDoc, []types.PrivAcc
 
 	for i := 0; i < numVals; i++ {
 		name := cmn.Fmt("%v_val_%v", chainID, i)
-		privAcc := testutils.PrivAccountFromSecret(name)
+		privAcc := types.PrivAccountFromSecret(name)
 		genDoc.Validators = append(genDoc.Validators, tm.GenesisValidator{
 			PubKey: privAcc.PubKey.PubKey,
 			Amount: 1,

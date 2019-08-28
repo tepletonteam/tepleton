@@ -11,7 +11,7 @@ install:
 	go install github.com/tepleton/basecoin/cmd/...
 
 test:
-	go test --race `${NOVENDOR}`
+	go test `${NOVENDOR}`
 	#go run tests/tepleton/*.go
 
 get_deps:
