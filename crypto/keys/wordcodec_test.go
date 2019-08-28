@@ -5,6 +5,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	cmn "github.com/tepleton/tmlibs/common"
 )
 
 func TestLengthCalc(t *testing.T) {
@@ -80,10 +82,100 @@ func TestEncodeDecode(t *testing.T) {
 }
 
 func TestCheckInvalidLists(t *testing.T) {
-	// assert, require := assert.New(t), require.New(t)
+	assert := assert.New(t)
+
+	trivial := []string{"abc", "def"}
+	short := make([]string, 1234)
+	long := make([]string, BankSize+1)
+	right := make([]string, BankSize)
+	dups := make([]string, BankSize)
+
+	for _, list := range [][]string{short, long, right, dups} {
+		for i := range list {
+			list[i] = cmn.RandStr(8)
+		}
+	}
+	// create one single duplicate
+	dups[192] = dups[782]
+
+	cases := []struct {
+		words    []string
+		loadable bool
+		valid    bool
+	}{
+		{trivial, false, false},
+		{short, false, false},
+		{long, false, false},
+		{dups, true, false}, // we only check dups on first use...
+		{right, true, true},
+	}
+
+	for i, tc := range cases {
+		codec, err := NewCodec(tc.words)
+		if !tc.loadable {
+			assert.NotNil(err, "%d", i)
+		} else if assert.Nil(err, "%d: %+v", i, err) {
+			data := cmn.RandBytes(32)
+			w, err := codec.BytesToWords(data)
+			if tc.valid {
+				assert.Nil(err, "%d: %+v", i, err)
+				b, err := codec.WordsToBytes(w)
+				assert.Nil(err, "%d: %+v", i, err)
+				assert.Equal(data, b)
+			} else {
+				assert.NotNil(err, "%d", i)
+			}
+		}
+	}
 
 }
 
+func getRandWord(c WordCodec) string {
+	idx := cmn.RandInt() % BankSize
+	return c.words[idx]
+}
+
+func getDiffWord(c WordCodec, not string) string {
+	w := getRandWord(c)
+	if w == not {
+		w = getRandWord(c)
+	}
+	return w
+}
+
 func TestCheckTypoDetection(t *testing.T) {
+	assert, require := assert.New(t), require.New(t)
+
+	banks := []string{"english"}
+
+	for _, bank := range banks {
+		codec, err := LoadCodec(bank)
+		require.Nil(err, "%s: %+v", bank, err)
+		for i := 0; i < 10; i++ {
+			numBytes := cmn.RandInt()%60 + 1
+			data := cmn.RandBytes(numBytes)
+
+			words, err := codec.BytesToWords(data)
+			assert.Nil(err, "%s: %+v", bank, err)
+			good, err := codec.WordsToBytes(words)
+			assert.Nil(err, "%s: %+v", bank, err)
+			assert.Equal(data, good, bank)
+
+			// now try some tweaks...
+			cut := words[1:]
+			_, err = codec.WordsToBytes(cut)
+			assert.NotNil(err, "%s: %s", bank, words)
+
+			// swap a word within the bank, should fails
+			words[3] = getDiffWord(codec, words[3])
+			_, err = codec.WordsToBytes(words)
+			assert.NotNil(err, "%s: %s", bank, words)
+
+			// put a random word here, must fail
+			words[3] = cmn.RandStr(10)
+			_, err = codec.WordsToBytes(words)
+			assert.NotNil(err, "%s: %s", bank, words)
+		}
+	}
 
 }
