@@ -130,12 +130,12 @@ func TestCheckInvalidLists(t *testing.T) {
 
 }
 
-func getRandWord(c WordCodec) string {
+func getRandWord(c *WordCodec) string {
 	idx := cmn.RandInt() % BankSize
 	return c.words[idx]
 }
 
-func getDiffWord(c WordCodec, not string) string {
+func getDiffWord(c *WordCodec, not string) string {
 	w := getRandWord(c)
 	if w == not {
 		w = getRandWord(c)
@@ -151,7 +151,7 @@ func TestCheckTypoDetection(t *testing.T) {
 	for _, bank := range banks {
 		codec, err := LoadCodec(bank)
 		require.Nil(err, "%s: %+v", bank, err)
-		for i := 0; i < 10; i++ {
+		for i := 0; i < 1000; i++ {
 			numBytes := cmn.RandInt()%60 + 1
 			data := cmn.RandBytes(numBytes)
 
@@ -177,5 +177,4 @@ func TestCheckTypoDetection(t *testing.T) {
 			assert.NotNil(err, "%s: %s", bank, words)
 		}
 	}
-
 }
