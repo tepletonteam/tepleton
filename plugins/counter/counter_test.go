@@ -1,13 +1,15 @@
 package counter
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/basecoin/app"
-	"github.com/tepleton/basecoin/testutils"
 	"github.com/tepleton/basecoin/types"
+	crypto "github.com/tepleton/go-crypto"
 	"github.com/tepleton/go-wire"
 	eyescli "github.com/tepleton/merkleeyes/client"
 )
@@ -19,20 +21,21 @@ func TestCounterPlugin(t *testing.T) {
 	chainID := "test_chain_id"
 	bcApp := app.NewBasecoin(eyesCli)
 	bcApp.SetOption("base/chainID", chainID)
-	t.Log(bcApp.Info())
+	// t.Log(bcApp.Info())
 
 	// Add Counter plugin
-	counterPluginName := "testcounter"
-	counterPlugin := New(counterPluginName)
+	counterPlugin := New()
 	bcApp.RegisterPlugin(counterPlugin)
 
 	// Account initialization
-	test1PrivAcc := testutils.PrivAccountFromSecret("test1")
+	test1PrivAcc := types.PrivAccountFromSecret("test1")
 
 	// Seed Basecoin with account
 	test1Acc := test1PrivAcc.Account
 	test1Acc.Balance = types.Coins{{"", 1000}, {"gold", 1000}}
-	bcApp.SetOption("base/account", string(wire.JSONBytes(test1Acc)))
+	accOpt, err := json.Marshal(test1Acc)
+	require.Nil(t, err)
+	bcApp.SetOption("base/account", string(accOpt))
 
 	// Deliver a CounterTx
 	DeliverCounterTx := func(gas int64, fee types.Coin, inputCoins types.Coins, inputSequence int, appFee types.Coins) wrsp.Result {
@@ -40,17 +43,17 @@ func TestCounterPlugin(t *testing.T) {
 		tx := &types.AppTx{
 			Gas:   gas,
 			Fee:   fee,
-			Name:  counterPluginName,
+			Name:  counterPlugin.Name(),
 			Input: types.NewTxInput(test1Acc.PubKey, inputCoins, inputSequence),
 			Data:  wire.BinaryBytes(CounterTx{Valid: true, Fee: appFee}),
 		}
 
 		// Sign request
 		signBytes := tx.SignBytes(chainID)
-		t.Logf("Sign bytes: %X\n", signBytes)
-		sig := test1PrivAcc.PrivKey.Sign(signBytes)
-		tx.Input.Signature = sig
-		t.Logf("Signed TX bytes: %X\n", wire.BinaryBytes(struct{ types.Tx }{tx}))
+		// t.Logf("Sign bytes: %X\n", signBytes)
+		sig := test1PrivAcc.Sign(signBytes)
+		tx.Input.Signature = crypto.SignatureS{sig}
+		// t.Logf("Signed TX bytes: %X\n", wire.BinaryBytes(struct{ types.Tx }{tx}))
 
 		// Write request
 		txBytes := wire.BinaryBytes(struct{ types.Tx }{tx})

@@ -21,24 +21,21 @@ type CounterTx struct {
 //--------------------------------------------------------------------------------
 
 type CounterPlugin struct {
-	name string
 }
 
 func (cp *CounterPlugin) Name() string {
-	return cp.name
+	return "counter"
 }
 
 func (cp *CounterPlugin) StateKey() []byte {
-	return []byte(fmt.Sprintf("CounterPlugin{name=%v}.State", cp.name))
+	return []byte(fmt.Sprintf("CounterPlugin.State"))
 }
 
-func New(name string) *CounterPlugin {
-	return &CounterPlugin{
-		name: name,
-	}
+func New() *CounterPlugin {
+	return &CounterPlugin{}
 }
 
-func (cp *CounterPlugin) SetOption(store types.KVStore, key string, value string) (log string) {
+func (cp *CounterPlugin) SetOption(store types.KVStore, key, value string) (log string) {
 	return ""
 }
 
@@ -93,9 +90,9 @@ func (cp *CounterPlugin) RunTx(store types.KVStore, ctx types.CallContext, txByt
 func (cp *CounterPlugin) InitChain(store types.KVStore, vals []*wrsp.Validator) {
 }
 
-func (cp *CounterPlugin) BeginBlock(store types.KVStore, height uint64) {
+func (cp *CounterPlugin) BeginBlock(store types.KVStore, hash []byte, header *wrsp.Header) {
 }
 
-func (cp *CounterPlugin) EndBlock(store types.KVStore, height uint64) []*wrsp.Validator {
-	return nil
+func (cp *CounterPlugin) EndBlock(store types.KVStore, height uint64) (res wrsp.ResponseEndBlock) {
+	return
 }

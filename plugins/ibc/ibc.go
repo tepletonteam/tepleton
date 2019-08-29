@@ -1,6 +1,7 @@
 package ibc
 
 import (
+	"bytes"
 	"errors"
 	"net/url"
 	"strings"
@@ -66,7 +67,8 @@ const (
 	IBCCodeChainAlreadyExists  = wrsp.CodeType(1002)
 	IBCCodePacketAlreadyExists = wrsp.CodeType(1003)
 	IBCCodeUnknownHeight       = wrsp.CodeType(1004)
-	IBCCodeInvalidProof        = wrsp.CodeType(1005)
+	IBCCodeInvalidCommit       = wrsp.CodeType(1005)
+	IBCCodeInvalidProof        = wrsp.CodeType(1006)
 )
 
 var _ = wire.RegisterInterface(
@@ -120,7 +122,7 @@ type IBCPacketPostTx struct {
 	FromChainID     string // The immediate source of the packet, not always Packet.SrcChainID
 	FromChainHeight uint64 // The block height in which Packet was committed, to check Proof
 	Packet
-	Proof merkle.IAVLProof
+	Proof *merkle.IAVLProof
 }
 
 func (IBCPacketPostTx) ValidateBasic() (res wrsp.Result) {
@@ -154,7 +156,7 @@ func (ibc *IBCPlugin) RunTx(store types.KVStore, ctx types.CallContext, txBytes 
 	var tx IBCTx
 	err := wire.ReadBinaryBytes(txBytes, &tx)
 	if err != nil {
-		return wrsp.ErrBaseEncodingError.AppendLog("Error decoding tx: " + err.Error()).PrependLog("IBCTx Error: ")
+		return wrsp.ErrBaseEncodingError.AppendLog("Error decoding tx: " + err.Error())
 	}
 
 	// Validate tx
@@ -205,14 +207,14 @@ func (sm *IBCStateMachine) runRegisterChainTx(tx IBCRegisterChainTx) {
 	wire.ReadJSONPtr(&chainGenDoc, []byte(chainGen.Genesis), &err)
 	if err != nil {
 		sm.res.Code = IBCCodeEncodingError
-		sm.res.AppendLog("Genesis doc couldn't be parsed: " + err.Error())
+		sm.res.Log = "Genesis doc couldn't be parsed: " + err.Error()
 		return
 	}
 
 	// Make sure chainGen doesn't already exist
 	if exists(sm.store, chainGenKey) {
 		sm.res.Code = IBCCodeChainAlreadyExists
-		sm.res.AppendLog("Already exists")
+		sm.res.Log = "Already exists"
 		return
 	}
 
@@ -265,7 +267,8 @@ func (sm *IBCStateMachine) runUpdateChainTx(tx IBCUpdateChainTx) {
 	// Check commit against last known state & validators
 	err = verifyCommit(chainState, &tx.Header, &tx.Commit)
 	if err != nil {
-		sm.res = wrsp.ErrInternalError.AppendLog(cmn.Fmt("Invalid Commit: %v", err.Error()))
+		sm.res.Code = IBCCodeInvalidCommit
+		sm.res.Log = cmn.Fmt("Invalid Commit: %v", err.Error())
 		return
 	}
 
@@ -291,11 +294,12 @@ func (sm *IBCStateMachine) runPacketCreateTx(tx IBCPacketCreateTx) {
 	// Make sure packet doesn't already exist
 	if exists(sm.store, packetKey) {
 		sm.res.Code = IBCCodePacketAlreadyExists
-		sm.res.AppendLog("Already exists")
+		// TODO: .AppendLog() does not update sm.res
+		sm.res.Log = "Already exists"
 		return
 	}
 	// Save new Packet
-	save(sm.store, packetKey, wire.BinaryBytes(packet))
+	save(sm.store, packetKey, packet)
 }
 
 func (sm *IBCStateMachine) runPacketPostTx(tx IBCPacketPostTx) {
@@ -318,14 +322,15 @@ func (sm *IBCStateMachine) runPacketPostTx(tx IBCPacketPostTx) {
 	// Make sure packet doesn't already exist
 	if exists(sm.store, packetKeyIngress) {
 		sm.res.Code = IBCCodePacketAlreadyExists
-		sm.res.AppendLog("Already exists")
+		sm.res.Log = "Already exists"
 		return
 	}
 
 	// Save new Packet
-	save(sm.store, packetKeyIngress, wire.BinaryBytes(packet))
+	save(sm.store, packetKeyIngress, packet)
 
 	// Load Header and make sure it exists
+	// If it exists, we already checked a valid commit for it in UpdateChainTx
 	var header tm.Header
 	exists, err := load(sm.store, headerKey, &header)
 	if err != nil {
@@ -334,43 +339,37 @@ func (sm *IBCStateMachine) runPacketPostTx(tx IBCPacketPostTx) {
 	}
 	if !exists {
 		sm.res.Code = IBCCodeUnknownHeight
-		sm.res.AppendLog(cmn.Fmt("Loading Header: %v", err.Error()))
+		sm.res.Log = cmn.Fmt("Loading Header: Unknown height")
 		return
 	}
 
-	/*
-		// Read Proof
-		var proof *merkle.IAVLProof
-		err = wire.ReadBinaryBytes(tx.Proof, &proof)
-		if err != nil {
-			sm.res.Code = IBCEncodingError
-			sm.res.AppendLog(cmn.Fmt("Reading Proof: %v", err.Error()))
-			return
-		}
-	*/
 	proof := tx.Proof
+	if proof == nil {
+		sm.res.Code = IBCCodeInvalidProof
+		sm.res.Log = "Proof is nil"
+		return
+	}
 	packetBytes := wire.BinaryBytes(packet)
 
 	// Make sure packet's proof matches given (packet, key, blockhash)
 	ok := proof.Verify(packetKeyEgress, packetBytes, header.AppHash)
 	if !ok {
 		sm.res.Code = IBCCodeInvalidProof
-		sm.res.AppendLog("Proof is invalid")
+		sm.res.Log = "Proof is invalid"
 		return
 	}
 
 	return
-
 }
 
 func (ibc *IBCPlugin) InitChain(store types.KVStore, vals []*wrsp.Validator) {
 }
 
-func (ibc *IBCPlugin) BeginBlock(store types.KVStore, height uint64) {
+func (cp *IBCPlugin) BeginBlock(store types.KVStore, hash []byte, header *wrsp.Header) {
 }
 
-func (ibc *IBCPlugin) EndBlock(store types.KVStore, height uint64) []*wrsp.Validator {
-	return nil
+func (cp *IBCPlugin) EndBlock(store types.KVStore, height uint64) (res wrsp.ResponseEndBlock) {
+	return
 }
 
 //--------------------------------------------------------------------------------
@@ -424,6 +423,7 @@ func verifyCommit(chainState BlockchainState, header *tm.Header, commit *tm.Comm
 	if chainState.ChainID != header.ChainID {
 		return errors.New(cmn.Fmt("Expected header.ChainID %v, got %v", chainState.ChainID, header.ChainID))
 	}
+	// Ensure things aren't empty
 	if len(chainState.Validators) == 0 {
 		return errors.New(cmn.Fmt("Blockchain has no validators")) // NOTE: Why would this happen?
 	}
@@ -431,16 +431,21 @@ func verifyCommit(chainState BlockchainState, header *tm.Header, commit *tm.Comm
 		return errors.New(cmn.Fmt("Commit has no signatures"))
 	}
 	chainID := chainState.ChainID
-	vote0 := commit.Precommits[0]
 	vals := chainState.Validators
 	valSet := tm.NewValidatorSet(vals)
+	blockID := commit.Precommits[0].BlockID // XXX: incorrect
 
 	// NOTE: Currently this only works with the exact same validator set.
 	// Not this, but perhaps "ValidatorSet.VerifyCommitAny" should expose
 	// the functionality to verify commits even after validator changes.
-	err := valSet.VerifyCommit(chainID, vote0.BlockID, vote0.Height, commit)
+	err := valSet.VerifyCommit(chainID, blockID, header.Height, commit)
 	if err != nil {
 		return err
+	}
+
+	// Ensure the committed blockID matches the header
+	if !bytes.Equal(header.Hash(), blockID.Hash) {
+		return errors.New(cmn.Fmt("blockID.Hash (%X) does not match header.Hash (%X)", blockID.Hash, header.Hash()))
 	}
 
 	// All ok!

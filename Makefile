@@ -1,5 +1,3 @@
-.PHONY: all test get_deps
-
 all: test install
 
 NOVENDOR = go list github.com/tepleton/basecoin/... | grep -v /vendor/
@@ -11,7 +9,7 @@ install:
 	go install github.com/tepleton/basecoin/cmd/...
 
 test:
-	go test --race `${NOVENDOR}`
+	go test `${NOVENDOR}`
 	#go run tests/tepleton/*.go
 
 get_deps:
@@ -24,3 +22,11 @@ get_vendor_deps:
 	go get github.com/Masterminds/glide
 	glide install
 
+build-docker:
+	docker run -it --rm -v "$(PWD):/go/src/github.com/tepleton/basecoin" -w "/go/src/github.com/tepleton/basecoin" -e "CGO_ENABLED=0" golang:alpine go build ./cmd/basecoin
+	docker build -t "tepleton/basecoin" .
+
+clean:
+	@rm -f ./basecoin
+
+.PHONY: all build install test get_deps update_deps get_vendor_deps build-docker clean

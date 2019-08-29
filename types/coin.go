@@ -35,11 +35,15 @@ func (coins Coins) IsValid() bool {
 			if coin.Amount == 0 {
 				return false
 			}
+			// we compare each coin against the last denom
+			lowDenom = coin.Denom
 		}
 		return true
 	}
 }
 
+// TODO: handle empty coins!
+// Currently appends an empty coin ...
 func (coinsA Coins) Plus(coinsB Coins) Coins {
 	sum := []Coin{}
 	indexA, indexB := 0, 0
@@ -98,7 +102,7 @@ func (coinsA Coins) IsGTE(coinsB Coins) bool {
 	if len(diff) == 0 {
 		return true
 	}
-	return diff.IsPositive()
+	return diff.IsNonnegative()
 }
 
 func (coins Coins) IsZero() bool {

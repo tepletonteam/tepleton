@@ -1,7 +1,7 @@
 package app
 
 import (
-	"fmt"
+	"encoding/json"
 	"strings"
 
 	wrsp "github.com/tepleton/wrsp/types"
@@ -37,7 +37,12 @@ func NewBasecoin(eyesCli *eyes.Client) *Basecoin {
 	}
 }
 
-// TMSP::Info
+// For testing, not thread safe!
+func (app *Basecoin) GetState() *sm.State {
+	return app.state.CacheWrap()
+}
+
+// WRSP::Info
 func (app *Basecoin) Info() wrsp.ResponseInfo {
 	return wrsp.ResponseInfo{Data: Fmt("Basecoin v%v", version)}
 }
@@ -46,15 +51,16 @@ func (app *Basecoin) RegisterPlugin(plugin types.Plugin) {
 	app.plugins.RegisterPlugin(plugin)
 }
 
-// TMSP::SetOption
-func (app *Basecoin) SetOption(key string, value string) (log string) {
-	PluginName, key := splitKey(key)
-	if PluginName != PluginNameBase {
+// WRSP::SetOption
+func (app *Basecoin) SetOption(key string, value string) string {
+	pluginName, key := splitKey(key)
+	if pluginName != PluginNameBase {
 		// Set option on plugin
-		plugin := app.plugins.GetByName(PluginName)
+		plugin := app.plugins.GetByName(pluginName)
 		if plugin == nil {
-			return "Invalid plugin name: " + PluginName
+			return "Invalid plugin name: " + pluginName
 		}
+		log.Info("SetOption on plugin", "plugin", pluginName, "key", key, "value", value)
 		return plugin.SetOption(app.state, key, value)
 	} else {
 		// Set option on basecoin
@@ -63,30 +69,30 @@ func (app *Basecoin) SetOption(key string, value string) (log string) {
 			app.state.SetChainID(value)
 			return "Success"
 		case "account":
-			var err error
-			var acc *types.Account
-			wire.ReadJSONPtr(&acc, []byte(value), &err)
+			var acc types.Account
+			err := json.Unmarshal([]byte(value), &acc)
 			if err != nil {
 				return "Error decoding acc message: " + err.Error()
 			}
-			app.state.SetAccount(acc.PubKey.Address(), acc)
+			app.state.SetAccount(acc.PubKey.Address(), &acc)
+			log.Info("SetAccount", "addr", acc.PubKey.Address(), "acc", acc)
 			return "Success"
 		}
 		return "Unrecognized option key " + key
 	}
 }
 
-// TMSP::DeliverTx
+// WRSP::DeliverTx
 func (app *Basecoin) DeliverTx(txBytes []byte) (res wrsp.Result) {
 	if len(txBytes) > maxTxSize {
-		return wrsp.CodeType_BaseEncodingError, nil, "Tx size exceeds maximum"
+		return wrsp.ErrBaseEncodingError.AppendLog("Tx size exceeds maximum")
 	}
 
 	// Decode tx
 	var tx types.Tx
 	err := wire.ReadBinaryBytes(txBytes, &tx)
 	if err != nil {
-		return wrsp.CodeType_BaseEncodingError, nil, "Error decoding tx: " + err.Error()
+		return wrsp.ErrBaseEncodingError.AppendLog("Error decoding tx: " + err.Error())
 	}
 
 	// Validate and exec tx
@@ -94,24 +100,20 @@ func (app *Basecoin) DeliverTx(txBytes []byte) (res wrsp.Result) {
 	if res.IsErr() {
 		return res.PrependLog("Error in DeliverTx")
 	}
-	// Store accounts
-	storeAccounts(app.eyesCli, accs)
-	return wrsp.CodeType_OK, nil, "Success"
+	return res
 }
 
-// TMSP::CheckTx
-func (app *Basecoin) CheckTx(txBytes []byte) (code wrsp.CodeType, result []byte, log string) {
+// WRSP::CheckTx
+func (app *Basecoin) CheckTx(txBytes []byte) (res wrsp.Result) {
 	if len(txBytes) > maxTxSize {
-		return wrsp.CodeType_BaseEncodingError, nil, "Tx size exceeds maximum"
+		return wrsp.ErrBaseEncodingError.AppendLog("Tx size exceeds maximum")
 	}
-
-	fmt.Printf("%X\n", txBytes)
 
 	// Decode tx
 	var tx types.Tx
 	err := wire.ReadBinaryBytes(txBytes, &tx)
 	if err != nil {
-		return wrsp.CodeType_BaseEncodingError, nil, "Error decoding tx: " + err.Error()
+		return wrsp.ErrBaseEncodingError.AppendLog("Error decoding tx: " + err.Error())
 	}
 
 	// Validate tx
@@ -119,15 +121,21 @@ func (app *Basecoin) CheckTx(txBytes []byte) (code wrsp.CodeType, result []byte,
 	if res.IsErr() {
 		return res.PrependLog("Error in CheckTx")
 	}
-	return wrsp.CodeType_OK, nil, "Success"
+	return wrsp.OK
 }
 
-// TMSP::Query
+// WRSP::Query
 func (app *Basecoin) Query(reqQuery wrsp.RequestQuery) (resQuery wrsp.ResponseQuery) {
 	if len(reqQuery.Data) == 0 {
 		resQuery.Log = "Query cannot be zero length"
 		resQuery.Code = wrsp.CodeType_EncodingError
 		return
+	}
+
+	// handle special path for account info
+	if reqQuery.Path == "/account" {
+		reqQuery.Path = "/key"
+		reqQuery.Data = append([]byte("base/a/"), reqQuery.Data...)
 	}
 
 	resQuery, err := app.eyesCli.QuerySync(reqQuery)
@@ -139,7 +147,7 @@ func (app *Basecoin) Query(reqQuery wrsp.RequestQuery) (resQuery wrsp.ResponseQu
 	return
 }
 
-// TMSP::Commit
+// WRSP::Commit
 func (app *Basecoin) Commit() (res wrsp.Result) {
 
 	// Commit state
@@ -151,28 +159,28 @@ func (app *Basecoin) Commit() (res wrsp.Result) {
 	if res.IsErr() {
 		PanicSanity("Error getting hash: " + res.Error())
 	}
-	return hash, "Success"
+	return res
 }
 
-// TMSP::InitChain
+// WRSP::InitChain
 func (app *Basecoin) InitChain(validators []*wrsp.Validator) {
 	for _, plugin := range app.plugins.GetList() {
 		plugin.InitChain(app.state, validators)
 	}
 }
 
-// TMSP::BeginBlock
-func (app *Basecoin) BeginBlock(height uint64) {
+// WRSP::BeginBlock
+func (app *Basecoin) BeginBlock(hash []byte, header *wrsp.Header) {
 	for _, plugin := range app.plugins.GetList() {
-		plugin.BeginBlock(app.state, height)
+		plugin.BeginBlock(app.state, hash, header)
 	}
 }
 
-// TMSP::EndBlock
-func (app *Basecoin) EndBlock(height uint64) (diffs []*wrsp.Validator) {
+// WRSP::EndBlock
+func (app *Basecoin) EndBlock(height uint64) (res wrsp.ResponseEndBlock) {
 	for _, plugin := range app.plugins.GetList() {
-		moreDiffs := plugin.EndBlock(app.state, height)
-		diffs = append(diffs, moreDiffs...)
+		pluginRes := plugin.EndBlock(app.state, height)
+		res.Diffs = append(res.Diffs, pluginRes.Diffs...)
 	}
 	return
 }
