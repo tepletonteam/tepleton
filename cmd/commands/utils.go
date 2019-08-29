@@ -16,7 +16,7 @@ import (
 	wrsp "github.com/tepleton/wrsp/types"
 	cmn "github.com/tepleton/go-common"
 	client "github.com/tepleton/go-rpc/client"
-	"github.com/tepleton/go-wire"
+	wire "github.com/tepleton/go-wire"
 	ctypes "github.com/tepleton/tepleton/rpc/core/types"
 	tmtypes "github.com/tepleton/tepleton/types"
 )
@@ -89,7 +89,7 @@ func ParseCoins(str string) (types.Coins, error) {
 }
 
 func Query(tmAddr string, key []byte) (*wrsp.ResponseQuery, error) {
-	clientURI := client.NewURIClient(tmAddr)
+	uriClient := client.NewURIClient(tmAddr)
 	tmResult := new(ctypes.TMResult)
 
 	params := map[string]interface{}{
@@ -97,7 +97,7 @@ func Query(tmAddr string, key []byte) (*wrsp.ResponseQuery, error) {
 		"data":  key,
 		"prove": true,
 	}
-	_, err := clientURI.Call("wrsp_query", params, tmResult)
+	_, err := uriClient.Call("wrsp_query", params, tmResult)
 	if err != nil {
 		return nil, errors.New(cmn.Fmt("Error calling /wrsp_query: %v", err))
 	}
@@ -136,10 +136,10 @@ func getAcc(tmAddr string, address []byte) (*types.Account, error) {
 func getHeaderAndCommit(c *cli.Context, height int) (*tmtypes.Header, *tmtypes.Commit, error) {
 	tmResult := new(ctypes.TMResult)
 	tmAddr := c.String("node")
-	clientURI := client.NewURIClient(tmAddr)
+	uriClient := client.NewURIClient(tmAddr)
 
 	method := "commit"
-	_, err := clientURI.Call(method, map[string]interface{}{"height": height}, tmResult)
+	_, err := uriClient.Call(method, map[string]interface{}{"height": height}, tmResult)
 	if err != nil {
 		return nil, nil, errors.New(cmn.Fmt("Error on %s: %v", method, err))
 	}

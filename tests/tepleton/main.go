@@ -8,9 +8,9 @@ import (
 	"github.com/tepleton/basecoin/types"
 	cmn "github.com/tepleton/go-common"
 	crypto "github.com/tepleton/go-crypto"
-	"github.com/tepleton/go-rpc/client"
+	rpcclient "github.com/tepleton/go-rpc/client"
 	"github.com/tepleton/go-rpc/types"
-	"github.com/tepleton/go-wire"
+	wire "github.com/tepleton/go-wire"
 	_ "github.com/tepleton/tepleton/rpc/core/types" // Register RPCResponse > Result types
 )
 

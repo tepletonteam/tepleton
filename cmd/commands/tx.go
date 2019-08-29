@@ -12,7 +12,7 @@ import (
 
 	cmn "github.com/tepleton/go-common"
 	client "github.com/tepleton/go-rpc/client"
-	"github.com/tepleton/go-wire"
+	wire "github.com/tepleton/go-wire"
 	ctypes "github.com/tepleton/tepleton/rpc/core/types"
 )
 
@@ -189,14 +189,14 @@ func AppTx(c *cli.Context, name string, data []byte) error {
 func broadcastTx(c *cli.Context, tx types.Tx) ([]byte, string, error) {
 	tmResult := new(ctypes.TMResult)
 	tmAddr := c.String("node")
-	clientURI := client.NewURIClient(tmAddr)
+	uriClient := client.NewURIClient(tmAddr)
 
 	// Don't you hate having to do this?
 	// How many times have I lost an hour over this trick?!
 	txBytes := []byte(wire.BinaryBytes(struct {
 		types.Tx `json:"unwrap"`
 	}{tx}))
-	_, err := clientURI.Call("broadcast_tx_commit", map[string]interface{}{"tx": txBytes}, tmResult)
+	_, err := uriClient.Call("broadcast_tx_commit", map[string]interface{}{"tx": txBytes}, tmResult)
 	if err != nil {
 		return nil, "", errors.New(cmn.Fmt("Error on broadcast tx: %v", err))
 	}
