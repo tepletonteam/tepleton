@@ -37,34 +37,54 @@ func (s Manager) assertKeyManager() keys.Manager {
 // Create adds a new key to the storage engine, returning error if
 // another key already stored under this name
 //
-// algo must be a supported go-crypto algorithm:
-//
+// algo must be a supported go-crypto algorithm: ed25519, secp256k1
 func (s Manager) Create(name, passphrase, algo string) (keys.Info, string, error) {
 	gen, err := getGenerator(algo)
 	if err != nil {
 		return keys.Info{}, "", err
 	}
-	key := gen.Generate()
+
+	// 128-bits are the all the randomness we can make use of
+	secret := crypto.CRandBytes(16)
+	key := gen.Generate(secret)
 	err = s.es.Put(name, passphrase, key)
 	if err != nil {
 		return keys.Info{}, "", err
 	}
-	seed, err := s.codec.BytesToWords(key.Bytes())
+
+	// we append the type byte to the serialized secret to help with recovery
+	// ie [secret] = [secret] + [type]
+	typ := key.Bytes()[0]
+	secret = append(secret, typ)
+
+	seed, err := s.codec.BytesToWords(secret)
 	phrase := strings.Join(seed, " ")
 	return info(name, key), phrase, err
 }
 
+// Recover takes a seed phrase and tries to recover the private key.
+//
+// If the seed phrase is valid, it will create the private key and store
+// it under name, protected by passphrase.
+//
+// Result similar to New(), except it doesn't return the seed again...
 func (s Manager) Recover(name, passphrase, seedphrase string) (keys.Info, error) {
 	words := strings.Split(strings.TrimSpace(seedphrase), " ")
-	data, err := s.codec.WordsToBytes(words)
+	secret, err := s.codec.WordsToBytes(words)
 	if err != nil {
 		return keys.Info{}, err
 	}
 
-	key, err := crypto.PrivKeyFromBytes(data)
+	// secret is comprised of the actual secret with the type appended
+	// ie [secret] = [secret] + [type]
+	l := len(secret)
+	secret, typ := secret[:l-1], secret[l-1]
+
+	gen, err := getGeneratorByType(typ)
 	if err != nil {
 		return keys.Info{}, err
 	}
+	key := gen.Generate(secret)
 
 	// d00d, it worked!  create the bugger....
 	err = s.es.Put(name, passphrase, key)
