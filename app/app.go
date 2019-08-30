@@ -5,17 +5,17 @@ import (
 	"strings"
 
 	wrsp "github.com/tepleton/wrsp/types"
-	sm "github.com/tepleton/basecoin/state"
-	"github.com/tepleton/basecoin/types"
 	. "github.com/tepleton/go-common"
 	"github.com/tepleton/go-wire"
 	eyes "github.com/tepleton/merkleeyes/client"
+
+	sm "github.com/tepleton/basecoin/state"
+	"github.com/tepleton/basecoin/types"
+	"github.com/tepleton/basecoin/version"
 )
 
 const (
-	version   = "0.1"
-	maxTxSize = 10240
-
+	maxTxSize      = 10240
 	PluginNameBase = "base"
 )
 
@@ -44,7 +44,7 @@ func (app *Basecoin) GetState() *sm.State {
 
 // WRSP::Info
 func (app *Basecoin) Info() wrsp.ResponseInfo {
-	return wrsp.ResponseInfo{Data: Fmt("Basecoin v%v", version)}
+	return wrsp.ResponseInfo{Data: Fmt("Basecoin v%v", version.Version)}
 }
 
 func (app *Basecoin) RegisterPlugin(plugin types.Plugin) {

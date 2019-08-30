@@ -1,47 +1,21 @@
 package commands
 
 import (
-	"os"
-	"path"
+	"github.com/spf13/cobra"
 
-	"github.com/urfave/cli"
-
+	tmcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 	tmcfg "github.com/tepleton/tepleton/config/tepleton"
-	types "github.com/tepleton/tepleton/types"
 )
 
-var UnsafeResetAllCmd = cli.Command{
-	Name:      "unsafe_reset_all",
-	Usage:     "Reset all blockchain data",
-	ArgsUsage: "",
-	Action: func(c *cli.Context) error {
-		return cmdUnsafeResetAll(c)
-	},
+var UnsafeResetAllCmd = &cobra.Command{
+	Use:   "unsafe_reset_all",
+	Short: "Reset all blockchain data",
+	RunE:  unsafeResetAllCmd,
 }
 
-func cmdUnsafeResetAll(c *cli.Context) error {
+func unsafeResetAllCmd(cmd *cobra.Command, args []string) error {
 	basecoinDir := BasecoinRoot("")
-	tmDir := path.Join(basecoinDir)
-	tmConfig := tmcfg.GetConfig(tmDir)
-
-	// Get and Reset PrivValidator
-	var privValidator *types.PrivValidator
-	privValidatorFile := tmConfig.GetString("priv_validator_file")
-	if _, err := os.Stat(privValidatorFile); err == nil {
-		privValidator = types.LoadPrivValidator(privValidatorFile)
-		privValidator.Reset()
-		log.Notice("Reset PrivValidator", "file", privValidatorFile)
-	} else {
-		privValidator = types.GenPrivValidator()
-		privValidator.SetFile(privValidatorFile)
-		privValidator.Save()
-		log.Notice("Generated PrivValidator", "file", privValidatorFile)
-	}
-
-	// Remove all tepleton data
-	tmDataDir := tmConfig.GetString("db_dir")
-	os.RemoveAll(tmDataDir)
-	log.Notice("Removed all data", "dir", tmDataDir)
-
+	tmConfig := tmcfg.GetConfig(basecoinDir)
+	tmcmd.ResetAll(tmConfig, log)
 	return nil
 }

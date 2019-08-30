@@ -8,6 +8,8 @@ import:
   version: develop
 - package: github.com/tepleton/go-logger
   version: develop
+- package: github.com/tepleton/go-data
+  version: develop
 - package: github.com/tepleton/go-rpc
   version: develop
 - package: github.com/tepleton/go-wire
