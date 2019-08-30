@@ -8,11 +8,10 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/tepleton/basecoin/types"
-	crypto "github.com/tepleton/go-crypto"
 
-	client "github.com/tepleton/go-rpc/client"
+	client "github.com/tepleton/tepleton/rpc/client"
 	wire "github.com/tepleton/go-wire"
-	ctypes "github.com/tepleton/tepleton/rpc/core/types"
+	ctypes "github.com/tepleton/tepleton/rpc/tepleton/core/types"
 )
 
 //commands
@@ -123,7 +122,7 @@ func sendTxCmd(cmd *cobra.Command, args []string) error {
 
 	// sign that puppy
 	signBytes := tx.SignBytes(chainIDFlag)
-	tx.Inputs[0].Signature = crypto.WrapSignature(privKey.Sign(signBytes))
+	tx.Inputs[0].Signature = privKey.Sign(signBytes)
 
 	fmt.Println("Signed SendTx:")
 	fmt.Println(string(wire.JSONBytes(tx)))
@@ -179,7 +178,7 @@ func AppTx(name string, data []byte) error {
 		Data:  data,
 	}
 
-	tx.Input.Signature = crypto.WrapSignature(privKey.Sign(tx.SignBytes(chainIDFlag)))
+	tx.Input.Signature = privKey.Sign(tx.SignBytes(chainIDFlag))
 
 	fmt.Println("Signed AppTx:")
 	fmt.Println(string(wire.JSONBytes(tx)))

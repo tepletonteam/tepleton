@@ -4,7 +4,7 @@ import (
 	"container/list"
 	"fmt"
 
-	. "github.com/tepleton/go-common"
+	. "github.com/tepleton/tmlibs/common"
 )
 
 type KVStore interface {

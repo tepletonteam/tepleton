@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"github.com/tepleton/go-logger"
+	"github.com/tepleton/tmlibs/logger"
 )
 
 var log = logger.New("module", "commands")

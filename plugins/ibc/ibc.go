@@ -8,8 +8,8 @@ import (
 
 	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/basecoin/types"
-	cmn "github.com/tepleton/go-common"
-	merkle "github.com/tepleton/go-merkle"
+	cmn "github.com/tepleton/tmlibs/common"
+	merkle "github.com/tepleton/merkleeyes/iavl"
 	"github.com/tepleton/go-wire"
 	tm "github.com/tepleton/tepleton/types"
 )

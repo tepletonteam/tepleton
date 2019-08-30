@@ -10,8 +10,8 @@ import (
 
 	"github.com/tepleton/basecoin/plugins/ibc"
 
-	"github.com/tepleton/go-merkle"
 	"github.com/tepleton/go-wire"
+	"github.com/tepleton/merkleeyes/iavl"
 	tmtypes "github.com/tepleton/tepleton/types"
 )
 
@@ -229,7 +229,7 @@ func ibcPacketPostTxCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	var packet ibc.Packet
-	proof := new(merkle.IAVLProof)
+	proof := new(iavl.IAVLProof)
 
 	err = wire.ReadBinaryBytes(packetBytes, &packet)
 	if err != nil {

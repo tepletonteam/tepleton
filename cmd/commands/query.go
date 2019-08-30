@@ -8,8 +8,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"github.com/tepleton/go-merkle"
 	"github.com/tepleton/go-wire"
+	"github.com/tepleton/merkleeyes/iavl"
 	tmtypes "github.com/tepleton/tepleton/types"
 )
 
@@ -202,7 +202,7 @@ func verifyCmd(cmd *cobra.Command, args []string) error {
 		return errors.Errorf("Proof (%v) is invalid hex: %v\n", proofFlag, err)
 	}
 
-	proof, err := merkle.ReadProof(proofBytes)
+	proof, err := iavl.ReadProof(proofBytes)
 	if err != nil {
 		return errors.Errorf("Error unmarshalling proof: %v\n", err)
 	}

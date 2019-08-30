@@ -9,7 +9,6 @@ import (
 	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/basecoin/app"
 	"github.com/tepleton/basecoin/types"
-	crypto "github.com/tepleton/go-crypto"
 	"github.com/tepleton/go-wire"
 	eyescli "github.com/tepleton/merkleeyes/client"
 )
@@ -52,8 +51,7 @@ func TestCounterPlugin(t *testing.T) {
 		// Sign request
 		signBytes := tx.SignBytes(chainID)
 		// t.Logf("Sign bytes: %X\n", signBytes)
-		sig := test1PrivAcc.Sign(signBytes)
-		tx.Input.Signature = crypto.WrapSignature(sig)
+		tx.Input.Signature = test1PrivAcc.Sign(signBytes)
 		// t.Logf("Signed TX bytes: %X\n", wire.BinaryBytes(struct{ types.Tx }{tx}))
 
 		// Write request

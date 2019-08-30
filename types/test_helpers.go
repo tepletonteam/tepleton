@@ -3,15 +3,15 @@ package types
 // Helper functions for testing
 
 import (
-	cmn "github.com/tepleton/go-common"
 	"github.com/tepleton/go-crypto"
+	cmn "github.com/tepleton/tmlibs/common"
 )
 
 // Creates a PrivAccount from secret.
 // The amount is not set.
 func PrivAccountFromSecret(secret string) PrivAccount {
-	privKey := crypto.WrapPrivKey(
-		crypto.GenPrivKeyEd25519FromSecret([]byte(secret)))
+	privKey :=
+		crypto.GenPrivKeyEd25519FromSecret([]byte(secret)).Wrap()
 	privAccount := PrivAccount{
 		PrivKey: privKey,
 		Account: Account{
@@ -31,7 +31,7 @@ func RandAccounts(num int, minAmount int64, maxAmount int64) []PrivAccount {
 			balance += cmn.RandInt64() % (maxAmount - minAmount)
 		}
 
-		privKey := crypto.WrapPrivKey(crypto.GenPrivKeyEd25519())
+		privKey := crypto.GenPrivKeyEd25519().Wrap()
 		pubKey := privKey.PubKey()
 		privAccs[i] = PrivAccount{
 			PrivKey: privKey,
@@ -100,6 +100,6 @@ func GetTx(seq int, accOut PrivAccount, accsIn ...PrivAccount) *SendTx {
 func SignTx(chainID string, tx *SendTx, accs ...PrivAccount) {
 	signBytes := tx.SignBytes(chainID)
 	for i, _ := range tx.Inputs {
-		tx.Inputs[i].Signature = crypto.SignatureS{accs[i].Sign(signBytes)}
+		tx.Inputs[i].Signature = accs[i].Sign(signBytes)
 	}
 }

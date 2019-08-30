@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	cmn "github.com/tepleton/go-common"
+	cmn "github.com/tepleton/tmlibs/common"
 	"github.com/tepleton/go-crypto"
 	eyescli "github.com/tepleton/merkleeyes/client"
 )
@@ -52,7 +52,7 @@ func TestParseGenesisList(t *testing.T) {
 	bytes, err := cmn.ReadFile(genesisFilepath)
 	require.Nil(err, "loading genesis file %+v", err)
 
-	// the basecoin genesis go-data :)
+	// the basecoin genesis go-wire/data :)
 	genDoc := new(FullGenesisDoc)
 	err = json.Unmarshal(bytes, genDoc)
 	require.Nil(err, "unmarshaling genesis file %+v", err)

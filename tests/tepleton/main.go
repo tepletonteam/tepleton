@@ -6,12 +6,11 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/tepleton/basecoin/types"
-	cmn "github.com/tepleton/go-common"
-	crypto "github.com/tepleton/go-crypto"
-	rpcclient "github.com/tepleton/go-rpc/client"
-	"github.com/tepleton/go-rpc/types"
+	cmn "github.com/tepleton/tmlibs/common"
+	"github.com/tepleton/tepleton/rpc/client"
+	"github.com/tepleton/tepleton/rpc/types"
 	wire "github.com/tepleton/go-wire"
-	_ "github.com/tepleton/tepleton/rpc/core/types" // Register RPCResponse > Result types
+	_ "github.com/tepleton/tepleton/rpc/tepleton/core/types" // Register RPCResponse > Result types
 )
 
 func main() {
@@ -67,7 +66,7 @@ func main() {
 		// Sign request
 		signBytes := tx.SignBytes(chainID)
 		sig := root.Sign(signBytes)
-		tx.Inputs[0].Signature = crypto.WrapSignature(sig)
+		tx.Inputs[0].Signature = sig
 		//fmt.Println("tx:", tx)
 
 		// Write request
@@ -118,7 +117,7 @@ func main() {
 		// Sign request
 		signBytes := tx.SignBytes(chainID)
 		sig := privAccountA.Sign(signBytes)
-		tx.Inputs[0].Signature = crypto.WrapSignature(sig)
+		tx.Inputs[0].Signature = sig
 		//fmt.Println("tx:", tx)
 
 		// Write request

@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	cmn "github.com/tepleton/go-common"
-	"github.com/tepleton/go-rpc/client"
-	"github.com/tepleton/go-rpc/types"
+	cmn "github.com/tepleton/tmlibs/common"
+	"github.com/tepleton/tepleton/rpc/client"
+	"github.com/tepleton/tepleton/rpc/types"
 	"github.com/tepleton/go-wire"
-	_ "github.com/tepleton/tepleton/rpc/core/types" // Register RPCResponse > Result types
+	_ "github.com/tepleton/tepleton/rpc/tepleton/core/types" // Register RPCResponse > Result types
 )
 
 func main() {

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	wrsp "github.com/tepleton/wrsp/types"
-	. "github.com/tepleton/go-common"
+	. "github.com/tepleton/tmlibs/common"
 	"github.com/tepleton/go-wire"
 	eyes "github.com/tepleton/merkleeyes/client"
 

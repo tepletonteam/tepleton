@@ -9,12 +9,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/basecoin/types"
-	cmn "github.com/tepleton/go-common"
 	crypto "github.com/tepleton/go-crypto"
-	"github.com/tepleton/go-merkle"
 	"github.com/tepleton/go-wire"
 	eyes "github.com/tepleton/merkleeyes/client"
+	"github.com/tepleton/merkleeyes/iavl"
 	tm "github.com/tepleton/tepleton/types"
+	cmn "github.com/tepleton/tmlibs/common"
 )
 
 // NOTE: PrivAccounts are sorted by Address,
@@ -192,7 +192,7 @@ func TestIBCPlugin(t *testing.T) {
 		Prove: true,
 	})
 	assert.Nil(err)
-	var proof *merkle.IAVLProof
+	var proof *iavl.IAVLProof
 	err = wire.ReadBinaryBytes(resQuery.Proof, &proof)
 	assert.Nil(err)
 
@@ -270,7 +270,7 @@ func TestIBCPluginBadCommit(t *testing.T) {
 	// Modify the first byte of the first signature
 	sig := commit.Precommits[0].Signature.Unwrap().(crypto.SignatureEd25519)
 	sig[0] += 1
-	commit.Precommits[0].Signature = crypto.WrapSignature(sig)
+	commit.Precommits[0].Signature = sig.Wrap()
 	res = ibcPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ IBCTx }{IBCUpdateChainTx{
 		Header: header,
 		Commit: commit,
@@ -379,7 +379,7 @@ func TestIBCPluginBadProof(t *testing.T) {
 		Prove: true,
 	})
 	assert.Nil(err)
-	var proof *merkle.IAVLProof
+	var proof *iavl.IAVLProof
 	err = wire.ReadBinaryBytes(resQuery.Proof, &proof)
 	assert.Nil(err)
 

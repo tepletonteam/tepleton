@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/tepleton/wrsp/server"
-	cmn "github.com/tepleton/go-common"
+	cmn "github.com/tepleton/tmlibs/common"
 	eyes "github.com/tepleton/merkleeyes/client"
 
 	tmcfg "github.com/tepleton/tepleton/config/tepleton"

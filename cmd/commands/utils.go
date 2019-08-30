@@ -14,10 +14,10 @@ import (
 	"github.com/tepleton/basecoin/types"
 
 	wrsp "github.com/tepleton/wrsp/types"
-	cmn "github.com/tepleton/go-common"
-	client "github.com/tepleton/go-rpc/client"
+	cmn "github.com/tepleton/tmlibs/common"
+	client "github.com/tepleton/tepleton/rpc/client"
 	wire "github.com/tepleton/go-wire"
-	ctypes "github.com/tepleton/tepleton/rpc/core/types"
+	ctypes "github.com/tepleton/tepleton/rpc/tepleton/core/types"
 	tmtypes "github.com/tepleton/tepleton/types"
 )
 

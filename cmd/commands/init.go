@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	cmn "github.com/tepleton/go-common"
+	cmn "github.com/tepleton/tmlibs/common"
 )
 
 //commands
