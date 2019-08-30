@@ -11,25 +11,38 @@ import:
   - types
 - package: github.com/tepleton/go-crypto
   version: develop
+  subpackages:
+  - keys/cmd
+  - keys/cryptostore
+  - keys/server
+  - keys/storage/filestorage
+  - keys/storage/memstorage
 - package: github.com/tepleton/go-wire
   version: develop
   subpackages:
   - data
+- package: github.com/tepleton/light-client
+  version: develop
+  subpackages:
+  - commands
+  - commands/proofs
+  - commands/seeds
+  - commands/tx
 - package: github.com/tepleton/merkleeyes
   version: develop
   subpackages:
   - client
   - iavl
 - package: github.com/tepleton/tepleton
-  version: unstable
+  version: develop
   subpackages:
   - cmd/tepleton/commands
   - config/tepleton
   - node
   - proxy
-  - rpc/client
   - rpc/core/types
-  - rpc/types
+  - rpc/lib/client
+  - rpc/lib/types
   - types
 - package: github.com/tepleton/tmlibs
   version: develop

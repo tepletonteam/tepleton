@@ -15,9 +15,9 @@ import (
 
 	wrsp "github.com/tepleton/wrsp/types"
 	cmn "github.com/tepleton/tmlibs/common"
-	client "github.com/tepleton/tepleton/rpc/client"
+	client "github.com/tepleton/tepleton/rpc/lib/client"
 	wire "github.com/tepleton/go-wire"
-	ctypes "github.com/tepleton/tepleton/rpc/tepleton/core/types"
+	ctypes "github.com/tepleton/tepleton/rpc/core/types"
 	tmtypes "github.com/tepleton/tepleton/types"
 )
 
