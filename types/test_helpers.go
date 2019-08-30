@@ -10,11 +10,12 @@ import (
 // Creates a PrivAccount from secret.
 // The amount is not set.
 func PrivAccountFromSecret(secret string) PrivAccount {
-	privKey := crypto.GenPrivKeyEd25519FromSecret([]byte(secret))
+	privKey := crypto.WrapPrivKey(
+		crypto.GenPrivKeyEd25519FromSecret([]byte(secret)))
 	privAccount := PrivAccount{
-		PrivKeyS: crypto.PrivKeyS{privKey},
+		PrivKey: privKey,
 		Account: Account{
-			PubKey: crypto.PubKeyS{privKey.PubKey()},
+			PubKey: privKey.PubKey(),
 		},
 	}
 	return privAccount
@@ -30,10 +31,10 @@ func RandAccounts(num int, minAmount int64, maxAmount int64) []PrivAccount {
 			balance += cmn.RandInt64() % (maxAmount - minAmount)
 		}
 
-		privKey := crypto.GenPrivKeyEd25519()
-		pubKey := crypto.PubKeyS{privKey.PubKey()}
+		privKey := crypto.WrapPrivKey(crypto.GenPrivKeyEd25519())
+		pubKey := privKey.PubKey()
 		privAccs[i] = PrivAccount{
-			PrivKeyS: crypto.PrivKeyS{privKey},
+			PrivKey: privKey,
 			Account: Account{
 				PubKey:  pubKey,
 				Balance: Coins{Coin{"", balance}},
