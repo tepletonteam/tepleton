@@ -15,13 +15,8 @@
 package cmd
 
 import (
-	"path/filepath"
-
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	keys "github.com/tepleton/go-keys"
-	"github.com/tepleton/go-keys/cryptostore"
-	"github.com/tepleton/go-keys/storage/filestorage"
+	keys "github.com/tepleton/go-crypto/keys"
 )
 
 const KeySubdir = "keys"
@@ -41,17 +36,15 @@ used by light-clients, full nodes, or any other application that
 needs to sign with a private key.`,
 }
 
-// GetKeyManager initializes a key manager based on the configuration
-func GetKeyManager() keys.Manager {
-	if manager == nil {
-		// store the keys directory
-		rootDir := viper.GetString("root")
-		keyDir := filepath.Join(rootDir, KeySubdir)
-		// and construct the key manager
-		manager = cryptostore.New(
-			cryptostore.SecretBox,
-			filestorage.New(keyDir),
-		)
-	}
-	return manager
+func init() {
+	RootCmd.AddCommand(getCmd)
+	RootCmd.AddCommand(listCmd)
+	RootCmd.AddCommand(newCmd)
+	RootCmd.AddCommand(updateCmd)
+	RootCmd.AddCommand(deleteCmd)
+	RootCmd.AddCommand(recoverCmd)
+}
+
+func RegisterServer() {
+	RootCmd.AddCommand(serveCmd)
 }

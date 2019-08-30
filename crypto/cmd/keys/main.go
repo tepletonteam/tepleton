@@ -17,11 +17,14 @@ package main
 import (
 	"os"
 
-	"github.com/tepleton/go-keys/cmd"
+	"github.com/tepleton/go-crypto/cmd"
+	"github.com/tepleton/tmlibs/cli"
 )
 
 func main() {
-	cmd.PrepareMainCmd(cmd.RootCmd, "TM", os.ExpandEnv("$HOME/.tlc"))
-	cmd.RootCmd.Execute()
-	// exec()
+	// for demos, we enable the key server, probably don't want this
+	// in most binaries we embed the key management into
+	cmd.RegisterServer()
+	root := cli.PrepareMainCmd(cmd.RootCmd, "TM", os.ExpandEnv("$HOME/.tlc"))
+	root.Execute()
 }

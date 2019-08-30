@@ -14,11 +14,7 @@
 
 package cmd
 
-import (
-	"fmt"
-
-	"github.com/spf13/cobra"
-)
+import "github.com/spf13/cobra"
 
 // listCmd represents the list command
 var listCmd = &cobra.Command{
@@ -26,17 +22,13 @@ var listCmd = &cobra.Command{
 	Short: "List all keys",
 	Long: `Return a list of all public keys stored by this key manager
 along with their associated name and address.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		infos, err := GetKeyManager().List()
-		if err != nil {
-			fmt.Println(err.Error())
-			return
-		}
-
-		printInfos(infos)
-	},
+	RunE: runListCmd,
 }
 
-func init() {
-	RootCmd.AddCommand(listCmd)
+func runListCmd(cmd *cobra.Command, args []string) error {
+	infos, err := GetKeyManager().List()
+	if err == nil {
+		printInfos(infos)
+	}
+	return err
 }

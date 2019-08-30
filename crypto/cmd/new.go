@@ -17,44 +17,78 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
+	"github.com/tepleton/go-crypto/keys"
+	"github.com/tepleton/go-wire/data"
+	"github.com/tepleton/tmlibs/cli"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
+const (
+	flagType     = "type"
+	flagNoBackup = "no-backup"
+)
+
 // newCmd represents the new command
 var newCmd = &cobra.Command{
-	Use:   "new <name>",
+	Use:   "new [name]",
 	Short: "Create a new public/private key pair",
 	Long: `Add a public/private key pair to the key store.
 The password muts be entered in the terminal and not
 passed as a command line argument for security.`,
-	Run: newPassword,
+	RunE: runNewCmd,
 }
 
 func init() {
-	RootCmd.AddCommand(newCmd)
-	newCmd.Flags().StringP("type", "t", "ed25519", "Type of key (ed25519|secp256k1)")
+	newCmd.Flags().StringP(flagType, "t", "ed25519", "Type of key (ed25519|secp256k1)")
+	newCmd.Flags().Bool(flagNoBackup, false, "Don't print out seed phrase (if others are watching the terminal)")
 }
 
-func newPassword(cmd *cobra.Command, args []string) {
+func runNewCmd(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 || len(args[0]) == 0 {
-		fmt.Println("You must provide a name for the key")
-		return
+		return errors.New("You must provide a name for the key")
 	}
 	name := args[0]
-	algo := viper.GetString("type")
+	algo := viper.GetString(flagType)
 
 	pass, err := getCheckPassword("Enter a passphrase:", "Repeat the passphrase:")
 	if err != nil {
-		fmt.Println(err.Error())
-		return
+		return err
 	}
 
-	info, err := GetKeyManager().Create(name, pass, algo)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
+	info, seed, err := GetKeyManager().Create(name, pass, algo)
+	if err == nil {
+		printCreate(info, seed)
 	}
+	return err
+}
 
-	printInfo(info)
+type NewOutput struct {
+	Key  keys.Info `json:"key"`
+	Seed string    `json:"seed"`
+}
+
+func printCreate(info keys.Info, seed string) {
+	switch viper.Get(cli.OutputFlag) {
+	case "text":
+		printInfo(info)
+		// print seed unless requested not to.
+		if !viper.GetBool(flagNoBackup) {
+			fmt.Println("**Important** write this seed phrase in a safe place.")
+			fmt.Println("It is the only way to recover your account if you ever forget your password.\n")
+			fmt.Println(seed)
+		}
+	case "json":
+		out := NewOutput{Key: info}
+		if !viper.GetBool(flagNoBackup) {
+			out.Seed = seed
+		}
+		json, err := data.ToJSON(out)
+		if err != nil {
+			panic(err) // really shouldn't happen...
+		}
+		fmt.Println(string(json))
+	}
 }

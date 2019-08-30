@@ -1,19 +1,41 @@
-package: github.com/tepleton/go-keys
+package: github.com/tepleton/go-crypto
 import:
+- package: github.com/btcsuite/btcd
+  subpackages:
+  - btcec
+- package: github.com/btcsuite/btcutil
+  subpackages:
+  - base58
+- package: github.com/tepleton/ed25519
+  subpackages:
+  - extra25519
+- package: github.com/tepleton/tmlibs
+  version: develop
+- package: github.com/tepleton/go-wire
+  version: develop
+  subpackages:
+  - data
+  - data/base58
+- package: golang.org/x/crypto
+  subpackages:
+  - blowfish
+  - nacl/secretbox
+  - openpgp/armor
+  - ripemd160
 - package: github.com/bgentry/speakeasy
 - package: github.com/gorilla/handlers
 - package: github.com/gorilla/mux
 - package: github.com/pkg/errors
 - package: github.com/spf13/cobra
 - package: github.com/spf13/viper
-- package: github.com/tepleton/go-crypto
-  version: develop
-- package: github.com/tepleton/go-data
-  subpackages:
-  - base58
 - package: gopkg.in/go-playground/validator.v9
+- package: github.com/howeyc/crc16
 testImport:
+- package: github.com/mndrix/btcutil
 - package: github.com/stretchr/testify
+  version: ^1.1.4
   subpackages:
   - assert
   - require
+- package: github.com/tyler-smith/go-bip32
+- package: github.com/tyler-smith/go-bip39
