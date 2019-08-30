@@ -5,9 +5,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	crypto "github.com/tepleton/go-crypto"
 	cmn "github.com/tepleton/tmlibs/common"
 
+	crypto "github.com/tepleton/go-crypto"
 	keys "github.com/tepleton/go-crypto/keys"
 )
 
