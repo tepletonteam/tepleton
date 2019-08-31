@@ -173,10 +173,10 @@ func TestSignWithLedger(t *testing.T) {
 	p := "hard2hack"
 
 	// create a nano user
-	c, _, err := cstore.Create(n, p, nano.NameLedger)
+	c, _, err := cstore.Create(n, p, nano.NameLedgerEd25519)
 	require.Nil(err, "%+v", err)
 	assert.Equal(c.Name, n)
-	_, ok := c.PubKey.Unwrap().(nano.PubKeyLedger)
+	_, ok := c.PubKey.Unwrap().(nano.PubKeyLedgerEd25519)
 	require.True(ok)
 
 	// make sure we can get it back
@@ -185,6 +185,7 @@ func TestSignWithLedger(t *testing.T) {
 	assert.Equal(info.Name, n)
 	key := info.PubKey
 	require.False(key.Empty())
+	require.True(key.Equals(c.PubKey))
 
 	// let's try to sign some messages
 	d1 := []byte("welcome to tepleton")
@@ -223,13 +224,15 @@ func TestImportUnencrypted(t *testing.T) {
 		keys.MustLoadCodec("english"),
 	)
 
-	key := cryptostore.GenEd25519.Generate(cmn.RandBytes(16))
+	key, err := cryptostore.GenEd25519.Generate(cmn.RandBytes(16))
+	require.NoError(err)
+
 	addr := key.PubKey().Address()
 	name := "john"
 	pass := "top-secret"
 
 	// import raw bytes
-	err := cstore.Import(name, pass, "", nil, key.Bytes())
+	err = cstore.Import(name, pass, "", nil, key.Bytes())
 	require.Nil(err, "%+v", err)
 
 	// make sure the address matches
@@ -317,7 +320,7 @@ func TestSeedPhrase(t *testing.T) {
 	assert.Equal(info.PubKey, newInfo.PubKey)
 }
 
-func ExampleStore() {
+func ExampleNew() {
 	// Select the encryption and storage for your cryptostore
 	cstore := cryptostore.New(
 		cryptostore.SecretBox,

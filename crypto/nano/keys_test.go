@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	crypto "github.com/tepleton/go-crypto"
 )
 
@@ -82,7 +83,7 @@ func TestRealLedger(t *testing.T) {
 	}
 	msg := []byte("kuhehfeohg")
 
-	priv, err := NewPrivKeyLedger()
+	priv, err := NewPrivKeyLedgerEd25519Ed25519()
 	require.Nil(err, "%+v", err)
 	pub := priv.PubKey()
 	sig := priv.Sign(msg)
@@ -104,4 +105,38 @@ func TestRealLedger(t *testing.T) {
 	valid = pub.VerifyBytes(msg, sig)
 	assert.True(valid)
 
+	// make sure pubkeys serialize properly as well
+	bs = pub.Bytes()
+	bpub, err := crypto.PubKeyFromBytes(bs)
+	require.NoError(err)
+	assert.Equal(pub, bpub)
+}
+
+// TestRealLedgerErrorHandling calls. These tests assume
+// the ledger is not plugged in....
+func TestRealLedgerErrorHandling(t *testing.T) {
+	require := require.New(t)
+
+	if os.Getenv("WITH_LEDGER") != "" {
+		t.Skip("Skipping on WITH_LEDGER as it tests unplugged cases")
+	}
+
+	// first, try to generate a key, must return an error
+	// (no panic)
+	_, err := NewPrivKeyLedgerEd25519Ed25519()
+	require.Error(err)
+
+	led := PrivKeyLedgerEd25519{} // empty
+	// or with some pub key
+	ed := crypto.GenPrivKeyEd25519()
+	led2 := PrivKeyLedgerEd25519{CachedPubKey: ed.PubKey()}
+
+	// loading these should return errors
+	bs := led.Bytes()
+	_, err = crypto.PrivKeyFromBytes(bs)
+	require.Error(err)
+
+	bs = led2.Bytes()
+	_, err = crypto.PrivKeyFromBytes(bs)
+	require.Error(err)
 }

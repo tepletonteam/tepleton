@@ -7,6 +7,20 @@ import (
 	"github.com/tepleton/go-crypto/bcrypt"
 )
 
+const (
+	// BcryptCost is as parameter to increase the resistance of the
+	// encoded keys to brute force password guessing
+	//
+	// Jae: 14 is good today (2016)
+	//
+	// Ethan: loading the key (at each signing) takes a second on my desktop,
+	// this is hard for laptops and deadly for mobile. You can raise it again,
+	// but for now, I will make this usable
+	//
+	// TODO: review value
+	BCryptCost = 12
+)
+
 var (
 	// SecretBox uses the algorithm from NaCL to store secrets securely
 	SecretBox Encoder = secretbox{}
@@ -30,7 +44,7 @@ func (e secretbox) Encrypt(privKey crypto.PrivKey, passphrase string) (saltBytes
 	}
 
 	saltBytes = crypto.CRandBytes(16)
-	key, err := bcrypt.GenerateFromPassword(saltBytes, []byte(passphrase), 14) // TODO parameterize.  14 is good today (2016)
+	key, err := bcrypt.GenerateFromPassword(saltBytes, []byte(passphrase), BCryptCost)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "Couldn't generate bcrypt key from passphrase.")
 	}
@@ -43,7 +57,8 @@ func (e secretbox) Decrypt(saltBytes []byte, encBytes []byte, passphrase string)
 	privKeyBytes := encBytes
 	// NOTE: Some keys weren't encrypted with a passphrase and hence we have the conditional
 	if passphrase != "" {
-		key, err := bcrypt.GenerateFromPassword(saltBytes, []byte(passphrase), 14) // TODO parameterize.  14 is good today (2016)
+		var key []byte
+		key, err = bcrypt.GenerateFromPassword(saltBytes, []byte(passphrase), BCryptCost)
 		if err != nil {
 			return crypto.PrivKey{}, errors.Wrap(err, "Invalid Passphrase")
 		}
@@ -55,7 +70,7 @@ func (e secretbox) Decrypt(saltBytes []byte, encBytes []byte, passphrase string)
 	}
 	privKey, err = crypto.PrivKeyFromBytes(privKeyBytes)
 	if err != nil {
-		return crypto.PrivKey{}, errors.Wrap(err, "Couldn't get privKey from bytes")
+		return crypto.PrivKey{}, errors.Wrap(err, "Private Key")
 	}
 	return privKey, nil
 }
