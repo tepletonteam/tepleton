@@ -1,10 +1,13 @@
 package commands
 
 import (
-	"github.com/spf13/cobra"
+	"os"
 
-	tmcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
-	tmcfg "github.com/tepleton/tepleton/config/tepleton"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+
+	"github.com/tepleton/tepleton/config"
+	"github.com/tepleton/tmlibs/cli"
 )
 
 var UnsafeResetAllCmd = &cobra.Command{
@@ -14,8 +17,9 @@ var UnsafeResetAllCmd = &cobra.Command{
 }
 
 func unsafeResetAllCmd(cmd *cobra.Command, args []string) error {
-	basecoinDir := BasecoinRoot("")
-	tmConfig := tmcfg.GetConfig(basecoinDir)
-	tmcmd.ResetAll(tmConfig, log)
+	rootDir := viper.GetString(cli.HomeFlag)
+	// wipe out rootdir if it exists before recreating it
+	os.RemoveAll(rootDir)
+	config.EnsureRoot(rootDir)
 	return nil
 }
