@@ -2,15 +2,17 @@ package ibc
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"net/url"
 	"strings"
 
 	wrsp "github.com/tepleton/wrsp/types"
-	"github.com/tepleton/basecoin/types"
-	cmn "github.com/tepleton/tmlibs/common"
-	merkle "github.com/tepleton/merkleeyes/iavl"
 	"github.com/tepleton/go-wire"
+	merkle "github.com/tepleton/merkleeyes/iavl"
+	cmn "github.com/tepleton/tmlibs/common"
+
+	"github.com/tepleton/basecoin/types"
 	tm "github.com/tepleton/tepleton/types"
 )
 
@@ -202,9 +204,8 @@ func (sm *IBCStateMachine) runRegisterChainTx(tx IBCRegisterChainTx) {
 	chainGen := tx.BlockchainGenesis
 
 	// Parse genesis
-	var chainGenDoc = &tm.GenesisDoc{}
-	var err error
-	wire.ReadJSONPtr(&chainGenDoc, []byte(chainGen.Genesis), &err)
+	chainGenDoc := new(tm.GenesisDoc)
+	err := json.Unmarshal([]byte(chainGen.Genesis), chainGenDoc)
 	if err != nil {
 		sm.res.Code = IBCCodeEncodingError
 		sm.res.Log = "Genesis doc couldn't be parsed: " + err.Error()

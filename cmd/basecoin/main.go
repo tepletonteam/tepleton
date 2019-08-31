@@ -7,6 +7,11 @@ import (
 
 	"github.com/tepleton/basecoin/cmd/commands"
 	"github.com/tepleton/tmlibs/cli"
+	"github.com/tepleton/tmlibs/log"
+)
+
+var (
+	logger = log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "main")
 )
 
 func main() {
@@ -29,5 +34,7 @@ func main() {
 	)
 
 	cmd := cli.PrepareMainCmd(RootCmd, "BC", os.ExpandEnv("$HOME/.basecoin"))
-	cmd.Execute()
+	if err := cmd.Execute(); err != nil {
+		os.Exit(1)
+	}
 }

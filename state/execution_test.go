@@ -7,6 +7,7 @@ import (
 
 	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/basecoin/types"
+	"github.com/tepleton/tmlibs/log"
 )
 
 //--------------------------------------------------------
@@ -42,7 +43,7 @@ func (et *execTest) exec(tx *types.SendTx, checkTx bool) (res wrsp.Result, inGot
 	initBalIn := et.state.GetAccount(et.accIn.Account.PubKey.Address()).Balance
 	initBalOut := et.state.GetAccount(et.accOut.Account.PubKey.Address()).Balance
 
-	res = ExecTx(et.state, nil, tx, checkTx, nil)
+	res = ExecTx(et.state, nil, tx, checkTx, nil, log.TestingLogger().With("module", "state"))
 
 	endBalIn := et.state.GetAccount(et.accIn.Account.PubKey.Address()).Balance
 	endBalOut := et.state.GetAccount(et.accOut.Account.PubKey.Address()).Balance

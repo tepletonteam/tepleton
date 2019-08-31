@@ -13,12 +13,12 @@ import (
 	eyes "github.com/tepleton/merkleeyes/client"
 	"github.com/tepleton/tmlibs/cli"
 	cmn "github.com/tepleton/tmlibs/common"
-	"github.com/tepleton/tmlibs/logger"
+	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/tepleton/config"
 	"github.com/tepleton/tepleton/node"
 	"github.com/tepleton/tepleton/proxy"
-	tmtypes "github.com/tepleton/tepleton/types"
+	"github.com/tepleton/tepleton/types"
 
 	"github.com/tepleton/basecoin/app"
 )
@@ -68,6 +68,7 @@ func startCmd(cmd *cobra.Command, args []string) error {
 
 	// Create Basecoin app
 	basecoinApp := app.NewBasecoin(eyesCli)
+	basecoinApp.SetLogger(logger.With("module", "app"))
 
 	// register IBC plugn
 	basecoinApp.RegisterPlugin(NewIBCPlugin())
@@ -94,11 +95,11 @@ func startCmd(cmd *cobra.Command, args []string) error {
 
 	chainID := basecoinApp.GetState().GetChainID()
 	if withoutTendermintFlag {
-		log.Notice("Starting Basecoin without Tendermint", "chain_id", chainID)
+		logger.Info("Starting Basecoin without Tendermint", "chain_id", chainID)
 		// run just the wrsp app/server
 		return startBasecoinWRSP(basecoinApp)
 	} else {
-		log.Notice("Starting Basecoin with Tendermint", "chain_id", chainID)
+		logger.Info("Starting Basecoin with Tendermint", "chain_id", chainID)
 		// start the app with tepleton in-process
 		return startTendermint(rootDir, basecoinApp)
 	}
@@ -110,6 +111,7 @@ func startBasecoinWRSP(basecoinApp *app.Basecoin) error {
 	if err != nil {
 		return errors.Errorf("Error creating listener: %v\n", err)
 	}
+	svr.SetLogger(logger.With("module", "wrsp-server"))
 
 	// Wait forever
 	cmn.TrapSignal(func() {
@@ -127,21 +129,22 @@ func startTendermint(dir string, basecoinApp *app.Basecoin) error {
 	}
 	cfg.SetRoot(cfg.RootDir)
 	config.EnsureRoot(cfg.RootDir)
-	logger.SetLogLevel(cfg.LogLevel)
+
+	tmLogger, err := log.NewFilterByLevel(logger, cfg.LogLevel)
+	if err != nil {
+		return err
+	}
 
 	// Create & start tepleton node
-	privValidator := tmtypes.LoadOrGenPrivValidator(cfg.PrivValidator)
-	n := node.NewNode(cfg, privValidator, proxy.NewLocalClientCreator(basecoinApp))
+	privValidator := types.LoadOrGenPrivValidator(cfg.PrivValidatorFile(), tmLogger)
+	n := node.NewNode(cfg, privValidator, proxy.NewLocalClientCreator(basecoinApp), tmLogger.With("module", "node"))
 
 	_, err = n.Start()
 	if err != nil {
 		return err
 	}
 
-	// Wait forever
-	cmn.TrapSignal(func() {
-		// Cleanup
-		n.Stop()
-	})
+	// Trap signal, run forever.
+	n.RunForever()
 	return nil
 }

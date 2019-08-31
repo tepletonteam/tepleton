@@ -7,8 +7,10 @@ import (
 	keycmd "github.com/tepleton/go-crypto/cmd"
 	"github.com/tepleton/light-client/commands"
 	"github.com/tepleton/light-client/commands/proofs"
+	"github.com/tepleton/light-client/commands/proxy"
 	"github.com/tepleton/light-client/commands/seeds"
 	"github.com/tepleton/light-client/commands/txs"
+	"github.com/tepleton/tmlibs/cli"
 )
 
 // BaseCli represents the base command when called without any subcommands
@@ -35,13 +37,10 @@ func init() {
 	BaseCli.AddCommand(proofs.RootCmd)
 	txs.Register("send", SendTxMaker{})
 	BaseCli.AddCommand(txs.RootCmd)
+	BaseCli.AddCommand(proxy.RootCmd)
 }
 
 func main() {
-	keycmd.PrepareMainCmd(BaseCli, "BC", os.ExpandEnv("$HOME/.basecli"))
-	BaseCli.Execute()
-	// err := BaseCli.Execute()
-	// if err != nil {
-	// 	fmt.Printf("%+v\n", err)
-	// }
+	cmd := cli.PrepareMainCmd(BaseCli, "BC", os.ExpandEnv("$HOME/.basecli"))
+	cmd.Execute()
 }
