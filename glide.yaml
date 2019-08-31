@@ -4,6 +4,7 @@ import:
 - package: github.com/pkg/errors
 - package: github.com/spf13/cobra
 - package: github.com/spf13/pflag
+- package: github.com/spf13/viper
 - package: github.com/tepleton/wrsp
   version: develop
   subpackages:
@@ -12,11 +13,8 @@ import:
 - package: github.com/tepleton/go-crypto
   version: develop
   subpackages:
-  - keys/cmd
-  - keys/cryptostore
-  - keys/server
-  - keys/storage/filestorage
-  - keys/storage/memstorage
+  - cmd
+  - keys
 - package: github.com/tepleton/go-wire
   version: develop
   subpackages:
@@ -27,7 +25,8 @@ import:
   - commands
   - commands/proofs
   - commands/seeds
-  - commands/tx
+  - commands/txs
+  - proofs
 - package: github.com/tepleton/merkleeyes
   version: develop
   subpackages:
@@ -36,10 +35,10 @@ import:
 - package: github.com/tepleton/tepleton
   version: develop
   subpackages:
-  - cmd/tepleton/commands
-  - config/tepleton
+  - config
   - node
   - proxy
+  - rpc/client
   - rpc/core/types
   - rpc/lib/client
   - rpc/lib/types
@@ -47,8 +46,10 @@ import:
 - package: github.com/tepleton/tmlibs
   version: develop
   subpackages:
+  - cli
   - common
   - events
+  - log
   - logger
 testImport:
 - package: github.com/stretchr/testify

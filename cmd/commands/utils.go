@@ -3,51 +3,20 @@ package commands
 import (
 	"encoding/hex"
 	"fmt"
-	"os"
-	"path"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	wrsp "github.com/tepleton/wrsp/types"
+	wire "github.com/tepleton/go-wire"
+
 	"github.com/tepleton/basecoin/state"
 	"github.com/tepleton/basecoin/types"
 
-	wrsp "github.com/tepleton/wrsp/types"
-	cmn "github.com/tepleton/tmlibs/common"
-	client "github.com/tepleton/tepleton/rpc/lib/client"
-	wire "github.com/tepleton/go-wire"
-	ctypes "github.com/tepleton/tepleton/rpc/core/types"
+	client "github.com/tepleton/tepleton/rpc/client"
 	tmtypes "github.com/tepleton/tepleton/types"
 )
-
-//This variable can be overwritten by plugin applications
-// if they require a different working directory
-var DefaultHome = ".basecoin"
-
-func BasecoinRoot(rootDir string) string {
-	if rootDir == "" {
-		rootDir = os.Getenv("BCHOME")
-	}
-	if rootDir == "" {
-		rootDir = path.Join(os.Getenv("HOME"), DefaultHome)
-	}
-	return rootDir
-}
-
-//Add debugging flag and execute the root command
-func ExecuteWithDebug(RootCmd *cobra.Command) {
-
-	var debug bool
-	RootCmd.SilenceUsage = true
-	RootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enables stack trace error messages")
-
-	//note that Execute() prints the error if encountered, so no need to reprint the error,
-	//  only if we want the full stack trace
-	if err := RootCmd.Execute(); err != nil && debug {
-		cmn.Exit(fmt.Sprintf("%+v\n", err))
-	}
-}
 
 //Quickly registering flags can be quickly achieved through using the utility functions
 //RegisterFlags, and RegisterPersistentFlags. Ex:
@@ -130,24 +99,16 @@ func StripHex(s string) string {
 	return s
 }
 
-func Query(tmAddr string, key []byte) (*wrsp.ResponseQuery, error) {
-	uriClient := client.NewURIClient(tmAddr)
-	tmResult := new(ctypes.TMResult)
-
-	params := map[string]interface{}{
-		"path":  "/key",
-		"data":  key,
-		"prove": true,
-	}
-	_, err := uriClient.Call("wrsp_query", params, tmResult)
+func Query(tmAddr string, key []byte) (*wrsp.ResultQuery, error) {
+	httpClient := client.NewHTTP(tmAddr, "/websocket")
+	res, err := httpClient.WRSPQuery("/key", key, true)
 	if err != nil {
 		return nil, errors.Errorf("Error calling /wrsp_query: %v", err)
 	}
-	res := (*tmResult).(*ctypes.ResultWRSPQuery)
-	if !res.Response.Code.IsOK() {
-		return nil, errors.Errorf("Query got non-zero exit code: %v. %s", res.Response.Code, res.Response.Log)
+	if !res.Code.IsOK() {
+		return nil, errors.Errorf("Query got non-zero exit code: %v. %s", res.Code, res.Log)
 	}
-	return &res.Response, nil
+	return res.ResultQuery, nil
 }
 
 // fetch the account by querying the app
@@ -176,17 +137,13 @@ func getAcc(tmAddr string, address []byte) (*types.Account, error) {
 }
 
 func getHeaderAndCommit(tmAddr string, height int) (*tmtypes.Header, *tmtypes.Commit, error) {
-	tmResult := new(ctypes.TMResult)
-	uriClient := client.NewURIClient(tmAddr)
-
-	method := "commit"
-	_, err := uriClient.Call(method, map[string]interface{}{"height": height}, tmResult)
+	httpClient := client.NewHTTP(tmAddr, "/websocket")
+	res, err := httpClient.Commit(height)
 	if err != nil {
-		return nil, nil, errors.Errorf("Error on %s: %v", method, err)
+		return nil, nil, errors.Errorf("Error on commit: %v", err)
 	}
-	resCommit := (*tmResult).(*ctypes.ResultCommit)
-	header := resCommit.Header
-	commit := resCommit.Commit
+	header := res.Header
+	commit := res.Commit
 
 	return header, commit, nil
 }

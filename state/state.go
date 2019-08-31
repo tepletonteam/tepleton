@@ -3,9 +3,10 @@ package state
 import (
 	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/basecoin/types"
-	. "github.com/tepleton/tmlibs/common"
-	"github.com/tepleton/go-wire"
+	wire "github.com/tepleton/go-wire"
 	eyes "github.com/tepleton/merkleeyes/client"
+	. "github.com/tepleton/tmlibs/common"
+	"github.com/tepleton/tmlibs/log"
 )
 
 // CONTRACT: State should be quick to copy.
@@ -15,6 +16,7 @@ type State struct {
 	store      types.KVStore
 	readCache  map[string][]byte // optional, for caching writes to store
 	writeCache *types.KVCache    // optional, for caching writes w/o writing to store
+	logger     log.Logger
 }
 
 func NewState(store types.KVStore) *State {
@@ -23,7 +25,12 @@ func NewState(store types.KVStore) *State {
 		store:      store,
 		readCache:  make(map[string][]byte),
 		writeCache: nil,
+		logger:     log.NewNopLogger(),
 	}
+}
+
+func (s *State) SetLogger(l log.Logger) {
+	s.logger = l
 }
 
 func (s *State) SetChainID(chainID string) {

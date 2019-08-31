@@ -7,15 +7,18 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/tepleton/wrsp/server"
-	cmn "github.com/tepleton/tmlibs/common"
 	eyes "github.com/tepleton/merkleeyes/client"
+	"github.com/tepleton/tmlibs/cli"
+	cmn "github.com/tepleton/tmlibs/common"
+	"github.com/tepleton/tmlibs/log"
 
-	tmcfg "github.com/tepleton/tepleton/config/tepleton"
+	"github.com/tepleton/tepleton/config"
 	"github.com/tepleton/tepleton/node"
 	"github.com/tepleton/tepleton/proxy"
-	tmtypes "github.com/tepleton/tepleton/types"
+	"github.com/tepleton/tepleton/types"
 
 	"github.com/tepleton/basecoin/app"
 )
@@ -49,12 +52,12 @@ func init() {
 }
 
 func startCmd(cmd *cobra.Command, args []string) error {
-	basecoinDir := BasecoinRoot("")
+	rootDir := viper.GetString(cli.HomeFlag)
 
 	// Connect to MerkleEyes
 	var eyesCli *eyes.Client
 	if eyesFlag == "local" {
-		eyesCli = eyes.NewLocalClient(path.Join(basecoinDir, "data", "merkleeyes.db"), EyesCacheSize)
+		eyesCli = eyes.NewLocalClient(path.Join(rootDir, "data", "merkleeyes.db"), EyesCacheSize)
 	} else {
 		var err error
 		eyesCli, err = eyes.NewClient(eyesFlag)
@@ -65,6 +68,7 @@ func startCmd(cmd *cobra.Command, args []string) error {
 
 	// Create Basecoin app
 	basecoinApp := app.NewBasecoin(eyesCli)
+	basecoinApp.SetLogger(logger.With("module", "app"))
 
 	// register IBC plugn
 	basecoinApp.RegisterPlugin(NewIBCPlugin())
@@ -78,7 +82,7 @@ func startCmd(cmd *cobra.Command, args []string) error {
 	// else, assume it's been loaded
 	if basecoinApp.GetState().GetChainID() == "" {
 		// If genesis file exists, set key-value options
-		genesisFile := path.Join(basecoinDir, "genesis.json")
+		genesisFile := path.Join(rootDir, "genesis.json")
 		if _, err := os.Stat(genesisFile); err == nil {
 			err := basecoinApp.LoadGenesis(genesisFile)
 			if err != nil {
@@ -91,23 +95,23 @@ func startCmd(cmd *cobra.Command, args []string) error {
 
 	chainID := basecoinApp.GetState().GetChainID()
 	if withoutTendermintFlag {
-		log.Notice("Starting Basecoin without Tendermint", "chain_id", chainID)
+		logger.Info("Starting Basecoin without Tendermint", "chain_id", chainID)
 		// run just the wrsp app/server
 		return startBasecoinWRSP(basecoinApp)
 	} else {
-		log.Notice("Starting Basecoin with Tendermint", "chain_id", chainID)
+		logger.Info("Starting Basecoin with Tendermint", "chain_id", chainID)
 		// start the app with tepleton in-process
-		return startTendermint(basecoinDir, basecoinApp)
+		return startTendermint(rootDir, basecoinApp)
 	}
 }
 
 func startBasecoinWRSP(basecoinApp *app.Basecoin) error {
-
 	// Start the WRSP listener
 	svr, err := server.NewServer(addrFlag, "socket", basecoinApp)
 	if err != nil {
 		return errors.Errorf("Error creating listener: %v\n", err)
 	}
+	svr.SetLogger(logger.With("module", "wrsp-server"))
 
 	// Wait forever
 	cmn.TrapSignal(func() {
@@ -118,26 +122,29 @@ func startBasecoinWRSP(basecoinApp *app.Basecoin) error {
 }
 
 func startTendermint(dir string, basecoinApp *app.Basecoin) error {
+	cfg := config.DefaultConfig()
+	err := viper.Unmarshal(cfg)
+	if err != nil {
+		return err
+	}
+	cfg.SetRoot(cfg.RootDir)
+	config.EnsureRoot(cfg.RootDir)
 
-	// Get configuration
-	tmConfig := tmcfg.GetConfig(dir)
-	// logger.SetLogLevel("notice") //config.GetString("log_level"))
-	// parseFlags(config, args[1:]) // Command line overrides
-
-	// Create & start tepleton node
-	privValidatorFile := tmConfig.GetString("priv_validator_file")
-	privValidator := tmtypes.LoadOrGenPrivValidator(privValidatorFile)
-	n := node.NewNode(tmConfig, privValidator, proxy.NewLocalClientCreator(basecoinApp))
-
-	_, err := n.Start()
+	tmLogger, err := log.NewFilterByLevel(logger, cfg.LogLevel)
 	if err != nil {
 		return err
 	}
 
-	// Wait forever
-	cmn.TrapSignal(func() {
-		// Cleanup
-		n.Stop()
-	})
+	// Create & start tepleton node
+	privValidator := types.LoadOrGenPrivValidator(cfg.PrivValidatorFile(), tmLogger)
+	n := node.NewNode(cfg, privValidator, proxy.NewLocalClientCreator(basecoinApp), tmLogger.With("module", "node"))
+
+	_, err = n.Start()
+	if err != nil {
+		return err
+	}
+
+	// Trap signal, run forever.
+	n.RunForever()
 	return nil
 }

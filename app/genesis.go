@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 
 	"github.com/pkg/errors"
+
 	"github.com/tepleton/basecoin/types"
 	cmn "github.com/tepleton/tmlibs/common"
-	//tmtypes "github.com/tepleton/tepleton/types"
 )
 
 func (app *Basecoin) LoadGenesis(path string) error {
@@ -26,13 +26,13 @@ func (app *Basecoin) LoadGenesis(path string) error {
 		}
 		r := app.SetOption("base/account", string(accBytes))
 		// TODO: SetOption returns an error
-		log.Notice("Done setting Account via SetOption", "result", r)
+		app.logger.Info("Done setting Account via SetOption", "result", r)
 	}
 
 	// set plugin options
 	for _, kv := range genDoc.AppOptions.pluginOptions {
 		r := app.SetOption(kv.Key, kv.Value)
-		log.Notice("Done setting Plugin key-value pair via SetOption", "result", r, "k", kv.Key, "v", kv.Value)
+		app.logger.Info("Done setting Plugin key-value pair via SetOption", "result", r, "k", kv.Key, "v", kv.Value)
 	}
 	return nil
 }
@@ -60,10 +60,6 @@ func loadGenesis(filePath string) (*FullGenesisDoc, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "loading genesis file")
 	}
-
-	// the tepleton genesis is go-wire
-	// tmGenesis := new(tmtypes.GenesisDoc)
-	// err = wire.ReadJSONBytes(bytes, tmGenesis)
 
 	// the basecoin genesis go-wire/data :)
 	genDoc := new(FullGenesisDoc)

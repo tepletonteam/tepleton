@@ -8,15 +8,17 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tepleton/basecoin/app"
 	"github.com/tepleton/basecoin/types"
-	cmn "github.com/tepleton/tmlibs/common"
-	"github.com/tepleton/go-wire"
+	wire "github.com/tepleton/go-wire"
 	eyescli "github.com/tepleton/merkleeyes/client"
+	cmn "github.com/tepleton/tmlibs/common"
+	"github.com/tepleton/tmlibs/log"
 )
 
 func TestSendTx(t *testing.T) {
 	eyesCli := eyescli.NewLocalClient("", 0)
 	chainID := "test_chain_id"
 	bcApp := app.NewBasecoin(eyesCli)
+	bcApp.SetLogger(log.TestingLogger().With("module", "app"))
 	bcApp.SetOption("base/chain_id", chainID)
 	// t.Log(bcApp.Info())
 
