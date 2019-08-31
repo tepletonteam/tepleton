@@ -12,6 +12,7 @@ import (
 	wire "github.com/tepleton/go-wire"
 )
 
+//nolint
 const (
 	NameLedgerEd25519 = "ledger"
 	TypeLedgerEd25519 = 0x10
@@ -59,6 +60,8 @@ type PrivKeyLedger struct {
 	CachedPubKey crypto.PubKey
 }
 
+// NewPrivKeyLedger will generate a new key and store the
+// public key for later use.
 func NewPrivKeyLedger() (crypto.PrivKey, error) {
 	var pk PrivKeyLedger
 	// getPubKey will cache the pubkey for later use,
@@ -66,6 +69,22 @@ func NewPrivKeyLedger() (crypto.PrivKey, error) {
 	// is not plugged in
 	_, err := pk.getPubKey()
 	return pk.Wrap(), err
+}
+
+// ValidateKey allows us to verify the sanity of a key
+// after loading it from disk
+func (pk *PrivKeyLedger) ValidateKey() error {
+	// getPubKey will return an error if the ledger is not
+	// properly set up...
+	pub, err := pk.getPubKey()
+	if err != nil {
+		return err
+	}
+	// verify this matches cached address
+	if !pub.Equals(pk.CachedPubKey) {
+		return errors.New("ledger doesn't match cached key")
+	}
+	return nil
 }
 
 // AssertIsPrivKeyInner fulfils PrivKey Interface
@@ -114,16 +133,23 @@ func (pk *PrivKeyLedger) PubKey() crypto.PubKey {
 func (pk *PrivKeyLedger) getPubKey() (key crypto.PubKey, err error) {
 	// if we have no pubkey, set it
 	if pk.CachedPubKey.Empty() {
-		dev, err := getLedger()
-		if err != nil {
-			return key, errors.WithMessage(err, "Can't connect to ledger")
-		}
-		pk.CachedPubKey, _, err = signLedger(dev, []byte{0})
-		if err != nil {
-			return key, errors.WithMessage(err, "Can't sign with app")
-		}
+		pk.CachedPubKey, err = pk.forceGetPubKey()
 	}
-	return pk.CachedPubKey, nil
+	return pk.CachedPubKey, err
+}
+
+// forceGetPubKey is like getPubKey but ignores any cached key
+// and ensures we get it from the ledger itself.
+func (pk *PrivKeyLedger) forceGetPubKey() (key crypto.PubKey, err error) {
+	dev, err := getLedger()
+	if err != nil {
+		return key, errors.New("Can't connect to ledger device")
+	}
+	key, _, err = signLedger(dev, []byte{0})
+	if err != nil {
+		return key, errors.New("Please open tepleton app on the ledger")
+	}
+	return key, err
 }
 
 // Equals fulfils PrivKey Interface
@@ -209,6 +235,11 @@ type PubKeyLedger struct {
 // PubKeyLedgerFromBytes creates a PubKey from the raw bytes
 func PubKeyLedgerFromBytes(key [32]byte) crypto.PubKey {
 	return PubKeyLedger{crypto.PubKeyEd25519(key)}.Wrap()
+}
+
+// Bytes fulfils pk Interface - no data, just type info
+func (pk PubKeyLedger) Bytes() []byte {
+	return wire.BinaryBytes(pk.Wrap())
 }
 
 // VerifyBytes uses the normal Ed25519 algorithm but a sha512 hash beforehand
