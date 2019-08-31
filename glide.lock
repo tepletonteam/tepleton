@@ -1,5 +1,5 @@
-hash: f191c6891478db6a905646e5e3de5d9b7f9ca4e06967035470acc17fbec826d1
-updated: 2017-05-13T15:14:28.531764948Z
+hash: 997e4cc3339141ee01aa2adf656425a49ebf117e6ca9e81ba72b8f94fee3e86e
+updated: 2017-05-16T13:41:59.92225084Z
 imports:
 - name: github.com/bgentry/speakeasy
   version: 4aabc24848ce5fd31929f7d1e4ea74d3709c14cd
@@ -101,7 +101,7 @@ imports:
   - leveldb/table
   - leveldb/util
 - name: github.com/tepleton/wrsp
-  version: b662bc7d3439b3c2cce615e8c3502b762e133dbf
+  version: 5dabeffb35c027d7087a12149685daa68989168b
   subpackages:
   - client
   - example/dummy
@@ -113,7 +113,7 @@ imports:
   - edwards25519
   - extra25519
 - name: github.com/tepleton/go-crypto
-  version: e71bbb2509b586f0b24f120b6ba57f32aefa1579
+  version: a42b10e0feb465eb56fbc6bb5b71d57ef646ec57
   subpackages:
   - cmd
   - keys
@@ -122,12 +122,12 @@ imports:
   - keys/server/types
   - keys/storage/filestorage
 - name: github.com/tepleton/go-wire
-  version: 82d31b6afb3c438639bffc5e1c7318b9a55285b3
+  version: 7f81de645283af7c62f17eafe3ef13b38cc0836b
   subpackages:
   - data
   - data/base58
 - name: github.com/tepleton/light-client
-  version: 6a786b321c0634e801e692af93491b75866cb0cd
+  version: c003b47d43fd79dcec14e5cdaf353cc461fa7cb7
   subpackages:
   - certifiers
   - certifiers/client
@@ -145,7 +145,7 @@ imports:
   - client
   - iavl
 - name: github.com/tepleton/tepleton
-  version: c5bccc5474f6ecc2f083c7e34e9ccb1be2de5312
+  version: e1792c1ea521ff6c10f79d7865a027024978b629
   subpackages:
   - blockchain
   - config
@@ -170,7 +170,7 @@ imports:
   - types
   - version
 - name: github.com/tepleton/tmlibs
-  version: 8f5a175ff4c869fedde710615a11f5745ff69bf3
+  version: 812d9f9b84d1dfe4cb46ce021b3a2d97b48d1292
   subpackages:
   - autofile
   - cli

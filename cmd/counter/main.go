@@ -7,15 +7,9 @@ import (
 
 	"github.com/tepleton/basecoin/cmd/commands"
 	"github.com/tepleton/tmlibs/cli"
-	"github.com/tepleton/tmlibs/log"
-)
-
-var (
-	logger = log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "main")
 )
 
 func main() {
-
 	var RootCmd = &cobra.Command{
 		Use:   "counter",
 		Short: "demo plugin for basecoin",

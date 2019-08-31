@@ -4,7 +4,8 @@ set -e
 cd $GOPATH/src/github.com/tepleton/basecoin/demo
 
 LOG_DIR="."
-TM_VERSION="v0.9.2"
+TM_VERSION="develop"
+#TM_VERSION="v0.10.0"
 
 if [[ "$CIRCLECI" == "true" ]]; then
 	# set log dir
@@ -17,6 +18,7 @@ if [[ "$CIRCLECI" == "true" ]]; then
 	git checkout $TM_VERSION
 	glide install
 	go install ./cmd/tepleton
+  ls $GOPATH/bin
 	popd
 	set -e
 fi
@@ -27,7 +29,7 @@ function ifExit() {
 	if [[ "$?" != 0 ]]; then
 		echo "FAIL"
 		exit 1
-	fi 
+	fi
 }
 
 function removeQuotes() {
