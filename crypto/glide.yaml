@@ -6,11 +6,18 @@ import:
 - package: github.com/btcsuite/btcutil
   subpackages:
   - base58
+- package: github.com/syndtr/goleveldb
+  subpackages:
+  - leveldb
+  - leveldb/errors
+  - leveldb/iterator
+  - leveldb/opt
+  - leveldb/util
 - package: github.com/tepleton/ed25519
   subpackages:
   - extra25519
 - package: github.com/tepleton/tmlibs
-  version: develop
+  version: sdk2
 - package: github.com/tepleton/go-wire
   version: develop
   subpackages:
@@ -22,14 +29,9 @@ import:
   - nacl/secretbox
   - openpgp/armor
   - ripemd160
-- package: github.com/bgentry/speakeasy
-- package: github.com/gorilla/handlers
-- package: github.com/gorilla/mux
 - package: github.com/pkg/errors
-- package: github.com/spf13/cobra
-- package: github.com/spf13/viper
-- package: gopkg.in/go-playground/validator.v9
 - package: github.com/howeyc/crc16
+- package: github.com/ethanfrey/ledger
 testImport:
 - package: github.com/mndrix/btcutil
 - package: github.com/stretchr/testify

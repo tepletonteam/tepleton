@@ -5,25 +5,26 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	asrt "github.com/stretchr/testify/assert"
+	rqr "github.com/stretchr/testify/require"
 
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
 
 	crypto "github.com/tepleton/go-crypto"
 	"github.com/tepleton/go-crypto/keys"
+	"github.com/tepleton/go-crypto/keys/words"
 	"github.com/tepleton/go-crypto/nano"
 )
 
 // TestKeyManagement makes sure we can manipulate these keys well
 func TestKeyManagement(t *testing.T) {
-	assert, require := assert.New(t), require.New(t)
+	assert, require := asrt.New(t), rqr.New(t)
 
 	// make the storage with reasonable defaults
 	cstore := keys.New(
 		dbm.NewMemDB(),
-		keys.MustLoadCodec("english"),
+		words.MustLoadCodec("english"),
 	)
 
 	algo := crypto.NameEd25519
@@ -38,7 +39,7 @@ func TestKeyManagement(t *testing.T) {
 	// create some keys
 	_, err = cstore.Get(n1)
 	assert.NotNil(err)
-	i, _, err := cstore.Create(n1, p1, algo)
+	_, i, err := cstore.Create(n1, p1, algo)
 	require.Equal(n1, i.Name)
 	require.Nil(err)
 	_, _, err = cstore.Create(n2, p2, algo)
@@ -86,12 +87,12 @@ func TestKeyManagement(t *testing.T) {
 // TestSignVerify does some detailed checks on how we sign and validate
 // signatures
 func TestSignVerify(t *testing.T) {
-	assert, require := assert.New(t), require.New(t)
+	assert, require := asrt.New(t), rqr.New(t)
 
 	// make the storage with reasonable defaults
 	cstore := keys.New(
 		dbm.NewMemDB(),
-		keys.MustLoadCodec("english"),
+		words.MustLoadCodec("english"),
 	)
 	algo := crypto.NameSecp256k1
 
@@ -99,10 +100,10 @@ func TestSignVerify(t *testing.T) {
 	p1, p2 := "1234", "foobar"
 
 	// create two users and get their info
-	i1, _, err := cstore.Create(n1, p1, algo)
+	_, i1, err := cstore.Create(n1, p1, algo)
 	require.Nil(err)
 
-	i2, _, err := cstore.Create(n2, p2, algo)
+	_, i2, err := cstore.Create(n2, p2, algo)
 	require.Nil(err)
 
 	// let's try to sign some messages
@@ -157,7 +158,7 @@ func TestSignVerify(t *testing.T) {
 // This test will only succeed with a ledger attached to the computer
 // and the tepleton app open
 func TestSignWithLedger(t *testing.T) {
-	assert, require := assert.New(t), require.New(t)
+	assert, require := asrt.New(t), rqr.New(t)
 	if os.Getenv("WITH_LEDGER") == "" {
 		t.Skip("Set WITH_LEDGER to run code on real ledger")
 	}
@@ -165,13 +166,13 @@ func TestSignWithLedger(t *testing.T) {
 	// make the storage with reasonable defaults
 	cstore := keys.New(
 		dbm.NewMemDB(),
-		keys.MustLoadCodec("english"),
+		words.MustLoadCodec("english"),
 	)
 	n := "nano-s"
 	p := "hard2hack"
 
 	// create a nano user
-	c, _, err := cstore.Create(n, p, nano.NameLedgerEd25519)
+	_, c, err := cstore.Create(n, p, nano.NameLedgerEd25519)
 	require.Nil(err, "%+v", err)
 	assert.Equal(c.Name, n)
 	_, ok := c.PubKey.Unwrap().(nano.PubKeyLedgerEd25519)
@@ -205,7 +206,7 @@ func TestSignWithLedger(t *testing.T) {
 	assert.False(key.VerifyBytes(d1, s2))
 }
 
-func assertPassword(assert *assert.Assertions, cstore keys.Keybase, name, pass, badpass string) {
+func assertPassword(assert *asrt.Assertions, cstore keys.Keybase, name, pass, badpass string) {
 	err := cstore.Update(name, badpass, pass)
 	assert.NotNil(err)
 	err = cstore.Update(name, pass, pass)
@@ -214,12 +215,12 @@ func assertPassword(assert *assert.Assertions, cstore keys.Keybase, name, pass, 
 
 // TestImportUnencrypted tests accepting raw priv keys bytes as input
 func TestImportUnencrypted(t *testing.T) {
-	require := require.New(t)
+	require := rqr.New(t)
 
 	// make the storage with reasonable defaults
 	cstore := keys.New(
 		dbm.NewMemDB(),
-		keys.MustLoadCodec("english"),
+		words.MustLoadCodec("english"),
 	)
 
 	key := crypto.GenPrivKeyEd25519FromSecret(cmn.RandBytes(16)).Wrap()
@@ -240,12 +241,12 @@ func TestImportUnencrypted(t *testing.T) {
 
 // TestAdvancedKeyManagement verifies update, import, export functionality
 func TestAdvancedKeyManagement(t *testing.T) {
-	assert, require := assert.New(t), require.New(t)
+	assert, require := asrt.New(t), rqr.New(t)
 
 	// make the storage with reasonable defaults
 	cstore := keys.New(
 		dbm.NewMemDB(),
-		keys.MustLoadCodec("english"),
+		words.MustLoadCodec("english"),
 	)
 
 	algo := crypto.NameSecp256k1
@@ -283,12 +284,12 @@ func TestAdvancedKeyManagement(t *testing.T) {
 
 // TestSeedPhrase verifies restoring from a seed phrase
 func TestSeedPhrase(t *testing.T) {
-	assert, require := assert.New(t), require.New(t)
+	assert, require := asrt.New(t), rqr.New(t)
 
 	// make the storage with reasonable defaults
 	cstore := keys.New(
 		dbm.NewMemDB(),
-		keys.MustLoadCodec("english"),
+		words.MustLoadCodec("english"),
 	)
 
 	algo := crypto.NameEd25519
@@ -296,7 +297,7 @@ func TestSeedPhrase(t *testing.T) {
 	p1, p2 := "1234", "foobar"
 
 	// make sure key works with initial password
-	info, seed, err := cstore.Create(n1, p1, algo)
+	seed, info, err := cstore.Create(n1, p1, algo)
 	require.Nil(err, "%+v", err)
 	assert.Equal(n1, info.Name)
 	assert.NotEmpty(seed)
@@ -308,7 +309,7 @@ func TestSeedPhrase(t *testing.T) {
 	require.NotNil(err)
 
 	// let us re-create it from the seed-phrase
-	newInfo, err := cstore.Recover(n2, p2, seed)
+	newInfo, err := cstore.Recover(n2, p2, algo, seed)
 	require.Nil(err, "%+v", err)
 	assert.Equal(n2, newInfo.Name)
 	assert.Equal(info.Address(), newInfo.Address())
@@ -319,13 +320,13 @@ func ExampleNew() {
 	// Select the encryption and storage for your cryptostore
 	cstore := keys.New(
 		dbm.NewMemDB(),
-		keys.MustLoadCodec("english"),
+		words.MustLoadCodec("english"),
 	)
 	ed := crypto.NameEd25519
 	sec := crypto.NameSecp256k1
 
 	// Add keys and see they return in alphabetical order
-	bob, _, err := cstore.Create("Bob", "friend", ed)
+	_, bob, err := cstore.Create("Bob", "friend", ed)
 	if err != nil {
 		// this should never happen
 		fmt.Println(err)

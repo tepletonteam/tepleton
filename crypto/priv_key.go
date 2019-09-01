@@ -1,7 +1,7 @@
 package crypto
 
 import (
-	"crypto/subtle"
+	"bytes"
 
 	secp256k1 "github.com/btcsuite/btcd/btcec"
 	"github.com/tepleton/ed25519"
@@ -13,13 +13,27 @@ import (
 
 func PrivKeyFromBytes(privKeyBytes []byte) (privKey PrivKey, err error) {
 	err = wire.ReadBinaryBytes(privKeyBytes, &privKey)
+	if err == nil {
+		// add support for a ValidateKey method on PrivKeys
+		// to make sure they load correctly
+		val, ok := privKey.Unwrap().(validatable)
+		if ok {
+			err = val.ValidateKey()
+		}
+	}
 	return
+}
+
+// validatable is an optional interface for keys that want to
+// check integrity
+type validatable interface {
+	ValidateKey() error
 }
 
 //----------------------------------------
 
 // DO NOT USE THIS INTERFACE.
-// You probably want to use PubKey
+// You probably want to use PrivKey
 // +gen wrapper:"PrivKey,Impl[PrivKeyEd25519,PrivKeySecp256k1],ed25519,secp256k1"
 type PrivKeyInner interface {
 	AssertIsPrivKeyInner()
@@ -55,11 +69,9 @@ func (privKey PrivKeyEd25519) PubKey() PubKey {
 	return PubKeyEd25519(pubBytes).Wrap()
 }
 
-// Equals - you probably don't need to use this.
-// Runs in constant time based on length of the keys.
 func (privKey PrivKeyEd25519) Equals(other PrivKey) bool {
 	if otherEd, ok := other.Unwrap().(PrivKeyEd25519); ok {
-		return subtle.ConstantTimeCompare(privKey[:], otherEd[:]) == 1
+		return bytes.Equal(privKey[:], otherEd[:])
 	} else {
 		return false
 	}
@@ -144,11 +156,9 @@ func (privKey PrivKeySecp256k1) PubKey() PubKey {
 	return pub.Wrap()
 }
 
-// Equals - you probably don't need to use this.
-// Runs in constant time based on length of the keys.
 func (privKey PrivKeySecp256k1) Equals(other PrivKey) bool {
 	if otherSecp, ok := other.Unwrap().(PrivKeySecp256k1); ok {
-		return subtle.ConstantTimeCompare(privKey[:], otherSecp[:]) == 1
+		return bytes.Equal(privKey[:], otherSecp[:])
 	} else {
 		return false
 	}
