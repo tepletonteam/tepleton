@@ -63,12 +63,6 @@ func (sig *SignatureEd25519) UnmarshalJSON(enc []byte) error {
 	return err
 }
 
-func SignatureEd25519FromBytes(data []byte) Signature {
-	var sig SignatureEd25519
-	copy(sig[:], data)
-	return sig.Wrap()
-}
-
 //-------------------------------------
 
 var _ SignatureInner = SignatureSecp256k1{}
@@ -87,8 +81,8 @@ func (sig SignatureSecp256k1) IsZero() bool { return len(sig) == 0 }
 func (sig SignatureSecp256k1) String() string { return fmt.Sprintf("/%X.../", Fingerprint(sig[:])) }
 
 func (sig SignatureSecp256k1) Equals(other Signature) bool {
-	if otherEd, ok := other.Unwrap().(SignatureSecp256k1); ok {
-		return bytes.Equal(sig[:], otherEd[:])
+	if otherSecp, ok := other.Unwrap().(SignatureSecp256k1); ok {
+		return bytes.Equal(sig[:], otherSecp[:])
 	} else {
 		return false
 	}
