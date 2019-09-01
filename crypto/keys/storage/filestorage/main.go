@@ -19,15 +19,11 @@ import (
 
 const (
 	BlockType = "Tendermint Light Client"
-
-	// PrivExt is the extension for private keys.
-	PrivExt = "tlc"
-	// PubExt is the extensions for public keys.
-	PubExt = "pub"
-
-	keyPerm = os.FileMode(0600)
-	// pubPerm = os.FileMode(0644)
-	dirPerm = os.FileMode(0700)
+	PrivExt   = "tlc"
+	PubExt    = "pub"
+	keyPerm   = os.FileMode(0600)
+	pubPerm   = os.FileMode(0644)
+	dirPerm   = os.FileMode(0700)
 )
 
 type FileStore struct {
@@ -46,8 +42,10 @@ func New(dir string) FileStore {
 	return FileStore{dir}
 }
 
-// assert FileStore satisfies keys.Storage
-var _ keys.Storage = FileStore{}
+// assertStorage just makes sure we implement the proper Storage interface
+func (s FileStore) assertStorage() keys.Storage {
+	return s
+}
 
 // Put creates two files, one with the public info as json, the other
 // with the (encoded) private key as gpg ascii-armor style
@@ -86,8 +84,6 @@ func (s FileStore) List() (keys.Infos, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "List Keys")
 	}
-	defer dir.Close()
-
 	names, err := dir.Readdirnames(0)
 	if err != nil {
 		return nil, errors.Wrap(err, "List Keys")
@@ -148,8 +144,6 @@ func read(path string) ([]byte, string, error) {
 	if err != nil {
 		return nil, "", errors.Wrap(err, "Reading data")
 	}
-	defer f.Close()
-
 	d, err := ioutil.ReadAll(f)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "Reading data")

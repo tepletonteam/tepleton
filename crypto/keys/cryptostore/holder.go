@@ -24,24 +24,29 @@ func New(coder Encoder, store keys.Storage, codec keys.Codec) Manager {
 	}
 }
 
-// assert Manager satisfies keys.Signer and keys.Manager interfaces
-var _ keys.Signer = Manager{}
-var _ keys.Manager = Manager{}
+// exists just to make sure we fulfill the Signer interface
+func (s Manager) assertSigner() keys.Signer {
+	return s
+}
+
+// exists just to make sure we fulfill the Manager interface
+func (s Manager) assertKeyManager() keys.Manager {
+	return s
+}
 
 // Create adds a new key to the storage engine, returning error if
 // another key already stored under this name
 //
 // algo must be a supported go-crypto algorithm: ed25519, secp256k1
 func (s Manager) Create(name, passphrase, algo string) (keys.Info, string, error) {
-	// 128-bits are the all the randomness we can make use of
-	secret := crypto.CRandBytes(16)
-	gen := getGenerator(algo)
-
-	key, err := gen.Generate(secret)
+	gen, err := getGenerator(algo)
 	if err != nil {
 		return keys.Info{}, "", err
 	}
 
+	// 128-bits are the all the randomness we can make use of
+	secret := crypto.CRandBytes(16)
+	key := gen.Generate(secret)
 	err = s.es.Put(name, passphrase, key)
 	if err != nil {
 		return keys.Info{}, "", err
@@ -75,11 +80,11 @@ func (s Manager) Recover(name, passphrase, seedphrase string) (keys.Info, error)
 	l := len(secret)
 	secret, typ := secret[:l-1], secret[l-1]
 
-	gen := getGeneratorByType(typ)
-	key, err := gen.Generate(secret)
+	gen, err := getGeneratorByType(typ)
 	if err != nil {
 		return keys.Info{}, err
 	}
+	key := gen.Generate(secret)
 
 	// d00d, it worked!  create the bugger....
 	err = s.es.Put(name, passphrase, key)

@@ -22,8 +22,10 @@ func New() MemStore {
 	return MemStore{}
 }
 
-// assert MemStore satisfies keys.Storage
-var _ keys.Storage = MemStore{}
+// assertStorage just makes sure we implement the Storage interface
+func (s MemStore) assertStorage() keys.Storage {
+	return s
+}
 
 // Put adds the given key, returns an error if it another key
 // is already stored under this name

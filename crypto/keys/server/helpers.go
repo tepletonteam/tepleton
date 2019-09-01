@@ -5,7 +5,6 @@ for key management, transaction signing, and query validation.
 Please read the README and godoc to see how to
 configure the server for your application.
 */
-
 package server
 
 import (
@@ -13,8 +12,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/tepleton/go-crypto/keys/server/types"
 	data "github.com/tepleton/go-wire/data"
+	"github.com/tepleton/go-crypto/keys/server/types"
 
 	"github.com/pkg/errors"
 )
