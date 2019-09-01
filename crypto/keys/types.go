@@ -1,6 +1,8 @@
 package keys
 
 import (
+	wire "github.com/tepleton/go-wire"
+
 	crypto "github.com/tepleton/go-crypto"
 )
 
@@ -8,6 +10,20 @@ import (
 type Info struct {
 	Name   string        `json:"name"`
 	PubKey crypto.PubKey `json:"pubkey"`
+}
+
+// Address is a helper function to calculate the address from the pubkey
+func (i Info) Address() []byte {
+	return i.PubKey.Address()
+}
+
+func (i Info) bytes() []byte {
+	return wire.BinaryBytes(i)
+}
+
+func readInfo(bs []byte) (info Info, err error) {
+	err = wire.ReadBinaryBytes(bs, &info)
+	return
 }
 
 func info(name string, privKey crypto.PrivKey) Info {

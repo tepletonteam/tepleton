@@ -17,7 +17,7 @@ import:
   subpackages:
   - extra25519
 - package: github.com/tepleton/tmlibs
-  version: develop
+  version: sdk-develop
 - package: github.com/tepleton/go-wire
   version: develop
   subpackages:
