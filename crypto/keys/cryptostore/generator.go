@@ -2,7 +2,6 @@ package cryptostore
 
 import (
 	"github.com/pkg/errors"
-
 	crypto "github.com/tepleton/go-crypto"
 	"github.com/tepleton/go-crypto/nano"
 )
