@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 
 	wrsp "github.com/tepleton/wrsp/types"
-	. "github.com/tepleton/tmlibs/common"
 	"github.com/tepleton/go-crypto"
-	"github.com/tepleton/go-wire/data"
 	"github.com/tepleton/go-wire"
+	"github.com/tepleton/go-wire/data"
+	. "github.com/tepleton/tmlibs/common"
 )
 
 /*
@@ -46,7 +46,7 @@ func init() {
 
 // TxS add json serialization to Tx
 type TxS struct {
-	Tx
+	Tx `json:"unwrap"`
 }
 
 func (p TxS) MarshalJSON() ([]byte, error) {

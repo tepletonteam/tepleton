@@ -7,6 +7,7 @@ import (
 	keycmd "github.com/tepleton/go-crypto/cmd"
 	"github.com/tepleton/light-client/commands"
 	"github.com/tepleton/light-client/commands/proofs"
+	"github.com/tepleton/light-client/commands/proxy"
 	"github.com/tepleton/light-client/commands/seeds"
 	"github.com/tepleton/light-client/commands/txs"
 	"github.com/tepleton/tmlibs/cli"
@@ -29,6 +30,7 @@ func main() {
 
 	//initialize proofs and txs
 	proofs.StatePresenters.Register("account", AccountPresenter{})
+	proofs.StatePresenters.Register("counter", CounterPresenter{})
 	proofs.TxPresenters.Register("base", BaseTxPresenter{})
 	txs.Register("send", SendTxMaker{})
 
@@ -39,6 +41,7 @@ func main() {
 		seeds.RootCmd,
 		proofs.RootCmd,
 		txs.RootCmd,
+		proxy.RootCmd,
 	)
 
 	cmd := cli.PrepareMainCmd(BaseCli, "BC", os.ExpandEnv("$HOME/.basecli"))

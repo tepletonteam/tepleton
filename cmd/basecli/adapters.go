@@ -8,14 +8,14 @@ import (
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"github.com/tepleton/basecoin/state"
-	btypes "github.com/tepleton/basecoin/types"
-
 	keycmd "github.com/tepleton/go-crypto/cmd"
 	wire "github.com/tepleton/go-wire"
 	lightclient "github.com/tepleton/light-client"
 	"github.com/tepleton/light-client/commands"
 	"github.com/tepleton/light-client/proofs"
+
+	"github.com/tepleton/basecoin/state"
+	btypes "github.com/tepleton/basecoin/types"
 )
 
 type AccountPresenter struct{}
@@ -43,6 +43,8 @@ func (_ BaseTxPresenter) ParseData(raw []byte) (interface{}, error) {
 	err := wire.ReadBinaryBytes(raw, &tx)
 	return tx, err
 }
+
+/******** SendTx *********/
 
 type SendTxMaker struct{}
 
