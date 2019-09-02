@@ -3,11 +3,8 @@ package types
 import (
 	"fmt"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 type Coin struct {
@@ -56,8 +53,9 @@ func (coins Coins) String() string {
 }
 
 func ParseCoins(str string) (Coins, error) {
+
 	split := strings.Split(str, ",")
-	var coins Coins
+	var coins []Coin
 
 	for _, el := range split {
 		if len(el) > 0 {
@@ -67,12 +65,6 @@ func ParseCoins(str string) (Coins, error) {
 			}
 			coins = append(coins, coin)
 		}
-	}
-
-	// ensure they are in proper order, to avoid random failures later
-	coins.Sort()
-	if !coins.IsValid() {
-		return nil, errors.Errorf("ParseCoins invalid: %#v", coins)
 	}
 
 	return coins, nil
@@ -203,10 +195,3 @@ func (coins Coins) IsNonnegative() bool {
 	}
 	return true
 }
-
-/*** Implement Sort interface ***/
-
-func (c Coins) Len() int           { return len(c) }
-func (c Coins) Less(i, j int) bool { return c[i].Denom < c[j].Denom }
-func (c Coins) Swap(i, j int)      { c[i], c[j] = c[j], c[i] }
-func (c Coins) Sort()              { sort.Sort(c) }

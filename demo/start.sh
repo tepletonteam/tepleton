@@ -18,6 +18,14 @@ if [[ "$CIRCLECI" == "true" ]]; then
 	git checkout $TM_VERSION
 	glide install
 	go install ./cmd/tepleton
+  echo "----"
+  echo $PATH
+  echo $GOPATH/bin
+  ls -l $GOPATH/bin
+  which basecoin
+  ls -l $(dirname `which basecoin`)
+  which tepleton
+  echo "----"
 	popd
 	set -e
 fi
@@ -122,20 +130,16 @@ ifExit
 echo ""
 echo "... creating egress packet on chain1"
 echo ""
-# send coins from chain1 to an address on chain2
-# TODO: dont hardcode the address
-basecoin tx send --amount 10mycoin $CHAIN_FLAGS1 --to $CHAIN_ID2/053BA0F19616AFF975C8756A2CBFF04F408B4D47 
+# create a packet on chain1 destined for chain2
+PAYLOAD="DEADBEEF" #TODO
+basecoin tx ibc --amount 10mycoin $CHAIN_FLAGS1 packet create --ibc_from $CHAIN_ID1 --to $CHAIN_ID2 --type coin --payload $PAYLOAD --ibc_sequence 1
 ifExit
-
-# alternative way to create packets (for testing)
-# basecoin tx ibc --amount 10mycoin $CHAIN_FLAGS1 packet create --ibc_from $CHAIN_ID1 --to $CHAIN_ID2 --type coin --payload $PAYLOAD --ibc_sequence 0
 
 echo ""
 echo "... querying for packet data"
 echo ""
 # query for the packet data and proof
-# since we only sent one packet, the sequence number is 0
-QUERY_RESULT=$(basecoin query ibc,egress,$CHAIN_ID1,$CHAIN_ID2,0)
+QUERY_RESULT=$(basecoin query ibc,egress,$CHAIN_ID1,$CHAIN_ID2,1)
 ifExit
 HEIGHT=$(echo $QUERY_RESULT | jq .height)
 PACKET=$(echo $QUERY_RESULT | jq .value)
@@ -191,7 +195,7 @@ echo ""
 echo "... checking if the packet is present on chain2"
 echo ""
 # query for the packet on chain2
-basecoin query --node tcp://localhost:36657 ibc,ingress,test_chain_2,test_chain_1,0
+basecoin query --node tcp://localhost:36657 ibc,ingress,test_chain_2,test_chain_1,1
 ifExit
 
 echo ""

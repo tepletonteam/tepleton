@@ -18,7 +18,6 @@ func main() {
 	RootCmd.AddCommand(
 		commands.InitCmd,
 		commands.StartCmd,
-		commands.RelayCmd,
 		commands.TxCmd,
 		commands.QueryCmd,
 		commands.KeyCmd,

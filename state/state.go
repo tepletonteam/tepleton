@@ -3,7 +3,9 @@ package state
 import (
 	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/basecoin/types"
+	wire "github.com/tepleton/go-wire"
 	eyes "github.com/tepleton/merkleeyes/client"
+	. "github.com/tepleton/tmlibs/common"
 	"github.com/tepleton/tmlibs/log"
 )
 
@@ -62,11 +64,11 @@ func (s *State) Set(key []byte, value []byte) {
 }
 
 func (s *State) GetAccount(addr []byte) *types.Account {
-	return types.GetAccount(s, addr)
+	return GetAccount(s, addr)
 }
 
 func (s *State) SetAccount(addr []byte, acc *types.Account) {
-	types.SetAccount(s, addr, acc)
+	SetAccount(s, addr, acc)
 }
 
 func (s *State) CacheWrap() *State {
@@ -76,7 +78,6 @@ func (s *State) CacheWrap() *State {
 		store:      cache,
 		readCache:  nil,
 		writeCache: cache,
-		logger:     s.logger,
 	}
 }
 
@@ -94,4 +95,29 @@ func (s *State) Commit() wrsp.Result {
 		return wrsp.NewError(wrsp.CodeType_InternalError, "can only use Commit if store is merkleeyes")
 	}
 
+}
+
+//----------------------------------------
+
+func AccountKey(addr []byte) []byte {
+	return append([]byte("base/a/"), addr...)
+}
+
+func GetAccount(store types.KVStore, addr []byte) *types.Account {
+	data := store.Get(AccountKey(addr))
+	if len(data) == 0 {
+		return nil
+	}
+	var acc *types.Account
+	err := wire.ReadBinaryBytes(data, &acc)
+	if err != nil {
+		panic(Fmt("Error reading account %X error: %v",
+			data, err.Error()))
+	}
+	return acc
+}
+
+func SetAccount(store types.KVStore, addr []byte, acc *types.Account) {
+	accBytes := wire.BinaryBytes(acc)
+	store.Set(AccountKey(addr), accBytes)
 }

@@ -196,18 +196,13 @@ func ibcPacketCreateTxCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	var payload ibc.Payload
-	if err := wire.ReadBinaryBytes(payloadBytes, &payload); err != nil {
-		return err
-	}
-
 	ibcTx := ibc.IBCPacketCreateTx{
 		Packet: ibc.Packet{
 			SrcChainID: fromChain,
 			DstChainID: toChain,
 			Sequence:   sequence,
 			Type:       packetType,
-			Payload:    payload,
+			Payload:    payloadBytes,
 		},
 	}
 

@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/tepleton/go-crypto"
-	"github.com/tepleton/go-wire"
 )
 
 type Account struct {
@@ -49,27 +48,4 @@ type AccountSetter interface {
 type AccountGetterSetter interface {
 	GetAccount(addr []byte) *Account
 	SetAccount(addr []byte, acc *Account)
-}
-
-func AccountKey(addr []byte) []byte {
-	return append([]byte("base/a/"), addr...)
-}
-
-func GetAccount(store KVStore, addr []byte) *Account {
-	data := store.Get(AccountKey(addr))
-	if len(data) == 0 {
-		return nil
-	}
-	var acc *Account
-	err := wire.ReadBinaryBytes(data, &acc)
-	if err != nil {
-		panic(fmt.Sprintf("Error reading account %X error: %v",
-			data, err.Error()))
-	}
-	return acc
-}
-
-func SetAccount(store KVStore, addr []byte, acc *Account) {
-	accBytes := wire.BinaryBytes(acc)
-	store.Set(AccountKey(addr), accBytes)
 }

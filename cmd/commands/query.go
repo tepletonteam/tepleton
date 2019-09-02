@@ -10,7 +10,6 @@ import (
 
 	"github.com/tepleton/go-wire"
 	"github.com/tepleton/merkleeyes/iavl"
-	"github.com/tepleton/tepleton/rpc/client"
 	tmtypes "github.com/tepleton/tepleton/types"
 )
 
@@ -121,8 +120,7 @@ func accountCmd(cmd *cobra.Command, args []string) error {
 		return errors.Errorf("Account address (%v) is invalid hex: %v\n", addrHex, err)
 	}
 
-	httpClient := client.NewHTTP(nodeFlag, "/websocket")
-	acc, err := getAccWithClient(httpClient, addr)
+	acc, err := getAcc(nodeFlag, addr)
 	if err != nil {
 		return err
 	}

@@ -1,7 +1,6 @@
 package app
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"strings"
 
@@ -78,18 +77,13 @@ func (app *Basecoin) SetOption(key string, value string) string {
 			app.state.SetChainID(value)
 			return "Success"
 		case "account":
-			var acc GenesisAccount
+			var acc types.Account
 			err := json.Unmarshal([]byte(value), &acc)
 			if err != nil {
 				return "Error decoding acc message: " + err.Error()
 			}
-			acc.Balance.Sort()
-			addr, err := acc.GetAddr()
-			if err != nil {
-				return "Invalid address: " + err.Error()
-			}
-			app.state.SetAccount(addr, acc.ToAccount())
-			app.logger.Info("SetAccount", "addr", hex.EncodeToString(addr), "acc", acc)
+			app.state.SetAccount(acc.PubKey.Address(), &acc)
+			app.logger.Info("SetAccount", "addr", acc.PubKey.Address(), "acc", acc)
 
 			return "Success"
 		}
@@ -150,7 +144,7 @@ func (app *Basecoin) Query(reqQuery wrsp.RequestQuery) (resQuery wrsp.ResponseQu
 	// handle special path for account info
 	if reqQuery.Path == "/account" {
 		reqQuery.Path = "/key"
-		reqQuery.Data = types.AccountKey(reqQuery.Data)
+		reqQuery.Data = sm.AccountKey(reqQuery.Data)
 	}
 
 	resQuery, err := app.eyesCli.QuerySync(reqQuery)

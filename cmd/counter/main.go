@@ -16,7 +16,6 @@ func main() {
 	}
 
 	RootCmd.AddCommand(
-		commands.InitCmd,
 		commands.StartCmd,
 		commands.TxCmd,
 		commands.QueryCmd,
@@ -24,8 +23,7 @@ func main() {
 		commands.VerifyCmd,
 		commands.BlockCmd,
 		commands.AccountCmd,
-		commands.UnsafeResetAllCmd,
-		commands.VersionCmd,
+		commands.QuickVersionCmd("0.1.0"),
 	)
 
 	cmd := cli.PrepareMainCmd(RootCmd, "BC", os.ExpandEnv("$HOME/.basecoin"))

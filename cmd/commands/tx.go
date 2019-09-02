@@ -3,7 +3,6 @@ package commands
 import (
 	"encoding/hex"
 	"fmt"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -82,27 +81,10 @@ func init() {
 
 func sendTxCmd(cmd *cobra.Command, args []string) error {
 
-	var toHex string
-	var chainPrefix string
-	spl := strings.Split(toFlag, "/")
-	switch len(spl) {
-	case 1:
-		toHex = spl[0]
-	case 2:
-		chainPrefix = spl[0]
-		toHex = spl[1]
-	default:
-		return errors.Errorf("To address has too many slashes")
-	}
-
 	// convert destination address to bytes
-	to, err := hex.DecodeString(StripHex(toHex))
+	to, err := hex.DecodeString(StripHex(toFlag))
 	if err != nil {
 		return errors.Errorf("To address is invalid hex: %v\n", err)
-	}
-
-	if chainPrefix != "" {
-		to = []byte(chainPrefix + "/" + string(to))
 	}
 
 	// load the priv key
@@ -238,12 +220,12 @@ func broadcastTx(tx types.Tx) ([]byte, string, error) {
 // if the sequence flag is set, return it;
 // else, fetch the account by querying the app and return the sequence number
 func getSeq(address []byte) (int, error) {
+
 	if seqFlag >= 0 {
 		return seqFlag, nil
 	}
 
-	httpClient := client.NewHTTP(txNodeFlag, "/websocket")
-	acc, err := getAccWithClient(httpClient, address)
+	acc, err := getAcc(txNodeFlag, address)
 	if err != nil {
 		return 0, err
 	}
