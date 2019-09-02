@@ -112,6 +112,7 @@ func startBasecoinWRSP(basecoinApp *app.Basecoin) error {
 		return errors.Errorf("Error creating listener: %v\n", err)
 	}
 	svr.SetLogger(logger.With("module", "wrsp-server"))
+	svr.Start()
 
 	// Wait forever
 	cmn.TrapSignal(func() {
@@ -121,19 +122,30 @@ func startBasecoinWRSP(basecoinApp *app.Basecoin) error {
 	return nil
 }
 
-func startTendermint(dir string, basecoinApp *app.Basecoin) error {
+func getTendermintConfig() (*config.Config, error) {
 	cfg := config.DefaultConfig()
 	err := viper.Unmarshal(cfg)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	cfg.SetRoot(cfg.RootDir)
 	config.EnsureRoot(cfg.RootDir)
+	return cfg, nil
+}
 
-	tmLogger, err := log.NewFilterByLevel(logger, cfg.LogLevel)
+func startTendermint(dir string, basecoinApp *app.Basecoin) error {
+	cfg, err := getTendermintConfig()
 	if err != nil {
 		return err
 	}
+
+	// TODO: parse the log level from the config properly (multi modules)
+	// but some tm code must be refactored for better usability
+	lvl, err := log.AllowLevel(cfg.LogLevel)
+	if err != nil {
+		return err
+	}
+	tmLogger := log.NewFilter(logger, lvl)
 
 	// Create & start tepleton node
 	privValidator := types.LoadOrGenPrivValidator(cfg.PrivValidatorFile(), tmLogger)
