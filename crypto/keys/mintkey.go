@@ -7,7 +7,7 @@ import (
 	cmn "github.com/tepleton/tmlibs/common"
 
 	"github.com/tepleton/go-crypto"
-	"github.com/tepleton/go-crypto/bcrypt"
+	"github.com/tepleton/go-crypto/keys/bcrypt"
 )
 
 const (
