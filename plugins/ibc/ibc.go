@@ -69,7 +69,9 @@ func NewPacket(src, dst string, seq uint64, payload Payload) Packet {
 	}
 }
 
-// GetSequenceNumber gets the sequence number for packets being sent from the src chain to the dst chain
+// GetSequenceNumber gets the sequence number for packets being sent from the src chain to the dst chain.
+// The sequence number counts how many packets have been sent.
+// The next packet must include the latest sequence number.
 func GetSequenceNumber(store types.KVStore, src, dst string) uint64 {
 	sequenceKey := toKey(_IBC, _EGRESS, src, dst)
 	seqBytes := store.Get(sequenceKey)
@@ -418,6 +420,9 @@ func (sm *IBCStateMachine) runPacketCreateTx(tx IBCPacketCreateTx) {
 
 	// Save new Packet
 	save(sm.store, packetKey, packet)
+
+	// set the sequence number
+	SetSequenceNumber(sm.store, packet.SrcChainID, packet.DstChainID, packet.Sequence)
 }
 
 func (sm *IBCStateMachine) runPacketPostTx(tx IBCPacketPostTx) {
@@ -473,7 +478,7 @@ func (sm *IBCStateMachine) runPacketPostTx(tx IBCPacketPostTx) {
 	ok := proof.Verify(packetKeyEgress, packetBytes, header.AppHash)
 	if !ok {
 		sm.res.Code = IBCCodeInvalidProof
-		sm.res.Log = "Proof is invalid"
+		sm.res.Log = fmt.Sprintf("Proof is invalid. key: %s; packetByes %X; header %v; proof %v", packetKeyEgress, packetBytes, header, proof)
 		return
 	}
 
