@@ -1,12 +1,12 @@
 package keys
 
 import (
-	"github.com/tepleton/go-crypto"
-	"github.com/tepleton/go-wire"
+	amino "github.com/tepleton/go-amino"
+	crypto "github.com/tepleton/go-crypto"
 )
 
-var cdc = wire.NewCodec()
+var cdc = amino.NewCodec()
 
 func init() {
-	crypto.RegisterWire(cdc)
+	crypto.RegisterAmino(cdc)
 }

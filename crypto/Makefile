@@ -1,11 +1,11 @@
 GOTOOLS = \
-	github.com/Masterminds/glide \
-	github.com/jteeuwen/go-bindata/go-bindata 
+	github.com/golang/dep/cmd/dep \
+	github.com/jteeuwen/go-bindata/go-bindata
 	# gopkg.in/alecthomas/gometalinter.v2 \
 		#
-GOTOOLS_CHECK = glide go-bindata #gometalinter.v2
+GOTOOLS_CHECK = dep go-bindata #gometalinter.v2
 
-all: check get_vendor_deps build test install 
+all: check get_vendor_deps build test install
 
 check: check_tools
 
@@ -43,16 +43,15 @@ update_tools:
 
 get_vendor_deps:
 	@rm -rf vendor/
-	@echo "--> Running glide install"
-	@glide install
+	@echo "--> Running dep ensure"
+	@dep ensure
 
 
 ########################################
 ### Testing
 
 test:
-	go test -p 1 `glide novendor`
-
+	go test -p 1 $(shell go list ./... | grep -v vendor)
 
 ########################################
 ### Formatting, linting, and vetting
