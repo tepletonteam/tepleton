@@ -11,7 +11,6 @@ import (
 	wrsp "github.com/tepleton/wrsp/types"
 	wire "github.com/tepleton/go-wire"
 
-	"github.com/tepleton/basecoin/state"
 	"github.com/tepleton/basecoin/types"
 
 	client "github.com/tepleton/tepleton/rpc/client"
@@ -114,7 +113,7 @@ func Query(tmAddr string, key []byte) (*wrsp.ResultQuery, error) {
 // fetch the account by querying the app
 func getAcc(tmAddr string, address []byte) (*types.Account, error) {
 
-	key := state.AccountKey(address)
+	key := types.AccountKey(address)
 	response, err := Query(tmAddr, key)
 	if err != nil {
 		return nil, err
