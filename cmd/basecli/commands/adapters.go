@@ -14,7 +14,6 @@ import (
 	"github.com/tepleton/light-client/commands"
 	"github.com/tepleton/light-client/proofs"
 
-	"github.com/tepleton/basecoin/state"
 	btypes "github.com/tepleton/basecoin/types"
 )
 
