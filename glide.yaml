@@ -2,27 +2,22 @@ package: github.com/tepleton/basecoin
 import:
 - package: github.com/gorilla/websocket
 - package: github.com/pkg/errors
-  version: ^0.8.0
 - package: github.com/spf13/cobra
 - package: github.com/spf13/pflag
 - package: github.com/spf13/viper
 - package: github.com/tepleton/wrsp
-  version: ~0.5.0
-  version:
   subpackages:
   - server
   - types
 - package: github.com/tepleton/go-crypto
-  version: ~0.2.0
   subpackages:
   - cmd
   - keys
 - package: github.com/tepleton/go-wire
-  version: ~0.6.2
   subpackages:
   - data
 - package: github.com/tepleton/light-client
-  version: ~0.10.0
+  version: develop
   subpackages:
   - commands
   - commands/proofs
@@ -30,12 +25,11 @@ import:
   - commands/txs
   - proofs
 - package: github.com/tepleton/merkleeyes
-  version: ~0.2.0
   subpackages:
   - client
   - iavl
 - package: github.com/tepleton/tepleton
-  version: ~0.10.0
+  version: develop
   subpackages:
   - config
   - node
@@ -46,7 +40,6 @@ import:
   - rpc/lib/types
   - types
 - package: github.com/tepleton/tmlibs
-  version: ~0.2.0
   subpackages:
   - cli
   - common
