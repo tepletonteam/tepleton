@@ -2,6 +2,7 @@ package commands
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -10,6 +11,7 @@ import (
 
 	"github.com/tepleton/go-wire"
 	"github.com/tepleton/merkleeyes/iavl"
+	"github.com/tepleton/tepleton/rpc/client"
 	tmtypes "github.com/tepleton/tepleton/types"
 )
 
@@ -98,11 +100,16 @@ func queryCmd(cmd *cobra.Command, args []string) error {
 	proof := resp.Proof
 	height := resp.Height
 
-	fmt.Println(string(wire.JSONBytes(struct {
+	out, err := json.Marshal(struct {
 		Value  []byte `json:"value"`
 		Proof  []byte `json:"proof"`
 		Height uint64 `json:"height"`
-	}{val, proof, height})))
+	}{val, proof, height})
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(string(out))
 	return nil
 }
 
@@ -120,11 +127,16 @@ func accountCmd(cmd *cobra.Command, args []string) error {
 		return errors.Errorf("Account address (%v) is invalid hex: %v\n", addrHex, err)
 	}
 
-	acc, err := getAcc(nodeFlag, addr)
+	httpClient := client.NewHTTP(nodeFlag, "/websocket")
+	acc, err := getAccWithClient(httpClient, addr)
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(wire.JSONBytes(acc)))
+	out, err := json.Marshal(acc)
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(out))
 	return nil
 }
 
@@ -145,7 +157,7 @@ func blockCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println(string(wire.JSONBytes(struct {
+	out, err := json.Marshal(struct {
 		Hex  BlockHex  `json:"hex"`
 		JSON BlockJSON `json:"json"`
 	}{
@@ -157,7 +169,12 @@ func blockCmd(cmd *cobra.Command, args []string) error {
 			Header: header,
 			Commit: commit,
 		},
-	})))
+	})
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(string(out))
 	return nil
 }
 

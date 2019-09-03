@@ -1,13 +1,9 @@
 package commands
 
 import (
-	"os"
-
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
-	"github.com/tepleton/tepleton/config"
-	"github.com/tepleton/tmlibs/cli"
+	tmcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 )
 
 var UnsafeResetAllCmd = &cobra.Command{
@@ -17,9 +13,10 @@ var UnsafeResetAllCmd = &cobra.Command{
 }
 
 func unsafeResetAllCmd(cmd *cobra.Command, args []string) error {
-	rootDir := viper.GetString(cli.HomeFlag)
-	// wipe out rootdir if it exists before recreating it
-	os.RemoveAll(rootDir)
-	config.EnsureRoot(rootDir)
+	cfg, err := getTendermintConfig()
+	if err != nil {
+		return err
+	}
+	tmcmd.ResetAll(cfg.DBDir(), cfg.PrivValidatorFile(), logger)
 	return nil
 }

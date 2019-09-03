@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 
 	wrsp "github.com/tepleton/wrsp/types"
-	. "github.com/tepleton/tmlibs/common"
 	"github.com/tepleton/go-crypto"
-	"github.com/tepleton/go-wire/data"
 	"github.com/tepleton/go-wire"
+	"github.com/tepleton/go-wire/data"
+	. "github.com/tepleton/tmlibs/common"
 )
 
 /*
@@ -46,7 +46,7 @@ func init() {
 
 // TxS add json serialization to Tx
 type TxS struct {
-	Tx
+	Tx `json:"unwrap"`
 }
 
 func (p TxS) MarshalJSON() ([]byte, error) {
@@ -116,10 +116,33 @@ type TxOutput struct {
 	Coins   Coins      `json:"coins"`   //
 }
 
-func (txOut TxOutput) ValidateBasic() wrsp.Result {
-	if len(txOut.Address) != 20 {
-		return wrsp.ErrBaseInvalidOutput.AppendLog("Invalid address length")
+// An output destined for another chain may be formatted as `chainID/address`.
+// ChainAndAddress returns the chainID prefix and the address.
+// If there is no chainID prefix, the first returned value is nil.
+func (txOut TxOutput) ChainAndAddress() ([]byte, []byte, wrsp.Result) {
+	var chainPrefix []byte
+	address := txOut.Address
+	if len(address) > 20 {
+		spl := bytes.Split(address, []byte("/"))
+		if len(spl) < 2 {
+			return nil, nil, wrsp.ErrBaseInvalidOutput.AppendLog("Invalid address format")
+		}
+		chainPrefix = spl[0]
+		address = bytes.Join(spl[1:], nil)
 	}
+
+	if len(address) != 20 {
+		return nil, nil, wrsp.ErrBaseInvalidOutput.AppendLog("Invalid address length")
+	}
+	return chainPrefix, address, wrsp.OK
+}
+
+func (txOut TxOutput) ValidateBasic() wrsp.Result {
+	_, _, r := txOut.ChainAndAddress()
+	if r.IsErr() {
+		return r
+	}
+
 	if !txOut.Coins.IsValid() {
 		return wrsp.ErrBaseInvalidOutput.AppendLog(Fmt("Invalid coins %v", txOut.Coins))
 	}
