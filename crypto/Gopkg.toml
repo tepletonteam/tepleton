@@ -24,7 +24,6 @@
 #   go-tests = true
 #   unused-packages = true
 
-
 [[constraint]]
   name = "github.com/btcsuite/btcutil"
   branch = "master"
@@ -47,7 +46,7 @@
 
 [[constraint]]
   name = "github.com/tepleton/go-amino"
-  version = "0.9.6"
+  version = "0.10.0-rc2"
 
 [[constraint]]
   name = "github.com/tepleton/tmlibs"
@@ -55,6 +54,10 @@
 
 [[constraint]]
   name = "github.com/tyler-smith/go-bip39"
+  branch = "master"
+
+[[constraint]]
+  name = "github.com/zondax/ledger-goclient"
   branch = "master"
 
 [prune]

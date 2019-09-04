@@ -1,6 +1,7 @@
 package crypto
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -41,6 +42,19 @@ func checkAminoJSON(t *testing.T, src interface{}, dst interface{}, isNil bool) 
 	require.Nil(t, err, "%+v", err)
 }
 
+func ExamplePrintRegisteredTypes() {
+	cdc.PrintTypes(os.Stdout)
+	// Output: | Type | Name | Prefix | Length | Notes |
+	//| ---- | ---- | ------ | ----- | ------ |
+	//| PubKeyEd25519 | tepleton/PubKeyEd25519 | 0x1624DE64 | 0x20 |  |
+	//| PubKeySecp256k1 | tepleton/PubKeySecp256k1 | 0xEB5AE987 | 0x21 |  |
+	//| PrivKeyEd25519 | tepleton/PrivKeyEd25519 | 0xA3288910 | 0x40 |  |
+	//| PrivKeySecp256k1 | tepleton/PrivKeySecp256k1 | 0xE1B0F79B | 0x20 |  |
+	//| PrivKeyLedgerSecp256k1 | tepleton/PrivKeyLedgerSecp256k1 | 0x10CAB393 | variable |  |
+	//| SignatureEd25519 | tepleton/SignatureEd25519 | 0x2031EA53 | 0x40 |  |
+	//| SignatureSecp256k1 | tepleton/SignatureSecp256k1 | 0x7FC4A495 | variable |  |
+}
+
 func TestKeyEncodings(t *testing.T) {
 	cases := []struct {
 		privKey           PrivKey
@@ -69,14 +83,16 @@ func TestKeyEncodings(t *testing.T) {
 
 		// Check (de/en)codings of Signatures.
 		var sig1, sig2, sig3 Signature
-		sig1 = tc.privKey.Sign([]byte("something"))
+		sig1, err := tc.privKey.Sign([]byte("something"))
+		assert.NoError(t, err)
 		checkAminoBinary(t, sig1, &sig2, -1) // Siganture size changes for Secp anyways.
 		assert.EqualValues(t, sig1, sig2)
 		checkAminoJSON(t, sig1, &sig3, false) // TODO also check Prefix bytes.
 		assert.EqualValues(t, sig1, sig3)
 
 		// Check (de/en)codings of PubKeys.
-		pubKey := tc.privKey.PubKey()
+		pubKey, err := tc.privKey.PubKey()
+		assert.NoError(t, err)
 		var pub2, pub3 PubKey
 		checkAminoBinary(t, pubKey, &pub2, tc.pubSize)
 		assert.EqualValues(t, pubKey, pub2)
