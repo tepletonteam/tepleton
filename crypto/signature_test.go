@@ -32,7 +32,8 @@ func TestSignAndValidateSecp256k1(t *testing.T) {
 	pubKey := privKey.PubKey()
 
 	msg := CRandBytes(128)
-	sig := privKey.Sign(msg)
+	sig, err := privKey.Sign(msg)
+	require.Nil(t, err)
 
 	assert.True(t, pubKey.VerifyBytes(msg, sig))
 

@@ -33,6 +33,7 @@ func TestPubKeySecp256k1Address(t *testing.T) {
 		var priv PrivKeySecp256k1
 		copy(priv[:], privB)
 
+
 		pubKey := priv.PubKey()
 		pubT, _ := pubKey.(PubKeySecp256k1)
 		pub := pubT[:]

@@ -44,10 +44,12 @@ type PrivKeyLedgerSecp256k1 struct {
 func NewPrivKeyLedgerSecp256k1(path DerivationPath) (PrivKey, error) {
 	var pk PrivKeyLedgerSecp256k1
 	pk.Path = path
-	// getPubKey will cache the pubkey for later use,
-	// this allows us to return an error early if the ledger
-	// is not plugged in
-	_, err := pk.getPubKey()
+	// cache the pubkey for later use
+	pubKey, err := pk.getPubKey()
+	if err != nil {
+		return nil, err
+	}
+	pk.CachedPubKey = pubKey
 	return &pk, err
 }
 
@@ -55,8 +57,7 @@ func NewPrivKeyLedgerSecp256k1(path DerivationPath) (PrivKey, error) {
 // after loading it from disk
 func (pk PrivKeyLedgerSecp256k1) ValidateKey() error {
 	// getPubKey will return an error if the ledger is not
-	// properly set up...
-	pub, err := pk.forceGetPubKey()
+	pub, err := pk.getPubKey()
 	if err != nil {
 		return err
 	}
@@ -73,11 +74,7 @@ func (pk *PrivKeyLedgerSecp256k1) AssertIsPrivKeyInner() {}
 // Bytes fulfils PrivKey Interface - but it stores the cached pubkey so we can verify
 // the same key when we reconnect to a ledger
 func (pk PrivKeyLedgerSecp256k1) Bytes() []byte {
-	bin, err := cdc.MarshalBinaryBare(pk)
-	if err != nil {
-		panic(err)
-	}
-	return bin
+	return cdc.MustMarshalBinaryBare(pk)
 }
 
 // Sign calls the ledger and stores the PubKey for future use
@@ -85,15 +82,14 @@ func (pk PrivKeyLedgerSecp256k1) Bytes() []byte {
 // Communication is checked on NewPrivKeyLedger and PrivKeyFromBytes,
 // returning an error, so this should only trigger if the privkey is held
 // in memory for a while before use.
-func (pk PrivKeyLedgerSecp256k1) Sign(msg []byte) Signature {
-	// oh, I wish there was better error handling
+func (pk PrivKeyLedgerSecp256k1) Sign(msg []byte) (Signature, error) {
 	dev, err := getLedger()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	sig, err := signLedgerSecp256k1(dev, pk.Path, msg)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	return sig, nil
 }
