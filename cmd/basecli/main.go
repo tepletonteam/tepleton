@@ -9,6 +9,7 @@ import (
 	"github.com/tepleton/light-client/commands"
 	"github.com/tepleton/light-client/commands/proofs"
 	"github.com/tepleton/light-client/commands/proxy"
+	rpccmd "github.com/tepleton/light-client/commands/rpc"
 	"github.com/tepleton/light-client/commands/seeds"
 	"github.com/tepleton/light-client/commands/txs"
 	"github.com/tepleton/tmlibs/cli"
@@ -50,6 +51,7 @@ func main() {
 		commands.ResetCmd,
 		keycmd.RootCmd,
 		seeds.RootCmd,
+		rpccmd.RootCmd,
 		pr,
 		tr,
 		proxy.RootCmd,
