@@ -115,7 +115,7 @@ git log | head -1
 
 In the main repo (tepleton, basecoin, ...) where the binary will be built:
 ```
-cd $GOPATH/src/github.com/tepleton/tendermin
+cd $GOPATH/src/github.com/tepleton/tepleton
 git checkout master
 git pull
 # -> edit glide.lock, set the version of go-p2p (for example)
