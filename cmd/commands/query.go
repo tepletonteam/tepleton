@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/tepleton/go-wire"
+	"github.com/tepleton/go-wire/data"
 	"github.com/tepleton/merkleeyes/iavl"
 	"github.com/tepleton/tepleton/rpc/client"
 	tmtypes "github.com/tepleton/tepleton/types"
@@ -101,9 +102,9 @@ func queryCmd(cmd *cobra.Command, args []string) error {
 	height := resp.Height
 
 	out, err := json.Marshal(struct {
-		Value  []byte `json:"value"`
-		Proof  []byte `json:"proof"`
-		Height uint64 `json:"height"`
+		Value  data.Bytes `json:"value"`
+		Proof  data.Bytes `json:"proof"`
+		Height uint64     `json:"height"`
 	}{val, proof, height})
 	if err != nil {
 		return err
@@ -179,8 +180,8 @@ func blockCmd(cmd *cobra.Command, args []string) error {
 }
 
 type BlockHex struct {
-	Header []byte `json:"header"`
-	Commit []byte `json:"commit"`
+	Header data.Bytes `json:"header"`
+	Commit data.Bytes `json:"commit"`
 }
 
 type BlockJSON struct {

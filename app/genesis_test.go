@@ -8,13 +8,20 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tepleton/basecoin/types"
-	"github.com/tepleton/go-crypto"
+	crypto "github.com/tepleton/go-crypto"
 	eyescli "github.com/tepleton/merkleeyes/client"
 	cmn "github.com/tepleton/tmlibs/common"
 )
 
 const genesisFilepath = "./testdata/genesis.json"
 const genesisAcctFilepath = "./testdata/genesis2.json"
+
+func TestLoadGenesisDoNotFailIfAppOptionsAreMissing(t *testing.T) {
+	eyesCli := eyescli.NewLocalClient("", 0)
+	app := NewBasecoin(eyesCli)
+	err := app.LoadGenesis("./testdata/genesis3.json")
+	require.Nil(t, err, "%+v", err)
+}
 
 func TestLoadGenesis(t *testing.T) {
 	assert, require := assert.New(t), require.New(t)
