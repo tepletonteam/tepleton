@@ -3,8 +3,7 @@
 On a good day, basecoin can be installed like a normal Go program:
 
 ```
-go get github.com/tepleton/basecoin/
-make all
+go get -u github.com/tepleton/basecoin/cmd/...
 ```
 
 In some cases, if that fails, or if another branch is required,
@@ -15,7 +14,6 @@ the correct way to install is:
 ```
 cd $GOPATH/src/github.com/tepleton/basecoin
 git pull origin master
-make get_vendor_deps
 make all
 ```
 
