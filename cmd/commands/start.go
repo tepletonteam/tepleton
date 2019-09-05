@@ -12,8 +12,8 @@ import (
 	"github.com/tepleton/wrsp/server"
 	eyes "github.com/tepleton/merkleeyes/client"
 	"github.com/tepleton/tmlibs/cli"
+	cliflags "github.com/tepleton/tmlibs/cli/flags"
 	cmn "github.com/tepleton/tmlibs/common"
-	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/tepleton/config"
 	"github.com/tepleton/tepleton/node"
@@ -139,13 +139,10 @@ func startTendermint(dir string, basecoinApp *app.Basecoin) error {
 		return err
 	}
 
-	// TODO: parse the log level from the config properly (multi modules)
-	// but some tm code must be refactored for better usability
-	lvl, err := log.AllowLevel(cfg.LogLevel)
+	tmLogger, err := cliflags.ParseLogLevel(cfg.LogLevel, logger, config.DefaultConfig().LogLevel)
 	if err != nil {
 		return err
 	}
-	tmLogger := log.NewFilter(logger, lvl)
 
 	// Create & start tepleton node
 	privValidator := types.LoadOrGenPrivValidator(cfg.PrivValidatorFile(), tmLogger)
