@@ -1,8 +1,8 @@
 package merkle
 
 import (
-	cmn "github.com/tepleton/tmlibs/common"
 	"github.com/tepleton/go-crypto/tmhash"
+	cmn "github.com/tepleton/tmlibs/common"
 )
 
 // Merkle tree from a map.
@@ -24,16 +24,13 @@ func newSimpleMap() *simpleMap {
 func (sm *simpleMap) Set(key string, value Hasher) {
 	sm.sorted = false
 
-	// Hash the key to blind it... why not?
-	khash := tmhash.Sum([]byte(key))
-
-	// And the value is hashed too, so you can
+	// The value is hashed, so you can
 	// check for equality with a cached value (say)
 	// and make a determination to fetch or not.
 	vhash := value.Hash()
 
 	sm.kvs = append(sm.kvs, cmn.KVPair{
-		Key:   khash,
+		Key:   []byte(key),
 		Value: vhash,
 	})
 }
@@ -65,28 +62,27 @@ func (sm *simpleMap) KVPairs() cmn.KVPairs {
 //----------------------------------------
 
 // A local extension to KVPair that can be hashed.
-// XXX: key and value do not need to already be hashed -
-// the kvpair ("abc", "def") would not give the same result
-// as ("ab", "cdef") as we're using length-prefixing.
-type kvPair cmn.KVPair
+// Key and value are length prefixed and concatenated,
+// then hashed.
+type KVPair cmn.KVPair
 
-func (kv kvPair) Hash() []byte {
+func (kv KVPair) Hash() []byte {
 	hasher := tmhash.New()
 	err := encodeByteSlice(hasher, kv.Key)
 	if err != nil {
-			panic(err)
-		}
+		panic(err)
+	}
 	err = encodeByteSlice(hasher, kv.Value)
 	if err != nil {
-			panic(err)
-		}
+		panic(err)
+	}
 	return hasher.Sum(nil)
 }
 
 func hashKVPairs(kvs cmn.KVPairs) []byte {
 	kvsH := make([]Hasher, len(kvs))
 	for i, kvp := range kvs {
-		kvsH[i] = kvPair(kvp)
+		kvsH[i] = KVPair(kvp)
 	}
 	return SimpleHashFromHashers(kvsH)
 }
