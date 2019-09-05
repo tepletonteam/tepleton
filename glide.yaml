@@ -30,12 +30,12 @@ import:
   - commands/txs
   - proofs
 - package: github.com/tepleton/merkleeyes
-  version: develop
+  version: feature/26-add-logger
   subpackages:
   - client
   - iavl
 - package: github.com/tepleton/tepleton
-  version: feature/554-embed-commands
+  version: develop
   subpackages:
   - config
   - node
