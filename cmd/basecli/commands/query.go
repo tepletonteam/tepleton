@@ -6,6 +6,7 @@ import (
 
 	wire "github.com/tepleton/go-wire"
 	lc "github.com/tepleton/light-client"
+	lcmd "github.com/tepleton/light-client/commands"
 	proofcmd "github.com/tepleton/light-client/commands/proofs"
 	"github.com/tepleton/light-client/proofs"
 
@@ -19,6 +20,10 @@ var AccountQueryCmd = &cobra.Command{
 }
 
 func doAccountQuery(cmd *cobra.Command, args []string) error {
+	if err := lcmd.RequireInit(cmd); err != nil {
+		return err
+	}
+
 	addr, err := proofcmd.ParseHexKey(args, "address")
 	if err != nil {
 		return err
