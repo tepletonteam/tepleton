@@ -20,9 +20,7 @@ test_unit:
 	go test $(PACKAGES)
 	#go run tests/tepleton/*.go
 
-test_cli:
-	wget "https://raw.githubusercontent.com/kward/shunit2/master/source/2.1/src/shunit2" \
-		-q -O tests/cli/shunit2
+test_cli: tests/cli/shunit2
 	# sudo apt-get install jq
 	@./tests/cli/basictx.sh
 	@./tests/cli/counter.sh
@@ -35,6 +33,10 @@ build-docker:
 	docker run -it --rm -v "$(PWD):/go/src/github.com/tepleton/basecoin" -w \
 		"/go/src/github.com/tepleton/basecoin" -e "CGO_ENABLED=0" golang:alpine go build ./cmd/basecoin
 	docker build -t "tepleton/basecoin" .
+
+tests/cli/shunit2:
+	wget "https://raw.githubusercontent.com/kward/shunit2/master/source/2.1/src/shunit2" \
+		-q -O tests/cli/shunit2
 
 tools:
 	go get -u -v $(GOTOOLS)
