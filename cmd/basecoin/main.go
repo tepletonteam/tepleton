@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/tepleton/basecoin/cmd/commands"
+	"github.com/tepleton/basecoin/cmd/basecoin/commands"
 	"github.com/tepleton/tmlibs/cli"
 )
 
