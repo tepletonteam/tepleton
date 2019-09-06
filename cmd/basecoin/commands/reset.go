@@ -3,7 +3,7 @@ package commands
 import (
 	"github.com/spf13/cobra"
 
-	tmcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
+	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 )
 
 var UnsafeResetAllCmd = &cobra.Command{
@@ -13,10 +13,10 @@ var UnsafeResetAllCmd = &cobra.Command{
 }
 
 func unsafeResetAllCmd(cmd *cobra.Command, args []string) error {
-	cfg, err := getTendermintConfig()
+	cfg, err := tcmd.ParseConfig()
 	if err != nil {
 		return err
 	}
-	tmcmd.ResetAll(cfg.DBDir(), cfg.PrivValidatorFile(), logger)
+	tcmd.ResetAll(cfg.DBDir(), cfg.PrivValidatorFile(), logger)
 	return nil
 }

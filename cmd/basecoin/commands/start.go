@@ -15,6 +15,7 @@ import (
 	cliflags "github.com/tepleton/tmlibs/cli/flags"
 	cmn "github.com/tepleton/tmlibs/common"
 
+	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 	"github.com/tepleton/tepleton/config"
 	"github.com/tepleton/tepleton/node"
 	"github.com/tepleton/tepleton/proxy"
@@ -33,7 +34,6 @@ var StartCmd = &cobra.Command{
 var (
 	addrFlag              string
 	eyesFlag              string
-	dirFlag               string
 	withoutTendermintFlag bool
 )
 
@@ -45,7 +45,6 @@ func init() {
 	flags := []Flag2Register{
 		{&addrFlag, "address", "tcp://0.0.0.0:46658", "Listen address"},
 		{&eyesFlag, "eyes", "local", "MerkleEyes address, or 'local' for embedded"},
-		{&dirFlag, "dir", ".", "Root directory"},
 		{&withoutTendermintFlag, "without-tepleton", false, "Run Tendermint in-process with the App"},
 	}
 	RegisterFlags(StartCmd, flags)
@@ -122,19 +121,8 @@ func startBasecoinWRSP(basecoinApp *app.Basecoin) error {
 	return nil
 }
 
-func getTendermintConfig() (*config.Config, error) {
-	cfg := config.DefaultConfig()
-	err := viper.Unmarshal(cfg)
-	if err != nil {
-		return nil, err
-	}
-	cfg.SetRoot(cfg.RootDir)
-	config.EnsureRoot(cfg.RootDir)
-	return cfg, nil
-}
-
 func startTendermint(dir string, basecoinApp *app.Basecoin) error {
-	cfg, err := getTendermintConfig()
+	cfg, err := tcmd.ParseConfig()
 	if err != nil {
 		return err
 	}

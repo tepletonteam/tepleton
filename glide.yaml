@@ -35,7 +35,7 @@ import:
   - client
   - iavl
 - package: github.com/tepleton/tepleton
-  version: develop
+  version: feature/554-embed-commands
   subpackages:
   - config
   - node
