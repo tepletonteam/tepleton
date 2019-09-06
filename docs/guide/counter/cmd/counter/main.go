@@ -7,7 +7,7 @@ import (
 
 	"github.com/tepleton/tmlibs/cli"
 
-	"github.com/tepleton/basecoin/cmd/commands"
+	"github.com/tepleton/basecoin/cmd/basecoin/commands"
 	"github.com/tepleton/basecoin/docs/guide/counter/plugins/counter"
 	"github.com/tepleton/basecoin/types"
 )
