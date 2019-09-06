@@ -12,11 +12,9 @@ import (
 	"github.com/tepleton/wrsp/server"
 	eyes "github.com/tepleton/merkleeyes/client"
 	"github.com/tepleton/tmlibs/cli"
-	cliflags "github.com/tepleton/tmlibs/cli/flags"
 	cmn "github.com/tepleton/tmlibs/common"
 
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
-	"github.com/tepleton/tepleton/config"
 	"github.com/tepleton/tepleton/node"
 	"github.com/tepleton/tepleton/proxy"
 	"github.com/tepleton/tepleton/types"
@@ -127,14 +125,9 @@ func startTendermint(dir string, basecoinApp *app.Basecoin) error {
 		return err
 	}
 
-	tmLogger, err := cliflags.ParseLogLevel(cfg.LogLevel, logger, config.DefaultConfig().LogLevel)
-	if err != nil {
-		return err
-	}
-
 	// Create & start tepleton node
-	privValidator := types.LoadOrGenPrivValidator(cfg.PrivValidatorFile(), tmLogger)
-	n := node.NewNode(cfg, privValidator, proxy.NewLocalClientCreator(basecoinApp), tmLogger.With("module", "node"))
+	privValidator := types.LoadOrGenPrivValidator(cfg.PrivValidatorFile(), logger)
+	n := node.NewNode(cfg, privValidator, proxy.NewLocalClientCreator(basecoinApp), logger.With("module", "node"))
 
 	_, err = n.Start()
 	if err != nil {
