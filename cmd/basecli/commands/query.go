@@ -1,9 +1,12 @@
 package commands
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	wire "github.com/tepleton/go-wire"
+	lc "github.com/tepleton/light-client"
 	proofcmd "github.com/tepleton/light-client/commands/proofs"
 	"github.com/tepleton/light-client/proofs"
 
@@ -25,7 +28,9 @@ func doAccountQuery(cmd *cobra.Command, args []string) error {
 
 	acc := new(btypes.Account)
 	proof, err := proofcmd.GetAndParseAppProof(key, &acc)
-	if err != nil {
+	if lc.IsNoDataErr(err) {
+		return fmt.Errorf("Account bytes are empty for address %X ", addr)
+	} else if err != nil {
 		return err
 	}
 
