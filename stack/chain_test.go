@@ -5,10 +5,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/tepleton/tmlibs/log"
+
 	"github.com/tepleton/basecoin"
 	"github.com/tepleton/basecoin/txs"
 	"github.com/tepleton/basecoin/types"
-	"github.com/tepleton/tmlibs/log"
 )
 
 func TestChain(t *testing.T) {
