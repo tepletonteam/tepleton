@@ -22,6 +22,10 @@ const (
 	msgTooManySignatures = "Too many signatures"
 )
 
+func InternalError(msg string) TMError {
+	return New(msg, wrsp.CodeType_InternalError)
+}
+
 func DecodingError() TMError {
 	return New(msgDecoding, wrsp.CodeType_EncodingError)
 }
