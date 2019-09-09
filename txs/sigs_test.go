@@ -6,13 +6,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tepleton/basecoin"
 	crypto "github.com/tepleton/go-crypto"
 	keys "github.com/tepleton/go-crypto/keys"
 	"github.com/tepleton/go-crypto/keys/cryptostore"
 	"github.com/tepleton/go-crypto/keys/storage/memstorage"
 	wire "github.com/tepleton/go-wire"
-	"github.com/tepleton/go-wire/data"
+
+	"github.com/tepleton/basecoin"
 )
 
 func checkSignBytes(t *testing.T, bytes []byte, expected string) {
@@ -22,9 +22,9 @@ func checkSignBytes(t *testing.T, bytes []byte, expected string) {
 	require.Nil(t, err)
 
 	// now make sure this tx is data.Bytes with the info we want
-	byt, ok := preTx.Unwrap().(data.Bytes)
+	raw, ok := preTx.Unwrap().(Raw)
 	require.True(t, ok)
-	assert.Equal(t, expected, string(byt))
+	assert.Equal(t, expected, string(raw.Bytes))
 }
 
 func TestOneSig(t *testing.T) {
@@ -54,7 +54,7 @@ func TestOneSig(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		inner := WrapBytes([]byte(tc.data))
+		inner := NewRaw([]byte(tc.data)).Wrap()
 		tx := NewSig(inner)
 		// unsigned version
 		_, err = tx.Signers()
@@ -119,7 +119,7 @@ func TestMultiSig(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		inner := WrapBytes([]byte(tc.data))
+		inner := NewRaw([]byte(tc.data)).Wrap()
 		tx := NewMulti(inner)
 		// unsigned version
 		_, err = tx.Signers()
