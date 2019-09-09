@@ -66,11 +66,10 @@ func startCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create Basecoin app
-	basecoinApp := app.NewBasecoin(eyesCli)
-	basecoinApp.SetLogger(logger.With("module", "app"))
+	basecoinApp := app.NewBasecoin(eyesCli, logger.With("module", "app"))
 
 	// register IBC plugn
-	basecoinApp.RegisterPlugin(NewIBCPlugin())
+	// basecoinApp.RegisterPlugin(NewIBCPlugin())
 
 	// register all other plugins
 	for _, p := range plugins {
