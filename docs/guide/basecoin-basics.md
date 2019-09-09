@@ -1,98 +1,241 @@
+<!--- shelldown script template, see github.com/rigelrozanski/shelldown
+#!/bin/bash
+
+testTutorial_BasecoinBasics() {
+  
+    #shelldown[1][3] >/dev/null 
+    #shelldown[1][4] >/dev/null 
+    KEYPASS=qwertyuiop
+  
+    RES=$((echo $KEYPASS; echo $KEYPASS) | #shelldown[1][6])
+    assertTrue "Line $LINENO: Expected to contain safe, got $RES" '[[ $RES == *safe* ]]'
+    RES=$((echo $KEYPASS; echo $KEYPASS) | #shelldown[1][7])
+    assertTrue "Line $LINENO: Expected to contain safe, got $RES" '[[ $RES == *safe* ]]'
+  
+    #shelldown[3][-1]
+    assertTrue "Expected true for line $LINENO" $?
+    
+    #shelldown[4][-1] >>/dev/null 2>&1 &
+    sleep 5
+    PID_SERVER=$!
+    disown
+  
+    RES=$((echo y) | #shelldown[5][-1] $1)
+    assertTrue "Line $LINENO: Expected to contain validator, got $RES" '[[ $RES == *validator* ]]'
+    
+    #shelldown[6][0]
+    #shelldown[6][1]
+    RES=$(#shelldown[6][2] | jq '.data.coins[0].denom' | tr -d '"')
+    assertTrue "Line $LINENO: Expected to have mycoins, got $RES" '[[ $RES == mycoin ]]'
+    RES="$(#shelldown[6][3] 2>&1)"
+    assertTrue "Line $LINENO: Expected to contain ERROR, got $RES" '[[ $RES == *ERROR* ]]'
+    
+    RES=$((echo $KEYPASS) | #shelldown[7][-1] | jq '.deliver_tx.code')
+    assertTrue "Line $LINENO: Expected 0 code deliver_tx, got $RES" '[[ $RES == 0 ]]'
+    
+    RES=$(#shelldown[8][-1] | jq '.data.coins[0].amount')
+    assertTrue "Line $LINENO: Expected to contain 1000 mycoin, got $RES" '[[ $RES == 1000 ]]'
+    
+    RES=$((echo $KEYPASS) | #shelldown[9][-1] | jq '.deliver_tx.code')
+    assertTrue "Line $LINENO: Expected 0 code deliver_tx, got $RES" '[[ $RES == 0 ]]'
+    
+    RES=$((echo $KEYPASS) | #shelldown[10][-1])
+    assertTrue "Line $LINENO: Expected to contain insufficient funds error, got $RES" \
+        '[[ $RES == *"insufficient funds"* ]]'
+    
+    #perform a substitution within the final tests
+    HASH=$((echo $KEYPASS) | #shelldown[11][-1] | jq '.hash' | tr -d '"')
+    PRESUB="#shelldown[12][-1]"
+    RES=$(eval ${PRESUB/<HASH>/$HASH})
+    assertTrue "Line $LINENO: Expected to not contain Error, got $RES" '[[ $RES != *Error* ]]'
+}
+
+oneTimeTearDown() {
+    kill -9 $PID_SERVER >/dev/null 2>&1
+    sleep 1
+}
+
+# load and run these tests with shunit2!
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" #get this files directory
+. $DIR/shunit2
+-->
+
 # Basecoin Basics
 
-Here we explain how to get started with a simple Basecoin blockchain, 
+Here we explain how to get started with a simple Basecoin blockchain,
 how to send transactions between accounts using the `basecoin` tool,
 and what is happening under the hood.
 
 ## Install
 
-Installing basecoin is simple:
+Installing Basecoin is simple:
 
-```
-go get -u github.com/tepleton/basecoin/cmd/basecoin
+```shelldown[0]
+go get -u github.com/tepleton/basecoin/cmd/...
 ```
 
 If you have trouble, see the [installation guide](install.md).
 
-## Initialization
+Note the above command installs two binaries: `basecoin` and `basecli`.
+The former is the running node. The latter is a command-line light-client.
+
+## Generate some keys
+
+Let's generate two keys, one to receive an initial allocation of coins,
+and one to send some coins to later:
+
+```shelldown[1]
+# WARNING: this will wipe out any existing info in the ~/.basecli dir
+# including private keys, don't run if you have lots of local state already
+# while we're at it let's remove the working directory for the full node too
+basecli reset_all
+rm -rf ~/.basecoin
+
+basecli keys new cool
+basecli keys new friend
+```
+
+You'll need to enter passwords. You can view your key names and addresses with
+`basecli keys list`, or see a particular key's address with `basecli keys get
+<NAME>`.
+
+## Initialize Basecoin
+
 
 To initialize a new Basecoin blockchain, run:
 
-```
-basecoin init 
+```shelldown[2]
+# WARNING: this will wipe out any existing info in the ~/.basecoin dir
+# don't run if you have lots of local state already
+rm -rf ~/.basecoin
+basecoin init <ADDRESS>
 ```
 
-This will create the necessary files for a Basecoin blockchain with one validator and one account in `~/.basecoin`.
-For more options on setup, see the [guide to using the Basecoin tool](/docs/guide/basecoin-tool.md).
+If you prefer not to copy-paste, you can provide the address programatically:
+
+```shelldown[3]
+basecoin init $(basecli keys get cool | awk '{print $2}')
+```
+
+This will create the necessary files for a Basecoin blockchain with one
+validator and one account (corresponding to your key) in `~/.basecoin`.  For
+more options on setup, see the [guide to using the Basecoin
+tool](/docs/guide/basecoin-tool.md).
+
+If you like, you can manually add some more accounts to the blockchain by
+generating keys and editing the `~/.basecoin/genesis.json`.
 
 ## Start
 
-Now we can start basecoin:
+Now we can start Basecoin:
 
-```
+```shelldown[4]
 basecoin start
 ```
 
 You should see blocks start streaming in!
 
+## Initialize Light-Client
+
+Now that Basecoin is running we can initialize `basecli`, the light-client
+utility.  Basecli is used for sending transactions and querying the state.
+Leave Basecoin running and open a new terminal window. Here run:
+
+```shelldown[5]
+basecli init --node=tcp://localhost:46657 --genesis=$HOME/.basecoin/genesis.json
+```
+
+If you provide the genesis file to basecli, it can calculate the proper chainID
+and validator hash.  Basecli needs to get this information from some trusted
+source, so all queries done with `basecli` can be cryptographically proven to
+be correct according to a known validator set.
+
+Note: that --genesis only works if there have been no validator set changes
+since genesis.  If there are validator set changes, you need to find the current
+set through some other method.
+
 ## Send transactions
 
-Now we are ready to send some transactions. First, open another window.
-If you take a look at the `~/.basecoin/genesis.json` file, you will see one account listed under the `app_options`.
-This account corresponds to the private key in `~/.basecoin/key.json`.
-We also included the private key for another account, in `~/.basecoin/key2.json`.
+Now we are ready to send some transactions. First Let's check the balance of
+the two accounts we setup earlier:
 
-Leave basecoin running and open a new terminal window.
-Let's check the balance of these two accounts:
-
-```
-basecoin account 0x1B1BE55F969F54064628A63B9559E7C21C925165
-basecoin account 0x1DA7C74F9C219229FD54CC9F7386D5A3839F0090
+```shelldown[6]
+ME=$(basecli keys get cool | awk '{print $2}')
+YOU=$(basecli keys get friend | awk '{print $2}')
+basecli query account $ME
+basecli query account $YOU
 ```
 
 The first account is flush with cash, while the second account doesn't exist.
 Let's send funds from the first account to the second:
 
-```
-basecoin tx send --to 0x1DA7C74F9C219229FD54CC9F7386D5A3839F0090 --amount 10mycoin
+```shelldown[7]
+basecli tx send --name=cool --amount=1000mycoin --to=$YOU --sequence=1
 ```
 
-By default, the CLI looks for a `key.json` to sign the transaction with.
-To specify a different key, we can use the `--from` flag.
+Now if we check the second account, it should have `1000` 'mycoin' coins!
 
-Now if we check the second account, it should have `10` 'mycoin' coins!
-
-```
-basecoin account 0x1DA7C74F9C219229FD54CC9F7386D5A3839F0090
+```shelldown[8]
+basecli query account $YOU
 ```
 
 We can send some of these coins back like so:
 
-```
-basecoin tx send --to 0x1B1BE55F969F54064628A63B9559E7C21C925165 --from key2.json --amount 5mycoin
+```shelldown[9]
+basecli tx send --name=friend --amount=500mycoin --to=$ME --sequence=1
 ```
 
-Note how we use the `--from` flag to select a different account to send from.
+Note how we use the `--name` flag to select a different account to send from.
 
 If we try to send too much, we'll get an error:
 
+```shelldown[10]
+basecli tx send --name=friend --amount=500000mycoin --to=$ME --sequence=2
 ```
-basecoin tx send --to 0x1B1BE55F969F54064628A63B9559E7C21C925165 --from key2.json --amount 100mycoin
+
+Let's send another transaction:
+
+```shelldown[11]
+basecli tx send --name=cool --amount=2345mycoin --to=$YOU --sequence=2
 ```
 
-See `basecoin tx send --help` for additional details.
+Note the `hash` value in the response - this is the hash of the transaction.
+We can query for the transaction by this hash:
 
-For a better understanding of the options, it helps to understand the underlying data structures.
+```shelldown[12]
+basecli query tx <HASH>
+```
 
-## Accounts
+See `basecli tx send --help` for additional details.
 
-The Basecoin state consists entirely of a set of accounts.
-Each account contains a public key,
-a balance in many different coin denominations,
-and a strictly increasing sequence number for replay protection.
-This type of account was directly inspired by accounts in Ethereum,
-and is unlike Bitcoin's use of Unspent Transaction Outputs (UTXOs).
-Note Basecoin is a multi-asset cryptocurrency, so each account can have many different kinds of tokens.
+## Proof
+
+Even if you don't see it in the UI, the result of every query comes with a
+proof.  This is a Merkle proof that the result of the query is actually
+contained in the state.  and the state's Merkle root is contained in a recent
+block header.  Behind the scenes, `countercli` will not only verify that this
+state matches the header, but also that the header is properly signed by the
+known validator set.  It will even update the validator set as needed, so long
+as there have not been major changes and it is secure to do so. So, if you
+wonder why the query may take a second... there is a lot of work going on in
+the background to make sure even a lying full node can't trick your client.
+
+In a latter [guide on InterBlockchainCommunication](ibc.md), we'll use these
+proofs to post transactions to other chains.
+
+## Accounts and Transactions
+
+For a better understanding of how to further use the tools, it helps to
+understand the underlying data structures.
+
+### Accounts
+
+The Basecoin state consists entirely of a set of accounts.  Each account
+contains a public key, a balance in many different coin denominations, and a
+strictly increasing sequence number for replay protection.  This type of
+account was directly inspired by accounts in Ethereum, and is unlike Bitcoin's
+use of Unspent Transaction Outputs (UTXOs).  Note Basecoin is a multi-asset
+cryptocurrency, so each account can have many different kinds of tokens.
 
 ```golang
 type Account struct {
@@ -109,17 +252,24 @@ type Coin struct {
 }
 ```
 
-Accounts are serialized and stored in a Merkle tree under the key `base/a/<address>`, where `<address>` is the address of the account.
-Typically, the address of the account is the 20-byte `RIPEMD160` hash of the public key, but other formats are acceptable as well,
-as defined in the [Tendermint crypto library](https://github.com/tepleton/go-crypto).
-The Merkle tree used in Basecoin is a balanced, binary search tree, which we call an [IAVL tree](https://github.com/tepleton/go-merkle).
+If you want to add more coins to a blockchain, you can do so manually in the
+`~/.basecoin/genesis.json` before you start the blockchain for the first time.
 
-## Transactions
+Accounts are serialized and stored in a Merkle tree under the key
+`base/a/<address>`, where `<address>` is the address of the account.
+Typically, the address of the account is the 20-byte `RIPEMD160` hash of the
+public key, but other formats are acceptable as well, as defined in the
+[Tendermint crypto library](https://github.com/tepleton/go-crypto).  The
+Merkle tree used in Basecoin is a balanced, binary search tree, which we call
+an [IAVL tree](https://github.com/tepleton/go-merkle).
 
-Basecoin defines a simple transaction type, the `SendTx`, which allows tokens to be sent to other accounts.
-The `SendTx` takes a list of inputs and a list of outputs,
-and transfers all the tokens listed in the inputs from their corresponding accounts to the accounts listed in the output.
-The `SendTx` is structured as follows:
+### Transactions
+
+Basecoin defines a simple transaction type, the `SendTx`, which allows tokens
+to be sent to other accounts.  The `SendTx` takes a list of inputs and a list
+of outputs, and transfers all the tokens listed in the inputs from their
+corresponding accounts to the accounts listed in the output.  The `SendTx` is
+structured as follows:
 
 ```golang
 type SendTx struct {
@@ -143,32 +293,39 @@ type TxOutput struct {
 }
 ```
 
-Note the `SendTx` includes a field for `Gas` and `Fee`.
-The `Gas` limits the total amount of computation that can be done by the transaction,
-while the `Fee` refers to the total amount paid in fees.
-This is slightly different from Ethereum's concept of `Gas` and `GasPrice`,
-where `Fee = Gas x GasPrice`. In Basecoin, the `Gas` and `Fee` are independent,
-and the `GasPrice` is implicit.
+Note the `SendTx` includes a field for `Gas` and `Fee`.  The `Gas` limits the
+total amount of computation that can be done by the transaction, while the
+`Fee` refers to the total amount paid in fees.  This is slightly different from
+Ethereum's concept of `Gas` and `GasPrice`, where `Fee = Gas x GasPrice`. In
+Basecoin, the `Gas` and `Fee` are independent, and the `GasPrice` is implicit.
 
-In Basecoin, the `Fee` is meant to be used by the validators to inform the ordering 
-of transactions, like in Bitcoin.  And the `Gas` is meant to be used by the application 
-plugin to control its execution.  There is currently no means to pass `Fee` information 
-to the Tendermint validators, but it will come soon...
+In Basecoin, the `Fee` is meant to be used by the validators to inform the
+ordering of transactions, like in Bitcoin.  And the `Gas` is meant to be used
+by the application plugin to control its execution.  There is currently no
+means to pass `Fee` information to the Tendermint validators, but it will come
+soon...
 
-Note also that the `PubKey` only needs to be sent for `Sequence == 0`.
-After that, it is stored under the account in the Merkle tree and subsequent transactions can exclude it,
-using only the `Address` to refer to the sender. Ethereum does not require public keys to be sent in transactions
-as it uses a different elliptic curve scheme which enables the public key to be derived from the signature itself.
+Note also that the `PubKey` only needs to be sent for `Sequence == 0`.  After
+that, it is stored under the account in the Merkle tree and subsequent
+transactions can exclude it, using only the `Address` to refer to the sender.
+Ethereum does not require public keys to be sent in transactions as it uses a
+different elliptic curve scheme which enables the public key to be derived from
+the signature itself.
 
-Finally, note that the use of multiple inputs and multiple outputs allows us to send many 
-different types of tokens between many different accounts at once in an atomic transaction. 
-Thus, the `SendTx` can serve as a basic unit of decentralized exchange. When using multiple 
-inputs and outputs, you must make sure that the sum of coins of the inputs equals the sum of 
-coins of the outputs (no creating money), and that all accounts that provide inputs have signed the transaction.
+Finally, note that the use of multiple inputs and multiple outputs allows us to
+send many different types of tokens between many different accounts at once in
+an atomic transaction.  Thus, the `SendTx` can serve as a basic unit of
+decentralized exchange. When using multiple inputs and outputs, you must make
+sure that the sum of coins of the inputs equals the sum of coins of the outputs
+(no creating money), and that all accounts that provide inputs have signed the
+transaction.
 
 ## Conclusion
 
-In this guide, we introduced the `basecoin` tool, demonstrated how to use it to send tokens between accounts,
-and discussed the underlying data types for accounts and transactions, specifically the `Account` and the `SendTx`.
-In the [next guide](basecoin-plugins.md), we introduce the basecoin plugin system, which uses a new transaction type, the `AppTx`,
-to extend the functionality of the Basecoin system with arbitrary logic.
+In this guide, we introduced the `basecoin` and `basecli` tools, demonstrated
+how to start a new basecoin blockchain and how to send tokens between accounts,
+and discussed the underlying data types for accounts and transactions,
+specifically the `Account` and the `SendTx`.  In the [next
+guide](basecoin-plugins.md), we introduce the Basecoin plugin system, which
+uses a new transaction type, the `AppTx`, to extend the functionality of the
+Basecoin system with arbitrary logic.

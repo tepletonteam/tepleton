@@ -12,6 +12,7 @@ dependencies:
   override:
     - go get github.com/Masterminds/glide
     - go version
+    - go get -u github.com/tepleton/tepleton/cmd/tepleton
     - glide --version
     - mkdir -p "$PROJECT_PARENT_PATH"
     - ln -sf "$HOME/$CIRCLE_PROJECT_REPONAME/" "$REPO"
@@ -19,9 +20,5 @@ dependencies:
 
 test:
   override:
-    - "cd $REPO && glide install && go install ./cmd/..."
+    - "cd $REPO && make all"
     - ls $GOPATH/bin
-    - "cd $REPO && make test"
-    - "cd $REPO/demo && bash start.sh"
-
-

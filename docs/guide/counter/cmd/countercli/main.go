@@ -9,18 +9,17 @@ import (
 	"github.com/tepleton/light-client/commands"
 	"github.com/tepleton/light-client/commands/proofs"
 	"github.com/tepleton/light-client/commands/proxy"
-	rpccmd "github.com/tepleton/light-client/commands/rpc"
 	"github.com/tepleton/light-client/commands/seeds"
 	"github.com/tepleton/light-client/commands/txs"
 	"github.com/tepleton/tmlibs/cli"
 
 	bcmd "github.com/tepleton/basecoin/cmd/basecli/commands"
-	coincmd "github.com/tepleton/basecoin/cmd/basecoin/commands"
+	bcount "github.com/tepleton/basecoin/docs/guide/counter/cmd/countercli/commands"
 )
 
 // BaseCli represents the base command when called without any subcommands
 var BaseCli = &cobra.Command{
-	Use:   "basecli",
+	Use:   "countercli",
 	Short: "Light client for tepleton",
 	Long: `Basecli is an version of tmcli including custom logic to
 present a nice (not raw hex) interface to the basecoin blockchain structure.
@@ -34,16 +33,25 @@ func main() {
 	commands.AddBasicFlags(BaseCli)
 
 	// Prepare queries
-	pr := proofs.RootCmd
-	// These are default parsers, but optional in your app (you can remove key)
-	pr.AddCommand(proofs.TxCmd)
-	pr.AddCommand(proofs.KeyCmd)
-	pr.AddCommand(bcmd.AccountQueryCmd)
+	proofs.RootCmd.AddCommand(
+		// These are default parsers, optional in your app
+		proofs.TxCmd,
+		proofs.KeyCmd,
+		bcmd.AccountQueryCmd,
 
-	// you will always want this for the base send command
+		// XXX IMPORTANT: here is how you add custom query commands in your app
+		bcount.CounterQueryCmd,
+	)
+
+	// Prepare transactions
 	proofs.TxPresenters.Register("base", bcmd.BaseTxPresenter{})
-	tr := txs.RootCmd
-	tr.AddCommand(bcmd.SendTxCmd)
+	txs.RootCmd.AddCommand(
+		// This is the default transaction, optional in your app
+		bcmd.SendTxCmd,
+
+		// XXX IMPORTANT: here is how you add custom tx construction for your app
+		bcount.CounterTxCmd,
+	)
 
 	// Set up the various commands to use
 	BaseCli.AddCommand(
@@ -51,14 +59,11 @@ func main() {
 		commands.ResetCmd,
 		keycmd.RootCmd,
 		seeds.RootCmd,
-		rpccmd.RootCmd,
-		pr,
-		tr,
+		proofs.RootCmd,
+		txs.RootCmd,
 		proxy.RootCmd,
-		coincmd.VersionCmd,
-		bcmd.AutoCompleteCmd,
 	)
 
-	cmd := cli.PrepareMainCmd(BaseCli, "BC", os.ExpandEnv("$HOME/.basecli"))
+	cmd := cli.PrepareMainCmd(BaseCli, "CTL", os.ExpandEnv("$HOME/.countercli"))
 	cmd.Execute()
 }

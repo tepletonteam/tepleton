@@ -1,139 +1,143 @@
 package commands
 
 import (
-	"errors"
+	"fmt"
 	"os"
 	"path"
 
-	"github.com/urfave/cli"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/tepleton/wrsp/server"
-	cmn "github.com/tepleton/go-common"
-	cfg "github.com/tepleton/go-config"
-	//logger "github.com/tepleton/go-logger"
+	eyesApp "github.com/tepleton/merkleeyes/app"
 	eyes "github.com/tepleton/merkleeyes/client"
+	"github.com/tepleton/tmlibs/cli"
+	cmn "github.com/tepleton/tmlibs/common"
 
-	tmcfg "github.com/tepleton/tepleton/config/tepleton"
+	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 	"github.com/tepleton/tepleton/node"
 	"github.com/tepleton/tepleton/proxy"
-	tmtypes "github.com/tepleton/tepleton/types"
+	"github.com/tepleton/tepleton/types"
 
 	"github.com/tepleton/basecoin/app"
-	"github.com/tepleton/basecoin/plugins/ibc"
-	"github.com/tepleton/basecoin/types"
 )
 
-var config cfg.Config
+var StartCmd = &cobra.Command{
+	Use:   "start",
+	Short: "Start basecoin",
+	RunE:  startCmd,
+}
 
+// TODO: move to config file
 const EyesCacheSize = 10000
 
-var StartCmd = cli.Command{
-	Name:      "start",
-	Usage:     "Start basecoin",
-	ArgsUsage: "",
-	Action: func(c *cli.Context) error {
-		return cmdStart(c)
-	},
-	Flags: []cli.Flag{
-		AddrFlag,
-		EyesFlag,
-		DirFlag,
-		InProcTMFlag,
-		ChainIDFlag,
-		IbcPluginFlag,
-	},
+//nolint
+const (
+	FlagAddress           = "address"
+	FlagEyes              = "eyes"
+	FlagWithoutTendermint = "without-tepleton"
+)
+
+func init() {
+	flags := StartCmd.Flags()
+	flags.String(FlagAddress, "tcp://0.0.0.0:46658", "Listen address")
+	flags.String(FlagEyes, "local", "MerkleEyes address, or 'local' for embedded")
+	flags.Bool(FlagWithoutTendermint, false, "Only run basecoin wrsp app, assume external tepleton process")
+	// add all standard 'tepleton node' flags
+	tcmd.AddNodeFlags(StartCmd)
 }
 
-type plugin struct {
-	name string
-	init func() types.Plugin
-}
-
-var plugins = []plugin{}
-
-// RegisterStartPlugin is used to add another
-func RegisterStartPlugin(flag cli.BoolFlag, init func() types.Plugin) {
-	StartCmd.Flags = append(StartCmd.Flags, flag)
-	plugins = append(plugins, plugin{name: flag.GetName(), init: init})
-}
-
-func cmdStart(c *cli.Context) error {
+func startCmd(cmd *cobra.Command, args []string) error {
+	rootDir := viper.GetString(cli.HomeFlag)
+	meyes := viper.GetString(FlagEyes)
 
 	// Connect to MerkleEyes
 	var eyesCli *eyes.Client
-	if c.String("eyes") == "local" {
-		eyesCli = eyes.NewLocalClient(path.Join(c.String("dir"), "merkleeyes.db"), EyesCacheSize)
+	if meyes == "local" {
+		eyesApp.SetLogger(logger.With("module", "merkleeyes"))
+		eyesCli = eyes.NewLocalClient(path.Join(rootDir, "data", "merkleeyes.db"), EyesCacheSize)
 	} else {
 		var err error
-		eyesCli, err = eyes.NewClient(c.String("eyes"))
+		eyesCli, err = eyes.NewClient(meyes)
 		if err != nil {
-			return errors.New("connect to MerkleEyes: " + err.Error())
+			return errors.Errorf("Error connecting to MerkleEyes: %v\n", err)
 		}
 	}
 
 	// Create Basecoin app
 	basecoinApp := app.NewBasecoin(eyesCli)
-	if c.Bool("ibc-plugin") {
-		basecoinApp.RegisterPlugin(ibc.New())
-	}
+	basecoinApp.SetLogger(logger.With("module", "app"))
 
-	// loop through all registered plugins and enable if desired
+	// register IBC plugn
+	basecoinApp.RegisterPlugin(NewIBCPlugin())
+
+	// register all other plugins
 	for _, p := range plugins {
-		if c.Bool(p.name) {
-			basecoinApp.RegisterPlugin(p.init())
+		basecoinApp.RegisterPlugin(p.newPlugin())
+	}
+
+	// if chain_id has not been set yet, load the genesis.
+	// else, assume it's been loaded
+	if basecoinApp.GetState().GetChainID() == "" {
+		// If genesis file exists, set key-value options
+		genesisFile := path.Join(rootDir, "genesis.json")
+		if _, err := os.Stat(genesisFile); err == nil {
+			err := basecoinApp.LoadGenesis(genesisFile)
+			if err != nil {
+				return errors.Errorf("Error in LoadGenesis: %v\n", err)
+			}
+		} else {
+			fmt.Printf("No genesis file at %s, skipping...\n", genesisFile)
 		}
 	}
 
-	// If genesis file exists, set key-value options
-	genesisFile := path.Join(c.String("dir"), "genesis.json")
-	if _, err := os.Stat(genesisFile); err == nil {
-		err := basecoinApp.LoadGenesis(genesisFile)
-		if err != nil {
-			return errors.New(cmn.Fmt("%+v", err))
-		}
-	}
-
-	if c.Bool("in-proc") {
-		startTendermint(c, basecoinApp)
+	chainID := basecoinApp.GetState().GetChainID()
+	if viper.GetBool(FlagWithoutTendermint) {
+		logger.Info("Starting Basecoin without Tendermint", "chain_id", chainID)
+		// run just the wrsp app/server
+		return startBasecoinWRSP(basecoinApp)
 	} else {
-		startBasecoinWRSP(c, basecoinApp)
+		logger.Info("Starting Basecoin with Tendermint", "chain_id", chainID)
+		// start the app with tepleton in-process
+		return startTendermint(rootDir, basecoinApp)
 	}
-
-	return nil
 }
 
-func startBasecoinWRSP(c *cli.Context, basecoinApp *app.Basecoin) error {
+func startBasecoinWRSP(basecoinApp *app.Basecoin) error {
 	// Start the WRSP listener
-	svr, err := server.NewServer(c.String("address"), "socket", basecoinApp)
+	addr := viper.GetString(FlagAddress)
+	svr, err := server.NewServer(addr, "socket", basecoinApp)
 	if err != nil {
-		return errors.New("create listener: " + err.Error())
+		return errors.Errorf("Error creating listener: %v\n", err)
 	}
+	svr.SetLogger(logger.With("module", "wrsp-server"))
+	svr.Start()
+
 	// Wait forever
 	cmn.TrapSignal(func() {
 		// Cleanup
 		svr.Stop()
 	})
 	return nil
-
 }
 
-func startTendermint(c *cli.Context, basecoinApp *app.Basecoin) {
-	// Get configuration
-	config = tmcfg.GetConfig("")
-	// logger.SetLogLevel("notice") //config.GetString("log_level"))
-
-	// parseFlags(config, args[1:]) // Command line overrides
+func startTendermint(dir string, basecoinApp *app.Basecoin) error {
+	cfg, err := tcmd.ParseConfig()
+	if err != nil {
+		return err
+	}
 
 	// Create & start tepleton node
-	privValidatorFile := config.GetString("priv_validator_file")
-	privValidator := tmtypes.LoadOrGenPrivValidator(privValidatorFile)
-	n := node.NewNode(config, privValidator, proxy.NewLocalClientCreator(basecoinApp))
+	privValidator := types.LoadOrGenPrivValidator(cfg.PrivValidatorFile(), logger)
+	n := node.NewNode(cfg, privValidator, proxy.NewLocalClientCreator(basecoinApp), logger.With("module", "node"))
 
-	n.Start()
+	_, err = n.Start()
+	if err != nil {
+		return err
+	}
 
-	// Wait forever
-	cmn.TrapSignal(func() {
-		// Cleanup
-		n.Stop()
-	})
+	// Trap signal, run forever.
+	n.RunForever()
+	return nil
 }

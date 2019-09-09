@@ -8,7 +8,7 @@ import (
 	wrsp "github.com/tepleton/wrsp/types"
 	wire "github.com/tepleton/go-wire"
 	eyes "github.com/tepleton/merkleeyes/client"
-	. "github.com/tepleton/tmlibs/common"
+	cmn "github.com/tepleton/tmlibs/common"
 	"github.com/tepleton/tmlibs/log"
 
 	sm "github.com/tepleton/basecoin/state"
@@ -53,7 +53,15 @@ func (app *Basecoin) GetState() *sm.State {
 
 // WRSP::Info
 func (app *Basecoin) Info() wrsp.ResponseInfo {
-	return wrsp.ResponseInfo{Data: Fmt("Basecoin v%v", version.Version)}
+	resp, err := app.eyesCli.InfoSync()
+	if err != nil {
+		cmn.PanicCrisis(err)
+	}
+	return wrsp.ResponseInfo{
+		Data:             cmn.Fmt("Basecoin v%v", version.Version),
+		LastBlockHeight:  resp.LastBlockHeight,
+		LastBlockAppHash: resp.LastBlockAppHash,
+	}
 }
 
 func (app *Basecoin) RegisterPlugin(plugin types.Plugin) {
@@ -172,7 +180,7 @@ func (app *Basecoin) Commit() (res wrsp.Result) {
 	app.cacheState = app.state.CacheWrap()
 
 	if res.IsErr() {
-		PanicSanity("Error getting hash: " + res.Error())
+		cmn.PanicSanity("Error getting hash: " + res.Error())
 	}
 	return res
 }

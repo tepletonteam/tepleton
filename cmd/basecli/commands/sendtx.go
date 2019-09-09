@@ -50,7 +50,7 @@ func (s *SendTx) Signers() ([]crypto.PubKey, error) {
 func (s *SendTx) TxBytes() ([]byte, error) {
 	// TODO: verify it is signed
 
-	// Code and comment from: basecoin/cmd/commands/tx.go
+	// Code and comment from: basecoin/cmd/basecoin/commands/tx.go
 	// Don't you hate having to do this?
 	// How many times have I lost an hour over this trick?!
 	txBytes := wire.BinaryBytes(struct {
@@ -80,7 +80,7 @@ func (s *SendTx) AddSigner(pk crypto.PubKey) {
 // but that code is too ugly now, needs refactor..
 func (s *SendTx) ValidateBasic() error {
 	if s.chainID == "" {
-		return errors.New("No chainId specified")
+		return errors.New("No chain-id specified")
 	}
 	for _, in := range s.Tx.Inputs {
 		if len(in.Address) != 20 {
@@ -97,7 +97,8 @@ func (s *SendTx) ValidateBasic() error {
 		}
 	}
 	for _, out := range s.Tx.Outputs {
-		if len(out.Address) != 20 {
+		// we now allow chain/addr, so it can be more than 20 bytes
+		if len(out.Address) < 20 {
 			return errors.Errorf("Invalid output address length: %d", len(out.Address))
 		}
 		if !out.Coins.IsValid() {
