@@ -4,7 +4,11 @@ package errors
 *    Copyright (C) 2017 Ethan Frey
 **/
 
-import wrsp "github.com/tepleton/wrsp/types"
+import (
+	"fmt"
+
+	wrsp "github.com/tepleton/wrsp/types"
+)
 
 const (
 	msgDecoding          = "Error decoding input"
@@ -20,7 +24,13 @@ const (
 	msgTooLarge          = "Input size too large"
 	msgMissingSignature  = "Signature missing"
 	msgTooManySignatures = "Too many signatures"
+	msgNoChain           = "No chain id provided"
+	msgWrongChain        = "Tx belongs to different chain - %s"
 )
+
+func InternalError(msg string) TMError {
+	return New(msg, wrsp.CodeType_InternalError)
+}
 
 func DecodingError() TMError {
 	return New(msgDecoding, wrsp.CodeType_EncodingError)
@@ -40,6 +50,15 @@ func TooManySignatures() TMError {
 
 func InvalidSignature() TMError {
 	return New(msgInvalidSignature, wrsp.CodeType_Unauthorized)
+}
+
+func NoChain() TMError {
+	return New(msgNoChain, wrsp.CodeType_Unauthorized)
+}
+
+func WrongChain(chain string) TMError {
+	msg := fmt.Sprintf(msgWrongChain, chain)
+	return New(msg, wrsp.CodeType_Unauthorized)
 }
 
 func InvalidAddress() TMError {

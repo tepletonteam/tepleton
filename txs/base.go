@@ -9,7 +9,8 @@ import (
 
 const (
 	// for utils...
-	ByteRaw   = 0x1
+	ByteRaw = 0x1
+	// TODO: move fees into a module, multiplexer is standard
 	ByteFees  = 0x2
 	ByteMulti = 0x3
 	ByteChain = 0x4
@@ -67,14 +68,14 @@ func NewRaw(d []byte) Raw {
 
 // Fee attaches a fee payment to the embedded tx
 type Fee struct {
-	Tx    basecoin.Tx `json:"tx"`
-	Fee   types.Coin  `json:"fee"`
-	Payer data.Bytes  `json:"payer"` // the address who pays the fee
+	Tx    basecoin.Tx    `json:"tx"`
+	Fee   types.Coin     `json:"fee"`
+	Payer basecoin.Actor `json:"payer"` // the address who pays the fee
 	// Gas types.Coin `json:"gas"`  // ?????
 }
 
-func NewFee(tx basecoin.Tx, fee types.Coin, addr []byte) *Fee {
-	return &Fee{Tx: tx, Fee: fee, Payer: addr}
+func NewFee(tx basecoin.Tx, fee types.Coin, payer basecoin.Actor) *Fee {
+	return &Fee{Tx: tx, Fee: fee, Payer: payer}
 }
 
 func (f *Fee) ValidateBasic() error {
@@ -121,7 +122,7 @@ type Chain struct {
 	ChainID string      `json:"chain_id"`
 }
 
-func NewChain(tx basecoin.Tx, chainID string) *Chain {
+func NewChain(chainID string, tx basecoin.Tx) *Chain {
 	return &Chain{Tx: tx, ChainID: chainID}
 }
 

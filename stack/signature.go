@@ -1,11 +1,10 @@
-package handlers
+package stack
 
 import (
 	crypto "github.com/tepleton/go-crypto"
 
 	"github.com/tepleton/basecoin"
 	"github.com/tepleton/basecoin/errors"
-	"github.com/tepleton/basecoin/stack"
 	"github.com/tepleton/basecoin/types"
 )
 
@@ -14,15 +13,13 @@ const (
 	NameSigs = "sigs"
 )
 
-type SignedHandler struct {
-	AllowMultiSig bool
-}
+type Signatures struct{}
 
-func (_ SignedHandler) Name() string {
+func (_ Signatures) Name() string {
 	return NameSigs
 }
 
-var _ stack.Middleware = SignedHandler{}
+var _ Middleware = Signatures{}
 
 func SigPerm(addr []byte) basecoin.Actor {
 	return basecoin.NewActor(NameSigs, addr)
@@ -34,7 +31,7 @@ type Signed interface {
 	Signers() ([]crypto.PubKey, error)
 }
 
-func (h SignedHandler) CheckTx(ctx basecoin.Context, store types.KVStore, tx basecoin.Tx, next basecoin.Checker) (res basecoin.Result, err error) {
+func (h Signatures) CheckTx(ctx basecoin.Context, store types.KVStore, tx basecoin.Tx, next basecoin.Checker) (res basecoin.Result, err error) {
 	sigs, tnext, err := getSigners(tx)
 	if err != nil {
 		return res, err
@@ -43,7 +40,7 @@ func (h SignedHandler) CheckTx(ctx basecoin.Context, store types.KVStore, tx bas
 	return next.CheckTx(ctx2, store, tnext)
 }
 
-func (h SignedHandler) DeliverTx(ctx basecoin.Context, store types.KVStore, tx basecoin.Tx, next basecoin.Deliver) (res basecoin.Result, err error) {
+func (h Signatures) DeliverTx(ctx basecoin.Context, store types.KVStore, tx basecoin.Tx, next basecoin.Deliver) (res basecoin.Result, err error) {
 	sigs, tnext, err := getSigners(tx)
 	if err != nil {
 		return res, err
