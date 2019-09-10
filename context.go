@@ -1,6 +1,7 @@
 package basecoin
 
 import (
+	wire "github.com/tepleton/go-wire"
 	"github.com/tepleton/go-wire/data"
 	"github.com/tepleton/tmlibs/log"
 )
@@ -18,6 +19,10 @@ type Actor struct {
 
 func NewActor(app string, addr []byte) Actor {
 	return Actor{App: app, Address: addr}
+}
+
+func (a Actor) Bytes() []byte {
+	return wire.BinaryBytes(a)
 }
 
 // Context is an interface, so we can implement "secure" variants that
