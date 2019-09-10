@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/tepleton/wrsp/server"
+	"github.com/tepleton/basecoin"
 	eyesApp "github.com/tepleton/merkleeyes/app"
 	eyes "github.com/tepleton/merkleeyes/client"
 	"github.com/tepleton/tmlibs/cli"
@@ -21,6 +22,8 @@ import (
 	"github.com/tepleton/tepleton/types"
 
 	"github.com/tepleton/basecoin/app"
+	"github.com/tepleton/basecoin/modules/coin"
+	"github.com/tepleton/basecoin/stack"
 )
 
 var StartCmd = &cobra.Command{
@@ -48,6 +51,22 @@ func init() {
 	tcmd.AddNodeFlags(StartCmd)
 }
 
+// TODO: setup handler instead of Plugins
+func getHandler() basecoin.Handler {
+	// use the default stack
+	h := coin.NewHandler()
+	app := stack.NewDefault("change-this").Use(h)
+	return app
+
+	// register IBC plugn
+	// basecoinApp.RegisterPlugin(NewIBCPlugin())
+
+	// register all other plugins
+	// for _, p := range plugins {
+	//  basecoinApp.RegisterPlugin(p.newPlugin())
+	// }
+}
+
 func startCmd(cmd *cobra.Command, args []string) error {
 	rootDir := viper.GetString(cli.HomeFlag)
 	meyes := viper.GetString(FlagEyes)
@@ -66,15 +85,8 @@ func startCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create Basecoin app
-	basecoinApp := app.NewBasecoin(eyesCli, logger.With("module", "app"))
-
-	// register IBC plugn
-	// basecoinApp.RegisterPlugin(NewIBCPlugin())
-
-	// register all other plugins
-	for _, p := range plugins {
-		basecoinApp.RegisterPlugin(p.newPlugin())
-	}
+	h := app.DefaultHandler()
+	basecoinApp := app.NewBasecoin(h, eyesCli, logger.With("module", "app"))
 
 	// if chain_id has not been set yet, load the genesis.
 	// else, assume it's been loaded
