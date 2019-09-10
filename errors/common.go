@@ -5,102 +5,148 @@ package errors
 **/
 
 import (
+	rawerr "errors"
 	"fmt"
 
+	"github.com/pkg/errors"
 	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/basecoin"
 )
 
-const (
-	msgDecoding          = "Error decoding input"
-	msgUnauthorized      = "Unauthorized"
-	msgInvalidAddress    = "Invalid Address"
-	msgInvalidCoins      = "Invalid Coins"
-	msgInvalidFormat     = "Invalid Format"
-	msgInvalidSequence   = "Invalid Sequence"
-	msgInvalidSignature  = "Invalid Signature"
-	msgInsufficientFees  = "Insufficient Fees"
-	msgInsufficientFunds = "Insufficient Funds"
-	msgNoInputs          = "No Input Coins"
-	msgNoOutputs         = "No Output Coins"
-	msgTooLarge          = "Input size too large"
-	msgMissingSignature  = "Signature missing"
-	msgTooManySignatures = "Too many signatures"
-	msgNoChain           = "No chain id provided"
-	msgWrongChain        = "Tx belongs to different chain - %s"
-	msgUnknownTxType     = "We cannot handle this tx - %v"
+var (
+	errDecoding          = rawerr.New("Error decoding input")
+	errUnauthorized      = rawerr.New("Unauthorized")
+	errInvalidAddress    = rawerr.New("Invalid Address")
+	errInvalidCoins      = rawerr.New("Invalid Coins")
+	errInvalidFormat     = rawerr.New("Invalid Format")
+	errInvalidSequence   = rawerr.New("Invalid Sequence")
+	errInvalidSignature  = rawerr.New("Invalid Signature")
+	errInsufficientFees  = rawerr.New("Insufficient Fees")
+	errInsufficientFunds = rawerr.New("Insufficient Funds")
+	errNoInputs          = rawerr.New("No Input Coins")
+	errNoOutputs         = rawerr.New("No Output Coins")
+	errTooLarge          = rawerr.New("Input size too large")
+	errMissingSignature  = rawerr.New("Signature missing")
+	errTooManySignatures = rawerr.New("Too many signatures")
+	errNoChain           = rawerr.New("No chain id provided")
+	errWrongChain        = rawerr.New("Wrong chain for tx")
+	errUnknownTxType     = rawerr.New("Tx type unknown")
 )
 
-func UnknownTxType(tx basecoin.Tx) TMError {
-	msg := fmt.Sprintf(msgUnknownTxType, tx)
-	return New(msg, wrsp.CodeType_UnknownRequest)
+func ErrUnknownTxType(tx basecoin.Tx) TMError {
+	msg := fmt.Sprintf("%T", tx.Unwrap())
+	w := errors.Wrap(errUnknownTxType, msg)
+	return WithCode(w, wrsp.CodeType_UnknownRequest)
 }
 
-func InternalError(msg string) TMError {
+func IsUnknownTxTypeErr(err error) bool {
+	return IsSameError(errUnknownTxType, err)
+}
+
+func ErrInternal(msg string) TMError {
 	return New(msg, wrsp.CodeType_InternalError)
 }
 
-func DecodingError() TMError {
-	return New(msgDecoding, wrsp.CodeType_EncodingError)
+// IsInternalErr matches any error that is not classified
+func IsInternalErr(err error) bool {
+	return HasErrorCode(err, wrsp.CodeType_InternalError)
 }
 
-func Unauthorized() TMError {
-	return New(msgUnauthorized, wrsp.CodeType_Unauthorized)
+func ErrDecoding() TMError {
+	return WithCode(errDecoding, wrsp.CodeType_EncodingError)
 }
 
-func MissingSignature() TMError {
-	return New(msgMissingSignature, wrsp.CodeType_Unauthorized)
+func IsDecodingErr(err error) bool {
+	return IsSameError(errDecoding, err)
 }
 
-func TooManySignatures() TMError {
-	return New(msgTooManySignatures, wrsp.CodeType_Unauthorized)
+func ErrUnauthorized() TMError {
+	return WithCode(errUnauthorized, wrsp.CodeType_Unauthorized)
 }
 
-func InvalidSignature() TMError {
-	return New(msgInvalidSignature, wrsp.CodeType_Unauthorized)
+// IsUnauthorizedErr is generic helper for any unauthorized errors,
+// also specific sub-types
+func IsUnauthorizedErr(err error) bool {
+	return HasErrorCode(err, wrsp.CodeType_Unauthorized)
 }
 
-func NoChain() TMError {
-	return New(msgNoChain, wrsp.CodeType_Unauthorized)
+func ErrMissingSignature() TMError {
+	return WithCode(errMissingSignature, wrsp.CodeType_Unauthorized)
 }
 
-func WrongChain(chain string) TMError {
-	msg := fmt.Sprintf(msgWrongChain, chain)
-	return New(msg, wrsp.CodeType_Unauthorized)
+func IsMissingSignatureErr(err error) bool {
+	return IsSameError(errMissingSignature, err)
+}
+
+func ErrTooManySignatures() TMError {
+	return WithCode(errTooManySignatures, wrsp.CodeType_Unauthorized)
+}
+
+func IsTooManySignaturesErr(err error) bool {
+	return IsSameError(errTooManySignatures, err)
+}
+
+func ErrInvalidSignature() TMError {
+	return WithCode(errInvalidSignature, wrsp.CodeType_Unauthorized)
+}
+
+func IsInvalidSignatureErr(err error) bool {
+	return IsSameError(errInvalidSignature, err)
+}
+
+func ErrNoChain() TMError {
+	return WithCode(errNoChain, wrsp.CodeType_Unauthorized)
+}
+
+func IsNoChainErr(err error) bool {
+	return IsSameError(errNoChain, err)
+}
+
+func ErrWrongChain(chain string) TMError {
+	msg := errors.Wrap(errWrongChain, chain)
+	return WithCode(msg, wrsp.CodeType_Unauthorized)
+}
+
+func IsWrongChainErr(err error) bool {
+	return IsSameError(errWrongChain, err)
 }
 
 func InvalidAddress() TMError {
-	return New(msgInvalidAddress, wrsp.CodeType_BaseInvalidInput)
+	return WithCode(errInvalidAddress, wrsp.CodeType_BaseInvalidInput)
 }
 
 func InvalidCoins() TMError {
-	return New(msgInvalidCoins, wrsp.CodeType_BaseInvalidInput)
+	return WithCode(errInvalidCoins, wrsp.CodeType_BaseInvalidInput)
 }
 
 func InvalidFormat() TMError {
-	return New(msgInvalidFormat, wrsp.CodeType_BaseInvalidInput)
+	return WithCode(errInvalidFormat, wrsp.CodeType_BaseInvalidInput)
 }
 
 func InvalidSequence() TMError {
-	return New(msgInvalidSequence, wrsp.CodeType_BaseInvalidInput)
+	return WithCode(errInvalidSequence, wrsp.CodeType_BaseInvalidInput)
 }
 
 func InsufficientFees() TMError {
-	return New(msgInsufficientFees, wrsp.CodeType_BaseInvalidInput)
+	return WithCode(errInsufficientFees, wrsp.CodeType_BaseInvalidInput)
 }
 
 func InsufficientFunds() TMError {
-	return New(msgInsufficientFunds, wrsp.CodeType_BaseInvalidInput)
+	return WithCode(errInsufficientFunds, wrsp.CodeType_BaseInvalidInput)
 }
 
 func NoInputs() TMError {
-	return New(msgNoInputs, wrsp.CodeType_BaseInvalidInput)
+	return WithCode(errNoInputs, wrsp.CodeType_BaseInvalidInput)
 }
 
 func NoOutputs() TMError {
-	return New(msgNoOutputs, wrsp.CodeType_BaseInvalidOutput)
+	return WithCode(errNoOutputs, wrsp.CodeType_BaseInvalidOutput)
 }
 
-func TooLarge() TMError {
-	return New(msgTooLarge, wrsp.CodeType_EncodingError)
+func ErrTooLarge() TMError {
+	return WithCode(errTooLarge, wrsp.CodeType_EncodingError)
+}
+
+func IsTooLargeErr(err error) bool {
+	return IsSameError(errTooLarge, err)
 }

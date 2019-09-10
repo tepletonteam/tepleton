@@ -24,8 +24,8 @@ func TestCreateResult(t *testing.T) {
 		{New("nonce", wrsp.CodeType_BadNonce), "nonce", wrsp.CodeType_BadNonce},
 		{Wrap(stderr.New("wrap")), "wrap", defaultErrCode},
 		{WithCode(stderr.New("coded"), wrsp.CodeType_BaseInvalidInput), "coded", wrsp.CodeType_BaseInvalidInput},
-		{DecodingError(), msgDecoding, wrsp.CodeType_EncodingError},
-		{Unauthorized(), msgUnauthorized, wrsp.CodeType_Unauthorized},
+		{ErrDecoding(), errDecoding.Error(), wrsp.CodeType_EncodingError},
+		{ErrUnauthorized(), errUnauthorized.Error(), wrsp.CodeType_Unauthorized},
 	}
 
 	for idx, tc := range cases {
