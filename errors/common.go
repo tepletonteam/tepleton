@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	wrsp "github.com/tepleton/wrsp/types"
+	"github.com/tepleton/basecoin"
 )
 
 const (
@@ -26,7 +27,13 @@ const (
 	msgTooManySignatures = "Too many signatures"
 	msgNoChain           = "No chain id provided"
 	msgWrongChain        = "Tx belongs to different chain - %s"
+	msgUnknownTxType     = "We cannot handle this tx - %v"
 )
+
+func UnknownTxType(tx basecoin.Tx) TMError {
+	msg := fmt.Sprintf(msgUnknownTxType, tx)
+	return New(msg, wrsp.CodeType_UnknownRequest)
+}
 
 func InternalError(msg string) TMError {
 	return New(msg, wrsp.CodeType_InternalError)

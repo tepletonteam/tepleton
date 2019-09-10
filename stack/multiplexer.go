@@ -1,9 +1,13 @@
 package stack
 
 import (
+	"strings"
+
 	"github.com/tepleton/basecoin"
 	"github.com/tepleton/basecoin/txs"
 	"github.com/tepleton/basecoin/types"
+	wire "github.com/tepleton/go-wire"
+	"github.com/tepleton/go-wire/data"
 )
 
 const (
@@ -45,7 +49,17 @@ func runAll(ctx basecoin.Context, store types.KVStore, txs []basecoin.Tx, next b
 	return combine(rs), nil
 }
 
-func combine(res []basecoin.Result) basecoin.Result {
-	// TODO: how to combine???
-	return res[0]
+// combines all data bytes as a go-wire array.
+// joins all log messages with \n
+func combine(all []basecoin.Result) basecoin.Result {
+	datas := make([]data.Bytes, len(all))
+	logs := make([]string, len(all))
+	for i, r := range all {
+		datas[i] = r.Data
+		logs[i] = r.Log
+	}
+	return basecoin.Result{
+		Data: wire.BinaryBytes(datas),
+		Log:  strings.Join(logs, "\n"),
+	}
 }
