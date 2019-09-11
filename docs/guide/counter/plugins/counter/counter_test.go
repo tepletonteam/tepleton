@@ -7,28 +7,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	wrsp "github.com/tepleton/wrsp/types"
-	"github.com/tepleton/basecoin"
 	"github.com/tepleton/basecoin/app"
-	"github.com/tepleton/basecoin/modules/coin"
-	"github.com/tepleton/basecoin/stack"
 	"github.com/tepleton/basecoin/txs"
 	"github.com/tepleton/basecoin/types"
 	"github.com/tepleton/go-wire"
 	eyescli "github.com/tepleton/merkleeyes/client"
 	"github.com/tepleton/tmlibs/log"
 )
-
-// TODO: actually handle the counter here...
-func NewCounterHandler() basecoin.Handler {
-	// use the default stack
-	coin := coin.NewHandler()
-	counter := CounterHandler{}
-	dispatcher := stack.NewDispatcher(
-		stack.WrapHandler(coin),
-		stack.WrapHandler(counter),
-	)
-	return stack.NewDefault().Use(dispatcher)
-}
 
 func TestCounterPlugin(t *testing.T) {
 	assert := assert.New(t)
