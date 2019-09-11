@@ -1,7 +1,7 @@
 package counter
 
 import (
-	rawerr "errors"
+	"fmt"
 
 	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/go-wire"
@@ -65,7 +65,7 @@ func (c Tx) ValidateBasic() error {
 //--------------------------------------------------------------------------------
 
 var (
-	errInvalidCounter = rawerr.New("Counter Tx marked invalid")
+	errInvalidCounter = fmt.Errorf("Counter Tx marked invalid")
 )
 
 // ErrInvalidCounter - custom error class
@@ -106,12 +106,12 @@ type Handler struct {
 var _ stack.Dispatchable = Handler{}
 
 // Name - return counter namespace
-func (h Handler) Name() string {
+func (Handler) Name() string {
 	return NameCounter
 }
 
 // AssertDispatcher - placeholder to satisfy XXX
-func (h Handler) AssertDispatcher() {}
+func (Handler) AssertDispatcher() {}
 
 // CheckTx checks if the tx is properly structured
 func (h Handler) CheckTx(ctx basecoin.Context, store types.KVStore, tx basecoin.Tx, _ basecoin.Checker) (res basecoin.Result, err error) {
