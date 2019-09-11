@@ -4,13 +4,15 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
+	"github.com/tepleton/basecoin"
 	wire "github.com/tepleton/go-wire"
 	lc "github.com/tepleton/light-client"
 	lcmd "github.com/tepleton/light-client/commands"
 	proofcmd "github.com/tepleton/light-client/commands/proofs"
 	"github.com/tepleton/light-client/proofs"
 
-	btypes "github.com/tepleton/basecoin/types"
+	"github.com/tepleton/basecoin/modules/coin"
+	"github.com/tepleton/basecoin/stack"
 )
 
 var AccountQueryCmd = &cobra.Command{
@@ -24,9 +26,9 @@ func doAccountQuery(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	key := btypes.AccountKey(addr)
+	key := coin.NewAccountant("").MakeKey(stack.SigPerm(addr))
 
-	acc := new(btypes.Account)
+	acc := coin.Account{}
 	proof, err := proofcmd.GetAndParseAppProof(key, &acc)
 	if lc.IsNoDataErr(err) {
 		return errors.Errorf("Account bytes are empty for address %X ", addr)
@@ -43,7 +45,7 @@ type BaseTxPresenter struct {
 }
 
 func (_ BaseTxPresenter) ParseData(raw []byte) (interface{}, error) {
-	var tx btypes.TxS
+	var tx basecoin.Tx
 	err := wire.ReadBinaryBytes(raw, &tx)
 	return tx, err
 }
