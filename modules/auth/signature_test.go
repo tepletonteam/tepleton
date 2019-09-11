@@ -12,7 +12,6 @@ import (
 	"github.com/tepleton/basecoin"
 	"github.com/tepleton/basecoin/stack"
 	"github.com/tepleton/basecoin/state"
-	"github.com/tepleton/basecoin/txs"
 )
 
 func TestSignatureChecks(t *testing.T) {
@@ -21,7 +20,7 @@ func TestSignatureChecks(t *testing.T) {
 	// generic args
 	ctx := stack.NewContext("test-chain", log.NewNopLogger())
 	store := state.NewMemKVStore()
-	raw := txs.NewRaw([]byte{1, 2, 3, 4})
+	raw := stack.NewRawTx([]byte{1, 2, 3, 4})
 
 	// let's make some keys....
 	priv1 := crypto.GenPrivKeyEd25519().Wrap()
@@ -65,16 +64,16 @@ func TestSignatureChecks(t *testing.T) {
 		var tx basecoin.Tx
 		// this does the signing as needed
 		if tc.useMultiSig {
-			mtx := txs.NewMulti(raw)
+			mtx := NewMulti(raw)
 			for _, k := range tc.keys {
-				err := txs.Sign(mtx, k)
+				err := Sign(mtx, k)
 				assert.Nil(err, "%d: %+v", i, err)
 			}
 			tx = mtx.Wrap()
 		} else {
-			otx := txs.NewSig(raw)
+			otx := NewSig(raw)
 			for _, k := range tc.keys {
-				err := txs.Sign(otx, k)
+				err := Sign(otx, k)
 				assert.Nil(err, "%d: %+v", i, err)
 			}
 			tx = otx.Wrap()

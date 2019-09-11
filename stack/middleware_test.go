@@ -12,7 +12,6 @@ import (
 	"github.com/tepleton/basecoin"
 	"github.com/tepleton/basecoin/errors"
 	"github.com/tepleton/basecoin/state"
-	"github.com/tepleton/basecoin/txs"
 )
 
 const (
@@ -25,7 +24,7 @@ func TestPermissionSandbox(t *testing.T) {
 	// generic args
 	ctx := NewContext("test-chain", log.NewNopLogger())
 	store := state.NewMemKVStore()
-	raw := txs.NewRaw([]byte{1, 2, 3, 4})
+	raw := NewRawTx([]byte{1, 2, 3, 4})
 	rawBytes, err := data.ToWire(raw)
 	require.Nil(err)
 

@@ -11,7 +11,6 @@ import (
 	"github.com/tepleton/basecoin"
 	"github.com/tepleton/basecoin/stack"
 	"github.com/tepleton/basecoin/state"
-	"github.com/tepleton/basecoin/txs"
 )
 
 func TestChain(t *testing.T) {
@@ -19,14 +18,14 @@ func TestChain(t *testing.T) {
 	msg := "got it"
 	chainID := "my-chain"
 
-	raw := txs.NewRaw([]byte{1, 2, 3, 4})
+	raw := stack.NewRawTx([]byte{1, 2, 3, 4})
 	cases := []struct {
 		tx       basecoin.Tx
 		valid    bool
 		errorMsg string
 	}{
-		{txs.NewChain(chainID, raw), true, ""},
-		{txs.NewChain("someone-else", raw), false, "someone-else"},
+		{NewChainTx(chainID, raw), true, ""},
+		{NewChainTx("someone-else", raw), false, "someone-else"},
 		{raw, false, "No chain id provided"},
 	}
 

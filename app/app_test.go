@@ -11,9 +11,9 @@ import (
 	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/basecoin"
 	"github.com/tepleton/basecoin/modules/auth"
+	"github.com/tepleton/basecoin/modules/base"
 	"github.com/tepleton/basecoin/modules/coin"
 	"github.com/tepleton/basecoin/state"
-	"github.com/tepleton/basecoin/txs"
 	wire "github.com/tepleton/go-wire"
 	eyes "github.com/tepleton/merkleeyes/client"
 	"github.com/tepleton/tmlibs/log"
@@ -44,9 +44,9 @@ func (at *appTest) getTx(seq int, coins coin.Coins) basecoin.Tx {
 	in := []coin.TxInput{{Address: at.acctIn.Actor(), Coins: coins, Sequence: seq}}
 	out := []coin.TxOutput{{Address: at.acctOut.Actor(), Coins: coins}}
 	tx := coin.NewSendTx(in, out)
-	tx = txs.NewChain(at.chainID, tx)
-	stx := txs.NewMulti(tx)
-	txs.Sign(stx, at.acctIn.Key)
+	tx = base.NewChainTx(at.chainID, tx)
+	stx := auth.NewMulti(tx)
+	auth.Sign(stx, at.acctIn.Key)
 	return stx.Wrap()
 }
 

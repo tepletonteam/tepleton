@@ -8,8 +8,9 @@ import (
 	"github.com/stretchr/testify/require"
 	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/basecoin/app"
+	"github.com/tepleton/basecoin/modules/auth"
+	"github.com/tepleton/basecoin/modules/base"
 	"github.com/tepleton/basecoin/modules/coin"
-	"github.com/tepleton/basecoin/txs"
 	"github.com/tepleton/go-wire"
 	eyescli "github.com/tepleton/merkleeyes/client"
 	"github.com/tepleton/tmlibs/log"
@@ -41,9 +42,9 @@ func TestCounterPlugin(t *testing.T) {
 	// Deliver a CounterTx
 	DeliverCounterTx := func(valid bool, counterFee coin.Coins, inputSequence int) wrsp.Result {
 		tx := NewTx(valid, counterFee, inputSequence)
-		tx = txs.NewChain(chainID, tx)
-		stx := txs.NewSig(tx)
-		txs.Sign(stx, acct.Key)
+		tx = base.NewChainTx(chainID, tx)
+		stx := auth.NewSig(tx)
+		auth.Sign(stx, acct.Key)
 		txBytes := wire.BinaryBytes(stx.Wrap())
 		return bcApp.DeliverTx(txBytes)
 	}
