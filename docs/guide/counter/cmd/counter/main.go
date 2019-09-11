@@ -7,6 +7,7 @@ import (
 
 	"github.com/tepleton/tmlibs/cli"
 
+	"github.com/tepleton/basecoin/app"
 	"github.com/tepleton/basecoin/cmd/basecoin/commands"
 	"github.com/tepleton/basecoin/docs/guide/counter/plugins/counter"
 	"github.com/tepleton/basecoin/types"
@@ -17,6 +18,9 @@ func main() {
 		Use:   "counter",
 		Short: "demo plugin for basecoin",
 	}
+
+	// TODO: register the counter here
+	commands.Handler = app.DefaultHandler()
 
 	RootCmd.AddCommand(
 		commands.InitCmd,
