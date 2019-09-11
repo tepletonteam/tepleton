@@ -11,6 +11,8 @@ import (
 	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/basecoin/errors"
+	"github.com/tepleton/basecoin/modules/auth"
+	"github.com/tepleton/basecoin/modules/base"
 	"github.com/tepleton/basecoin/modules/coin"
 	"github.com/tepleton/basecoin/stack"
 	sm "github.com/tepleton/basecoin/state"
@@ -50,7 +52,12 @@ func DefaultHandler() basecoin.Handler {
 	// use the default stack
 	h := coin.NewHandler()
 	d := stack.NewDispatcher(stack.WrapHandler(h))
-	return stack.NewDefault().Use(d)
+	return stack.New(
+		base.Logger{},
+		stack.Recovery{},
+		auth.Signatures{},
+		base.Chain{},
+	).Use(d)
 }
 
 // GetState - XXX For testing, not thread safe!

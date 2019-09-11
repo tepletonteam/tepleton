@@ -13,8 +13,8 @@ import (
 	txcmd "github.com/tepleton/light-client/commands/txs"
 	cmn "github.com/tepleton/tmlibs/common"
 
+	"github.com/tepleton/basecoin/modules/auth"
 	"github.com/tepleton/basecoin/modules/coin"
-	"github.com/tepleton/basecoin/stack"
 	"github.com/tepleton/basecoin/txs"
 )
 
@@ -82,7 +82,7 @@ func readSendTxFlags() (tx basecoin.Tx, err error) {
 	if err != nil {
 		return tx, err
 	}
-	toAddr := stack.SigPerm(to)
+	toAddr := auth.SigPerm(to)
 	toAddr.ChainID = chain
 
 	// //parse the fee and amounts into coin types
@@ -102,7 +102,7 @@ func readSendTxFlags() (tx basecoin.Tx, err error) {
 	var fromAddr basecoin.Actor
 	signer := txcmd.GetSigner()
 	if !signer.Empty() {
-		fromAddr = stack.SigPerm(signer.Address())
+		fromAddr = auth.SigPerm(signer.Address())
 	}
 
 	// craft the inputs and outputs

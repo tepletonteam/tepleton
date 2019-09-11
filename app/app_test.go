@@ -10,8 +10,8 @@ import (
 
 	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/basecoin"
+	"github.com/tepleton/basecoin/modules/auth"
 	"github.com/tepleton/basecoin/modules/coin"
-	"github.com/tepleton/basecoin/stack"
 	"github.com/tepleton/basecoin/state"
 	"github.com/tepleton/basecoin/txs"
 	wire "github.com/tepleton/go-wire"
@@ -87,7 +87,7 @@ func getBalance(key basecoin.Actor, state state.KVStore) (coin.Coins, error) {
 }
 
 func getAddr(addr []byte, state state.KVStore) (coin.Coins, error) {
-	actor := stack.SigPerm(addr)
+	actor := auth.SigPerm(addr)
 	return getBalance(actor, state)
 }
 

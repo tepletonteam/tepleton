@@ -11,6 +11,7 @@ import (
 	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/basecoin"
+	"github.com/tepleton/basecoin/modules/auth"
 	"github.com/tepleton/basecoin/stack"
 	"github.com/tepleton/basecoin/state"
 )
@@ -172,7 +173,7 @@ func TestSetOption(t *testing.T) {
 	// some sample settings
 	pk := crypto.GenPrivKeySecp256k1().Wrap()
 	addr := pk.PubKey().Address()
-	actor := basecoin.Actor{App: stack.NameSigs, Address: addr}
+	actor := auth.SigPerm(addr)
 
 	someCoins := Coins{{"atom", 123}}
 	otherCoins := Coins{{"eth", 11}}
