@@ -1,6 +1,8 @@
 package coin
 
 import (
+	"github.com/tepleton/tmlibs/log"
+
 	"github.com/tepleton/basecoin"
 	"github.com/tepleton/basecoin/errors"
 	"github.com/tepleton/basecoin/types"
@@ -72,6 +74,11 @@ func (h Handler) DeliverTx(ctx basecoin.Context, store types.KVStore, tx basecoi
 
 	// a-ok!
 	return basecoin.Result{}, nil
+}
+
+func (h Handler) SetOption(l log.Logger, store types.KVStore, key, value string) (log string, err error) {
+	// TODO
+	return "ok", nil
 }
 
 func checkTx(ctx basecoin.Context, tx basecoin.Tx) (send SendTx, err error) {

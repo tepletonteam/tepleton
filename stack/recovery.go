@@ -3,6 +3,8 @@ package stack
 import (
 	"fmt"
 
+	"github.com/tepleton/tmlibs/log"
+
 	"github.com/tepleton/basecoin"
 	"github.com/tepleton/basecoin/errors"
 	"github.com/tepleton/basecoin/types"
@@ -37,6 +39,15 @@ func (_ Recovery) DeliverTx(ctx basecoin.Context, store types.KVStore, tx baseco
 		}
 	}()
 	return next.DeliverTx(ctx, store, tx)
+}
+
+func (_ Recovery) SetOption(l log.Logger, store types.KVStore, key, value string, next basecoin.SetOptioner) (log string, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = normalizePanic(r)
+		}
+	}()
+	return next.SetOption(l, store, key, value)
 }
 
 // normalizePanic makes sure we can get a nice TMError (with stack) out of it

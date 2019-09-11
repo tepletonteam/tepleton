@@ -7,12 +7,22 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	wrsp "github.com/tepleton/wrsp/types"
+	"github.com/tepleton/basecoin"
 	"github.com/tepleton/basecoin/app"
+	"github.com/tepleton/basecoin/modules/coin"
+	"github.com/tepleton/basecoin/stack"
 	"github.com/tepleton/basecoin/types"
 	"github.com/tepleton/go-wire"
 	eyescli "github.com/tepleton/merkleeyes/client"
 	"github.com/tepleton/tmlibs/log"
 )
+
+// TODO: actually handle the counter here...
+func CounterHandler() basecoin.Handler {
+	// use the default stack
+	h := coin.NewHandler()
+	return stack.NewDefault().Use(h)
+}
 
 func TestCounterPlugin(t *testing.T) {
 	assert := assert.New(t)
@@ -20,13 +30,10 @@ func TestCounterPlugin(t *testing.T) {
 	// Basecoin initialization
 	eyesCli := eyescli.NewLocalClient("", 0)
 	chainID := "test_chain_id"
-	bcApp := app.NewBasecoin(eyesCli, log.TestingLogger().With("module", "app"))
+	bcApp := app.NewBasecoin(CounterHandler(), eyesCli,
+		log.TestingLogger().With("module", "app"))
 	bcApp.SetOption("base/chain_id", chainID)
 	// t.Log(bcApp.Info())
-
-	// Add Counter plugin
-	counterPlugin := New()
-	bcApp.RegisterPlugin(counterPlugin)
 
 	// Account initialization
 	test1PrivAcc := types.PrivAccountFromSecret("test1")
@@ -44,7 +51,7 @@ func TestCounterPlugin(t *testing.T) {
 		tx := &types.AppTx{
 			Gas:   gas,
 			Fee:   fee,
-			Name:  counterPlugin.Name(),
+			Name:  "counter",
 			Input: types.NewTxInput(test1Acc.PubKey, inputCoins, inputSequence),
 			Data:  wire.BinaryBytes(CounterTx{Valid: true, Fee: appFee}),
 		}
