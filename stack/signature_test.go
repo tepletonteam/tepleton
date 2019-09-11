@@ -5,12 +5,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
 	crypto "github.com/tepleton/go-crypto"
 	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/basecoin"
+	"github.com/tepleton/basecoin/state"
 	"github.com/tepleton/basecoin/txs"
-	"github.com/tepleton/basecoin/types"
 )
 
 func TestSignatureChecks(t *testing.T) {
@@ -18,7 +19,7 @@ func TestSignatureChecks(t *testing.T) {
 
 	// generic args
 	ctx := NewContext("test-chain", log.NewNopLogger())
-	store := types.NewMemKVStore()
+	store := state.NewMemKVStore()
 	raw := txs.NewRaw([]byte{1, 2, 3, 4})
 
 	// let's make some keys....

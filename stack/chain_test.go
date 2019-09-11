@@ -9,8 +9,8 @@ import (
 	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/basecoin"
+	"github.com/tepleton/basecoin/state"
 	"github.com/tepleton/basecoin/txs"
-	"github.com/tepleton/basecoin/types"
 )
 
 func TestChain(t *testing.T) {
@@ -31,7 +31,7 @@ func TestChain(t *testing.T) {
 
 	// generic args here...
 	ctx := NewContext(chainID, log.NewNopLogger())
-	store := types.NewMemKVStore()
+	store := state.NewMemKVStore()
 
 	// build the stack
 	ok := OKHandler{Log: msg}

@@ -12,6 +12,7 @@ import (
 	"github.com/tepleton/basecoin"
 	"github.com/tepleton/basecoin/modules/coin"
 	"github.com/tepleton/basecoin/stack"
+	"github.com/tepleton/basecoin/state"
 	"github.com/tepleton/basecoin/txs"
 	"github.com/tepleton/basecoin/types"
 	wire "github.com/tepleton/go-wire"
@@ -81,12 +82,12 @@ func (at *appTest) reset() {
 	require.True(at.t, reswrsp.IsOK(), reswrsp)
 }
 
-func getBalance(key basecoin.Actor, state types.KVStore) (types.Coins, error) {
+func getBalance(key basecoin.Actor, state state.KVStore) (types.Coins, error) {
 	acct, err := coin.NewAccountant("").GetAccount(state, key)
 	return acct.Coins, err
 }
 
-func getAddr(addr []byte, state types.KVStore) (types.Coins, error) {
+func getAddr(addr []byte, state state.KVStore) (types.Coins, error) {
 	actor := stack.SigPerm(addr)
 	return getBalance(actor, state)
 }

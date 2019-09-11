@@ -6,9 +6,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/tepleton/basecoin"
-	"github.com/tepleton/basecoin/types"
+
 	"github.com/tepleton/tmlibs/log"
+
+	"github.com/tepleton/basecoin"
+	"github.com/tepleton/basecoin/state"
 )
 
 func TestRecovery(t *testing.T) {
@@ -16,7 +18,7 @@ func TestRecovery(t *testing.T) {
 
 	// generic args here...
 	ctx := NewContext("test-chain", log.NewNopLogger())
-	store := types.NewMemKVStore()
+	store := state.NewMemKVStore()
 	tx := basecoin.Tx{}
 
 	cases := []struct {
