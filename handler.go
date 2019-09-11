@@ -15,7 +15,6 @@ type Handler interface {
 	SetOptioner
 	Named
 	// TODO: flesh these out as well
-	// SetOption(store types.KVStore, key, value string) (log string)
 	// InitChain(store types.KVStore, vals []*wrsp.Validator)
 	// BeginBlock(store types.KVStore, hash []byte, header *wrsp.Header)
 	// EndBlock(store types.KVStore, height uint64) wrsp.ResponseEndBlock
