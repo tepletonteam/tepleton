@@ -9,8 +9,8 @@ import (
 	txcmd "github.com/tepleton/light-client/commands/txs"
 
 	"github.com/tepleton/basecoin/docs/guide/counter/plugins/counter"
+	"github.com/tepleton/basecoin/modules/coin"
 	"github.com/tepleton/basecoin/txs"
-	btypes "github.com/tepleton/basecoin/types"
 )
 
 //CounterTxCmd is the CLI command to execute the counter
@@ -70,7 +70,7 @@ func counterTx(cmd *cobra.Command, args []string) error {
 }
 
 func readCounterTxFlags() (tx basecoin.Tx, err error) {
-	feeCoins, err := btypes.ParseCoins(viper.GetString(FlagCountFee))
+	feeCoins, err := coin.ParseCoins(viper.GetString(FlagCountFee))
 	if err != nil {
 		return tx, err
 	}

@@ -10,7 +10,6 @@ import (
 	"github.com/tepleton/basecoin/app"
 	"github.com/tepleton/basecoin/modules/coin"
 	"github.com/tepleton/basecoin/txs"
-	"github.com/tepleton/basecoin/types"
 	"github.com/tepleton/go-wire"
 	eyescli "github.com/tepleton/merkleeyes/client"
 	"github.com/tepleton/tmlibs/log"
@@ -34,13 +33,13 @@ func TestCounterPlugin(t *testing.T) {
 	bcApp.SetOption("base/chain_id", chainID)
 
 	// Account initialization
-	bal := types.Coins{{"", 1000}, {"gold", 1000}}
+	bal := coin.Coins{{"", 1000}, {"gold", 1000}}
 	acct := coin.NewAccountWithKey(bal)
 	log := bcApp.SetOption("coin/account", acct.MakeOption())
 	require.Equal(t, "Success", log)
 
 	// Deliver a CounterTx
-	DeliverCounterTx := func(valid bool, counterFee types.Coins, inputSequence int) wrsp.Result {
+	DeliverCounterTx := func(valid bool, counterFee coin.Coins, inputSequence int) wrsp.Result {
 		tx := NewTx(valid, counterFee, inputSequence)
 		tx = txs.NewChain(chainID, tx)
 		stx := txs.NewSig(tx)
@@ -58,10 +57,10 @@ func TestCounterPlugin(t *testing.T) {
 	assert.True(res.IsErr(), res.String())
 
 	// Test the fee (increments sequence)
-	res = DeliverCounterTx(true, types.Coins{{"gold", 100}}, 1)
+	res = DeliverCounterTx(true, coin.Coins{{"gold", 100}}, 1)
 	assert.True(res.IsOK(), res.String())
 
 	// Test unsupported fee
-	res = DeliverCounterTx(true, types.Coins{{"silver", 100}}, 2)
+	res = DeliverCounterTx(true, coin.Coins{{"silver", 100}}, 2)
 	assert.True(res.IsErr(), res.String())
 }

@@ -1,11 +1,11 @@
 package coin
 
 import (
-	"github.com/tepleton/basecoin"
-	"github.com/tepleton/basecoin/stack"
-	"github.com/tepleton/basecoin/types"
 	crypto "github.com/tepleton/go-crypto"
 	"github.com/tepleton/go-wire/data"
+
+	"github.com/tepleton/basecoin"
+	"github.com/tepleton/basecoin/stack"
 )
 
 // AccountWithKey is a helper for tests, that includes and account
@@ -17,7 +17,7 @@ type AccountWithKey struct {
 
 // NewAccountWithKey creates an account with the given balance
 // and a random private key
-func NewAccountWithKey(coins types.Coins) *AccountWithKey {
+func NewAccountWithKey(coins Coins) *AccountWithKey {
 	return &AccountWithKey{
 		Key:     crypto.GenPrivKeyEd25519().Wrap(),
 		Account: Account{Coins: coins},

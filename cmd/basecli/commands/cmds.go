@@ -16,7 +16,6 @@ import (
 	"github.com/tepleton/basecoin/modules/coin"
 	"github.com/tepleton/basecoin/stack"
 	"github.com/tepleton/basecoin/txs"
-	btypes "github.com/tepleton/basecoin/types"
 )
 
 //-------------------------
@@ -94,7 +93,7 @@ func readSendTxFlags() (tx basecoin.Tx, err error) {
 	// // set the gas
 	// tx.Gas = viper.GetInt64(FlagGas)
 
-	amountCoins, err := btypes.ParseCoins(viper.GetString(FlagAmount))
+	amountCoins, err := coin.ParseCoins(viper.GetString(FlagAmount))
 	if err != nil {
 		return tx, err
 	}
