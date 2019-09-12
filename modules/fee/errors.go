@@ -2,14 +2,14 @@
 package fee
 
 import (
-	rawerr "errors"
+	"fmt"
 
 	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/basecoin/errors"
 )
 
 var (
-	errInsufficientFees = rawerr.New("Insufficient Fees")
+	errInsufficientFees = fmt.Errorf("Insufficient Fees")
 )
 
 func ErrInsufficientFees() errors.TMError {
