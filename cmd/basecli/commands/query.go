@@ -13,6 +13,7 @@ import (
 
 	"github.com/tepleton/basecoin/modules/auth"
 	"github.com/tepleton/basecoin/modules/coin"
+	"github.com/tepleton/basecoin/stack"
 )
 
 // AccountQueryCmd - command to query an account
@@ -27,7 +28,7 @@ func doAccountQuery(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	key := coin.NewAccountant("").MakeKey(auth.SigPerm(addr))
+	key := stack.PrefixedKey(coin.NameCoin, auth.SigPerm(addr).Bytes())
 
 	acc := coin.Account{}
 	proof, err := proofcmd.GetAndParseAppProof(key, &acc)
