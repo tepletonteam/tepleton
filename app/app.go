@@ -15,6 +15,7 @@ import (
 	"github.com/tepleton/basecoin/modules/base"
 	"github.com/tepleton/basecoin/modules/coin"
 	"github.com/tepleton/basecoin/modules/fee"
+	"github.com/tepleton/basecoin/modules/nonce"
 	"github.com/tepleton/basecoin/stack"
 	sm "github.com/tepleton/basecoin/state"
 	"github.com/tepleton/basecoin/version"
@@ -61,6 +62,7 @@ func DefaultHandler(feeDenom string) basecoin.Handler {
 		base.Logger{},
 		stack.Recovery{},
 		auth.Signatures{},
+		nonce.ReplayCheck{},
 		base.Chain{},
 		fee.NewSimpleFeeMiddleware(coin.Coin{feeDenom, 0}, fee.Bank),
 	).Use(d)
