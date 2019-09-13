@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/pkg/errors"
+
 	wrsp "github.com/tepleton/wrsp/types"
 )
 
@@ -40,8 +41,7 @@ func unwrap(i interface{}) interface{} {
 
 func ErrUnknownTxType(tx interface{}) TMError {
 	msg := fmt.Sprintf("%T", unwrap(tx))
-	w := errors.Wrap(errUnknownTxType, msg)
-	return WithCode(w, wrsp.CodeType_UnknownRequest)
+	return WithMessage(msg, errUnknownTxType, wrsp.CodeType_UnknownRequest)
 }
 func IsUnknownTxTypeErr(err error) bool {
 	return IsSameError(errUnknownTxType, err)
@@ -49,16 +49,14 @@ func IsUnknownTxTypeErr(err error) bool {
 
 func ErrInvalidFormat(expected string, tx interface{}) TMError {
 	msg := fmt.Sprintf("%T not %s", unwrap(tx), expected)
-	w := errors.Wrap(errInvalidFormat, msg)
-	return WithCode(w, wrsp.CodeType_UnknownRequest)
+	return WithMessage(msg, errInvalidFormat, wrsp.CodeType_UnknownRequest)
 }
 func IsInvalidFormatErr(err error) bool {
 	return IsSameError(errInvalidFormat, err)
 }
 
 func ErrUnknownModule(mod string) TMError {
-	w := errors.Wrap(errUnknownModule, mod)
-	return WithCode(w, wrsp.CodeType_UnknownRequest)
+	return WithMessage(mod, errUnknownModule, wrsp.CodeType_UnknownRequest)
 }
 func IsUnknownModuleErr(err error) bool {
 	return IsSameError(errUnknownModule, err)

@@ -6,12 +6,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/tepleton/tmlibs/log"
+
 	"github.com/tepleton/basecoin"
 	"github.com/tepleton/basecoin/modules/coin"
 	"github.com/tepleton/basecoin/modules/fee"
 	"github.com/tepleton/basecoin/stack"
 	"github.com/tepleton/basecoin/state"
-	"github.com/tepleton/tmlibs/log"
 )
 
 func TestFeeChecks(t *testing.T) {
