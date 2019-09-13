@@ -14,6 +14,7 @@ import (
 	"github.com/tepleton/basecoin/modules/auth"
 	"github.com/tepleton/basecoin/modules/base"
 	"github.com/tepleton/basecoin/modules/coin"
+	"github.com/tepleton/basecoin/modules/fee"
 	"github.com/tepleton/basecoin/stack"
 	sm "github.com/tepleton/basecoin/state"
 	"github.com/tepleton/basecoin/version"
@@ -52,7 +53,7 @@ func NewBasecoin(handler basecoin.Handler, eyesCli *eyes.Client, logger log.Logg
 }
 
 // DefaultHandler - placeholder to just handle sendtx
-func DefaultHandler() basecoin.Handler {
+func DefaultHandler(feeDenom string) basecoin.Handler {
 	// use the default stack
 	h := coin.NewHandler()
 	d := stack.NewDispatcher(stack.WrapHandler(h))
@@ -61,6 +62,7 @@ func DefaultHandler() basecoin.Handler {
 		stack.Recovery{},
 		auth.Signatures{},
 		base.Chain{},
+		fee.NewSimpleFeeMiddleware(coin.Coin{feeDenom, 0}, fee.Bank),
 	).Use(d)
 }
 
