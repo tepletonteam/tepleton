@@ -11,6 +11,7 @@ import (
 	"github.com/tepleton/basecoin/modules/auth"
 	"github.com/tepleton/basecoin/modules/base"
 	"github.com/tepleton/basecoin/modules/coin"
+	"github.com/tepleton/basecoin/modules/fee"
 	"github.com/tepleton/basecoin/stack"
 	"github.com/tepleton/basecoin/state"
 )
@@ -89,12 +90,12 @@ func ErrDecoding() error {
 //--------------------------------------------------------------------------------
 
 // NewHandler returns a new counter transaction processing handler
-func NewHandler() basecoin.Handler {
+func NewHandler(feeDenom string) basecoin.Handler {
 	// use the default stack
-	coin := coin.NewHandler()
+	ch := coin.NewHandler()
 	counter := Handler{}
 	dispatcher := stack.NewDispatcher(
-		stack.WrapHandler(coin),
+		stack.WrapHandler(ch),
 		counter,
 	)
 	return stack.New(
@@ -102,6 +103,7 @@ func NewHandler() basecoin.Handler {
 		stack.Recovery{},
 		auth.Signatures{},
 		base.Chain{},
+		fee.NewSimpleFeeMiddleware(coin.Coin{feeDenom, 0}, fee.Bank),
 	).Use(dispatcher)
 }
 
