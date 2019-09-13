@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/basecoin"
 	"github.com/tepleton/basecoin/modules/auth"
 	"github.com/tepleton/basecoin/modules/base"
@@ -16,8 +17,6 @@ import (
 	"github.com/tepleton/basecoin/modules/nonce"
 	"github.com/tepleton/basecoin/stack"
 	"github.com/tepleton/basecoin/state"
-
-	wrsp "github.com/tepleton/wrsp/types"
 	wire "github.com/tepleton/go-wire"
 	eyes "github.com/tepleton/merkleeyes/client"
 	"github.com/tepleton/tmlibs/log"
@@ -60,7 +59,7 @@ func (at *appTest) signTx(tx basecoin.Tx) basecoin.Tx {
 func (at *appTest) getTx(coins coin.Coins) basecoin.Tx {
 	tx := at.baseTx(coins)
 	tx = base.NewChainTx(at.chainID, 0, tx)
-	tx = nonce.NewTx(tx, 0, []basecoin.Actor{at.acctIn.Actor()})
+	tx = nonce.NewTx(1, []basecoin.Actor{at.acctIn.Actor()}, tx)
 	return at.signTx(tx)
 }
 
@@ -68,6 +67,7 @@ func (at *appTest) feeTx(coins coin.Coins, toll coin.Coin) basecoin.Tx {
 	tx := at.baseTx(coins)
 	tx = fee.NewFee(tx, toll, at.acctIn.Actor())
 	tx = base.NewChainTx(at.chainID, 0, tx)
+	tx = nonce.NewTx(1, []basecoin.Actor{at.acctIn.Actor()}, tx)
 	return at.signTx(tx)
 }
 
