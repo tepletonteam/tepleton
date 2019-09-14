@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/tepleton/basecoin/types"
 	eyes "github.com/tepleton/merkleeyes/client"
 	"github.com/tepleton/tmlibs/log"
 
@@ -15,30 +14,21 @@ func TestState(t *testing.T) {
 	assert := assert.New(t)
 
 	//States and Stores for tests
-	store := types.NewMemKVStore()
-	state := NewState(store)
-	state.SetLogger(log.TestingLogger())
+	store := NewMemKVStore()
+	state := NewState(store, log.TestingLogger())
 	cache := state.CacheWrap()
 	eyesCli := eyes.NewLocalClient("", 0)
 
-	//Account and address for tests
-	dumAddr := []byte("dummyAddress")
-
-	acc := new(types.Account)
-	acc.Sequence = 1
-
 	//reset the store/state/cache
 	reset := func() {
-		store = types.NewMemKVStore()
-		state = NewState(store)
-		state.SetLogger(log.TestingLogger())
+		store = NewMemKVStore()
+		state = NewState(store, log.TestingLogger())
 		cache = state.CacheWrap()
 	}
 
 	//set the state to using the eyesCli instead of MemKVStore
 	useEyesCli := func() {
-		state = NewState(eyesCli)
-		state.SetLogger(log.TestingLogger())
+		state = NewState(eyesCli, log.TestingLogger())
 		cache = state.CacheWrap()
 	}
 
@@ -52,14 +42,14 @@ func TestState(t *testing.T) {
 	}
 
 	//set the kvc to have all the key value pairs
-	setRecords := func(kv types.KVStore) {
+	setRecords := func(kv KVStore) {
 		for _, n := range keyvalue {
 			kv.Set([]byte(n.key), []byte(n.value))
 		}
 	}
 
 	//store has all the key value pairs
-	storeHasAll := func(kv types.KVStore) bool {
+	storeHasAll := func(kv KVStore) bool {
 		for _, n := range keyvalue {
 			if !bytes.Equal(kv.Get([]byte(n.key)), []byte(n.value)) {
 				return false
@@ -75,10 +65,6 @@ func TestState(t *testing.T) {
 	//test basic retrieve
 	setRecords(state)
 	assert.True(storeHasAll(state), "state doesn't retrieve after Set")
-
-	// Test account retrieve
-	state.SetAccount(dumAddr, acc)
-	assert.Equal(state.GetAccount(dumAddr).Sequence, 1, "GetAccount not retrieving")
 
 	//Test CacheWrap with local mem store
 	reset()

@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/tepleton/wrsp/server"
+	"github.com/tepleton/basecoin"
 	eyesApp "github.com/tepleton/merkleeyes/app"
 	eyes "github.com/tepleton/merkleeyes/client"
 	"github.com/tepleton/tmlibs/cli"
@@ -23,13 +24,14 @@ import (
 	"github.com/tepleton/basecoin/app"
 )
 
+// StartCmd - command to start running the basecoin node!
 var StartCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Start basecoin",
 	RunE:  startCmd,
 }
 
-// TODO: move to config file
+// nolint TODO: move to config file
 const EyesCacheSize = 10000
 
 //nolint
@@ -37,6 +39,12 @@ const (
 	FlagAddress           = "address"
 	FlagEyes              = "eyes"
 	FlagWithoutTendermint = "without-tepleton"
+)
+
+var (
+	// Handler - use a global to store the handler, so we can set it in main.
+	// TODO: figure out a cleaner way to register plugins
+	Handler basecoin.Handler
 )
 
 func init() {
@@ -66,16 +74,7 @@ func startCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create Basecoin app
-	basecoinApp := app.NewBasecoin(eyesCli)
-	basecoinApp.SetLogger(logger.With("module", "app"))
-
-	// register IBC plugn
-	basecoinApp.RegisterPlugin(NewIBCPlugin())
-
-	// register all other plugins
-	for _, p := range plugins {
-		basecoinApp.RegisterPlugin(p.newPlugin())
-	}
+	basecoinApp := app.NewBasecoin(Handler, eyesCli, logger.With("module", "app"))
 
 	// if chain_id has not been set yet, load the genesis.
 	// else, assume it's been loaded
@@ -97,11 +96,10 @@ func startCmd(cmd *cobra.Command, args []string) error {
 		logger.Info("Starting Basecoin without Tendermint", "chain_id", chainID)
 		// run just the wrsp app/server
 		return startBasecoinWRSP(basecoinApp)
-	} else {
-		logger.Info("Starting Basecoin with Tendermint", "chain_id", chainID)
-		// start the app with tepleton in-process
-		return startTendermint(rootDir, basecoinApp)
 	}
+	logger.Info("Starting Basecoin with Tendermint", "chain_id", chainID)
+	// start the app with tepleton in-process
+	return startTendermint(rootDir, basecoinApp)
 }
 
 func startBasecoinWRSP(basecoinApp *app.Basecoin) error {

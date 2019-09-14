@@ -6,50 +6,53 @@ TUTORIALS=$(shell find docs/guide -name "*md" -type f)
 all: get_vendor_deps install test
 
 build:
-	go build ./cmd/...
+	@go build ./cmd/...
 
 install:
-	go install ./cmd/...
-	go install ./docs/guide/counter/cmd/...
+	@go install ./cmd/...
+	@go install ./docs/guide/counter/cmd/...
 
 dist:
-	@bash scripts/dist.sh
-	@bash scripts/publish.sh
+	@bash publish/dist.sh
+	@bash publish/publish.sh
+
+benchmark:
+	@go test -bench=. ./modules/...
 
 test: test_unit test_cli test_tutorial
 
 test_unit:
-	go test `glide novendor`
+	@go test `glide novendor`
 	#go run tests/tepleton/*.go
 
 test_cli: tests/cli/shunit2
 	# sudo apt-get install jq
-	@./tests/cli/basictx.sh
-	@./tests/cli/counter.sh
-	@./tests/cli/restart.sh
-	@./tests/cli/ibc.sh
+	./tests/cli/basictx.sh
+	./tests/cli/counter.sh
+	./tests/cli/restart.sh
+	# @./tests/cli/ibc.sh
 
 test_tutorial: docs/guide/shunit2
-	shelldown ${TUTORIALS}
-	for script in docs/guide/*.sh ; do \
+	@shelldown ${TUTORIALS}
+	@for script in docs/guide/*.sh ; do \
 		bash $$script ; \
 	done
 
 tests/cli/shunit2:
-	wget "https://raw.githubusercontent.com/kward/shunit2/master/source/2.1/src/shunit2" \
+	@wget "https://raw.githubusercontent.com/kward/shunit2/master/source/2.1/src/shunit2" \
     	-q -O tests/cli/shunit2
 
 docs/guide/shunit2:
-	wget "https://raw.githubusercontent.com/kward/shunit2/master/source/2.1/src/shunit2" \
+	@wget "https://raw.githubusercontent.com/kward/shunit2/master/source/2.1/src/shunit2" \
     	-q -O docs/guide/shunit2
 
 get_vendor_deps: tools
-	glide install
+	@glide install
 
 build-docker:
-	docker run -it --rm -v "$(PWD):/go/src/github.com/tepleton/basecoin" -w \
+	@docker run -it --rm -v "$(PWD):/go/src/github.com/tepleton/basecoin" -w \
 		"/go/src/github.com/tepleton/basecoin" -e "CGO_ENABLED=0" golang:alpine go build ./cmd/basecoin
-	docker build -t "tepleton/basecoin" .
+	@docker build -t "tepleton/basecoin" .
 
 tools:
 	@go get $(GOTOOLS)
@@ -65,4 +68,4 @@ clean:
 fresh: clean get_vendor_deps install
 	@if [[ `git status -s` ]]; then echo; echo "Warning: uncommited changes"; git status -s; fi
 
-.PHONY: all build install test test_cli test_unit get_vendor_deps build-docker clean fresh
+.PHONY: all build install test test_cli test_unit get_vendor_deps build-docker clean fresh benchmark

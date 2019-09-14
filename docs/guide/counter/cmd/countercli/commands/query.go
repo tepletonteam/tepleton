@@ -6,9 +6,10 @@ import (
 	proofcmd "github.com/tepleton/light-client/commands/proofs"
 
 	"github.com/tepleton/basecoin/docs/guide/counter/plugins/counter"
+	"github.com/tepleton/basecoin/stack"
 )
 
-//CounterQueryCmd CLI command to query the counter state
+//CounterQueryCmd - CLI command to query the counter state
 var CounterQueryCmd = &cobra.Command{
 	Use:   "counter",
 	Short: "Query counter state, with proof",
@@ -16,9 +17,9 @@ var CounterQueryCmd = &cobra.Command{
 }
 
 func counterQueryCmd(cmd *cobra.Command, args []string) error {
-	key := counter.New().StateKey()
+	key := stack.PrefixedKey(counter.NameCounter, counter.StateKey())
 
-	var cp counter.CounterPluginState
+	var cp counter.State
 	proof, err := proofcmd.GetAndParseAppProof(key, &cp)
 	if err != nil {
 		return err

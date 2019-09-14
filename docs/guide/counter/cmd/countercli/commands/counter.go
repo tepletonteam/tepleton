@@ -4,12 +4,13 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	wire "github.com/tepleton/go-wire"
 	txcmd "github.com/tepleton/light-client/commands/txs"
 
+	"github.com/tepleton/basecoin"
 	bcmd "github.com/tepleton/basecoin/cmd/basecli/commands"
 	"github.com/tepleton/basecoin/docs/guide/counter/plugins/counter"
-	btypes "github.com/tepleton/basecoin/types"
+	"github.com/tepleton/basecoin/modules/auth"
+	"github.com/tepleton/basecoin/modules/coin"
 )
 
 //CounterTxCmd is the CLI command to execute the counter
@@ -20,64 +21,75 @@ var CounterTxCmd = &cobra.Command{
 	Long: `Add a vote to the counter.
 
 You must pass --valid for it to count and the countfee will be added to the counter.`,
-	RunE: counterTxCmd,
+	RunE: counterTx,
 }
 
+// nolint - flags names
 const (
-	flagCountFee = "countfee"
-	flagValid    = "valid"
+	FlagCountFee = "countfee"
+	FlagValid    = "valid"
 )
 
 func init() {
 	fs := CounterTxCmd.Flags()
-	bcmd.AddAppTxFlags(fs)
-	fs.String(flagCountFee, "", "Coins to send in the format <amt><coin>,<amt><coin>...")
-	fs.Bool(flagValid, false, "Is count valid?")
+	fs.String(FlagCountFee, "", "Coins to send in the format <amt><coin>,<amt><coin>...")
+	fs.Bool(FlagValid, false, "Is count valid?")
+
+	fs.String(bcmd.FlagFee, "0mycoin", "Coins for the transaction fee of the format <amt><coin>")
+	fs.Int(bcmd.FlagSequence, -1, "Sequence number for this transaction")
 }
 
-func counterTxCmd(cmd *cobra.Command, args []string) error {
-	// Note: we don't support loading apptx from json currently, so skip that
-
-	// Read the app-specific flags
-	name, data, err := getAppData()
+// TODO: counterTx is very similar to the sendtx one,
+// maybe we can pull out some common patterns?
+func counterTx(cmd *cobra.Command, args []string) error {
+	// load data from json or flags
+	var tx basecoin.Tx
+	found, err := txcmd.LoadJSON(&tx)
+	if err != nil {
+		return err
+	}
+	if !found {
+		tx, err = readCounterTxFlags()
+	}
 	if err != nil {
 		return err
 	}
 
-	// Read the standard app-tx flags
-	gas, fee, txInput, err := bcmd.ReadAppTxFlags()
+	// TODO: make this more flexible for middleware
+	tx, err = bcmd.WrapFeeTx(tx)
+	if err != nil {
+		return err
+	}
+	tx, err = bcmd.WrapNonceTx(tx)
+	if err != nil {
+		return err
+	}
+	tx, err = bcmd.WrapChainTx(tx)
 	if err != nil {
 		return err
 	}
 
-	// Create AppTx and broadcast
-	tx := &btypes.AppTx{
-		Gas:   gas,
-		Fee:   fee,
-		Name:  name,
-		Input: txInput,
-		Data:  data,
-	}
-	res, err := bcmd.BroadcastAppTx(tx)
+	stx := auth.NewSig(tx)
+
+	// Sign if needed and post.  This it the work-horse
+	bres, err := txcmd.SignAndPostTx(stx)
 	if err != nil {
+		return err
+	}
+	if err = bcmd.ValidateResult(bres); err != nil {
 		return err
 	}
 
 	// Output result
-	return txcmd.OutputTx(res)
+	return txcmd.OutputTx(bres)
 }
 
-func getAppData() (name string, data []byte, err error) {
-	countFee, err := btypes.ParseCoins(viper.GetString(flagCountFee))
+func readCounterTxFlags() (tx basecoin.Tx, err error) {
+	feeCoins, err := coin.ParseCoins(viper.GetString(FlagCountFee))
 	if err != nil {
-		return
-	}
-	ctx := counter.CounterTx{
-		Valid: viper.GetBool(flagValid),
-		Fee:   countFee,
+		return tx, err
 	}
 
-	name = counter.New().Name()
-	data = wire.BinaryBytes(ctx)
-	return
+	tx = counter.NewTx(viper.GetBool(FlagValid), feeCoins)
+	return tx, nil
 }
