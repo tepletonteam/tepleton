@@ -9,11 +9,13 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/tepleton/basecoin"
 	"github.com/tepleton/light-client/commands"
 	txcmd "github.com/tepleton/light-client/commands/txs"
 	cmn "github.com/tepleton/tmlibs/common"
 
+	ctypes "github.com/tepleton/tepleton/rpc/core/types"
+
+	"github.com/tepleton/basecoin"
 	"github.com/tepleton/basecoin/modules/auth"
 	"github.com/tepleton/basecoin/modules/base"
 	"github.com/tepleton/basecoin/modules/coin"
@@ -88,9 +90,24 @@ func doSendTx(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	if err = ValidateResult(bres); err != nil {
+		return err
+	}
 
 	// Output result
 	return txcmd.OutputTx(bres)
+}
+
+// ValidateResult returns an appropriate error if the server rejected the
+// tx in CheckTx or DeliverTx
+func ValidateResult(res *ctypes.ResultBroadcastTxCommit) error {
+	if res.CheckTx.IsErr() {
+		return fmt.Errorf("CheckTx: (%d): %s", res.CheckTx.Code, res.CheckTx.Log)
+	}
+	if res.DeliverTx.IsErr() {
+		return fmt.Errorf("DeliverTx: (%d): %s", res.DeliverTx.Code, res.DeliverTx.Log)
+	}
+	return nil
 }
 
 // WrapNonceTx grabs the sequence number from the flag and wraps
