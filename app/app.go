@@ -1,166 +1,164 @@
 package app
 
 import (
-	"fmt"
+	"encoding/hex"
+	"encoding/json"
 	"strings"
 
 	wrsp "github.com/tepleton/wrsp/types"
-	"github.com/tepleton/basecoin"
+	wire "github.com/tepleton/go-wire"
 	eyes "github.com/tepleton/merkleeyes/client"
 	cmn "github.com/tepleton/tmlibs/common"
 	"github.com/tepleton/tmlibs/log"
 
-	"github.com/tepleton/basecoin/errors"
-	"github.com/tepleton/basecoin/modules/auth"
-	"github.com/tepleton/basecoin/modules/base"
-	"github.com/tepleton/basecoin/modules/coin"
-	"github.com/tepleton/basecoin/modules/fee"
-	"github.com/tepleton/basecoin/modules/nonce"
-	"github.com/tepleton/basecoin/stack"
 	sm "github.com/tepleton/basecoin/state"
+	"github.com/tepleton/basecoin/types"
 	"github.com/tepleton/basecoin/version"
 )
 
-//nolint
 const (
-	ModuleNameBase = "base"
-	ChainKey       = "chain_id"
+	maxTxSize      = 10240
+	PluginNameBase = "base"
 )
 
-// Basecoin - The WRSP application
 type Basecoin struct {
 	eyesCli    *eyes.Client
 	state      *sm.State
 	cacheState *sm.State
-	handler    basecoin.Handler
-	height     uint64
+	plugins    *types.Plugins
 	logger     log.Logger
 }
 
-var _ wrsp.Application = &Basecoin{}
-
-// NewBasecoin - create a new instance of the basecoin application
-func NewBasecoin(handler basecoin.Handler, eyesCli *eyes.Client, logger log.Logger) *Basecoin {
-	state := sm.NewState(eyesCli, logger.With("module", "state"))
-
+func NewBasecoin(eyesCli *eyes.Client) *Basecoin {
+	state := sm.NewState(eyesCli)
+	plugins := types.NewPlugins()
 	return &Basecoin{
-		handler:    handler,
 		eyesCli:    eyesCli,
 		state:      state,
 		cacheState: nil,
-		height:     0,
-		logger:     logger,
+		plugins:    plugins,
+		logger:     log.NewNopLogger(),
 	}
 }
 
-// DefaultHandler - placeholder to just handle sendtx
-func DefaultHandler(feeDenom string) basecoin.Handler {
-	// use the default stack
-	h := coin.NewHandler()
-	d := stack.NewDispatcher(stack.WrapHandler(h))
-	return stack.New(
-		base.Logger{},
-		stack.Recovery{},
-		auth.Signatures{},
-		base.Chain{},
-		nonce.ReplayCheck{},
-		fee.NewSimpleFeeMiddleware(coin.Coin{feeDenom, 0}, fee.Bank),
-	).Use(d)
+func (app *Basecoin) SetLogger(l log.Logger) {
+	app.logger = l
+	app.state.SetLogger(l.With("module", "state"))
 }
 
-// GetState - XXX For testing, not thread safe!
+// XXX For testing, not thread safe!
 func (app *Basecoin) GetState() *sm.State {
 	return app.state.CacheWrap()
 }
 
-// Info - WRSP
+// WRSP::Info
 func (app *Basecoin) Info() wrsp.ResponseInfo {
 	resp, err := app.eyesCli.InfoSync()
 	if err != nil {
 		cmn.PanicCrisis(err)
 	}
-	app.height = resp.LastBlockHeight
 	return wrsp.ResponseInfo{
-		Data:             fmt.Sprintf("Basecoin v%v", version.Version),
+		Data:             cmn.Fmt("Basecoin v%v", version.Version),
 		LastBlockHeight:  resp.LastBlockHeight,
 		LastBlockAppHash: resp.LastBlockAppHash,
 	}
 }
 
-// SetOption - WRSP
+func (app *Basecoin) RegisterPlugin(plugin types.Plugin) {
+	app.plugins.RegisterPlugin(plugin)
+}
+
+// WRSP::SetOption
 func (app *Basecoin) SetOption(key string, value string) string {
-
-	module, key := splitKey(key)
-
-	if module == ModuleNameBase {
-		if key == ChainKey {
+	pluginName, key := splitKey(key)
+	if pluginName != PluginNameBase {
+		// Set option on plugin
+		plugin := app.plugins.GetByName(pluginName)
+		if plugin == nil {
+			return "Invalid plugin name: " + pluginName
+		}
+		app.logger.Info("SetOption on plugin", "plugin", pluginName, "key", key, "value", value)
+		return plugin.SetOption(app.state, key, value)
+	} else {
+		// Set option on basecoin
+		switch key {
+		case "chain_id":
 			app.state.SetChainID(value)
 			return "Success"
+		case "account":
+			var acc GenesisAccount
+			err := json.Unmarshal([]byte(value), &acc)
+			if err != nil {
+				return "Error decoding acc message: " + err.Error()
+			}
+			acc.Balance.Sort()
+			addr, err := acc.GetAddr()
+			if err != nil {
+				return "Invalid address: " + err.Error()
+			}
+			app.state.SetAccount(addr, acc.ToAccount())
+			app.logger.Info("SetAccount", "addr", hex.EncodeToString(addr), "acc", acc)
+
+			return "Success"
 		}
-		return fmt.Sprintf("Error: unknown base option: %s", key)
+		return "Unrecognized option key " + key
 	}
-
-	log, err := app.handler.SetOption(app.logger, app.state, module, key, value)
-	if err == nil {
-		return log
-	}
-	return "Error: " + err.Error()
 }
 
-// DeliverTx - WRSP
-func (app *Basecoin) DeliverTx(txBytes []byte) wrsp.Result {
-	tx, err := basecoin.LoadTx(txBytes)
-	if err != nil {
-		return errors.Result(err)
+// WRSP::DeliverTx
+func (app *Basecoin) DeliverTx(txBytes []byte) (res wrsp.Result) {
+	if len(txBytes) > maxTxSize {
+		return wrsp.ErrBaseEncodingError.AppendLog("Tx size exceeds maximum")
 	}
 
-	// TODO: can we abstract this setup and commit logic??
-	cache := app.state.CacheWrap()
-	ctx := stack.NewContext(
-		app.state.GetChainID(),
-		app.height,
-		app.logger.With("call", "delivertx"),
-	)
-	res, err := app.handler.DeliverTx(ctx, cache, tx)
-
+	// Decode tx
+	var tx types.Tx
+	err := wire.ReadBinaryBytes(txBytes, &tx)
 	if err != nil {
-		// discard the cache...
-		return errors.Result(err)
+		return wrsp.ErrBaseEncodingError.AppendLog("Error decoding tx: " + err.Error())
 	}
-	// commit the cache and return result
-	cache.CacheSync()
-	return res.ToWRSP()
+
+	// Validate and exec tx
+	res = sm.ExecTx(app.state, app.plugins, tx, false, nil)
+	if res.IsErr() {
+		return res.PrependLog("Error in DeliverTx")
+	}
+	return res
 }
 
-// CheckTx - WRSP
-func (app *Basecoin) CheckTx(txBytes []byte) wrsp.Result {
-	tx, err := basecoin.LoadTx(txBytes)
-	if err != nil {
-		return errors.Result(err)
+// WRSP::CheckTx
+func (app *Basecoin) CheckTx(txBytes []byte) (res wrsp.Result) {
+	if len(txBytes) > maxTxSize {
+		return wrsp.ErrBaseEncodingError.AppendLog("Tx size exceeds maximum")
 	}
 
-	// TODO: can we abstract this setup and commit logic??
-	ctx := stack.NewContext(
-		app.state.GetChainID(),
-		app.height,
-		app.logger.With("call", "checktx"),
-	)
-	// checktx generally shouldn't touch the state, but we don't care
-	// here on the framework level, since the cacheState is thrown away next block
-	res, err := app.handler.CheckTx(ctx, app.cacheState, tx)
-
+	// Decode tx
+	var tx types.Tx
+	err := wire.ReadBinaryBytes(txBytes, &tx)
 	if err != nil {
-		return errors.Result(err)
+		return wrsp.ErrBaseEncodingError.AppendLog("Error decoding tx: " + err.Error())
 	}
-	return res.ToWRSP()
+
+	// Validate tx
+	res = sm.ExecTx(app.cacheState, app.plugins, tx, true, nil)
+	if res.IsErr() {
+		return res.PrependLog("Error in CheckTx")
+	}
+	return wrsp.OK
 }
 
-// Query - WRSP
+// WRSP::Query
 func (app *Basecoin) Query(reqQuery wrsp.RequestQuery) (resQuery wrsp.ResponseQuery) {
 	if len(reqQuery.Data) == 0 {
 		resQuery.Log = "Query cannot be zero length"
 		resQuery.Code = wrsp.CodeType_EncodingError
 		return
+	}
+
+	// handle special path for account info
+	if reqQuery.Path == "/account" {
+		reqQuery.Path = "/key"
+		reqQuery.Data = types.AccountKey(reqQuery.Data)
 	}
 
 	resQuery, err := app.eyesCli.QuerySync(reqQuery)
@@ -172,7 +170,7 @@ func (app *Basecoin) Query(reqQuery wrsp.RequestQuery) (resQuery wrsp.ResponseQu
 	return
 }
 
-// Commit - WRSP
+// WRSP::Commit
 func (app *Basecoin) Commit() (res wrsp.Result) {
 
 	// Commit state
@@ -187,38 +185,37 @@ func (app *Basecoin) Commit() (res wrsp.Result) {
 	return res
 }
 
-// InitChain - WRSP
+// WRSP::InitChain
 func (app *Basecoin) InitChain(validators []*wrsp.Validator) {
-	// for _, plugin := range app.plugins.GetList() {
-	// 	plugin.InitChain(app.state, validators)
-	// }
+	for _, plugin := range app.plugins.GetList() {
+		plugin.InitChain(app.state, validators)
+	}
 }
 
-// BeginBlock - WRSP
+// WRSP::BeginBlock
 func (app *Basecoin) BeginBlock(hash []byte, header *wrsp.Header) {
-	app.height++
-	// for _, plugin := range app.plugins.GetList() {
-	// 	plugin.BeginBlock(app.state, hash, header)
-	// }
+	for _, plugin := range app.plugins.GetList() {
+		plugin.BeginBlock(app.state, hash, header)
+	}
 }
 
-// EndBlock - WRSP
+// WRSP::EndBlock
 func (app *Basecoin) EndBlock(height uint64) (res wrsp.ResponseEndBlock) {
-	// for _, plugin := range app.plugins.GetList() {
-	// 	pluginRes := plugin.EndBlock(app.state, height)
-	// 	res.Diffs = append(res.Diffs, pluginRes.Diffs...)
-	// }
+	for _, plugin := range app.plugins.GetList() {
+		pluginRes := plugin.EndBlock(app.state, height)
+		res.Diffs = append(res.Diffs, pluginRes.Diffs...)
+	}
 	return
 }
 
-//TODO move split key to tmlibs?
+//----------------------------------------
 
 // Splits the string at the first '/'.
-// if there are none, assign default module ("base").
-func splitKey(key string) (string, string) {
+// if there are none, the second string is nil.
+func splitKey(key string) (prefix string, suffix string) {
 	if strings.Contains(key, "/") {
 		keyParts := strings.SplitN(key, "/", 2)
 		return keyParts[0], keyParts[1]
 	}
-	return ModuleNameBase, key
+	return key, ""
 }

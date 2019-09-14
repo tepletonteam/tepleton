@@ -11,7 +11,6 @@ import (
 	"github.com/tepleton/tmlibs/log"
 )
 
-//nolint
 const (
 	defaultLogLevel = "error"
 	FlagLogLevel    = "log_level"
@@ -21,7 +20,6 @@ var (
 	logger = log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "main")
 )
 
-// RootCmd - main node command
 var RootCmd = &cobra.Command{
 	Use:   "basecoin",
 	Short: "A cryptocurrency framework in Golang based on Tendermint-Core",

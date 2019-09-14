@@ -4,20 +4,15 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"github.com/tepleton/basecoin"
 	wire "github.com/tepleton/go-wire"
 	lc "github.com/tepleton/light-client"
 	lcmd "github.com/tepleton/light-client/commands"
 	proofcmd "github.com/tepleton/light-client/commands/proofs"
 	"github.com/tepleton/light-client/proofs"
 
-	"github.com/tepleton/basecoin/modules/auth"
-	"github.com/tepleton/basecoin/modules/coin"
-	"github.com/tepleton/basecoin/modules/nonce"
-	"github.com/tepleton/basecoin/stack"
+	btypes "github.com/tepleton/basecoin/types"
 )
 
-// AccountQueryCmd - command to query an account
 var AccountQueryCmd = &cobra.Command{
 	Use:   "account [address]",
 	Short: "Get details of an account, with proof",
@@ -29,9 +24,9 @@ func doAccountQuery(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	key := stack.PrefixedKey(coin.NameCoin, auth.SigPerm(addr).Bytes())
+	key := btypes.AccountKey(addr)
 
-	acc := coin.Account{}
+	acc := new(btypes.Account)
 	proof, err := proofcmd.GetAndParseAppProof(key, &acc)
 	if lc.IsNoDataErr(err) {
 		return errors.Errorf("Account bytes are empty for address %X ", addr)
@@ -42,45 +37,13 @@ func doAccountQuery(cmd *cobra.Command, args []string) error {
 	return proofcmd.OutputProof(acc, proof.BlockHeight())
 }
 
-// NonceQueryCmd - command to query an nonce account
-var NonceQueryCmd = &cobra.Command{
-	Use:   "nonce [address]",
-	Short: "Get details of a nonce sequence number, with proof",
-	RunE:  lcmd.RequireInit(doNonceQuery),
-}
-
-func doNonceQuery(cmd *cobra.Command, args []string) error {
-	addr, err := proofcmd.ParseHexKey(args, "address")
-	if err != nil {
-		return err
-	}
-
-	act := []basecoin.Actor{basecoin.NewActor(
-		nonce.NameNonce,
-		addr,
-	)}
-
-	key := stack.PrefixedKey(nonce.NameNonce, nonce.GetSeqKey(act))
-
-	var seq uint32
-	proof, err := proofcmd.GetAndParseAppProof(key, &seq)
-	if lc.IsNoDataErr(err) {
-		return errors.Errorf("Sequence is empty for address %X ", addr)
-	} else if err != nil {
-		return err
-	}
-
-	return proofcmd.OutputProof(seq, proof.BlockHeight())
-}
-
 // BaseTxPresenter this decodes all basecoin tx
 type BaseTxPresenter struct {
 	proofs.RawPresenter // this handles MakeKey as hex bytes
 }
 
-// ParseData - unmarshal raw bytes to a basecoin tx
-func (BaseTxPresenter) ParseData(raw []byte) (interface{}, error) {
-	var tx basecoin.Tx
+func (_ BaseTxPresenter) ParseData(raw []byte) (interface{}, error) {
+	var tx btypes.TxS
 	err := wire.ReadBinaryBytes(raw, &tx)
 	return tx, err
 }

@@ -18,7 +18,7 @@ import (
 	coincmd "github.com/tepleton/basecoin/cmd/basecoin/commands"
 )
 
-// BaseCli - main basecoin client command
+// BaseCli represents the base command when called without any subcommands
 var BaseCli = &cobra.Command{
 	Use:   "basecli",
 	Short: "Light client for tepleton",
@@ -34,20 +34,16 @@ func main() {
 	commands.AddBasicFlags(BaseCli)
 
 	// Prepare queries
-	proofs.RootCmd.AddCommand(
-		// These are default parsers, but optional in your app (you can remove key)
-		proofs.TxCmd,
-		proofs.KeyCmd,
-		bcmd.AccountQueryCmd,
-		bcmd.NonceQueryCmd,
-	)
+	pr := proofs.RootCmd
+	// These are default parsers, but optional in your app (you can remove key)
+	pr.AddCommand(proofs.TxCmd)
+	pr.AddCommand(proofs.KeyCmd)
+	pr.AddCommand(bcmd.AccountQueryCmd)
 
 	// you will always want this for the base send command
 	proofs.TxPresenters.Register("base", bcmd.BaseTxPresenter{})
-	txs.RootCmd.AddCommand(
-		// This is the default transaction, optional in your app
-		bcmd.SendTxCmd,
-	)
+	tr := txs.RootCmd
+	tr.AddCommand(bcmd.SendTxCmd)
 
 	// Set up the various commands to use
 	BaseCli.AddCommand(
@@ -56,8 +52,8 @@ func main() {
 		keycmd.RootCmd,
 		seeds.RootCmd,
 		rpccmd.RootCmd,
-		proofs.RootCmd,
-		txs.RootCmd,
+		pr,
+		tr,
 		proxy.RootCmd,
 		coincmd.VersionCmd,
 		bcmd.AutoCompleteCmd,

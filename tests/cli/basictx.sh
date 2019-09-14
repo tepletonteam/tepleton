@@ -8,9 +8,7 @@ RICH=${ACCOUNTS[0]}
 POOR=${ACCOUNTS[4]}
 
 oneTimeSetUp() {
-    if ! quickSetup .basecoin_test_basictx basictx-chain; then
-        exit 1;
-    fi
+    quickSetup .basecoin_test_basictx basictx-chain
 }
 
 oneTimeTearDown() {
@@ -23,7 +21,7 @@ test00GetAccount() {
 
     assertFalse "requires arg" "${CLIENT_EXE} query account"
 
-    checkAccount $SENDER "9007199254740992"
+    checkAccount $SENDER "0" "9007199254740992"
 
     ACCT2=$(${CLIENT_EXE} query account $RECV 2>/dev/null)
     assertFalse "has no genesis account" $?
@@ -40,48 +38,14 @@ test01SendTx() {
     HASH=$(echo $TX | jq .hash | tr -d \")
     TX_HEIGHT=$(echo $TX | jq .height)
 
-    checkAccount $SENDER "9007199254740000"
+    checkAccount $SENDER "1" "9007199254740000"
     # make sure 0x prefix also works
-    checkAccount "0x$SENDER" "9007199254740000"
-    checkAccount $RECV "992"
+    checkAccount "0x$SENDER" "1" "9007199254740000"
+    checkAccount $RECV "0" "992"
 
     # Make sure tx is indexed
     checkSendTx $HASH $TX_HEIGHT $SENDER "992"
 }
-
-test02SendTxWithFee() {
-    SENDER=$(getAddr $RICH)
-    RECV=$(getAddr $POOR)
-
-    TX=$(echo qwertyuiop | ${CLIENT_EXE} tx send --amount=90mycoin --fee=10mycoin --sequence=2 --to=$RECV --name=$RICH)
-    txSucceeded $? "$TX" "$RECV"
-    HASH=$(echo $TX | jq .hash | tr -d \")
-    TX_HEIGHT=$(echo $TX | jq .height)
-
-    # deduct 100 from sender, add 90 to receiver... fees "vanish"
-    checkAccount $SENDER "9007199254739900"
-    checkAccount $RECV "1082"
-
-    # Make sure tx is indexed
-    checkSendFeeTx $HASH $TX_HEIGHT $SENDER "90" "10"
-
-    # assert replay protection
-    TX=$(echo qwertyuiop | ${CLIENT_EXE} tx send --amount=90mycoin --fee=10mycoin --sequence=2 --to=$RECV --name=$RICH 2>/dev/null)
-    assertFalse "replay: $TX" $?
-    checkAccount $SENDER "9007199254739900"
-    checkAccount $RECV "1082"
-
-    # make sure we can query the proper nonce
-    NONCE=$(${CLIENT_EXE} query nonce $SENDER)
-    echo $NONCE
-    if [ -n "$DEBUG" ]; then echo $NONCE; echo; fi
-    # TODO: note that cobra returns error code 0 on parse failure,
-    # so currently this check passes even if there is no nonce query command
-    if assertTrue "no nonce query" $?; then
-        assertEquals "line=${LINENO}, proper nonce" "2" $(echo $NONCE | jq .data)
-    fi
-}
-
 
 # Load common then run these tests with shunit2!
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" #get this files directory

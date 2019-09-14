@@ -1,14 +1,17 @@
 package app
 
 import (
+	"bytes"
 	"encoding/json"
 
 	"github.com/pkg/errors"
 
+	"github.com/tepleton/basecoin/types"
+	crypto "github.com/tepleton/go-crypto"
+	"github.com/tepleton/go-wire/data"
 	cmn "github.com/tepleton/tmlibs/common"
 )
 
-// LoadGenesis - Load the genesis file into memory
 func (app *Basecoin) LoadGenesis(path string) error {
 	genDoc, err := loadGenesis(path)
 	if err != nil {
@@ -19,13 +22,20 @@ func (app *Basecoin) LoadGenesis(path string) error {
 	app.SetOption("base/chain_id", genDoc.ChainID)
 
 	// set accounts
-	for _, acct := range genDoc.AppOptions.Accounts {
-		_ = app.SetOption("coin/account", string(acct))
+	for _, acc := range genDoc.AppOptions.Accounts {
+		accBytes, err := json.Marshal(acc)
+		if err != nil {
+			return err
+		}
+		r := app.SetOption("base/account", string(accBytes))
+		// TODO: SetOption returns an error
+		app.logger.Info("Done setting Account via SetOption", "result", r)
 	}
 
 	// set plugin options
 	for _, kv := range genDoc.AppOptions.pluginOptions {
-		_ = app.SetOption(kv.Key, kv.Value)
+		r := app.SetOption(kv.Key, kv.Value)
+		app.logger.Info("Done setting Plugin key-value pair via SetOption", "result", r, "k", kv.Key, "v", kv.Value)
 	}
 
 	return nil
@@ -36,15 +46,14 @@ type keyValue struct {
 	Value string `json:"value"`
 }
 
-// FullGenesisDoc - includes tepleton (in the json, we ignore here)
+// includes tepleton (in the json, we ignore here)
 type FullGenesisDoc struct {
 	ChainID    string      `json:"chain_id"`
 	AppOptions *GenesisDoc `json:"app_options"`
 }
 
-// GenesisDoc - All genesis values
 type GenesisDoc struct {
-	Accounts      []json.RawMessage `json:"accounts"`
+	Accounts      []GenesisAccount  `json:"accounts"`
 	PluginOptions []json.RawMessage `json:"plugin_options"`
 
 	pluginOptions []keyValue // unmarshaled rawmessages
@@ -75,20 +84,20 @@ func loadGenesis(filePath string) (*FullGenesisDoc, error) {
 	return genDoc, nil
 }
 
-func parseGenesisList(kvzIn []json.RawMessage) (kvz []keyValue, err error) {
-	if len(kvzIn)%2 != 0 {
+func parseGenesisList(kvz_ []json.RawMessage) (kvz []keyValue, err error) {
+	if len(kvz_)%2 != 0 {
 		return nil, errors.New("genesis cannot have an odd number of items.  Format = [key1, value1, key2, value2, ...]")
 	}
 
-	for i := 0; i < len(kvzIn); i += 2 {
+	for i := 0; i < len(kvz_); i += 2 {
 		kv := keyValue{}
-		rawK := []byte(kvzIn[i])
+		rawK := []byte(kvz_[i])
 		err := json.Unmarshal(rawK, &(kv.Key))
 		if err != nil {
 			return nil, errors.Errorf("Non-string key: %s", string(rawK))
 		}
 		// convert value to string if possible (otherwise raw json)
-		rawV := kvzIn[i+1]
+		rawV := kvz_[i+1]
 		err = json.Unmarshal(rawV, &(kv.Value))
 		if err != nil {
 			kv.Value = string(rawV)
@@ -96,4 +105,41 @@ func parseGenesisList(kvzIn []json.RawMessage) (kvz []keyValue, err error) {
 		kvz = append(kvz, kv)
 	}
 	return kvz, nil
+}
+
+/**** code to parse accounts from genesis docs ***/
+
+type GenesisAccount struct {
+	Address data.Bytes `json:"address"`
+	// this from types.Account (don't know how to embed this properly)
+	PubKey   crypto.PubKey `json:"pub_key"` // May be nil, if not known.
+	Sequence int           `json:"sequence"`
+	Balance  types.Coins   `json:"coins"`
+}
+
+func (g GenesisAccount) ToAccount() *types.Account {
+	return &types.Account{
+		PubKey:   g.PubKey,
+		Sequence: g.Sequence,
+		Balance:  g.Balance,
+	}
+}
+
+func (g GenesisAccount) GetAddr() ([]byte, error) {
+	noAddr, noPk := len(g.Address) == 0, g.PubKey.Empty()
+
+	if noAddr {
+		if noPk {
+			return nil, errors.New("No address given")
+		}
+		return g.PubKey.Address(), nil
+	}
+	if noPk { // but is addr...
+		return g.Address, nil
+	}
+	// now, we have both, make sure they check out
+	if bytes.Equal(g.Address, g.PubKey.Address()) {
+		return g.Address, nil
+	}
+	return nil, errors.New("Address and pubkey don't match")
 }

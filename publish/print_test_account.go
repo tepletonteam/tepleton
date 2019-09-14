@@ -4,7 +4,6 @@ package main
 
 import (
 	"fmt"
-
 	"github.com/tepleton/basecoin/tests"
 	"github.com/tepleton/go-wire"
 )

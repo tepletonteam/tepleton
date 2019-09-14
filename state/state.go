@@ -2,6 +2,7 @@ package state
 
 import (
 	wrsp "github.com/tepleton/wrsp/types"
+	"github.com/tepleton/basecoin/types"
 	eyes "github.com/tepleton/merkleeyes/client"
 	"github.com/tepleton/tmlibs/log"
 )
@@ -10,20 +11,24 @@ import (
 // See CacheWrap().
 type State struct {
 	chainID    string
-	store      KVStore
+	store      types.KVStore
 	readCache  map[string][]byte // optional, for caching writes to store
-	writeCache *KVCache          // optional, for caching writes w/o writing to store
+	writeCache *types.KVCache    // optional, for caching writes w/o writing to store
 	logger     log.Logger
 }
 
-func NewState(store KVStore, l log.Logger) *State {
+func NewState(store types.KVStore) *State {
 	return &State{
 		chainID:    "",
 		store:      store,
 		readCache:  make(map[string][]byte),
 		writeCache: nil,
-		logger:     l,
+		logger:     log.NewNopLogger(),
 	}
+}
+
+func (s *State) SetLogger(l log.Logger) {
+	s.logger = l
 }
 
 func (s *State) SetChainID(chainID string) {
@@ -56,8 +61,16 @@ func (s *State) Set(key []byte, value []byte) {
 	s.store.Set(key, value)
 }
 
+func (s *State) GetAccount(addr []byte) *types.Account {
+	return types.GetAccount(s, addr)
+}
+
+func (s *State) SetAccount(addr []byte, acc *types.Account) {
+	types.SetAccount(s, addr, acc)
+}
+
 func (s *State) CacheWrap() *State {
-	cache := NewKVCache(s)
+	cache := types.NewKVCache(s)
 	return &State{
 		chainID:    s.chainID,
 		store:      cache,

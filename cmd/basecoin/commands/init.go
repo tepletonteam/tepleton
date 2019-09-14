@@ -1,31 +1,37 @@
 package commands
 
 import (
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 )
 
-// InitCmd - node initialization command
-var InitCmd = &cobra.Command{
-	Use:   "init [address]",
-	Short: "Initialize a basecoin blockchain",
-	RunE:  initCmd,
-}
-
-//nolint - flags
+//commands
 var (
-	FlagChainID = "chain-id" //TODO group with other flags or remove? is this already a flag here?
+	InitCmd = &cobra.Command{
+		Use:   "init [address]",
+		Short: "Initialize a basecoin blockchain",
+		RunE:  initCmd,
+	}
+)
+
+//flags
+var (
+	chainIDFlag string
 )
 
 func init() {
-	InitCmd.Flags().String(FlagChainID, "test_chain_id", "Chain ID")
+	flags := []Flag2Register{
+		{&chainIDFlag, "chain-id", "test_chain_id", "Chain ID"},
+	}
+	RegisterFlags(InitCmd, flags)
 }
 
 // returns 1 iff it set a file, otherwise 0 (so we can add them)
@@ -52,13 +58,21 @@ func initCmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("`init` takes one argument, a basecoin account address. Generate one using `basecli keys new mykey`")
 	}
 	userAddr := args[0]
+	// verify this account is correct
+	data, err := hex.DecodeString(StripHex(userAddr))
+	if err != nil {
+		return errors.Wrap(err, "Invalid address")
+	}
+	if len(data) != 20 {
+		return errors.New("Address must be 20-bytes in hex")
+	}
 
 	// initalize basecoin
 	genesisFile := cfg.GenesisFile()
 	privValFile := cfg.PrivValidatorFile()
 	keyFile := path.Join(cfg.RootDir, "key.json")
 
-	mod1, err := setupFile(genesisFile, GetGenesisJSON(viper.GetString(FlagChainID), userAddr), 0644)
+	mod1, err := setupFile(genesisFile, GetGenesisJSON(chainIDFlag, userAddr), 0644)
 	if err != nil {
 		return err
 	}
@@ -81,7 +95,6 @@ func initCmd(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// PrivValJSON - validator private key file contents in json
 var PrivValJSON = `{
   "address": "7A956FADD20D3A5B2375042B2959F8AB172A058F",
   "last_height": 0,
@@ -131,7 +144,7 @@ func GetGenesisJSON(chainID, addr string) string {
 }`, chainID, addr)
 }
 
-// KeyJSON - TODO: remove this once not needed for relay
+// TODO: remove this once not needed for relay
 var KeyJSON = `{
   "address": "1B1BE55F969F54064628A63B9559E7C21C925165",
   "priv_key": {

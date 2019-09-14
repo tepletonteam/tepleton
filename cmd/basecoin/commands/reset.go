@@ -6,7 +6,6 @@ import (
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 )
 
-// UnsafeResetAllCmd - extension of the tepleton command, resets initialization
 var UnsafeResetAllCmd = &cobra.Command{
 	Use:   "unsafe_reset_all",
 	Short: "Reset all blockchain data",

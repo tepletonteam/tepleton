@@ -60,7 +60,8 @@ func (et *execTest) reset() {
 	et.accOut = types.MakeAcc("bar")
 
 	et.store = types.NewMemKVStore()
-	et.state = NewState(et.store, log.TestingLogger())
+	et.state = NewState(et.store)
+	et.state.SetLogger(log.TestingLogger())
 	et.state.SetChainID(et.chainID)
 
 	// NOTE we dont run acc2State here
@@ -296,19 +297,6 @@ func TestSendTx(t *testing.T) {
 	et.acc2State(et.accOut)
 	res, _, _, _, _ = et.exec(tx, true)
 	assert.True(res.IsOK(), "ExecTx/Good CheckTx: Expected OK return from ExecTx, Error: %v", res)
-
-	// rige: go hack the cli and abuse this to steal some coinz.... I'm not fixing, but re-writing SendTx
-	//Negative CheckTx
-	// et.reset()
-	// et.acc2State(et.accIn)
-	// et.acc2State(et.accOut)
-	// tx2 := types.MakeSendTx(1, et.accOut, et.accIn)
-	// tx2.Fee = types.Coin{"mycoin", 0}
-	// tx2.Inputs[0].Coins = types.Coins{{"mycoin", -5}}
-	// tx2.Outputs[0].Coins = types.Coins{{"mycoin", -5}}
-	// et.signTx(tx2, et.accIn)
-	// res, _, _, _, _ = et.exec(tx2, true)
-	// assert.True(res.IsErr(), "ExecTx/Bad CheckTx: Expected error return from ExecTx, returned: %v", res)
 
 	//Regular DeliverTx
 	et.reset()
