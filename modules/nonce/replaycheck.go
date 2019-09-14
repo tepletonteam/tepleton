@@ -2,7 +2,6 @@ package nonce
 
 import (
 	"github.com/tepleton/basecoin"
-	"github.com/tepleton/basecoin/errors"
 	"github.com/tepleton/basecoin/stack"
 	"github.com/tepleton/basecoin/state"
 )
@@ -57,11 +56,16 @@ func (r ReplayCheck) checkIncrementNonceTx(ctx basecoin.Context, store state.KVS
 	// make sure it is a the nonce Tx (Tx from this package)
 	nonceTx, ok := tx.Unwrap().(Tx)
 	if !ok {
-		return tx, errors.ErrNoNonce()
+		return tx, ErrNoNonce()
+	}
+
+	err := nonceTx.ValidateBasic()
+	if err != nil {
+		return tx, err
 	}
 
 	// check the nonce sequence number
-	err := nonceTx.CheckIncrementSeq(ctx, store)
+	err = nonceTx.CheckIncrementSeq(ctx, store)
 	if err != nil {
 		return tx, err
 	}
