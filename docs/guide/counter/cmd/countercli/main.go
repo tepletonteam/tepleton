@@ -6,11 +6,11 @@ import (
 	"github.com/spf13/cobra"
 
 	keycmd "github.com/tepleton/go-crypto/cmd"
-	"github.com/tepleton/light-client/commands"
-	"github.com/tepleton/light-client/commands/proofs"
-	"github.com/tepleton/light-client/commands/proxy"
-	"github.com/tepleton/light-client/commands/seeds"
-	"github.com/tepleton/light-client/commands/txs"
+	"github.com/tepleton/basecoin/commands"
+	"github.com/tepleton/basecoin/commands/proofs"
+	"github.com/tepleton/basecoin/commands/proxy"
+	"github.com/tepleton/basecoin/commands/seeds"
+	"github.com/tepleton/basecoin/commands/txs"
 	"github.com/tepleton/tmlibs/cli"
 
 	bcmd "github.com/tepleton/basecoin/cmd/basecli/commands"

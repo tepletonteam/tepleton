@@ -7,8 +7,8 @@ import (
 	"github.com/spf13/cobra"
 
 	lc "github.com/tepleton/light-client"
-	lcmd "github.com/tepleton/light-client/commands"
-	proofcmd "github.com/tepleton/light-client/commands/proofs"
+	lcmd "github.com/tepleton/basecoin/commands"
+	proofcmd "github.com/tepleton/basecoin/commands/proofs"
 
 	"github.com/tepleton/basecoin/modules/nonce"
 	"github.com/tepleton/basecoin/stack"

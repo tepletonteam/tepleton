@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 
-	txcmd "github.com/tepleton/light-client/commands/txs"
+	txcmd "github.com/tepleton/basecoin/commands/txs"
 	cmn "github.com/tepleton/tmlibs/common"
 
 	ctypes "github.com/tepleton/tepleton/rpc/core/types"

@@ -3,7 +3,7 @@ package commands
 import (
 	"github.com/spf13/cobra"
 
-	proofcmd "github.com/tepleton/light-client/commands/proofs"
+	proofcmd "github.com/tepleton/basecoin/commands/proofs"
 
 	"github.com/tepleton/basecoin/docs/guide/counter/plugins/counter"
 	"github.com/tepleton/basecoin/stack"
