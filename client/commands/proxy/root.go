@@ -7,14 +7,13 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	cmn "github.com/tepleton/tmlibs/common"
-	"github.com/tepleton/tmlibs/log"
-
+	certclient "github.com/tepleton/light-client/certifiers/client"
 	"github.com/tepleton/tepleton/rpc/client"
 	"github.com/tepleton/tepleton/rpc/core"
 	rpc "github.com/tepleton/tepleton/rpc/lib/server"
+	cmn "github.com/tepleton/tmlibs/common"
+	"github.com/tepleton/tmlibs/log"
 
-	certclient "github.com/tepleton/light-client/certifiers/client"
 	"github.com/tepleton/basecoin/client/commands"
 )
 

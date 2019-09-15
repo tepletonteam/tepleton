@@ -3,10 +3,11 @@ package roles
 import (
 	"fmt"
 
+	wire "github.com/tepleton/go-wire"
+
 	"github.com/tepleton/basecoin"
 	"github.com/tepleton/basecoin/errors"
 	"github.com/tepleton/basecoin/state"
-	wire "github.com/tepleton/go-wire"
 )
 
 // NewPerm creates a role permission with the given label

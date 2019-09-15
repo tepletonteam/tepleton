@@ -3,9 +3,10 @@ package main
 import (
 	"os"
 
+	"github.com/tepleton/tmlibs/cli"
+
 	"github.com/tepleton/basecoin/app"
 	"github.com/tepleton/basecoin/cmd/basecoin/commands"
-	"github.com/tepleton/tmlibs/cli"
 )
 
 func main() {

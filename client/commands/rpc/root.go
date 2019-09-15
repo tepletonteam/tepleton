@@ -6,9 +6,9 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/tepleton/go-wire/data"
+	certclient "github.com/tepleton/light-client/certifiers/client"
 	"github.com/tepleton/tepleton/rpc/client"
 
-	certclient "github.com/tepleton/light-client/certifiers/client"
 	"github.com/tepleton/basecoin/client/commands"
 )
 

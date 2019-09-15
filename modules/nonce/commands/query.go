@@ -6,11 +6,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
+	lc "github.com/tepleton/light-client"
+
 	"github.com/tepleton/basecoin"
 	lcmd "github.com/tepleton/basecoin/client/commands"
 	proofcmd "github.com/tepleton/basecoin/client/commands/proofs"
-	lc "github.com/tepleton/light-client"
-
 	"github.com/tepleton/basecoin/modules/nonce"
 	"github.com/tepleton/basecoin/stack"
 )
@@ -28,7 +28,6 @@ func nonceQueryCmd(cmd *cobra.Command, args []string) error {
 	}
 	addr := strings.Join(args, ",")
 
-	var signers []basecoin.Actor
 	signers, err := parseActors(addr)
 	if err != nil {
 		return err

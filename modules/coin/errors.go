@@ -4,9 +4,8 @@ package coin
 import (
 	"fmt"
 
-	pkgerrors "github.com/pkg/errors"
-
 	wrsp "github.com/tepleton/wrsp/types"
+
 	"github.com/tepleton/basecoin/errors"
 )
 
@@ -83,8 +82,7 @@ func IsNoOutputsErr(err error) bool {
 }
 
 func ErrUnknownKey(mod string) errors.TMError {
-	w := pkgerrors.Wrap(errUnknownKey, mod)
-	return errors.WithCode(w, unknownRequest)
+	return errors.WithMessage(mod, errUnknownKey, unknownRequest)
 }
 func IsUnknownKeyErr(err error) bool {
 	return errors.IsSameError(errUnknownKey, err)

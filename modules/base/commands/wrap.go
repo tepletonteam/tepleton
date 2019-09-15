@@ -6,9 +6,8 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"github.com/tepleton/basecoin/client/commands"
-
 	"github.com/tepleton/basecoin"
+	"github.com/tepleton/basecoin/client/commands"
 	txcmd "github.com/tepleton/basecoin/client/commands/txs"
 	"github.com/tepleton/basecoin/modules/base"
 )

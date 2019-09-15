@@ -2,6 +2,7 @@ package txs
 
 import (
 	"github.com/pkg/errors"
+
 	wire "github.com/tepleton/go-wire"
 	"github.com/tepleton/light-client/proofs"
 	ctypes "github.com/tepleton/tepleton/rpc/core/types"

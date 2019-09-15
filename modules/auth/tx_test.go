@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tepleton/basecoin/stack"
 	crypto "github.com/tepleton/go-crypto"
 	keys "github.com/tepleton/go-crypto/keys"
 	"github.com/tepleton/go-crypto/keys/cryptostore"
@@ -14,6 +13,7 @@ import (
 	wire "github.com/tepleton/go-wire"
 
 	"github.com/tepleton/basecoin"
+	"github.com/tepleton/basecoin/stack"
 )
 
 func checkSignBytes(t *testing.T, bytes []byte, expected string) {

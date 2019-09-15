@@ -3,13 +3,16 @@ package proofs
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/tepleton/basecoin/client/commands"
 	"github.com/tepleton/light-client/proofs"
+
+	"github.com/tepleton/basecoin/client/commands"
 )
 
+//nolint TODO add description
 var TxPresenters = proofs.NewPresenters()
 
-var TxCmd = &cobra.Command{
+// TxQueryCmd - CLI command to query a transaction with proof
+var TxQueryCmd = &cobra.Command{
 	Use:   "tx [txhash]",
 	Short: "Handle proofs of commited txs",
 	Long: `Proofs allows you to validate wrsp state with merkle proofs.
@@ -18,10 +21,10 @@ These proofs tie the data to a checkpoint, which is managed by "seeds".
 Here we can validate these proofs and import/export them to prove specific
 data to other peers as needed.
 `,
-	RunE: commands.RequireInit(doTxQuery),
+	RunE: commands.RequireInit(txQueryCmd),
 }
 
-func doTxQuery(cmd *cobra.Command, args []string) error {
+func txQueryCmd(cmd *cobra.Command, args []string) error {
 	// parse cli
 	height := GetHeight()
 	bkey, err := ParseHexKey(args, "txhash")

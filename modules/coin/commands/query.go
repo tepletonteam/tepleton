@@ -4,10 +4,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	lcmd "github.com/tepleton/basecoin/client/commands"
-	proofcmd "github.com/tepleton/basecoin/client/commands/proofs"
 	lc "github.com/tepleton/light-client"
 
+	lcmd "github.com/tepleton/basecoin/client/commands"
+	proofcmd "github.com/tepleton/basecoin/client/commands/proofs"
 	"github.com/tepleton/basecoin/modules/auth"
 	"github.com/tepleton/basecoin/modules/coin"
 	"github.com/tepleton/basecoin/stack"

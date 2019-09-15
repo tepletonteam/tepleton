@@ -1,11 +1,11 @@
 package coin
 
 import (
-	"github.com/tepleton/basecoin/modules/auth"
 	crypto "github.com/tepleton/go-crypto"
 	"github.com/tepleton/go-wire/data"
 
 	"github.com/tepleton/basecoin"
+	"github.com/tepleton/basecoin/modules/auth"
 )
 
 // AccountWithKey is a helper for tests, that includes and account

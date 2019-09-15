@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
 	"github.com/tepleton/basecoin"
 	"github.com/tepleton/basecoin/modules/roles"
 	"github.com/tepleton/basecoin/stack"

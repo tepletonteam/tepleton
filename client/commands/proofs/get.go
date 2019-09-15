@@ -8,12 +8,11 @@ import (
 
 	wire "github.com/tepleton/go-wire"
 	"github.com/tepleton/go-wire/data"
-
+	lc "github.com/tepleton/light-client"
+	"github.com/tepleton/light-client/proofs"
 	"github.com/tepleton/tepleton/rpc/client"
 
-	lc "github.com/tepleton/light-client"
 	"github.com/tepleton/basecoin/client/commands"
-	"github.com/tepleton/light-client/proofs"
 )
 
 // GetAndParseAppProof does most of the work of the query commands, but is quite

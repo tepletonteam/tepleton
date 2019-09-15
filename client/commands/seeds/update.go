@@ -4,7 +4,9 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+
 	"github.com/tepleton/light-client/certifiers"
+
 	"github.com/tepleton/basecoin/client/commands"
 )
 

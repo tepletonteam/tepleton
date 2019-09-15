@@ -6,11 +6,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/tepleton/go-wire/data"
 	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/basecoin"
 	"github.com/tepleton/basecoin/state"
-	"github.com/tepleton/go-wire/data"
 )
 
 // writerMid is a middleware that writes the given bytes on CheckTx and DeliverTx

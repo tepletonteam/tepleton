@@ -15,19 +15,19 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
+	"github.com/tepleton/light-client/certifiers"
+	"github.com/tepleton/light-client/certifiers/files"
 	"github.com/tepleton/tmlibs/cli"
 	cmn "github.com/tepleton/tmlibs/common"
 
 	"github.com/tepleton/tepleton/types"
-
-	"github.com/tepleton/light-client/certifiers"
-	"github.com/tepleton/light-client/certifiers/files"
 )
 
 var (
 	dirPerm = os.FileMode(0700)
 )
 
+//nolint
 const (
 	SeedFlag    = "seed"
 	HashFlag    = "valhash"

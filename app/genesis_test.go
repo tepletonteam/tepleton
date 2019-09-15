@@ -7,10 +7,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tepleton/basecoin/modules/coin"
+
 	eyescli "github.com/tepleton/merkleeyes/client"
 	cmn "github.com/tepleton/tmlibs/common"
 	"github.com/tepleton/tmlibs/log"
+
+	"github.com/tepleton/basecoin/modules/coin"
 )
 
 const genesisFilepath = "./testdata/genesis.json"
