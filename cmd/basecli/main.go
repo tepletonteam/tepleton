@@ -22,6 +22,7 @@ import (
 	coincmd "github.com/tepleton/basecoin/modules/coin/commands"
 	feecmd "github.com/tepleton/basecoin/modules/fee/commands"
 	noncecmd "github.com/tepleton/basecoin/modules/nonce/commands"
+	rolecmd "github.com/tepleton/basecoin/modules/roles/commands"
 )
 
 // BaseCli - main basecoin client command
@@ -61,6 +62,7 @@ func main() {
 	// set up the middleware
 	txcmd.Middleware = txcmd.Wrappers{
 		feecmd.FeeWrapper{},
+		rolecmd.RoleWrapper{},
 		noncecmd.NonceWrapper{},
 		basecmd.ChainWrapper{},
 		authcmd.SigWrapper{},

@@ -9,7 +9,7 @@ import (
 	lc "github.com/tepleton/light-client"
 
 	"github.com/tepleton/basecoin"
-	lcmd "github.com/tepleton/basecoin/client/commands"
+	"github.com/tepleton/basecoin/client/commands"
 	proofcmd "github.com/tepleton/basecoin/client/commands/proofs"
 	"github.com/tepleton/basecoin/modules/nonce"
 	"github.com/tepleton/basecoin/stack"
@@ -19,7 +19,7 @@ import (
 var NonceQueryCmd = &cobra.Command{
 	Use:   "nonce [address]",
 	Short: "Get details of a nonce sequence number, with proof",
-	RunE:  lcmd.RequireInit(nonceQueryCmd),
+	RunE:  commands.RequireInit(nonceQueryCmd),
 }
 
 func nonceQueryCmd(cmd *cobra.Command, args []string) error {
@@ -28,7 +28,7 @@ func nonceQueryCmd(cmd *cobra.Command, args []string) error {
 	}
 	addr := strings.Join(args, ",")
 
-	signers, err := parseActors(addr)
+	signers, err := commands.ParseActors(addr)
 	if err != nil {
 		return err
 	}
