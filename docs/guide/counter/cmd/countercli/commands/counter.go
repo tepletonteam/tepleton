@@ -4,7 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	txcmd "github.com/tepleton/basecoin/commands/txs"
+	txcmd "github.com/tepleton/basecoin/client/commands/txs"
 
 	"github.com/tepleton/basecoin"
 	bcmd "github.com/tepleton/basecoin/cmd/basecli/commands"
