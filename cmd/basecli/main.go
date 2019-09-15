@@ -8,15 +8,15 @@ import (
 
 	"github.com/tepleton/wrsp/version"
 	keycmd "github.com/tepleton/go-crypto/cmd"
+	"github.com/tepleton/tmlibs/cli"
+
 	"github.com/tepleton/basecoin/client/commands"
+	"github.com/tepleton/basecoin/client/commands/auto"
 	"github.com/tepleton/basecoin/client/commands/proofs"
 	"github.com/tepleton/basecoin/client/commands/proxy"
 	rpccmd "github.com/tepleton/basecoin/client/commands/rpc"
 	"github.com/tepleton/basecoin/client/commands/seeds"
-	"github.com/tepleton/basecoin/client/commands/txs"
-	"github.com/tepleton/tmlibs/cli"
-
-	bcmd "github.com/tepleton/basecoin/cmd/basecli/commands"
+	txcmd "github.com/tepleton/basecoin/client/commands/txs"
 	authcmd "github.com/tepleton/basecoin/modules/auth/commands"
 	basecmd "github.com/tepleton/basecoin/modules/base/commands"
 	coincmd "github.com/tepleton/basecoin/modules/coin/commands"
@@ -56,19 +56,19 @@ func main() {
 		coincmd.AccountQueryCmd,
 		noncecmd.NonceQueryCmd,
 	)
+	proofs.TxPresenters.Register("base", txcmd.BaseTxPresenter{})
 
 	// set up the middleware
-	bcmd.Middleware = bcmd.Wrappers{
+	txcmd.Middleware = txcmd.Wrappers{
 		feecmd.FeeWrapper{},
 		noncecmd.NonceWrapper{},
 		basecmd.ChainWrapper{},
 		authcmd.SigWrapper{},
 	}
-	bcmd.Middleware.Register(txs.RootCmd.PersistentFlags())
+	txcmd.Middleware.Register(txcmd.RootCmd.PersistentFlags())
 
 	// you will always want this for the base send command
-	proofs.TxPresenters.Register("base", bcmd.BaseTxPresenter{})
-	txs.RootCmd.AddCommand(
+	txcmd.RootCmd.AddCommand(
 		// This is the default transaction, optional in your app
 		coincmd.SendTxCmd,
 	)
@@ -81,10 +81,10 @@ func main() {
 		seeds.RootCmd,
 		rpccmd.RootCmd,
 		proofs.RootCmd,
-		txs.RootCmd,
+		txcmd.RootCmd,
 		proxy.RootCmd,
 		VersionCmd,
-		bcmd.AutoCompleteCmd,
+		auto.AutoCompleteCmd,
 	)
 
 	cmd := cli.PrepareMainCmd(BaseCli, "BC", os.ExpandEnv("$HOME/.basecli"))

@@ -14,16 +14,19 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 
-	"github.com/tepleton/basecoin/client/commands"
 	crypto "github.com/tepleton/go-crypto"
 	keycmd "github.com/tepleton/go-crypto/cmd"
 	"github.com/tepleton/go-crypto/keys"
+	lc "github.com/tepleton/light-client"
 
 	ctypes "github.com/tepleton/tepleton/rpc/core/types"
 
-	lc "github.com/tepleton/light-client"
+	"github.com/tepleton/basecoin"
+	"github.com/tepleton/basecoin/client/commands"
+	"github.com/tepleton/basecoin/modules/auth"
 )
 
+// Validatable represents anything that can be Validated
 type Validatable interface {
 	ValidateBasic() error
 }
@@ -35,6 +38,17 @@ func GetSigner() crypto.PubKey {
 	manager := keycmd.GetKeyManager()
 	info, _ := manager.Get(name) // error -> empty pubkey
 	return info.PubKey
+}
+
+// GetSignerAct returns the address of the signer of the tx
+// (as we still only support single sig)
+func GetSignerAct() (res basecoin.Actor) {
+	// this could be much cooler with multisig...
+	signer := GetSigner()
+	if !signer.Empty() {
+		res = auth.SigPerm(signer.Address())
+	}
+	return res
 }
 
 // Sign if it is Signable, otherwise, just convert it to bytes

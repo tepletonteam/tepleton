@@ -9,7 +9,7 @@ import (
 	"github.com/tepleton/basecoin/client/commands"
 
 	"github.com/tepleton/basecoin"
-	bcmd "github.com/tepleton/basecoin/cmd/basecli/commands"
+	txcmd "github.com/tepleton/basecoin/client/commands/txs"
 	"github.com/tepleton/basecoin/modules/base"
 )
 
@@ -21,7 +21,7 @@ const (
 // ChainWrapper wraps a tx with an chain info and optional expiration
 type ChainWrapper struct{}
 
-var _ bcmd.Wrapper = ChainWrapper{}
+var _ txcmd.Wrapper = ChainWrapper{}
 
 // Wrap will wrap the tx with a ChainTx from the standard flags
 func (ChainWrapper) Wrap(tx basecoin.Tx) (res basecoin.Tx, err error) {

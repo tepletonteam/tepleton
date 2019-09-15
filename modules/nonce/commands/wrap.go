@@ -8,7 +8,8 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/tepleton/basecoin"
-	bcmd "github.com/tepleton/basecoin/cmd/basecli/commands"
+	"github.com/tepleton/basecoin/client/commands"
+	txcmd "github.com/tepleton/basecoin/client/commands/txs"
 	"github.com/tepleton/basecoin/modules/nonce"
 )
 
@@ -21,7 +22,7 @@ const (
 // NonceWrapper wraps a tx with a nonce
 type NonceWrapper struct{}
 
-var _ bcmd.Wrapper = NonceWrapper{}
+var _ txcmd.Wrapper = NonceWrapper{}
 
 // Wrap grabs the sequence number from the flag and wraps
 // the tx with this nonce.  Grabs the permission from the signer,
@@ -49,7 +50,7 @@ func (NonceWrapper) Register(fs *pflag.FlagSet) {
 func readNonceKey() ([]basecoin.Actor, error) {
 	nonce := viper.GetString(FlagNonceKey)
 	if nonce == "" {
-		return []basecoin.Actor{bcmd.GetSignerAct()}, nil
+		return []basecoin.Actor{txcmd.GetSignerAct()}, nil
 	}
 	return parseActors(nonce)
 }
@@ -57,7 +58,7 @@ func readNonceKey() ([]basecoin.Actor, error) {
 func parseActors(key string) (signers []basecoin.Actor, err error) {
 	var act basecoin.Actor
 	for _, k := range strings.Split(key, ",") {
-		act, err = bcmd.ParseAddress(k)
+		act, err = commands.ParseAddress(k)
 		if err != nil {
 			return
 		}

@@ -4,11 +4,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/tepleton/basecoin"
 	"github.com/tepleton/basecoin/client/commands"
 	txcmd "github.com/tepleton/basecoin/client/commands/txs"
-
-	"github.com/tepleton/basecoin"
-	bcmd "github.com/tepleton/basecoin/cmd/basecli/commands"
 	"github.com/tepleton/basecoin/modules/coin"
 )
 
@@ -47,7 +45,7 @@ func doSendTx(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	tx, err = bcmd.Middleware.Wrap(tx)
+	tx, err = txcmd.Middleware.Wrap(tx)
 	if err != nil {
 		return err
 	}
@@ -57,7 +55,7 @@ func doSendTx(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	if err = bcmd.ValidateResult(bres); err != nil {
+	if err = txcmd.ValidateResult(bres); err != nil {
 		return err
 	}
 
@@ -67,7 +65,7 @@ func doSendTx(cmd *cobra.Command, args []string) error {
 
 func readSendTxFlags() (tx basecoin.Tx, err error) {
 	// parse to address
-	toAddr, err := bcmd.ParseAddress(viper.GetString(FlagTo))
+	toAddr, err := commands.ParseAddress(viper.GetString(FlagTo))
 	if err != nil {
 		return tx, err
 	}
@@ -98,7 +96,7 @@ func readSendTxFlags() (tx basecoin.Tx, err error) {
 func readFromAddr() (basecoin.Actor, error) {
 	from := viper.GetString(FlagFrom)
 	if from == "" {
-		return bcmd.GetSignerAct(), nil
+		return txcmd.GetSignerAct(), nil
 	}
-	return bcmd.ParseAddress(from)
+	return commands.ParseAddress(from)
 }
