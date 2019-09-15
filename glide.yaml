@@ -34,7 +34,7 @@ import:
   - client
   - iavl
 - package: github.com/tepleton/tepleton
-  version: develop
+  version: no-internet
   subpackages:
   - config
   - node
