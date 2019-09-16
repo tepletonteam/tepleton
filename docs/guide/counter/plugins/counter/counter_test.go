@@ -1,7 +1,6 @@
 package counter
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,8 +12,8 @@ import (
 	"github.com/tepleton/basecoin/modules/base"
 	"github.com/tepleton/basecoin/modules/coin"
 	"github.com/tepleton/basecoin/modules/nonce"
+	"github.com/tepleton/basecoin/state/merkle"
 	"github.com/tepleton/go-wire"
-	eyescli "github.com/tepleton/merkleeyes/client"
 	"github.com/tepleton/tmlibs/log"
 )
 
@@ -22,16 +21,16 @@ func TestCounterPlugin(t *testing.T) {
 	assert := assert.New(t)
 
 	// Basecoin initialization
-	eyesCli := eyescli.NewLocalClient("", 0)
 	chainID := "test_chain_id"
+	logger := log.TestingLogger()
+	// logger := log.NewTracingLogger(log.NewTMLogger(os.Stdout))
 
-	// logger := log.TestingLogger().With("module", "app"),
-	logger := log.NewTMLogger(os.Stdout).With("module", "app")
-	// logger = log.NewTracingLogger(logger)
+	store := merkle.NewStore("", 0, logger.With("module", "store"))
+	h := NewHandler("gold")
 	bcApp := app.NewBasecoin(
-		NewHandler("gold"),
-		eyesCli,
-		logger,
+		h,
+		store,
+		logger.With("module", "app"),
 	)
 	bcApp.SetOption("base/chain_id", chainID)
 
@@ -60,11 +59,15 @@ func TestCounterPlugin(t *testing.T) {
 	res = DeliverCounterTx(false, nil, 2)
 	assert.True(res.IsErr(), res.String())
 
-	// Test an invalid send, with supported fee
-	res = DeliverCounterTx(true, coin.Coins{{"gold", 100}}, 2)
+	// Test an invalid sequence
+	res = DeliverCounterTx(true, nil, 2)
+	assert.True(res.IsErr(), res.String())
+
+	// Test an valid send, with supported fee
+	res = DeliverCounterTx(true, coin.Coins{{"gold", 100}}, 3)
 	assert.True(res.IsOK(), res.String())
 
 	// Test unsupported fee
-	res = DeliverCounterTx(true, coin.Coins{{"silver", 100}}, 3)
+	res = DeliverCounterTx(true, coin.Coins{{"silver", 100}}, 4)
 	assert.True(res.IsErr(), res.String())
 }

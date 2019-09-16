@@ -11,8 +11,6 @@ import (
 
 	"github.com/tepleton/wrsp/server"
 	"github.com/tepleton/basecoin"
-	eyesApp "github.com/tepleton/merkleeyes/app"
-	eyes "github.com/tepleton/merkleeyes/client"
 	"github.com/tepleton/tmlibs/cli"
 	cmn "github.com/tepleton/tmlibs/common"
 
@@ -22,6 +20,7 @@ import (
 	"github.com/tepleton/tepleton/types"
 
 	"github.com/tepleton/basecoin/app"
+	"github.com/tepleton/basecoin/state/merkle"
 )
 
 // StartCmd - command to start running the basecoin node!
@@ -37,7 +36,6 @@ const EyesCacheSize = 10000
 //nolint
 const (
 	FlagAddress           = "address"
-	FlagEyes              = "eyes"
 	FlagWithoutTendermint = "without-tepleton"
 )
 
@@ -50,7 +48,6 @@ var (
 func init() {
 	flags := StartCmd.Flags()
 	flags.String(FlagAddress, "tcp://0.0.0.0:46658", "Listen address")
-	flags.String(FlagEyes, "local", "MerkleEyes address, or 'local' for embedded")
 	flags.Bool(FlagWithoutTendermint, false, "Only run basecoin wrsp app, assume external tepleton process")
 	// add all standard 'tepleton node' flags
 	tcmd.AddNodeFlags(StartCmd)
@@ -58,27 +55,19 @@ func init() {
 
 func startCmd(cmd *cobra.Command, args []string) error {
 	rootDir := viper.GetString(cli.HomeFlag)
-	meyes := viper.GetString(FlagEyes)
 
-	// Connect to MerkleEyes
-	var eyesCli *eyes.Client
-	if meyes == "local" {
-		eyesApp.SetLogger(logger.With("module", "merkleeyes"))
-		eyesCli = eyes.NewLocalClient(path.Join(rootDir, "data", "merkleeyes.db"), EyesCacheSize)
-	} else {
-		var err error
-		eyesCli, err = eyes.NewClient(meyes)
-		if err != nil {
-			return errors.Errorf("Error connecting to MerkleEyes: %v\n", err)
-		}
-	}
+	store := merkle.NewStore(
+		path.Join(rootDir, "data", "merkleeyes.db"),
+		EyesCacheSize,
+		logger.With("module", "store"),
+	)
 
 	// Create Basecoin app
-	basecoinApp := app.NewBasecoin(Handler, eyesCli, logger.With("module", "app"))
+	basecoinApp := app.NewBasecoin(Handler, store, logger.With("module", "app"))
 
 	// if chain_id has not been set yet, load the genesis.
 	// else, assume it's been loaded
-	if basecoinApp.GetState().GetChainID() == "" {
+	if basecoinApp.GetChainID() == "" {
 		// If genesis file exists, set key-value options
 		genesisFile := path.Join(rootDir, "genesis.json")
 		if _, err := os.Stat(genesisFile); err == nil {
@@ -91,7 +80,7 @@ func startCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	chainID := basecoinApp.GetState().GetChainID()
+	chainID := basecoinApp.GetChainID()
 	if viper.GetBool(FlagWithoutTendermint) {
 		logger.Info("Starting Basecoin without Tendermint", "chain_id", chainID)
 		// run just the wrsp app/server
