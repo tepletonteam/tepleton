@@ -16,7 +16,6 @@ import (
 	"github.com/tepleton/basecoin/modules/nonce"
 	"github.com/tepleton/basecoin/stack"
 	"github.com/tepleton/basecoin/state"
-	"github.com/tepleton/basecoin/state/merkle"
 	wire "github.com/tepleton/go-wire"
 	"github.com/tepleton/tmlibs/log"
 )
@@ -84,7 +83,7 @@ func (at *appTest) reset() {
 	// Note: switch logger if you want to get more info
 	logger := log.TestingLogger()
 	// logger := log.NewTracingLogger(log.NewTMLogger(os.Stdout))
-	store := merkle.NewStore("", 0, logger.With("module", "store"))
+	store := NewStore("", 0, logger.With("module", "store"))
 	at.app = NewBasecoin(
 		DefaultHandler("mycoin"),
 		store,
@@ -142,7 +141,7 @@ func TestSetOption(t *testing.T) {
 	require := require.New(t)
 
 	logger := log.TestingLogger()
-	store := merkle.NewStore("", 0, logger.With("module", "store"))
+	store := NewStore("", 0, logger.With("module", "store"))
 	app := NewBasecoin(
 		DefaultHandler("atom"),
 		store,

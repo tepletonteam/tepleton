@@ -5,16 +5,17 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	wrsp "github.com/tepleton/wrsp/types"
+	"github.com/tepleton/go-wire"
+	"github.com/tepleton/tmlibs/log"
+
 	"github.com/tepleton/basecoin"
 	"github.com/tepleton/basecoin/app"
 	"github.com/tepleton/basecoin/modules/auth"
 	"github.com/tepleton/basecoin/modules/base"
 	"github.com/tepleton/basecoin/modules/coin"
 	"github.com/tepleton/basecoin/modules/nonce"
-	"github.com/tepleton/basecoin/state/merkle"
-	"github.com/tepleton/go-wire"
-	"github.com/tepleton/tmlibs/log"
 )
 
 func TestCounterPlugin(t *testing.T) {
@@ -25,7 +26,7 @@ func TestCounterPlugin(t *testing.T) {
 	logger := log.TestingLogger()
 	// logger := log.NewTracingLogger(log.NewTMLogger(os.Stdout))
 
-	store := merkle.NewStore("", 0, logger.With("module", "store"))
+	store := app.NewStore("", 0, logger.With("module", "store"))
 	h := NewHandler("gold")
 	bcApp := app.NewBasecoin(
 		h,

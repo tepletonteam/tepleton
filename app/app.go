@@ -18,7 +18,6 @@ import (
 	"github.com/tepleton/basecoin/modules/roles"
 	"github.com/tepleton/basecoin/stack"
 	sm "github.com/tepleton/basecoin/state"
-	"github.com/tepleton/basecoin/state/merkle"
 	"github.com/tepleton/basecoin/version"
 )
 
@@ -32,7 +31,7 @@ const (
 type Basecoin struct {
 	info *sm.ChainState
 
-	state *merkle.Store
+	state *Store
 
 	handler basecoin.Handler
 	height  uint64
@@ -42,7 +41,7 @@ type Basecoin struct {
 var _ wrsp.Application = &Basecoin{}
 
 // NewBasecoin - create a new instance of the basecoin application
-func NewBasecoin(handler basecoin.Handler, store *merkle.Store, logger log.Logger) *Basecoin {
+func NewBasecoin(handler basecoin.Handler, store *Store, logger log.Logger) *Basecoin {
 	return &Basecoin{
 		handler: handler,
 		info:    sm.NewChainState(),
