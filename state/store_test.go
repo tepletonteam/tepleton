@@ -4,13 +4,24 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
 	"github.com/tepleton/merkleeyes/iavl"
+	// dbm "github.com/tepleton/tmlibs/db"
 )
 
 func GetDBs() []SimpleDB {
+	// // tree with persistence....
+	// tmpDir, err := ioutil.TempDir("", "state-tests")
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// db := dbm.NewDB("test-get-dbs", dbm.LevelDBBackendStr, tmpDir)
+	// persist := iavl.NewIAVLTree(500, db)
+
 	return []SimpleDB{
 		NewMemKVStore(),
 		NewBonsai(iavl.NewIAVLTree(0, nil)),
+		// NewBonsai(persist),
 	}
 }
 
@@ -28,20 +39,20 @@ func m(k, v string) Model {
 	}
 }
 
+type listQuery struct {
+	// this is the list query
+	start, end string
+	limit      int
+	// expected result from List, first element also expected for First
+	expected []Model
+	// expected result from Last
+	last Model
+}
+
 // TestKVStore makes sure that get/set/remove operations work,
 // as well as list
 func TestKVStore(t *testing.T) {
 	assert := assert.New(t)
-
-	type listQuery struct {
-		// this is the list query
-		start, end string
-		limit      int
-		// expected result from List, first element also expected for First
-		expected []Model
-		// expected result from Last
-		last Model
-	}
 
 	cases := []struct {
 		toSet    []Model
