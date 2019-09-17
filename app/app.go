@@ -129,7 +129,6 @@ func (app *Basecoin) DeliverTx(txBytes []byte) wrsp.Result {
 	res, err := app.handler.DeliverTx(ctx, app.state.Append(), tx)
 
 	if err != nil {
-		// discard the cache...
 		return errors.Result(err)
 	}
 	return res.ToWRSP()
