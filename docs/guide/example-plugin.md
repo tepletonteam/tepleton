@@ -375,7 +375,7 @@ example-plugin query ExamplePlugin.State
 
 Neat, right? Notice how the result of the query comes with a proof.
 This is a Merkle proof that the state is what we say it is.
-In a latter [tutorial on InterBlockchain Communication](ibc.md),
+In a latter [tutorial on InterBlockchain Communication](abi.md),
 we'll put this proof to work!
 
 ## Next Steps

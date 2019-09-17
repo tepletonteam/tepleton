@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	commands.RegisterIBC()
+	commands.RegisterABI()
 }
 
 func main() {

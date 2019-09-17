@@ -1,4 +1,4 @@
-package ibc
+package abi
 
 // import (
 // 	"bytes"
@@ -20,7 +20,7 @@ package ibc
 
 // const (
 // 	// Key parts
-// 	_IBC        = "ibc"
+// 	_ABI        = "abi"
 // 	_BLOCKCHAIN = "blockchain"
 // 	_GENESIS    = "genesis"
 // 	_STATE      = "state"
@@ -30,13 +30,13 @@ package ibc
 // 	_CONNECTION = "connection"
 // )
 
-// type IBCPluginState struct {
-// 	// @[:ibc, :blockchain, :genesis, ChainID] <~ BlockchainGenesis
-// 	// @[:ibc, :blockchain, :state, ChainID] <~ BlockchainState
-// 	// @[:ibc, :blockchain, :header, ChainID, Height] <~ tm.Header
-// 	// @[:ibc, :egress, Src, Dst, Sequence] <~ Packet
-// 	// @[:ibc, :ingress, Dst, Src, Sequence] <~ Packet
-// 	// @[:ibc, :connection, Src, Dst] <~ Connection # TODO - keep connection state
+// type ABIPluginState struct {
+// 	// @[:abi, :blockchain, :genesis, ChainID] <~ BlockchainGenesis
+// 	// @[:abi, :blockchain, :state, ChainID] <~ BlockchainState
+// 	// @[:abi, :blockchain, :header, ChainID, Height] <~ tm.Header
+// 	// @[:abi, :egress, Src, Dst, Sequence] <~ Packet
+// 	// @[:abi, :ingress, Dst, Src, Sequence] <~ Packet
+// 	// @[:abi, :connection, Src, Dst] <~ Connection # TODO - keep connection state
 // }
 
 // type BlockchainGenesis struct {
@@ -73,7 +73,7 @@ package ibc
 // // The sequence number counts how many packets have been sent.
 // // The next packet must include the latest sequence number.
 // func GetSequenceNumber(store state.SimpleDB, src, dst string) uint64 {
-// 	sequenceKey := toKey(_IBC, _EGRESS, src, dst)
+// 	sequenceKey := toKey(_ABI, _EGRESS, src, dst)
 // 	seqBytes := store.Get(sequenceKey)
 // 	if seqBytes == nil {
 // 		return 0
@@ -87,25 +87,25 @@ package ibc
 
 // // SetSequenceNumber sets the sequence number for packets being sent from the src chain to the dst chain
 // func SetSequenceNumber(store state.SimpleDB, src, dst string, seq uint64) {
-// 	sequenceKey := toKey(_IBC, _EGRESS, src, dst)
+// 	sequenceKey := toKey(_ABI, _EGRESS, src, dst)
 // 	store.Set(sequenceKey, []byte(strconv.FormatUint(seq, 10)))
 // }
 
-// // SaveNewIBCPacket creates an IBC packet with the given payload from the src chain to the dst chain
+// // SaveNewABIPacket creates an ABI packet with the given payload from the src chain to the dst chain
 // // using the correct sequence number. It also increments the sequence number by 1
-// func SaveNewIBCPacket(state state.SimpleDB, src, dst string, payload Payload) {
+// func SaveNewABIPacket(state state.SimpleDB, src, dst string, payload Payload) {
 // 	// fetch sequence number and increment by 1
 // 	seq := GetSequenceNumber(state, src, dst)
 // 	SetSequenceNumber(state, src, dst, seq+1)
 
-// 	// save ibc packet
-// 	packetKey := toKey(_IBC, _EGRESS, src, dst, cmn.Fmt("%v", seq))
+// 	// save abi packet
+// 	packetKey := toKey(_ABI, _EGRESS, src, dst, cmn.Fmt("%v", seq))
 // 	packet := NewPacket(src, dst, uint64(seq), payload)
 // 	save(state, packetKey, packet)
 // }
 
-// func GetIBCPacket(state state.SimpleDB, src, dst string, seq uint64) (Packet, error) {
-// 	packetKey := toKey(_IBC, _EGRESS, src, dst, cmn.Fmt("%v", seq))
+// func GetABIPacket(state state.SimpleDB, src, dst string, seq uint64) (Packet, error) {
+// 	packetKey := toKey(_ABI, _EGRESS, src, dst, cmn.Fmt("%v", seq))
 // 	packetBytes := state.Get(packetKey)
 
 // 	var packet Packet
@@ -162,102 +162,102 @@ package ibc
 // //--------------------------------------------------------------------------------
 
 // const (
-// 	IBCTxTypeRegisterChain = byte(0x01)
-// 	IBCTxTypeUpdateChain   = byte(0x02)
-// 	IBCTxTypePacketCreate  = byte(0x03)
-// 	IBCTxTypePacketPost    = byte(0x04)
+// 	ABITxTypeRegisterChain = byte(0x01)
+// 	ABITxTypeUpdateChain   = byte(0x02)
+// 	ABITxTypePacketCreate  = byte(0x03)
+// 	ABITxTypePacketPost    = byte(0x04)
 
-// 	IBCCodeEncodingError       = wrsp.CodeType(1001)
-// 	IBCCodeChainAlreadyExists  = wrsp.CodeType(1002)
-// 	IBCCodePacketAlreadyExists = wrsp.CodeType(1003)
-// 	IBCCodeUnknownHeight       = wrsp.CodeType(1004)
-// 	IBCCodeInvalidCommit       = wrsp.CodeType(1005)
-// 	IBCCodeInvalidProof        = wrsp.CodeType(1006)
+// 	ABICodeEncodingError       = wrsp.CodeType(1001)
+// 	ABICodeChainAlreadyExists  = wrsp.CodeType(1002)
+// 	ABICodePacketAlreadyExists = wrsp.CodeType(1003)
+// 	ABICodeUnknownHeight       = wrsp.CodeType(1004)
+// 	ABICodeInvalidCommit       = wrsp.CodeType(1005)
+// 	ABICodeInvalidProof        = wrsp.CodeType(1006)
 // )
 
 // var _ = wire.RegisterInterface(
-// 	struct{ IBCTx }{},
-// 	wire.ConcreteType{IBCRegisterChainTx{}, IBCTxTypeRegisterChain},
-// 	wire.ConcreteType{IBCUpdateChainTx{}, IBCTxTypeUpdateChain},
-// 	wire.ConcreteType{IBCPacketCreateTx{}, IBCTxTypePacketCreate},
-// 	wire.ConcreteType{IBCPacketPostTx{}, IBCTxTypePacketPost},
+// 	struct{ ABITx }{},
+// 	wire.ConcreteType{ABIRegisterChainTx{}, ABITxTypeRegisterChain},
+// 	wire.ConcreteType{ABIUpdateChainTx{}, ABITxTypeUpdateChain},
+// 	wire.ConcreteType{ABIPacketCreateTx{}, ABITxTypePacketCreate},
+// 	wire.ConcreteType{ABIPacketPostTx{}, ABITxTypePacketPost},
 // )
 
-// type IBCTx interface {
-// 	AssertIsIBCTx()
+// type ABITx interface {
+// 	AssertIsABITx()
 // 	ValidateBasic() wrsp.Result
 // }
 
-// func (IBCRegisterChainTx) AssertIsIBCTx() {}
-// func (IBCUpdateChainTx) AssertIsIBCTx()   {}
-// func (IBCPacketCreateTx) AssertIsIBCTx()  {}
-// func (IBCPacketPostTx) AssertIsIBCTx()    {}
+// func (ABIRegisterChainTx) AssertIsABITx() {}
+// func (ABIUpdateChainTx) AssertIsABITx()   {}
+// func (ABIPacketCreateTx) AssertIsABITx()  {}
+// func (ABIPacketPostTx) AssertIsABITx()    {}
 
-// type IBCRegisterChainTx struct {
+// type ABIRegisterChainTx struct {
 // 	BlockchainGenesis
 // }
 
-// func (IBCRegisterChainTx) ValidateBasic() (res wrsp.Result) {
+// func (ABIRegisterChainTx) ValidateBasic() (res wrsp.Result) {
 // 	// TODO - validate
 // 	return
 // }
 
-// type IBCUpdateChainTx struct {
+// type ABIUpdateChainTx struct {
 // 	Header tm.Header
 // 	Commit tm.Commit
 // 	// TODO: NextValidators
 // }
 
-// func (IBCUpdateChainTx) ValidateBasic() (res wrsp.Result) {
+// func (ABIUpdateChainTx) ValidateBasic() (res wrsp.Result) {
 // 	// TODO - validate
 // 	return
 // }
 
-// type IBCPacketCreateTx struct {
+// type ABIPacketCreateTx struct {
 // 	Packet
 // }
 
-// func (IBCPacketCreateTx) ValidateBasic() (res wrsp.Result) {
+// func (ABIPacketCreateTx) ValidateBasic() (res wrsp.Result) {
 // 	// TODO - validate
 // 	return
 // }
 
-// type IBCPacketPostTx struct {
+// type ABIPacketPostTx struct {
 // 	FromChainID     string // The immediate source of the packet, not always Packet.SrcChainID
 // 	FromChainHeight uint64 // The block height in which Packet was committed, to check Proof
 // 	Packet
 // 	Proof *merkle.IAVLProof
 // }
 
-// func (IBCPacketPostTx) ValidateBasic() (res wrsp.Result) {
+// func (ABIPacketPostTx) ValidateBasic() (res wrsp.Result) {
 // 	// TODO - validate
 // 	return
 // }
 
 // //--------------------------------------------------------------------------------
 
-// type IBCPlugin struct {
+// type ABIPlugin struct {
 // }
 
-// func (ibc *IBCPlugin) Name() string {
-// 	return "IBC"
+// func (abi *ABIPlugin) Name() string {
+// 	return "ABI"
 // }
 
-// func (ibc *IBCPlugin) StateKey() []byte {
-// 	return []byte("IBCPlugin.State")
+// func (abi *ABIPlugin) StateKey() []byte {
+// 	return []byte("ABIPlugin.State")
 // }
 
-// func New() *IBCPlugin {
-// 	return &IBCPlugin{}
+// func New() *ABIPlugin {
+// 	return &ABIPlugin{}
 // }
 
-// func (ibc *IBCPlugin) SetOption(store state.SimpleDB, key string, value string) (log string) {
+// func (abi *ABIPlugin) SetOption(store state.SimpleDB, key string, value string) (log string) {
 // 	return ""
 // }
 
-// func (ibc *IBCPlugin) RunTx(store state.SimpleDB, ctx types.CallContext, txBytes []byte) (res wrsp.Result) {
+// func (abi *ABIPlugin) RunTx(store state.SimpleDB, ctx types.CallContext, txBytes []byte) (res wrsp.Result) {
 // 	// Decode tx
-// 	var tx IBCTx
+// 	var tx ABITx
 // 	err := wire.ReadBinaryBytes(txBytes, &tx)
 // 	if err != nil {
 // 		return wrsp.ErrBaseEncodingError.AppendLog("Error decoding tx: " + err.Error())
@@ -278,45 +278,45 @@ package ibc
 // 		// NOTE: We should use the CallContext to store fund/refund information.
 // 	}()
 
-// 	sm := &IBCStateMachine{store, ctx, wrsp.OK}
+// 	sm := &ABIStateMachine{store, ctx, wrsp.OK}
 
 // 	switch tx := tx.(type) {
-// 	case IBCRegisterChainTx:
+// 	case ABIRegisterChainTx:
 // 		sm.runRegisterChainTx(tx)
-// 	case IBCUpdateChainTx:
+// 	case ABIUpdateChainTx:
 // 		sm.runUpdateChainTx(tx)
-// 	case IBCPacketCreateTx:
+// 	case ABIPacketCreateTx:
 // 		sm.runPacketCreateTx(tx)
-// 	case IBCPacketPostTx:
+// 	case ABIPacketPostTx:
 // 		sm.runPacketPostTx(tx)
 // 	}
 
 // 	return sm.res
 // }
 
-// type IBCStateMachine struct {
+// type ABIStateMachine struct {
 // 	store state.SimpleDB
 // 	ctx   types.CallContext
 // 	res   wrsp.Result
 // }
 
-// func (sm *IBCStateMachine) runRegisterChainTx(tx IBCRegisterChainTx) {
-// 	chainGenKey := toKey(_IBC, _BLOCKCHAIN, _GENESIS, tx.ChainID)
-// 	chainStateKey := toKey(_IBC, _BLOCKCHAIN, _STATE, tx.ChainID)
+// func (sm *ABIStateMachine) runRegisterChainTx(tx ABIRegisterChainTx) {
+// 	chainGenKey := toKey(_ABI, _BLOCKCHAIN, _GENESIS, tx.ChainID)
+// 	chainStateKey := toKey(_ABI, _BLOCKCHAIN, _STATE, tx.ChainID)
 // 	chainGen := tx.BlockchainGenesis
 
 // 	// Parse genesis
 // 	chainGenDoc := new(tm.GenesisDoc)
 // 	err := json.Unmarshal([]byte(chainGen.Genesis), chainGenDoc)
 // 	if err != nil {
-// 		sm.res.Code = IBCCodeEncodingError
+// 		sm.res.Code = ABICodeEncodingError
 // 		sm.res.Log = "Genesis doc couldn't be parsed: " + err.Error()
 // 		return
 // 	}
 
 // 	// Make sure chainGen doesn't already exist
 // 	if exists(sm.store, chainGenKey) {
-// 		sm.res.Code = IBCCodeChainAlreadyExists
+// 		sm.res.Code = ABICodeChainAlreadyExists
 // 		sm.res.Log = "Already exists"
 // 		return
 // 	}
@@ -346,9 +346,9 @@ package ibc
 // 	save(sm.store, chainStateKey, chainState)
 // }
 
-// func (sm *IBCStateMachine) runUpdateChainTx(tx IBCUpdateChainTx) {
+// func (sm *ABIStateMachine) runUpdateChainTx(tx ABIUpdateChainTx) {
 // 	chainID := tx.Header.ChainID
-// 	chainStateKey := toKey(_IBC, _BLOCKCHAIN, _STATE, chainID)
+// 	chainStateKey := toKey(_ABI, _BLOCKCHAIN, _STATE, chainID)
 
 // 	// Make sure chainState exists
 // 	if !exists(sm.store, chainStateKey) {
@@ -370,13 +370,13 @@ package ibc
 // 	// Check commit against last known state & validators
 // 	err = verifyCommit(chainState, &tx.Header, &tx.Commit)
 // 	if err != nil {
-// 		sm.res.Code = IBCCodeInvalidCommit
+// 		sm.res.Code = ABICodeInvalidCommit
 // 		sm.res.Log = cmn.Fmt("Invalid Commit: %v", err.Error())
 // 		return
 // 	}
 
 // 	// Store header
-// 	headerKey := toKey(_IBC, _BLOCKCHAIN, _HEADER, chainID, cmn.Fmt("%v", tx.Header.Height))
+// 	headerKey := toKey(_ABI, _BLOCKCHAIN, _HEADER, chainID, cmn.Fmt("%v", tx.Header.Height))
 // 	save(sm.store, headerKey, tx.Header)
 
 // 	// Update chainState
@@ -387,16 +387,16 @@ package ibc
 // 	save(sm.store, chainStateKey, chainState)
 // }
 
-// func (sm *IBCStateMachine) runPacketCreateTx(tx IBCPacketCreateTx) {
+// func (sm *ABIStateMachine) runPacketCreateTx(tx ABIPacketCreateTx) {
 // 	packet := tx.Packet
-// 	packetKey := toKey(_IBC, _EGRESS,
+// 	packetKey := toKey(_ABI, _EGRESS,
 // 		packet.SrcChainID,
 // 		packet.DstChainID,
 // 		cmn.Fmt("%v", packet.Sequence),
 // 	)
 // 	// Make sure packet doesn't already exist
 // 	if exists(sm.store, packetKey) {
-// 		sm.res.Code = IBCCodePacketAlreadyExists
+// 		sm.res.Code = ABICodePacketAlreadyExists
 // 		// TODO: .AppendLog() does not update sm.res
 // 		sm.res.Log = "Already exists"
 // 		return
@@ -410,7 +410,7 @@ package ibc
 // 		// ensure enough coins were sent in tx to cover the payload coins
 // 		if !sm.ctx.Coins.IsGTE(payload.Coins) {
 // 			sm.res.Code = wrsp.CodeType_InsufficientFunds
-// 			sm.res.Log = fmt.Sprintf("Not enough funds sent in tx (%v) to send %v via IBC", sm.ctx.Coins, payload.Coins)
+// 			sm.res.Log = fmt.Sprintf("Not enough funds sent in tx (%v) to send %v via ABI", sm.ctx.Coins, payload.Coins)
 // 			return
 // 		}
 
@@ -425,26 +425,26 @@ package ibc
 // 	SetSequenceNumber(sm.store, packet.SrcChainID, packet.DstChainID, packet.Sequence)
 // }
 
-// func (sm *IBCStateMachine) runPacketPostTx(tx IBCPacketPostTx) {
+// func (sm *ABIStateMachine) runPacketPostTx(tx ABIPacketPostTx) {
 // 	packet := tx.Packet
-// 	packetKeyEgress := toKey(_IBC, _EGRESS,
+// 	packetKeyEgress := toKey(_ABI, _EGRESS,
 // 		packet.SrcChainID,
 // 		packet.DstChainID,
 // 		cmn.Fmt("%v", packet.Sequence),
 // 	)
-// 	packetKeyIngress := toKey(_IBC, _INGRESS,
+// 	packetKeyIngress := toKey(_ABI, _INGRESS,
 // 		packet.DstChainID,
 // 		packet.SrcChainID,
 // 		cmn.Fmt("%v", packet.Sequence),
 // 	)
-// 	headerKey := toKey(_IBC, _BLOCKCHAIN, _HEADER,
+// 	headerKey := toKey(_ABI, _BLOCKCHAIN, _HEADER,
 // 		tx.FromChainID,
 // 		cmn.Fmt("%v", tx.FromChainHeight),
 // 	)
 
 // 	// Make sure packet doesn't already exist
 // 	if exists(sm.store, packetKeyIngress) {
-// 		sm.res.Code = IBCCodePacketAlreadyExists
+// 		sm.res.Code = ABICodePacketAlreadyExists
 // 		sm.res.Log = "Already exists"
 // 		return
 // 	}
@@ -461,14 +461,14 @@ package ibc
 // 		return
 // 	}
 // 	if !exists {
-// 		sm.res.Code = IBCCodeUnknownHeight
+// 		sm.res.Code = ABICodeUnknownHeight
 // 		sm.res.Log = cmn.Fmt("Loading Header: Unknown height")
 // 		return
 // 	}
 
 // 	proof := tx.Proof
 // 	if proof == nil {
-// 		sm.res.Code = IBCCodeInvalidProof
+// 		sm.res.Code = ABICodeInvalidProof
 // 		sm.res.Log = "Proof is nil"
 // 		return
 // 	}
@@ -477,7 +477,7 @@ package ibc
 // 	// Make sure packet's proof matches given (packet, key, blockhash)
 // 	ok := proof.Verify(packetKeyEgress, packetBytes, header.AppHash)
 // 	if !ok {
-// 		sm.res.Code = IBCCodeInvalidProof
+// 		sm.res.Code = ABICodeInvalidProof
 // 		sm.res.Log = fmt.Sprintf("Proof is invalid. key: %s; packetByes %X; header %v; proof %v", packetKeyEgress, packetBytes, header, proof)
 // 		return
 // 	}
@@ -499,13 +499,13 @@ package ibc
 // 	return
 // }
 
-// func (ibc *IBCPlugin) InitChain(store state.SimpleDB, vals []*wrsp.Validator) {
+// func (abi *ABIPlugin) InitChain(store state.SimpleDB, vals []*wrsp.Validator) {
 // }
 
-// func (cp *IBCPlugin) BeginBlock(store state.SimpleDB, hash []byte, header *wrsp.Header) {
+// func (cp *ABIPlugin) BeginBlock(store state.SimpleDB, hash []byte, header *wrsp.Header) {
 // }
 
-// func (cp *IBCPlugin) EndBlock(store state.SimpleDB, height uint64) (res wrsp.ResponseEndBlock) {
+// func (cp *ABIPlugin) EndBlock(store state.SimpleDB, height uint64) (res wrsp.ResponseEndBlock) {
 // 	return
 // }
 

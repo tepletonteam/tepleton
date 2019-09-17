@@ -33,8 +33,8 @@ var (
 	}
 
 	IbcPluginFlag = cli.BoolFlag{
-		Name:  "ibc-plugin",
-		Usage: "Enable the ibc plugin",
+		Name:  "abi-plugin",
+		Usage: "Enable the abi plugin",
 	}
 )
 
@@ -113,7 +113,7 @@ var (
 	}
 )
 
-// ibc flags
+// abi flags
 var (
 	IbcChainIDFlag = cli.StringFlag{
 		Name:  "chain_id",
@@ -129,13 +129,13 @@ var (
 
 	IbcHeaderFlag = cli.StringFlag{
 		Name:  "header",
-		Usage: "Block header for an ibc update",
+		Usage: "Block header for an abi update",
 		Value: "",
 	}
 
 	IbcCommitFlag = cli.StringFlag{
 		Name:  "commit",
-		Usage: "Block commit for an ibc update",
+		Usage: "Block commit for an abi update",
 		Value: "",
 	}
 
@@ -153,31 +153,31 @@ var (
 
 	IbcTypeFlag = cli.StringFlag{
 		Name:  "type",
-		Usage: "IBC packet type (eg. coin)",
+		Usage: "ABI packet type (eg. coin)",
 		Value: "",
 	}
 
 	IbcPayloadFlag = cli.StringFlag{
 		Name:  "payload",
-		Usage: "IBC packet payload",
+		Usage: "ABI packet payload",
 		Value: "",
 	}
 
 	IbcPacketFlag = cli.StringFlag{
 		Name:  "packet",
-		Usage: "hex-encoded IBC packet",
+		Usage: "hex-encoded ABI packet",
 		Value: "",
 	}
 
 	IbcProofFlag = cli.StringFlag{
 		Name:  "proof",
-		Usage: "hex-encoded proof of IBC packet from source chain",
+		Usage: "hex-encoded proof of ABI packet from source chain",
 		Value: "",
 	}
 
 	IbcSequenceFlag = cli.IntFlag{
 		Name:  "sequence",
-		Usage: "sequence number for IBC packet",
+		Usage: "sequence number for ABI packet",
 		Value: 0,
 	}
 

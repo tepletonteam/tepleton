@@ -1,4 +1,4 @@
-package ibc
+package abi
 
 import (
 	"github.com/tepleton/light-client/certifiers"

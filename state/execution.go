@@ -5,7 +5,7 @@ import (
 	cmn "github.com/tepleton/tmlibs/common"
 	"github.com/tepleton/tmlibs/events"
 
-	"github.com/tepleton/basecoin/plugins/ibc"
+	"github.com/tepleton/basecoin/plugins/abi"
 	"github.com/tepleton/basecoin/types"
 )
 
@@ -194,7 +194,7 @@ func getOrMakeOutputs(state types.AccountGetter, accounts map[string]*types.Acco
 		chain, outAddress, _ := out.ChainAndAddress() // already validated
 		if chain != nil {
 			// we dont need an account for the other chain.
-			// we'll just create an outgoing ibc packet
+			// we'll just create an outgoing abi packet
 			continue
 		}
 		// Account shouldn't be duplicated
@@ -293,8 +293,8 @@ func adjustByOutputs(state *State, accounts map[string]*types.Account, outs []ty
 	for _, out := range outs {
 		destChain, outAddress, _ := out.ChainAndAddress() // already validated
 		if destChain != nil {
-			payload := ibc.CoinsPayload{outAddress, out.Coins}
-			ibc.SaveNewIBCPacket(state, state.GetChainID(), string(destChain), payload)
+			payload := abi.CoinsPayload{outAddress, out.Coins}
+			abi.SaveNewABIPacket(state, state.GetChainID(), string(destChain), payload)
 			continue
 		}
 

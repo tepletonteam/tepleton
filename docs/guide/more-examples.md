@@ -11,4 +11,4 @@ In particular, we have the following:
 2. [Trader](https://github.com/tepleton/basecoin-examples/tree/develop/trader) - a plugin for adding escrow and options features to Basecoin
 3. [Stakecoin](https://github.com/tepleton/basecoin-examples/tree/develop/stake) - a plugin for bonding and unbonding Tendermint validators and updating the validator set accordingly
 4. [PayToVote](https://github.com/tepleton/basecoin-examples/tree/develop/paytovote) - a plugin for creating issues and voting on them
-5. [IBC](/docs/guide/ibc.md) - a plugin for facilitating InterBlockchain Communication
+5. [ABI](/docs/guide/abi.md) - a plugin for facilitating InterBlockchain Communication

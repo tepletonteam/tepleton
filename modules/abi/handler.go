@@ -1,4 +1,4 @@
-package ibc
+package abi
 
 import (
 	"github.com/tepleton/basecoin"
@@ -7,7 +7,7 @@ import (
 
 // nolint
 const (
-	NameIBC = "ibc"
+	NameABI = "abi"
 )
 
 // Handler allows us to update the chain state or create a packet
@@ -24,7 +24,7 @@ func NewHandler() Handler {
 
 // Name - return name space
 func (Handler) Name() string {
-	return NameIBC
+	return NameABI
 }
 
 // CheckTx verifies the packet is formated correctly, and has the proper sequence

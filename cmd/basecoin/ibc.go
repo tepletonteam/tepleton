@@ -8,7 +8,7 @@ import (
 
 	"github.com/urfave/cli"
 
-	"github.com/tepleton/basecoin/plugins/ibc"
+	"github.com/tepleton/basecoin/plugins/abi"
 
 	cmn "github.com/tepleton/go-common"
 	"github.com/tepleton/go-merkle"
@@ -16,7 +16,7 @@ import (
 	tmtypes "github.com/tepleton/tepleton/types"
 )
 
-func cmdIBCRegisterTx(c *cli.Context) error {
+func cmdABIRegisterTx(c *cli.Context) error {
 	chainID := c.String("chain_id")
 	genesisFile := c.String("genesis")
 	parent := c.Parent()
@@ -26,24 +26,24 @@ func cmdIBCRegisterTx(c *cli.Context) error {
 		return errors.New(cmn.Fmt("Error reading genesis file %v: %v", genesisFile, err))
 	}
 
-	ibcTx := ibc.IBCRegisterChainTx{
-		ibc.BlockchainGenesis{
+	abiTx := abi.ABIRegisterChainTx{
+		abi.BlockchainGenesis{
 			ChainID: chainID,
 			Genesis: string(genesisBytes),
 		},
 	}
 
-	fmt.Println("IBCTx:", string(wire.JSONBytes(ibcTx)))
+	fmt.Println("ABITx:", string(wire.JSONBytes(abiTx)))
 
 	data := []byte(wire.BinaryBytes(struct {
-		ibc.IBCTx `json:"unwrap"`
-	}{ibcTx}))
-	name := "IBC"
+		abi.ABITx `json:"unwrap"`
+	}{abiTx}))
+	name := "ABI"
 
 	return appTx(parent, name, data)
 }
 
-func cmdIBCUpdateTx(c *cli.Context) error {
+func cmdABIUpdateTx(c *cli.Context) error {
 	headerBytes, err := hex.DecodeString(stripHex(c.String("header")))
 	if err != nil {
 		return errors.New(cmn.Fmt("Header (%v) is invalid hex: %v", c.String("header"), err))
@@ -63,22 +63,22 @@ func cmdIBCUpdateTx(c *cli.Context) error {
 		return errors.New(cmn.Fmt("Error unmarshalling commit: %v", err))
 	}
 
-	ibcTx := ibc.IBCUpdateChainTx{
+	abiTx := abi.ABIUpdateChainTx{
 		Header: *header,
 		Commit: *commit,
 	}
 
-	fmt.Println("IBCTx:", string(wire.JSONBytes(ibcTx)))
+	fmt.Println("ABITx:", string(wire.JSONBytes(abiTx)))
 
 	data := []byte(wire.BinaryBytes(struct {
-		ibc.IBCTx `json:"unwrap"`
-	}{ibcTx}))
-	name := "IBC"
+		abi.ABITx `json:"unwrap"`
+	}{abiTx}))
+	name := "ABI"
 
 	return appTx(c.Parent(), name, data)
 }
 
-func cmdIBCPacketCreateTx(c *cli.Context) error {
+func cmdABIPacketCreateTx(c *cli.Context) error {
 	fromChain, toChain := c.String("from"), c.String("to")
 	packetType := c.String("type")
 
@@ -87,13 +87,13 @@ func cmdIBCPacketCreateTx(c *cli.Context) error {
 		return errors.New(cmn.Fmt("Payload (%v) is invalid hex: %v", c.String("payload"), err))
 	}
 
-	sequence, err := getIBCSequence(c)
+	sequence, err := getABISequence(c)
 	if err != nil {
 		return err
 	}
 
-	ibcTx := ibc.IBCPacketCreateTx{
-		Packet: ibc.Packet{
+	abiTx := abi.ABIPacketCreateTx{
+		Packet: abi.Packet{
 			SrcChainID: fromChain,
 			DstChainID: toChain,
 			Sequence:   sequence,
@@ -102,16 +102,16 @@ func cmdIBCPacketCreateTx(c *cli.Context) error {
 		},
 	}
 
-	fmt.Println("IBCTx:", string(wire.JSONBytes(ibcTx)))
+	fmt.Println("ABITx:", string(wire.JSONBytes(abiTx)))
 
 	data := []byte(wire.BinaryBytes(struct {
-		ibc.IBCTx `json:"unwrap"`
-	}{ibcTx}))
+		abi.ABITx `json:"unwrap"`
+	}{abiTx}))
 
-	return appTx(c.Parent().Parent(), "IBC", data)
+	return appTx(c.Parent().Parent(), "ABI", data)
 }
 
-func cmdIBCPacketPostTx(c *cli.Context) error {
+func cmdABIPacketPostTx(c *cli.Context) error {
 	fromChain, fromHeight := c.String("from"), c.Int("height")
 
 	packetBytes, err := hex.DecodeString(stripHex(c.String("packet")))
@@ -123,7 +123,7 @@ func cmdIBCPacketPostTx(c *cli.Context) error {
 		return errors.New(cmn.Fmt("Proof (%v) is invalid hex: %v", c.String("proof"), err))
 	}
 
-	var packet ibc.Packet
+	var packet abi.Packet
 	proof := new(merkle.IAVLProof)
 
 	if err := wire.ReadBinaryBytes(packetBytes, &packet); err != nil {
@@ -133,23 +133,23 @@ func cmdIBCPacketPostTx(c *cli.Context) error {
 		return errors.New(cmn.Fmt("Error unmarshalling proof: %v", err))
 	}
 
-	ibcTx := ibc.IBCPacketPostTx{
+	abiTx := abi.ABIPacketPostTx{
 		FromChainID:     fromChain,
 		FromChainHeight: uint64(fromHeight),
 		Packet:          packet,
 		Proof:           proof,
 	}
 
-	fmt.Println("IBCTx:", string(wire.JSONBytes(ibcTx)))
+	fmt.Println("ABITx:", string(wire.JSONBytes(abiTx)))
 
 	data := []byte(wire.BinaryBytes(struct {
-		ibc.IBCTx `json:"unwrap"`
-	}{ibcTx}))
+		abi.ABITx `json:"unwrap"`
+	}{abiTx}))
 
-	return appTx(c.Parent().Parent(), "IBC", data)
+	return appTx(c.Parent().Parent(), "ABI", data)
 }
 
-func getIBCSequence(c *cli.Context) (uint64, error) {
+func getABISequence(c *cli.Context) (uint64, error) {
 	if c.IsSet("sequence") {
 		return uint64(c.Int("sequence")), nil
 	}

@@ -1,4 +1,4 @@
-package ibc
+package abi
 
 // import (
 // 	"bytes"
@@ -100,27 +100,27 @@ package ibc
 //   }
 // }`
 
-// func TestIBCGenesisFromString(t *testing.T) {
+// func TestABIGenesisFromString(t *testing.T) {
 // 	eyesClient := eyes.NewLocalClient("", 0)
 // 	store := types.NewKVCache(eyesClient)
 // 	store.SetLogging() // Log all activity
 
-// 	ibcPlugin := New()
+// 	abiPlugin := New()
 // 	ctx := types.NewCallContext(nil, nil, coin.Coins{})
 
-// 	registerChain(t, ibcPlugin, store, ctx, "test_chain", testGenesisDoc)
+// 	registerChain(t, abiPlugin, store, ctx, "test_chain", testGenesisDoc)
 // }
 
 // //--------------------------------------------------------------------------------
 
-// func TestIBCPluginRegister(t *testing.T) {
+// func TestABIPluginRegister(t *testing.T) {
 // 	require := require.New(t)
 
 // 	eyesClient := eyes.NewLocalClient("", 0)
 // 	store := types.NewKVCache(eyesClient)
 // 	store.SetLogging() // Log all activity
 
-// 	ibcPlugin := New()
+// 	abiPlugin := New()
 // 	ctx := types.NewCallContext(nil, nil, coin.Coins{})
 
 // 	chainID_1 := "test_chain"
@@ -129,35 +129,35 @@ package ibc
 // 	require.Nil(err)
 
 // 	// Register a malformed chain
-// 	res := ibcPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ IBCTx }{IBCRegisterChainTx{
+// 	res := abiPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ ABITx }{ABIRegisterChainTx{
 // 		BlockchainGenesis{
 // 			ChainID: "test_chain",
 // 			Genesis: "<THIS IS NOT JSON>",
 // 		},
 // 	}}))
-// 	assertAndLog(t, store, res, IBCCodeEncodingError)
+// 	assertAndLog(t, store, res, ABICodeEncodingError)
 
 // 	// Successfully register a chain
-// 	registerChain(t, ibcPlugin, store, ctx, "test_chain", string(genDocJSON_1))
+// 	registerChain(t, abiPlugin, store, ctx, "test_chain", string(genDocJSON_1))
 
 // 	// Duplicate request fails
-// 	res = ibcPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ IBCTx }{IBCRegisterChainTx{
+// 	res = abiPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ ABITx }{ABIRegisterChainTx{
 // 		BlockchainGenesis{
 // 			ChainID: "test_chain",
 // 			Genesis: string(genDocJSON_1),
 // 		},
 // 	}}))
-// 	assertAndLog(t, store, res, IBCCodeChainAlreadyExists)
+// 	assertAndLog(t, store, res, ABICodeChainAlreadyExists)
 // }
 
-// func TestIBCPluginPost(t *testing.T) {
+// func TestABIPluginPost(t *testing.T) {
 // 	require := require.New(t)
 
 // 	eyesClient := eyes.NewLocalClient("", 0)
 // 	store := types.NewKVCache(eyesClient)
 // 	store.SetLogging() // Log all activity
 
-// 	ibcPlugin := New()
+// 	abiPlugin := New()
 // 	ctx := types.NewCallContext(nil, nil, coin.Coins{})
 
 // 	chainID_1 := "test_chain"
@@ -166,23 +166,23 @@ package ibc
 // 	require.Nil(err)
 
 // 	// Register a chain
-// 	registerChain(t, ibcPlugin, store, ctx, "test_chain", string(genDocJSON_1))
+// 	registerChain(t, abiPlugin, store, ctx, "test_chain", string(genDocJSON_1))
 
 // 	// Create a new packet (for testing)
 // 	packet := NewPacket("test_chain", "dst_chain", 0, DataPayload([]byte("hello world")))
-// 	res := ibcPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ IBCTx }{IBCPacketCreateTx{
+// 	res := abiPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ ABITx }{ABIPacketCreateTx{
 // 		Packet: packet,
 // 	}}))
 // 	assertAndLog(t, store, res, wrsp.CodeType_OK)
 
 // 	// Post a duplicate packet
-// 	res = ibcPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ IBCTx }{IBCPacketCreateTx{
+// 	res = abiPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ ABITx }{ABIPacketCreateTx{
 // 		Packet: packet,
 // 	}}))
-// 	assertAndLog(t, store, res, IBCCodePacketAlreadyExists)
+// 	assertAndLog(t, store, res, ABICodePacketAlreadyExists)
 // }
 
-// func TestIBCPluginPayloadBytes(t *testing.T) {
+// func TestABIPluginPayloadBytes(t *testing.T) {
 // 	assert := assert.New(t)
 // 	require := require.New(t)
 
@@ -190,7 +190,7 @@ package ibc
 // 	store := types.NewKVCache(eyesClient)
 // 	store.SetLogging() // Log all activity
 
-// 	ibcPlugin := New()
+// 	abiPlugin := New()
 // 	ctx := types.NewCallContext(nil, nil, coin.Coins{})
 
 // 	chainID_1 := "test_chain"
@@ -199,11 +199,11 @@ package ibc
 // 	require.Nil(err)
 
 // 	// Register a chain
-// 	registerChain(t, ibcPlugin, store, ctx, "test_chain", string(genDocJSON_1))
+// 	registerChain(t, abiPlugin, store, ctx, "test_chain", string(genDocJSON_1))
 
 // 	// Create a new packet (for testing)
 // 	packet := NewPacket("test_chain", "dst_chain", 0, DataPayload([]byte("hello world")))
-// 	res := ibcPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ IBCTx }{IBCPacketCreateTx{
+// 	res := abiPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ ABITx }{ABIPacketCreateTx{
 // 		Packet: packet,
 // 	}}))
 // 	assertAndLog(t, store, res, wrsp.CodeType_OK)
@@ -218,14 +218,14 @@ package ibc
 // 	commit := constructCommit(privAccs_1, header)
 
 // 	// Update a chain
-// 	res = ibcPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ IBCTx }{IBCUpdateChainTx{
+// 	res = abiPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ ABITx }{ABIUpdateChainTx{
 // 		Header: header,
 // 		Commit: commit,
 // 	}}))
 // 	assertAndLog(t, store, res, wrsp.CodeType_OK)
 
 // 	// Get proof for the packet
-// 	packetKey := toKey(_IBC, _EGRESS,
+// 	packetKey := toKey(_ABI, _EGRESS,
 // 		packet.SrcChainID,
 // 		packet.DstChainID,
 // 		cmn.Fmt("%v", packet.Sequence),
@@ -241,7 +241,7 @@ package ibc
 // 	assert.Nil(err)
 
 // 	// Post a packet
-// 	res = ibcPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ IBCTx }{IBCPacketPostTx{
+// 	res = abiPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ ABITx }{ABIPacketPostTx{
 // 		FromChainID:     "test_chain",
 // 		FromChainHeight: 999,
 // 		Packet:          packet,
@@ -250,7 +250,7 @@ package ibc
 // 	assertAndLog(t, store, res, wrsp.CodeType_OK)
 // }
 
-// func TestIBCPluginPayloadCoins(t *testing.T) {
+// func TestABIPluginPayloadCoins(t *testing.T) {
 // 	assert := assert.New(t)
 // 	require := require.New(t)
 
@@ -258,7 +258,7 @@ package ibc
 // 	store := types.NewKVCache(eyesClient)
 // 	store.SetLogging() // Log all activity
 
-// 	ibcPlugin := New()
+// 	abiPlugin := New()
 // 	coins := coin.Coins{
 // 		coin.Coin{
 // 			Denom:  "mycoin",
@@ -273,7 +273,7 @@ package ibc
 // 	require.Nil(err)
 
 // 	// Register a chain
-// 	registerChain(t, ibcPlugin, store, ctx, "test_chain", string(genDocJSON_1))
+// 	registerChain(t, abiPlugin, store, ctx, "test_chain", string(genDocJSON_1))
 
 // 	// send coins to this addr on the other chain
 // 	destinationAddr := []byte("some address")
@@ -285,7 +285,7 @@ package ibc
 // 		Address: destinationAddr,
 // 		Coins:   coinsBad,
 // 	})
-// 	res := ibcPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ IBCTx }{IBCPacketCreateTx{
+// 	res := abiPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ ABITx }{ABIPacketCreateTx{
 // 		Packet: packet,
 // 	}}))
 // 	assertAndLog(t, store, res, wrsp.CodeType_InsufficientFunds)
@@ -295,7 +295,7 @@ package ibc
 // 		Address: destinationAddr,
 // 		Coins:   coinsGood,
 // 	})
-// 	res = ibcPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ IBCTx }{IBCPacketCreateTx{
+// 	res = abiPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ ABITx }{ABIPacketCreateTx{
 // 		Packet: packet,
 // 	}}))
 // 	assertAndLog(t, store, res, wrsp.CodeType_OK)
@@ -310,14 +310,14 @@ package ibc
 // 	commit := constructCommit(privAccs_1, header)
 
 // 	// Update a chain
-// 	res = ibcPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ IBCTx }{IBCUpdateChainTx{
+// 	res = abiPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ ABITx }{ABIUpdateChainTx{
 // 		Header: header,
 // 		Commit: commit,
 // 	}}))
 // 	assertAndLog(t, store, res, wrsp.CodeType_OK)
 
 // 	// Get proof for the packet
-// 	packetKey := toKey(_IBC, _EGRESS,
+// 	packetKey := toKey(_ABI, _EGRESS,
 // 		packet.SrcChainID,
 // 		packet.DstChainID,
 // 		cmn.Fmt("%v", packet.Sequence),
@@ -337,7 +337,7 @@ package ibc
 // 	assert.Nil(acc)
 
 // 	// Post a packet
-// 	res = ibcPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ IBCTx }{IBCPacketPostTx{
+// 	res = abiPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ ABITx }{ABIPacketPostTx{
 // 		FromChainID:     "test_chain",
 // 		FromChainHeight: 999,
 // 		Packet:          packet,
@@ -350,14 +350,14 @@ package ibc
 // 	assert.Equal(acc.Balance, coinsGood)
 // }
 
-// func TestIBCPluginBadCommit(t *testing.T) {
+// func TestABIPluginBadCommit(t *testing.T) {
 // 	require := require.New(t)
 
 // 	eyesClient := eyes.NewLocalClient("", 0)
 // 	store := types.NewKVCache(eyesClient)
 // 	store.SetLogging() // Log all activity
 
-// 	ibcPlugin := New()
+// 	abiPlugin := New()
 // 	ctx := types.NewCallContext(nil, nil, coin.Coins{})
 
 // 	chainID_1 := "test_chain"
@@ -366,7 +366,7 @@ package ibc
 // 	require.Nil(err)
 
 // 	// Successfully register a chain
-// 	registerChain(t, ibcPlugin, store, ctx, "test_chain", string(genDocJSON_1))
+// 	registerChain(t, abiPlugin, store, ctx, "test_chain", string(genDocJSON_1))
 
 // 	// Construct a Header
 // 	header := newHeader("test_chain", 999, nil, []byte("must_exist"))
@@ -379,15 +379,15 @@ package ibc
 // 	sig := commit.Precommits[0].Signature.Unwrap().(crypto.SignatureEd25519)
 // 	sig[0] += 1
 // 	commit.Precommits[0].Signature = sig.Wrap()
-// 	res := ibcPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ IBCTx }{IBCUpdateChainTx{
+// 	res := abiPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ ABITx }{ABIUpdateChainTx{
 // 		Header: header,
 // 		Commit: commit,
 // 	}}))
-// 	assertAndLog(t, store, res, IBCCodeInvalidCommit)
+// 	assertAndLog(t, store, res, ABICodeInvalidCommit)
 
 // }
 
-// func TestIBCPluginBadProof(t *testing.T) {
+// func TestABIPluginBadProof(t *testing.T) {
 // 	assert := assert.New(t)
 // 	require := require.New(t)
 
@@ -395,7 +395,7 @@ package ibc
 // 	store := types.NewKVCache(eyesClient)
 // 	store.SetLogging() // Log all activity
 
-// 	ibcPlugin := New()
+// 	abiPlugin := New()
 // 	ctx := types.NewCallContext(nil, nil, coin.Coins{})
 
 // 	chainID_1 := "test_chain"
@@ -404,11 +404,11 @@ package ibc
 // 	require.Nil(err)
 
 // 	// Successfully register a chain
-// 	registerChain(t, ibcPlugin, store, ctx, "test_chain", string(genDocJSON_1))
+// 	registerChain(t, abiPlugin, store, ctx, "test_chain", string(genDocJSON_1))
 
 // 	// Create a new packet (for testing)
 // 	packet := NewPacket("test_chain", "dst_chain", 0, DataPayload([]byte("hello world")))
-// 	res := ibcPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ IBCTx }{IBCPacketCreateTx{
+// 	res := abiPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ ABITx }{ABIPacketCreateTx{
 // 		Packet: packet,
 // 	}}))
 // 	assertAndLog(t, store, res, wrsp.CodeType_OK)
@@ -423,14 +423,14 @@ package ibc
 // 	commit := constructCommit(privAccs_1, header)
 
 // 	// Update a chain
-// 	res = ibcPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ IBCTx }{IBCUpdateChainTx{
+// 	res = abiPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ ABITx }{ABIUpdateChainTx{
 // 		Header: header,
 // 		Commit: commit,
 // 	}}))
 // 	assertAndLog(t, store, res, wrsp.CodeType_OK)
 
 // 	// Get proof for the packet
-// 	packetKey := toKey(_IBC, _EGRESS,
+// 	packetKey := toKey(_ABI, _EGRESS,
 // 		packet.SrcChainID,
 // 		packet.DstChainID,
 // 		cmn.Fmt("%v", packet.Sequence),
@@ -449,13 +449,13 @@ package ibc
 // 	proof.InnerNodes[0].Height += 1
 
 // 	// Post a packet
-// 	res = ibcPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ IBCTx }{IBCPacketPostTx{
+// 	res = abiPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ ABITx }{ABIPacketPostTx{
 // 		FromChainID:     "test_chain",
 // 		FromChainHeight: 999,
 // 		Packet:          packet,
 // 		Proof:           proof,
 // 	}}))
-// 	assertAndLog(t, store, res, IBCCodeInvalidProof)
+// 	assertAndLog(t, store, res, ABICodeInvalidProof)
 // }
 
 // //-------------------------------------
@@ -477,8 +477,8 @@ package ibc
 // 	}
 // }
 
-// func registerChain(t *testing.T, ibcPlugin *IBCPlugin, store *types.KVCache, ctx types.CallContext, chainID, genDoc string) {
-// 	res := ibcPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ IBCTx }{IBCRegisterChainTx{
+// func registerChain(t *testing.T, abiPlugin *ABIPlugin, store *types.KVCache, ctx types.CallContext, chainID, genDoc string) {
+// 	res := abiPlugin.RunTx(store, ctx, wire.BinaryBytes(struct{ ABITx }{ABIRegisterChainTx{
 // 		BlockchainGenesis{
 // 			ChainID: chainID,
 // 			Genesis: genDoc,

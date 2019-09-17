@@ -14,13 +14,13 @@ POOR=${ACCOUNTS[4]}
 
 oneTimeSetUp() {
     # These are passed in as args
-    BASE_DIR_1=$HOME/.basecoin_test_ibc/chain1
+    BASE_DIR_1=$HOME/.basecoin_test_abi/chain1
     CHAIN_ID_1=test-chain-1
     CLIENT_1=${BASE_DIR_1}/client
     PREFIX_1=1234
     PORT_1=${PREFIX_1}7
 
-    BASE_DIR_2=$HOME/.basecoin_test_ibc/chain2
+    BASE_DIR_2=$HOME/.basecoin_test_abi/chain2
     CHAIN_ID_2=test-chain-2
     CLIENT_2=${BASE_DIR_2}/client
     PREFIX_2=2345
@@ -83,7 +83,7 @@ test00GetAccount() {
     assertNotEquals "line=${LINENO}, recipient keys must be different" "$RECV_1" "$RECV_2"
 }
 
-test01SendIBCTx() {
+test01SendABITx() {
     # Trigger a cross-chain sendTx... from RICH on chain1 to POOR on chain2
     #   we make sure the money was reduced, but nothing arrived
     SENDER=$(BC_HOME=${CLIENT_1} getAddr $RICH)
@@ -119,7 +119,7 @@ test01SendIBCTx() {
     waitForBlock ${PORT_2}
 
     # Check the new account
-    echo "checking ibc recipient..."
+    echo "checking abi recipient..."
     BC_HOME=${CLIENT_2} checkAccount $RECV "0" "20002"
 
     # Stop relay

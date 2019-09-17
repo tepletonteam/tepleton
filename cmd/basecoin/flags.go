@@ -32,9 +32,9 @@ var (
 		Usage: "Run Tendermint in-process with the App",
 	}
 
-	ibcPluginFlag = cli.BoolFlag{
-		Name:  "ibc-plugin",
-		Usage: "Enable the ibc plugin",
+	abiPluginFlag = cli.BoolFlag{
+		Name:  "abi-plugin",
+		Usage: "Enable the abi plugin",
 	}
 
 	counterPluginFlag = cli.BoolFlag{
@@ -118,75 +118,75 @@ var (
 	}
 )
 
-// ibc flags
+// abi flags
 var (
-	ibcChainIDFlag = cli.StringFlag{
+	abiChainIDFlag = cli.StringFlag{
 		Name:  "chain_id",
 		Usage: "ChainID for the new blockchain",
 		Value: "",
 	}
 
-	ibcGenesisFlag = cli.StringFlag{
+	abiGenesisFlag = cli.StringFlag{
 		Name:  "genesis",
 		Usage: "Genesis file for the new blockchain",
 		Value: "",
 	}
 
-	ibcHeaderFlag = cli.StringFlag{
+	abiHeaderFlag = cli.StringFlag{
 		Name:  "header",
-		Usage: "Block header for an ibc update",
+		Usage: "Block header for an abi update",
 		Value: "",
 	}
 
-	ibcCommitFlag = cli.StringFlag{
+	abiCommitFlag = cli.StringFlag{
 		Name:  "commit",
-		Usage: "Block commit for an ibc update",
+		Usage: "Block commit for an abi update",
 		Value: "",
 	}
 
-	ibcFromFlag = cli.StringFlag{
+	abiFromFlag = cli.StringFlag{
 		Name:  "from",
 		Usage: "Source ChainID",
 		Value: "",
 	}
 
-	ibcToFlag = cli.StringFlag{
+	abiToFlag = cli.StringFlag{
 		Name:  "to",
 		Usage: "Destination ChainID",
 		Value: "",
 	}
 
-	ibcTypeFlag = cli.StringFlag{
+	abiTypeFlag = cli.StringFlag{
 		Name:  "type",
-		Usage: "IBC packet type (eg. coin)",
+		Usage: "ABI packet type (eg. coin)",
 		Value: "",
 	}
 
-	ibcPayloadFlag = cli.StringFlag{
+	abiPayloadFlag = cli.StringFlag{
 		Name:  "payload",
-		Usage: "IBC packet payload",
+		Usage: "ABI packet payload",
 		Value: "",
 	}
 
-	ibcPacketFlag = cli.StringFlag{
+	abiPacketFlag = cli.StringFlag{
 		Name:  "packet",
-		Usage: "hex-encoded IBC packet",
+		Usage: "hex-encoded ABI packet",
 		Value: "",
 	}
 
-	ibcProofFlag = cli.StringFlag{
+	abiProofFlag = cli.StringFlag{
 		Name:  "proof",
-		Usage: "hex-encoded proof of IBC packet from source chain",
+		Usage: "hex-encoded proof of ABI packet from source chain",
 		Value: "",
 	}
 
-	ibcSequenceFlag = cli.IntFlag{
+	abiSequenceFlag = cli.IntFlag{
 		Name:  "sequence",
-		Usage: "sequence number for IBC packet",
+		Usage: "sequence number for ABI packet",
 		Value: 0,
 	}
 
-	ibcHeightFlag = cli.IntFlag{
+	abiHeightFlag = cli.IntFlag{
 		Name:  "height",
 		Usage: "Height the packet became egress in source chain",
 		Value: 0,

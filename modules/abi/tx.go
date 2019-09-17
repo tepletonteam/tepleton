@@ -1,4 +1,4 @@
-package ibc
+package abi
 
 import (
 	wrsp "github.com/tepleton/wrsp/types"
@@ -11,23 +11,23 @@ import (
 
 // nolint
 const (
-	// 0x3? series for ibc
+	// 0x3? series for abi
 	ByteRegisterChain = byte(0x30)
 	ByteUpdateChain   = byte(0x31)
 	BytePacketCreate  = byte(0x32)
 	BytePacketPost    = byte(0x33)
 
-	TypeRegisterChain = NameIBC + "/register"
-	TypeUpdateChain   = NameIBC + "/update"
-	TypePacketCreate  = NameIBC + "/create"
-	TypePacketPost    = NameIBC + "/post"
+	TypeRegisterChain = NameABI + "/register"
+	TypeUpdateChain   = NameABI + "/update"
+	TypePacketCreate  = NameABI + "/create"
+	TypePacketPost    = NameABI + "/post"
 
-	IBCCodeEncodingError       = wrsp.CodeType(1001)
-	IBCCodeChainAlreadyExists  = wrsp.CodeType(1002)
-	IBCCodePacketAlreadyExists = wrsp.CodeType(1003)
-	IBCCodeUnknownHeight       = wrsp.CodeType(1004)
-	IBCCodeInvalidCommit       = wrsp.CodeType(1005)
-	IBCCodeInvalidProof        = wrsp.CodeType(1006)
+	ABICodeEncodingError       = wrsp.CodeType(1001)
+	ABICodeChainAlreadyExists  = wrsp.CodeType(1002)
+	ABICodePacketAlreadyExists = wrsp.CodeType(1003)
+	ABICodeUnknownHeight       = wrsp.CodeType(1004)
+	ABICodeInvalidCommit       = wrsp.CodeType(1005)
+	ABICodeInvalidProof        = wrsp.CodeType(1006)
 )
 
 func init() {
@@ -123,7 +123,7 @@ func (p PacketPostTx) Wrap() basecoin.Tx {
 
 // proof := tx.Proof
 // if proof == nil {
-//   sm.res.Code = IBCCodeInvalidProof
+//   sm.res.Code = ABICodeInvalidProof
 //   sm.res.Log = "Proof is nil"
 //   return
 // }
@@ -132,7 +132,7 @@ func (p PacketPostTx) Wrap() basecoin.Tx {
 // // Make sure packet's proof matches given (packet, key, blockhash)
 // ok := proof.Verify(packetKeyEgress, packetBytes, header.AppHash)
 // if !ok {
-//   sm.res.Code = IBCCodeInvalidProof
+//   sm.res.Code = ABICodeInvalidProof
 //   sm.res.Log = fmt.Sprintf("Proof is invalid. key: %s; packetByes %X; header %v; proof %v", packetKeyEgress, packetBytes, header, proof)
 //   return
 // }

@@ -20,7 +20,7 @@ import (
 
 	"github.com/tepleton/basecoin/app"
 	"github.com/tepleton/basecoin/plugins/counter"
-	"github.com/tepleton/basecoin/plugins/ibc"
+	"github.com/tepleton/basecoin/plugins/abi"
 )
 
 var config cfg.Config
@@ -48,8 +48,8 @@ func cmdStart(c *cli.Context) error {
 		basecoinApp.RegisterPlugin(counter.New("counter"))
 	}
 
-	if c.Bool("ibc-plugin") {
-		basecoinApp.RegisterPlugin(ibc.New())
+	if c.Bool("abi-plugin") {
+		basecoinApp.RegisterPlugin(abi.New())
 
 	}
 

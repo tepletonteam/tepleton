@@ -18,7 +18,7 @@ var (
 			dirFlag,
 			inProcTMFlag,
 			chainIDFlag,
-			ibcPluginFlag,
+			abiPluginFlag,
 			counterPluginFlag,
 		},
 	}
@@ -84,9 +84,9 @@ var (
 		},
 	}
 
-	ibcCmd = cli.Command{
-		Name:  "ibc",
-		Usage: "Send a transaction to the interblockchain (ibc) plugin",
+	abiCmd = cli.Command{
+		Name:  "abi",
+		Usage: "Send a transaction to the interblockchain (abi) plugin",
 		Flags: []cli.Flag{
 			nodeFlag,
 			chainIDFlag,
@@ -103,74 +103,74 @@ var (
 			dataFlag,
 		},
 		Subcommands: []cli.Command{
-			ibcRegisterTxCmd,
-			ibcUpdateTxCmd,
-			ibcPacketTxCmd,
+			abiRegisterTxCmd,
+			abiUpdateTxCmd,
+			abiPacketTxCmd,
 		},
 	}
 
-	ibcRegisterTxCmd = cli.Command{
+	abiRegisterTxCmd = cli.Command{
 		Name:  "register",
-		Usage: "Register a blockchain via IBC",
+		Usage: "Register a blockchain via ABI",
 		Action: func(c *cli.Context) error {
-			return cmdIBCRegisterTx(c)
+			return cmdABIRegisterTx(c)
 		},
 		Flags: []cli.Flag{
-			ibcChainIDFlag,
-			ibcGenesisFlag,
+			abiChainIDFlag,
+			abiGenesisFlag,
 		},
 	}
 
-	ibcUpdateTxCmd = cli.Command{
+	abiUpdateTxCmd = cli.Command{
 		Name:  "update",
-		Usage: "Update the latest state of a blockchain via IBC",
+		Usage: "Update the latest state of a blockchain via ABI",
 		Action: func(c *cli.Context) error {
-			return cmdIBCUpdateTx(c)
+			return cmdABIUpdateTx(c)
 		},
 		Flags: []cli.Flag{
-			ibcHeaderFlag,
-			ibcCommitFlag,
+			abiHeaderFlag,
+			abiCommitFlag,
 		},
 	}
 
-	ibcPacketTxCmd = cli.Command{
+	abiPacketTxCmd = cli.Command{
 		Name:  "packet",
-		Usage: "Send a new packet via IBC",
+		Usage: "Send a new packet via ABI",
 		Flags: []cli.Flag{
 		//
 		},
 		Subcommands: []cli.Command{
-			ibcPacketCreateTx,
-			ibcPacketPostTx,
+			abiPacketCreateTx,
+			abiPacketPostTx,
 		},
 	}
 
-	ibcPacketCreateTx = cli.Command{
+	abiPacketCreateTx = cli.Command{
 		Name:  "create",
-		Usage: "Create an egress IBC packet",
+		Usage: "Create an egress ABI packet",
 		Action: func(c *cli.Context) error {
-			return cmdIBCPacketCreateTx(c)
+			return cmdABIPacketCreateTx(c)
 		},
 		Flags: []cli.Flag{
-			ibcFromFlag,
-			ibcToFlag,
-			ibcTypeFlag,
-			ibcPayloadFlag,
-			ibcSequenceFlag,
+			abiFromFlag,
+			abiToFlag,
+			abiTypeFlag,
+			abiPayloadFlag,
+			abiSequenceFlag,
 		},
 	}
 
-	ibcPacketPostTx = cli.Command{
+	abiPacketPostTx = cli.Command{
 		Name:  "post",
-		Usage: "Deliver an IBC packet to another chain",
+		Usage: "Deliver an ABI packet to another chain",
 		Action: func(c *cli.Context) error {
-			return cmdIBCPacketPostTx(c)
+			return cmdABIPacketPostTx(c)
 		},
 		Flags: []cli.Flag{
-			ibcFromFlag,
-			ibcHeightFlag,
-			ibcPacketFlag,
-			ibcProofFlag,
+			abiFromFlag,
+			abiHeightFlag,
+			abiPacketFlag,
+			abiProofFlag,
 		},
 	}
 

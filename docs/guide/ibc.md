@@ -1,24 +1,24 @@
 # InterBlockchain Communication with Basecoin
 
 One of the most exciting elements of the Cosmos Network is the InterBlockchain
-Communication (IBC) protocol, which enables interoperability across different
-blockchains. We implemented IBC as a basecoin plugin, and we'll show you how to
+Communication (ABI) protocol, which enables interoperability across different
+blockchains. We implemented ABI as a basecoin plugin, and we'll show you how to
 use it to send tokens across blockchains!
 
 Please note, this tutorial assumes you are familiar with [Basecoin
-plugins](/docs/guide/basecoin-plugins.md), but we'll explain how IBC works. You
+plugins](/docs/guide/basecoin-plugins.md), but we'll explain how ABI works. You
 may also want to see [our repository of example
 plugins](https://github.com/tepleton/basecoin-examples).
 
-The IBC plugin defines a new set of transactions as subtypes of the `AppTx`.
+The ABI plugin defines a new set of transactions as subtypes of the `AppTx`.
 The plugin's functionality is accessed by setting the `AppTx.Name` field to
-`"IBC"`, and setting the `Data` field to the serialized IBC transaction type.
+`"ABI"`, and setting the `Data` field to the serialized ABI transaction type.
 
 We'll demonstrate exactly how this works below.
 
-## IBC
+## ABI
 
-Let's review the IBC protocol.  The purpose of IBC is to enable one blockchain
+Let's review the ABI protocol.  The purpose of ABI is to enable one blockchain
 to function as a light-client of another.  Since we are using a classical
 Byzantine Fault Tolerant consensus algorithm, light-client verification is
 cheap and easy: all we have to do is check validator signatures on the latest
@@ -42,12 +42,12 @@ changes, which requires downloading headers for each block in which there is a
 significant change. Here, we will assume the validator set is constant, and
 postpone handling validator set changes for another time.
 
-Now we can describe exactly how IBC works.  Suppose we have two blockchains,
+Now we can describe exactly how ABI works.  Suppose we have two blockchains,
 `chain1` and `chain2`, and we want to send some data from `chain1` to `chain2`.
 We need to do the following:
  1. Register the details (ie. chain ID and genesis configuration) of `chain1`
     on `chain2`
- 2. Within `chain1`, broadcast a transaction that creates an outgoing IBC
+ 2. Within `chain1`, broadcast a transaction that creates an outgoing ABI
     packet destined for `chain2`
  3. Broadcast a transaction to `chain2` informing it of the latest state (ie.
     header and commit signatures) of `chain1`
@@ -55,16 +55,16 @@ We need to do the following:
     that it was indeed committed on `chain1`. Note `chain2` can only verify
 this proof because it has a recent header and commit.
 
-Each of these steps involves a separate IBC transaction type. Let's take them
+Each of these steps involves a separate ABI transaction type. Let's take them
 up in turn.
 
-### IBCRegisterChainTx
+### ABIRegisterChainTx
 
-The `IBCRegisterChainTx` is used to register one chain on another.  It contains
+The `ABIRegisterChainTx` is used to register one chain on another.  It contains
 the chain ID and genesis configuration of the chain to register:
 
 ```golang
-type IBCRegisterChainTx struct { BlockchainGenesis }
+type ABIRegisterChainTx struct { BlockchainGenesis }
 
 type BlockchainGenesis struct { ChainID string Genesis string }
 ```
@@ -73,31 +73,31 @@ This transaction should only be sent once for a given chain ID, and successive
 sends will return an error.
 
 
-### IBCUpdateChainTx
+### ABIUpdateChainTx
 
-The `IBCUpdateChainTx` is used to update the state of one chain on another.  It
+The `ABIUpdateChainTx` is used to update the state of one chain on another.  It
 contains the header and commit signatures for some block in the chain:
 
 ```golang
-type IBCUpdateChainTx struct {
+type ABIUpdateChainTx struct {
   Header tm.Header
   Commit tm.Commit
 }
 ```
 
 In the future, it needs to be updated to include changes to the validator set
-as well.  Anyone can relay an `IBCUpdateChainTx`, and they only need to do so
+as well.  Anyone can relay an `ABIUpdateChainTx`, and they only need to do so
 as frequently as packets are being sent or the validator set is changing.
 
-### IBCPacketCreateTx
+### ABIPacketCreateTx
 
-The `IBCPacketCreateTx` is used to create an outgoing packet on one chain.  The
+The `ABIPacketCreateTx` is used to create an outgoing packet on one chain.  The
 packet itself contains the source and destination chain IDs, a sequence number
 (i.e. an integer that increments with every message sent between this pair of
 chains), a packet type (e.g. coin, data, etc.), and a payload.
 
 ```golang
-type IBCPacketCreateTx struct {
+type ABIPacketCreateTx struct {
   Packet
 }
 
@@ -114,20 +114,20 @@ We have yet to define the format for the payload, so, for now, it's just
 arbitrary bytes.
 
 One way to think about this is that `chain2` has an account on `chain1`.  With
-a `IBCPacketCreateTx` on `chain1`, we send funds to that account.  Then we can
+a `ABIPacketCreateTx` on `chain1`, we send funds to that account.  Then we can
 prove to `chain2` that there are funds locked up for it in it's account on
-`chain1`.  Those funds can only be unlocked with corresponding IBC messages
+`chain1`.  Those funds can only be unlocked with corresponding ABI messages
 back from `chain2` to `chain1` sending the locked funds to another account on
 `chain1`.
 
-### IBCPacketPostTx
+### ABIPacketPostTx
 
-The `IBCPacketPostTx` is used to post an outgoing packet from one chain to
+The `ABIPacketPostTx` is used to post an outgoing packet from one chain to
 another.  It contains the packet and a proof that the packet was committed into
 the state of the sending chain:
 
 ```golang
-type IBCPacketPostTx struct {
+type ABIPacketPostTx struct {
   FromChainID     string // The immediate source of the packet, not always Packet.SrcChainID
   FromChainHeight uint64 // The block height in which Packet was committed, to check Proof Packet
   Proof *merkle.IAVLProof
@@ -143,10 +143,10 @@ can be hashed together to get the Merkle root hash.  This hash must match the
   the packet was committed, and the resulting state root is not included until
 the next block.
 
-### IBC State
+### ABI State
 
 Now that we've seen all the transaction types, let's talk about the state.
-Each chain stores some IBC state in its Merkle tree.  For each chain being
+Each chain stores some ABI state in its Merkle tree.  For each chain being
 tracked by our chain, we store:
 
 - Genesis configuration
@@ -155,9 +155,9 @@ tracked by our chain, we store:
 
 We also store all incoming (ingress) and outgoing (egress) packets.
 
-The state of a chain is updated every time an `IBCUpdateChainTx` is committed.
-New packets are added to the egress state upon `IBCPacketCreateTx`.  New
-packets are added to the ingress state upon `IBCPacketPostTx`, assuming the
+The state of a chain is updated every time an `ABIUpdateChainTx` is committed.
+New packets are added to the egress state upon `ABIPacketCreateTx`.  New
+packets are added to the ingress state upon `ABIPacketPostTx`, assuming the
 proof checks out.
 
 ## Merkle Queries
@@ -171,7 +171,7 @@ We can query the Merkle tree using the WRSP Query method.  If we pass in the
 correct key, it will return the corresponding value, as well as a proof that
 the key and value are contained in the Merkle tree.
 
-The results of a query can thus be used as proof in an `IBCPacketPostTx`.
+The results of a query can thus be used as proof in an `ABIPacketPostTx`.
 
 ## Relay
 
@@ -186,7 +186,7 @@ long-running process polling the queue on each side, and relaying all new
 message to the other block.
 
 This requires that the relay has access to accounts with some funds on both
-chains to pay for all the ibc packets it will be forwarding.
+chains to pay for all the abi packets it will be forwarding.
 
 ## Try it out
 
@@ -196,29 +196,29 @@ tutorial.
 Make sure you have installed [basecoin and basecli](/docs/guide/install.md).
 
 Basecoin is a framework for creating new cryptocurrency applications.  It comes
-with an `IBC` plugin enabled by default.
+with an `ABI` plugin enabled by default.
 
 You will also want to install the [jq](https://stedolan.github.io/jq/) for
 handling JSON at the command line.
 
 If you have any trouble with this, you can also look at the [test
-scripts](/tests/cli/ibc.sh) or just run `make test_cli` in basecoin repo.
+scripts](/tests/cli/abi.sh) or just run `make test_cli` in basecoin repo.
 Otherwise, open up 5 (yes 5!) terminal tabs....
 
 ### Preliminaries
 
 ```
 # first, clean up any old garbage for a fresh slate...
-rm -rf ~/.ibcdemo/
+rm -rf ~/.abidemo/
 ```
 
 Let's start by setting up some environment variables and aliases:
 
 ```
-export BCHOME1_CLIENT=~/.ibcdemo/chain1/client
-export BCHOME1_SERVER=~/.ibcdemo/chain1/server
-export BCHOME2_CLIENT=~/.ibcdemo/chain2/client
-export BCHOME2_SERVER=~/.ibcdemo/chain2/server
+export BCHOME1_CLIENT=~/.abidemo/chain1/client
+export BCHOME1_SERVER=~/.abidemo/chain1/server
+export BCHOME2_CLIENT=~/.abidemo/chain2/client
+export BCHOME2_SERVER=~/.abidemo/chain2/server
 alias basecli1="basecli --home $BCHOME1_CLIENT"
 alias basecli2="basecli --home $BCHOME2_CLIENT"
 alias basecoin1="basecoin --home $BCHOME1_SERVER"
@@ -323,7 +323,7 @@ OK! So we have two chains running on your local machine, with different keys on
 each.  Let's hook them up together by starting a relay process to forward
 messages from one chain to the other.
 
-The relay account needs some money in it to pay for the ibc messages, so for
+The relay account needs some money in it to pay for the abi messages, so for
 now, we have to transfer some cash from the rich accounts before we start the
 actual relay.
 
@@ -354,7 +354,7 @@ basecoin relay start --chain1-id=$CHAINID1 --chain2-id=$CHAINID2 \
 ```
 
 This should start up the relay, and assuming no error messages came out,
-the two chains are now fully connected over IBC.  Let's use this to send
+the two chains are now fully connected over ABI.  Let's use this to send
 our first tx accross the chains...
 
 ### Sending cross-chain payments
@@ -385,14 +385,14 @@ And making more accounts as you want to.
 
 ## Conclusion
 
-In this tutorial we explained how IBC works, and demonstrated how to use it to
+In this tutorial we explained how ABI works, and demonstrated how to use it to
 communicate between two chains.  We did the simplest communciation possible: a
 one way transfer of data from chain1 to chain2.  The most important part was
 that we updated chain2 with the latest state (i.e. header and commit) of
 chain1, and then were able to post a proof to chain2 that a packet was
 committed to the outgoing state of chain1.
 
-In a future tutorial, we will demonstrate how to use IBC to actually transfer
+In a future tutorial, we will demonstrate how to use ABI to actually transfer
 tokens between two blockchains, but we'll do it with real testnets deployed
 across multiple nodes on the network. Stay tuned!
 

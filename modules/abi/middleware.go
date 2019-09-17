@@ -1,4 +1,4 @@
-package ibc
+package abi
 
 import (
 	"github.com/tepleton/basecoin"
@@ -6,7 +6,7 @@ import (
 	"github.com/tepleton/basecoin/state"
 )
 
-// Middleware allows us to verify the IBC proof on a packet and
+// Middleware allows us to verify the ABI proof on a packet and
 // and if valid, attach this permission to the wrapped packet
 type Middleware struct {
 	stack.PassOption
@@ -21,7 +21,7 @@ func NewMiddleware() Middleware {
 
 // Name - return name space
 func (Middleware) Name() string {
-	return NameIBC
+	return NameABI
 }
 
 // CheckTx verifies the named chain and height is present, and verifies

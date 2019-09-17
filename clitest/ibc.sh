@@ -1,3 +1,3 @@
 #!/bin/bash
 
-echo "ibc test not implemented"
+echo "abi test not implemented"

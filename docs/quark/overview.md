@@ -43,7 +43,7 @@ middlewares provided in this package include:
  - Nonce
  - Fees
  - Roles
- - Inter-Blockchain-Communication (IBC)
+ - Inter-Blockchain-Communication (ABI)
  
  As a part of stack execution the state space provided to each middleware is
 isolated (see [Data Store](overview.md#data-store)). When executing the stack,

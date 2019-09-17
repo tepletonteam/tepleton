@@ -126,7 +126,7 @@ func TestSendTxJSON(t *testing.T) {
 	assert.False(tx2.Inputs[0].Signature.Empty())
 }
 
-func TestSendTxIBC(t *testing.T) {
+func TestSendTxABI(t *testing.T) {
 	assert, require := assert.New(t), require.New(t)
 
 	good, err := hex.DecodeString("1960CA7E170862837AA8F22A947194F41F61860B")

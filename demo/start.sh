@@ -116,7 +116,7 @@ sleep 3
 echo "... registering chain1 on chain2"
 echo ""
 # register chain1 on chain2
-basecoin tx ibc --amount 10mycoin $CHAIN_FLAGS2 register --ibc_chain_id $CHAIN_ID1 --genesis $BCHOME1/genesis.json
+basecoin tx abi --amount 10mycoin $CHAIN_FLAGS2 register --abi_chain_id $CHAIN_ID1 --genesis $BCHOME1/genesis.json
 ifExit
 
 echo ""
@@ -128,14 +128,14 @@ basecoin tx send --amount 10mycoin $CHAIN_FLAGS1 --to $CHAIN_ID2/053BA0F19616AFF
 ifExit
 
 # alternative way to create packets (for testing)
-# basecoin tx ibc --amount 10mycoin $CHAIN_FLAGS1 packet create --ibc_from $CHAIN_ID1 --to $CHAIN_ID2 --type coin --payload $PAYLOAD --ibc_sequence 0
+# basecoin tx abi --amount 10mycoin $CHAIN_FLAGS1 packet create --abi_from $CHAIN_ID1 --to $CHAIN_ID2 --type coin --payload $PAYLOAD --abi_sequence 0
 
 echo ""
 echo "... querying for packet data"
 echo ""
 # query for the packet data and proof
 # since we only sent one packet, the sequence number is 0
-QUERY_RESULT=$(basecoin query ibc,egress,$CHAIN_ID1,$CHAIN_ID2,0)
+QUERY_RESULT=$(basecoin query abi,egress,$CHAIN_ID1,$CHAIN_ID2,0)
 ifExit
 HEIGHT=$(echo $QUERY_RESULT | jq .height)
 PACKET=$(echo $QUERY_RESULT | jq .value)
@@ -177,21 +177,21 @@ echo ""
 echo "... updating state of chain1 on chain2"
 echo ""
 # update the state of chain1 on chain2
-basecoin tx ibc --amount 10mycoin $CHAIN_FLAGS2 update --header 0x$HEADER --commit 0x$COMMIT
+basecoin tx abi --amount 10mycoin $CHAIN_FLAGS2 update --header 0x$HEADER --commit 0x$COMMIT
 ifExit
 
 echo ""
 echo "... posting packet from chain1 on chain2"
 echo ""
 # post the packet from chain1 to chain2
-basecoin tx ibc --amount 10mycoin $CHAIN_FLAGS2 packet post --ibc_from $CHAIN_ID1 --height $HEIGHT --packet 0x$PACKET --proof 0x$PROOF
+basecoin tx abi --amount 10mycoin $CHAIN_FLAGS2 packet post --abi_from $CHAIN_ID1 --height $HEIGHT --packet 0x$PACKET --proof 0x$PROOF
 ifExit
 
 echo ""
 echo "... checking if the packet is present on chain2"
 echo ""
 # query for the packet on chain2
-basecoin query --node tcp://localhost:36657 ibc,ingress,test_chain_2,test_chain_1,0
+basecoin query --node tcp://localhost:36657 abi,ingress,test_chain_2,test_chain_1,0
 ifExit
 
 echo ""

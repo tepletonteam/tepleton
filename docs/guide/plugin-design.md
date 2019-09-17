@@ -76,4 +76,4 @@ as the plugin state.
 
 To get started with plugins, see [the example-plugin tutorial](example-plugin.md).
 For more examples, see [the advanced plugin tutorial](more-examples.md).
-If you're really brave, see the tutorial on [implementing Interblockchain Communication as a plugin](ibc.md).
+If you're really brave, see the tutorial on [implementing Interblockchain Communication as a plugin](abi.md).

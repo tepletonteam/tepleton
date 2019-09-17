@@ -8,7 +8,7 @@ import (
 	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/tmlibs/log"
 
-	"github.com/tepleton/basecoin/plugins/ibc"
+	"github.com/tepleton/basecoin/plugins/abi"
 	"github.com/tepleton/basecoin/types"
 )
 
@@ -310,7 +310,7 @@ func TestSendTx(t *testing.T) {
 		"ExecTx/good DeliverTx: unexpected change in output balance, got: %v, expected: %v", balOut, balOutExp)
 }
 
-func TestSendTxIBC(t *testing.T) {
+func TestSendTxABI(t *testing.T) {
 	assert := assert.New(t)
 	et := newExecTest()
 
@@ -338,7 +338,7 @@ func TestSendTxIBC(t *testing.T) {
 	assert.True(balIn.IsEqual(balInExp),
 		"ExecTx/good DeliverTx: unexpected change in input balance, got: %v, expected: %v", balIn, balInExp)
 
-	packet, err := ibc.GetIBCPacket(et.state, et.chainID, chainID2, 0)
+	packet, err := abi.GetABIPacket(et.state, et.chainID, chainID2, 0)
 	assert.Nil(err)
 
 	assert.Equal(packet.SrcChainID, et.chainID)
@@ -346,7 +346,7 @@ func TestSendTxIBC(t *testing.T) {
 	assert.Equal(packet.Sequence, uint64(0))
 	assert.Equal(packet.Type, "coin")
 
-	coins, ok := packet.Payload.(ibc.CoinsPayload)
+	coins, ok := packet.Payload.(abi.CoinsPayload)
 	assert.True(ok)
 	assert.Equal(coins.Coins, tx.Outputs[0].Coins)
 	assert.EqualValues(coins.Address, dstAddress)
