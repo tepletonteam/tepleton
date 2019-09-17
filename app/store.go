@@ -120,8 +120,13 @@ func (s *Store) Info() wrsp.ResponseInfo {
 
 // Commit implements wrsp.Application
 func (s *Store) Commit() wrsp.Result {
-	s.hash = s.State.Hash()
+	var err error
 	s.height++
+	s.hash, err = s.State.Hash()
+	if err != nil {
+		return wrsp.NewError(wrsp.CodeType_InternalError, err.Error())
+	}
+
 	s.logger.Debug("Commit synced",
 		"height", s.height,
 		"hash", fmt.Sprintf("%X", s.hash))
