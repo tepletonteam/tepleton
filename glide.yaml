@@ -29,7 +29,7 @@ import:
   - certifiers/client
   - certifiers/files
 - package: github.com/tepleton/merkleeyes
-  version: develop
+  version: unstable
   subpackages:
   - client
   - iavl
