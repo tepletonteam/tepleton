@@ -1,7 +1,6 @@
 package abi
 
 import (
-	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/light-client/certifiers"
 	merkle "github.com/tepleton/merkleeyes/iavl"
 
@@ -21,13 +20,6 @@ const (
 	TypeUpdateChain   = NameABI + "/update"
 	TypePacketCreate  = NameABI + "/create"
 	TypePacketPost    = NameABI + "/post"
-
-	ABICodeEncodingError       = wrsp.CodeType(1001)
-	ABICodeChainAlreadyExists  = wrsp.CodeType(1002)
-	ABICodePacketAlreadyExists = wrsp.CodeType(1003)
-	ABICodeUnknownHeight       = wrsp.CodeType(1004)
-	ABICodeInvalidCommit       = wrsp.CodeType(1005)
-	ABICodeInvalidProof        = wrsp.CodeType(1006)
 )
 
 func init() {
@@ -71,6 +63,11 @@ func (u UpdateChainTx) ChainID() string {
 // ValidateBasic makes sure this is consistent, without checking the sigs
 func (u UpdateChainTx) ValidateBasic() error {
 	return u.Seed.ValidateBasic(u.ChainID())
+}
+
+// Wrap - used to satisfy TxInner
+func (u UpdateChainTx) Wrap() basecoin.Tx {
+	return basecoin.Tx{u}
 }
 
 // PacketCreateTx is meant to be called by IPC, another module...
