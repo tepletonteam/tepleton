@@ -88,7 +88,7 @@ func abiQueryCmd(cmd *cobra.Command, args []string) error {
 
 func chainsQueryCmd(cmd *cobra.Command, args []string) error {
 	list := [][]byte{}
-	key := stack.PrefixedKey(abi.NameABI, abi.HandlerKey())
+	key := stack.PrefixedKey(abi.NameABI, abi.ChainsKey())
 	proof, err := proofcmd.GetAndParseAppProof(key, &list)
 	if err != nil {
 		return err
