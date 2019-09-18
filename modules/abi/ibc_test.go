@@ -2,6 +2,7 @@ package abi
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,10 +10,13 @@ import (
 
 	wire "github.com/tepleton/go-wire"
 	"github.com/tepleton/light-client/certifiers"
+	"github.com/tepleton/merkleeyes/iavl"
 	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/basecoin"
 	"github.com/tepleton/basecoin/errors"
+	"github.com/tepleton/basecoin/modules/auth"
+	"github.com/tepleton/basecoin/modules/coin"
 	"github.com/tepleton/basecoin/stack"
 	"github.com/tepleton/basecoin/state"
 )
@@ -335,19 +339,169 @@ func TestABICreatePacket(t *testing.T) {
 	}
 }
 
-func TestABIPostPacket(t *testing.T) {
-	// make proofs
+func makePostPacket(tree *iavl.IAVLTree, packet Packet, fromID string, fromHeight int) PostPacketTx {
+	key := []byte(fmt.Sprintf("some-long-prefix-%06d", packet.Sequence))
+	tree.Set(key, packet.Bytes())
+	_, proof := tree.ConstructProof(key)
+	if proof == nil {
+		panic("wtf?")
+	}
 
-	// bad chain -> error
-	// no matching header -> error
-	// bad proof -> error
-	// out of order -> error
-	// invalid permissions -> error
-
-	// all good -> execute tx
-
+	return PostPacketTx{
+		FromChainID:     fromID,
+		FromChainHeight: uint64(fromHeight),
+		Proof:           proof,
+		Key:             key,
+		Packet:          packet,
+	}
 }
 
-func TestABISendTx(t *testing.T) {
+func updateChain(app basecoin.Handler, store state.KVStore, keys certifiers.ValKeys,
+	chain string, h int, appHash []byte) error {
+	seed := genEmptySeed(keys, chain, h, appHash, len(keys))
+	tx := UpdateChainTx{seed}.Wrap()
+	ctx := stack.MockContext("foo", 123)
+	_, err := app.DeliverTx(ctx, store, tx)
+	return err
+}
 
+func TestABIPostPacket(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	otherID := "chain-1"
+	ourID := "hub"
+
+	// this is the root seed, that others are evaluated against
+	keys := certifiers.GenValKeys(7)
+	appHash := []byte("this is just random garbage")
+	start := 100 // initial height
+	root := genEmptySeed(keys, otherID, start, appHash, len(keys))
+
+	// create the app and register the root of trust (for chain-1)
+	ctx := stack.MockContext(ourID, 50)
+	store := state.NewMemKVStore()
+	app := stack.New().
+		ABI(NewMiddleware()).
+		Dispatch(
+			stack.WrapHandler(NewHandler()),
+			stack.WrapHandler(coin.NewHandler()),
+		)
+	tx := RegisterChainTx{root}.Wrap()
+	_, err := app.DeliverTx(ctx, store, tx)
+	require.Nil(err, "%+v", err)
+
+	recipient := basecoin.Actor{ChainID: ourID, App: auth.NameSigs, Address: []byte("bar")}
+	sender := basecoin.Actor{ChainID: otherID, App: auth.NameSigs, Address: []byte("foo")}
+	coinTx := coin.NewSendOneTx(
+		sender,
+		recipient,
+		coin.Coins{{"eth", 100}, {"ltc", 300}},
+	)
+
+	// set some cash on this chain (TODO: via set options...)
+	otherAddr := coin.ChainAddr(sender)
+	acct := coin.Account{
+		Coins: coin.Coins{{"btc", 300}, {"eth", 2000}, {"ltc", 5000}},
+	}
+	cstore := stack.PrefixedStore(coin.NameCoin, store)
+	cstore.Set(otherAddr.Bytes(), wire.BinaryBytes(acct))
+
+	// make proofs for some packets....
+	tree := iavl.NewIAVLTree(0, nil)
+	pbad := Packet{
+		DestChain: "something-else",
+		Sequence:  0,
+		Tx:        coinTx,
+	}
+	packetBad := makePostPacket(tree, pbad, "something-else", 123)
+
+	p0 := Packet{
+		DestChain:   ourID,
+		Sequence:    0,
+		Permissions: basecoin.Actors{sender},
+		Tx:          coinTx,
+	}
+	p1 := Packet{
+		DestChain:   ourID,
+		Sequence:    1,
+		Permissions: basecoin.Actors{sender},
+		Tx:          coinTx,
+	}
+	// this sends money we don't have registered
+	p2 := Packet{
+		DestChain:   ourID,
+		Sequence:    2,
+		Permissions: basecoin.Actors{sender},
+		Tx:          coin.NewSendOneTx(sender, recipient, coin.Coins{{"missing", 20}}),
+	}
+
+	packet0 := makePostPacket(tree, p0, otherID, start+5)
+	err = updateChain(app, store, keys, otherID, start+5, tree.Hash())
+	require.Nil(err, "%+v", err)
+
+	packet0badHeight := packet0
+	packet0badHeight.FromChainHeight -= 2
+
+	packet1 := makePostPacket(tree, p1, otherID, start+25)
+	err = updateChain(app, store, keys, otherID, start+25, tree.Hash())
+	require.Nil(err, "%+v", err)
+
+	packet1badProof := packet1
+	packet1badProof.Key = []byte("random-data")
+
+	packet2 := makePostPacket(tree, p2, otherID, start+50)
+	err = updateChain(app, store, keys, otherID, start+50, tree.Hash())
+	require.Nil(err, "%+v", err)
+
+	abiPerm := basecoin.Actors{AllowABI(coin.NameCoin)}
+	cases := []struct {
+		packet      PostPacketTx
+		permissions basecoin.Actors
+		checker     checkErr
+	}{
+		// bad chain -> error
+		{packetBad, abiPerm, IsNotRegisteredErr},
+
+		// invalid permissions -> error
+		{packet0, nil, IsNeedsABIPermissionErr},
+
+		// no matching header -> error
+		{packet0badHeight, abiPerm, IsHeaderNotFoundErr},
+
+		// out of order -> error
+		{packet1, abiPerm, IsPacketOutOfOrderErr},
+
+		// all good -> execute tx	}
+		{packet0, abiPerm, noErr},
+
+		// bad proof -> error
+		{packet1badProof, abiPerm, IsInvalidProofErr},
+
+		// all good -> execute tx }
+		{packet1, abiPerm, noErr},
+
+		// repeat -> error
+		{packet0, abiPerm, IsPacketAlreadyExistsErr},
+
+		// packet 2 attempts to spend money this chain doesn't have
+		{packet2, abiPerm, coin.IsInsufficientFundsErr},
+	}
+
+	for i, tc := range cases {
+		// cache wrap it like an app, so no state change on error...
+		myStore := state.NewKVCache(store)
+
+		myCtx := ctx
+		if len(tc.permissions) > 0 {
+			myCtx = myCtx.WithPermissions(tc.permissions...)
+		}
+		_, err := app.DeliverTx(myCtx, myStore, tc.packet.Wrap())
+		assert.True(tc.checker(err), "%d: %+v", i, err)
+
+		// only commit changes on success
+		if err == nil {
+			myStore.Sync()
+		}
+	}
 }

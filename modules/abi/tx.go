@@ -5,7 +5,6 @@ import (
 	merkle "github.com/tepleton/merkleeyes/iavl"
 
 	"github.com/tepleton/basecoin"
-	"github.com/tepleton/basecoin/errors"
 )
 
 // nolint
@@ -94,11 +93,8 @@ type CreatePacketTx struct {
 // ValidateBasic makes sure this is consistent - used to satisfy TxInner
 func (p CreatePacketTx) ValidateBasic() error {
 	if p.DestChain == "" {
-		return errors.ErrNoChain()
+		return ErrWrongDestChain(p.DestChain)
 	}
-	// if len(p.Permissions) == 0 {
-	//   return ErrNoPermissions()
-	// }
 	return nil
 }
 
