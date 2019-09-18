@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	wire "github.com/tepleton/go-wire"
 	"github.com/tepleton/light-client/certifiers"
 	"github.com/tepleton/tmlibs/log"
 
@@ -230,11 +231,120 @@ func TestABIUpdate(t *testing.T) {
 	}
 }
 
+// try to create an abi packet and verify the number we get back
 func TestABICreatePacket(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
 
+	// this is the root seed, that others are evaluated against
+	keys := certifiers.GenValKeys(7)
+	appHash := []byte{1, 2, 3, 4}
+	start := 100 // initial height
+	chainID := "tepleton-hub"
+	root := genEmptySeed(keys, chainID, start, appHash, len(keys))
+
+	// create the app and register the root of trust (for chain-1)
+	ctx := stack.MockContext("hub", 50)
+	store := state.NewMemKVStore()
+	app := stack.New().Dispatch(stack.WrapHandler(NewHandler()))
+	tx := RegisterChainTx{root}.Wrap()
+	_, err := app.DeliverTx(ctx, store, tx)
+	require.Nil(err, "%+v", err)
+
+	// this is the tx we send, and the needed permission to send it
+	raw := stack.NewRawTx([]byte{0xbe, 0xef})
+	abiPerm := AllowABI(stack.NameOK)
+	somePerm := basecoin.Actor{App: "some", Address: []byte("perm")}
+
+	cases := []struct {
+		dest     string
+		abiPerms basecoin.Actors
+		ctxPerms basecoin.Actors
+		checker  checkErr
+	}{
+		// wrong chain -> error
+		{
+			dest:     "some-other-chain",
+			ctxPerms: basecoin.Actors{abiPerm},
+			checker:  IsNotRegisteredErr,
+		},
+
+		// no abi permission -> error
+		{
+			dest:    chainID,
+			checker: IsNeedsABIPermissionErr,
+		},
+
+		// correct -> nice sequence
+		{
+			dest:     chainID,
+			ctxPerms: basecoin.Actors{abiPerm},
+			checker:  noErr,
+		},
+
+		// requesting invalid permissions -> error
+		{
+			dest:     chainID,
+			abiPerms: basecoin.Actors{somePerm},
+			ctxPerms: basecoin.Actors{abiPerm},
+			checker:  IsCannotSetPermissionErr,
+		},
+
+		// requesting extra permissions when present
+		{
+			dest:     chainID,
+			abiPerms: basecoin.Actors{somePerm},
+			ctxPerms: basecoin.Actors{abiPerm, somePerm},
+			checker:  noErr,
+		},
+	}
+
+	for i, tc := range cases {
+		tx := CreatePacketTx{
+			DestChain:   tc.dest,
+			Permissions: tc.abiPerms,
+			Tx:          raw,
+		}.Wrap()
+
+		myCtx := ctx.WithPermissions(tc.ctxPerms...)
+		_, err = app.DeliverTx(myCtx, store, tx)
+		assert.True(tc.checker(err), "%d: %+v", i, err)
+	}
+
+	// query packet state - make sure both packets are properly writen
+	p := stack.PrefixedStore(NameABI, store)
+	q := OutputQueue(p, chainID)
+	if assert.Equal(2, q.Size()) {
+		expected := []struct {
+			seq  uint64
+			perm basecoin.Actors
+		}{
+			{0, nil},
+			{1, basecoin.Actors{somePerm}},
+		}
+
+		for _, tc := range expected {
+			var packet Packet
+			err = wire.ReadBinaryBytes(q.Pop(), &packet)
+			require.Nil(err, "%+v", err)
+			assert.Equal(chainID, packet.DestChain)
+			assert.EqualValues(tc.seq, packet.Sequence)
+			assert.Equal(raw, packet.Tx)
+			assert.Equal(len(tc.perm), len(packet.Permissions))
+		}
+	}
 }
 
 func TestABIPostPacket(t *testing.T) {
+	// make proofs
+
+	// bad chain -> error
+	// no matching header -> error
+	// bad proof -> error
+	// out of order -> error
+	// invalid permissions -> error
+
+	// all good -> execute tx
 
 }
 
