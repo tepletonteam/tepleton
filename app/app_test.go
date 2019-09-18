@@ -13,12 +13,42 @@ import (
 	"github.com/tepleton/basecoin/modules/base"
 	"github.com/tepleton/basecoin/modules/coin"
 	"github.com/tepleton/basecoin/modules/fee"
+	"github.com/tepleton/basecoin/modules/abi"
 	"github.com/tepleton/basecoin/modules/nonce"
+	"github.com/tepleton/basecoin/modules/roles"
 	"github.com/tepleton/basecoin/stack"
 	"github.com/tepleton/basecoin/state"
 	wire "github.com/tepleton/go-wire"
 	"github.com/tepleton/tmlibs/log"
 )
+
+// DefaultHandler for the tests (coin, roles, abi)
+func DefaultHandler(feeDenom string) basecoin.Handler {
+	// use the default stack
+	c := coin.NewHandler()
+	r := roles.NewHandler()
+	i := abi.NewHandler()
+
+	return stack.New(
+		base.Logger{},
+		stack.Recovery{},
+		auth.Signatures{},
+		base.Chain{},
+		stack.Checkpoint{OnCheck: true},
+		nonce.ReplayCheck{},
+	).
+		ABI(abi.NewMiddleware()).
+		Apps(
+			roles.NewMiddleware(),
+			fee.NewSimpleFeeMiddleware(coin.Coin{feeDenom, 0}, fee.Bank),
+			stack.Checkpoint{OnDeliver: true},
+		).
+		Dispatch(
+			stack.WrapHandler(c),
+			stack.WrapHandler(r),
+			stack.WrapHandler(i),
+		)
+}
 
 //--------------------------------------------------------
 // test environment is a list of input and output accounts
