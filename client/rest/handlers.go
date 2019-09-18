@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -9,13 +10,16 @@ import (
 
 	"github.com/tepleton/basecoin"
 	"github.com/tepleton/basecoin/client/commands"
+	"github.com/tepleton/basecoin/client/commands/proofs"
 	"github.com/tepleton/basecoin/modules/auth"
 	"github.com/tepleton/basecoin/modules/base"
 	"github.com/tepleton/basecoin/modules/coin"
 	"github.com/tepleton/basecoin/modules/fee"
 	"github.com/tepleton/basecoin/modules/nonce"
+	"github.com/tepleton/basecoin/stack"
 	keysutils "github.com/tepleton/go-crypto/cmd"
 	keys "github.com/tepleton/go-crypto/keys"
+	lightclient "github.com/tepleton/light-client"
 )
 
 type Keys struct {
@@ -144,8 +148,61 @@ func (ctx *Context) RegisterHandlers(r *mux.Router) error {
 	r.HandleFunc("/build/send", doSend).Methods("POST")
 	r.HandleFunc("/sign", doSign).Methods("POST")
 	r.HandleFunc("/tx", doPostTx).Methods("POST")
+	r.HandleFunc("/query/account/{signature}", doAccountQuery).Methods("GET")
 
 	return nil
+}
+
+func extractAddress(signature string) (address string, err *ErrorResponse) {
+	// Expecting the signature of the form:
+	//  sig:<ADDRESS>
+	splits := strings.Split(signature, ":")
+	if len(splits) < 2 {
+		return "", &ErrorResponse{
+			Error: `expecting the signature of the form "sig:<ADDRESS>"`,
+			Code:  406,
+		}
+	}
+	if splits[0] != "sigs" {
+		return "", &ErrorResponse{
+			Error: `expecting the signature of the form "sig:<ADDRESS>"`,
+			Code:  406,
+		}
+	}
+	return splits[1], nil
+}
+
+func doAccountQuery(w http.ResponseWriter, r *http.Request) {
+	query := mux.Vars(r)
+	signature := query["signature"]
+	address, errResp := extractAddress(signature)
+	if errResp != nil {
+		writeCode(w, errResp, errResp.Code)
+		return
+	}
+	actor, err := commands.ParseActor(address)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	actor = coin.ChainAddr(actor)
+	key := stack.PrefixedKey(coin.NameCoin, actor.Bytes())
+	account := new(coin.Account)
+	proof, err := proofs.GetAndParseAppProof(key, account)
+	if lightclient.IsNoDataErr(err) {
+		err := fmt.Errorf("account bytes are empty for address: %q", address)
+		writeError(w, err)
+		return
+	} else if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	if err := proofs.OutputProof(account, proof.BlockHeight()); err != nil {
+		writeError(w, err)
+		return
+	}
+	writeSuccess(w, account)
 }
 
 func doPostTx(w http.ResponseWriter, r *http.Request) {
