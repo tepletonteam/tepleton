@@ -12,7 +12,9 @@ import (
 	"github.com/tepleton/basecoin/modules/base"
 	"github.com/tepleton/basecoin/modules/coin"
 	"github.com/tepleton/basecoin/modules/fee"
+	"github.com/tepleton/basecoin/modules/abi"
 	"github.com/tepleton/basecoin/modules/nonce"
+	"github.com/tepleton/basecoin/modules/roles"
 	"github.com/tepleton/basecoin/stack"
 	"github.com/tepleton/basecoin/state"
 )
@@ -90,13 +92,6 @@ func ErrDecoding() error {
 
 // NewHandler returns a new counter transaction processing handler
 func NewHandler(feeDenom string) basecoin.Handler {
-	// use the default stack
-	ch := coin.NewHandler()
-	counter := Handler{}
-	dispatcher := stack.NewDispatcher(
-		stack.WrapHandler(ch),
-		counter,
-	)
 	return stack.New(
 		base.Logger{},
 		stack.Recovery{},
@@ -104,9 +99,17 @@ func NewHandler(feeDenom string) basecoin.Handler {
 		base.Chain{},
 		stack.Checkpoint{OnCheck: true},
 		nonce.ReplayCheck{},
-		fee.NewSimpleFeeMiddleware(coin.Coin{feeDenom, 0}, fee.Bank),
-		stack.Checkpoint{OnDeliver: true},
-	).Use(dispatcher)
+	).
+		ABI(abi.NewMiddleware()).
+		Apps(
+			roles.NewMiddleware(),
+			fee.NewSimpleFeeMiddleware(coin.Coin{feeDenom, 0}, fee.Bank),
+			stack.Checkpoint{OnDeliver: true},
+		).
+		Dispatch(
+			coin.NewHandler(),
+			Handler{},
+		)
 }
 
 // Handler the counter transaction processing handler

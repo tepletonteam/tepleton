@@ -25,7 +25,6 @@ import (
 // DefaultHandler for the tests (coin, roles, abi)
 func DefaultHandler(feeDenom string) basecoin.Handler {
 	// use the default stack
-	c := coin.NewHandler()
 	r := roles.NewHandler()
 	i := abi.NewHandler()
 
@@ -44,7 +43,7 @@ func DefaultHandler(feeDenom string) basecoin.Handler {
 			stack.Checkpoint{OnDeliver: true},
 		).
 		Dispatch(
-			stack.WrapHandler(c),
+			coin.NewHandler(),
 			stack.WrapHandler(r),
 			stack.WrapHandler(i),
 		)
