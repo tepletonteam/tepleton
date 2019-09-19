@@ -3,14 +3,16 @@ GOTOOLS =	github.com/mitchellh/gox \
 			github.com/rigelrozanski/shelldown/cmd/shelldown
 TUTORIALS=$(shell find docs/guide -name "*md" -type f)
 
+LINKER_FLAGS:="-X github.com/tepleton/basecoin/client/commands.CommitHash=`git rev-parse --short HEAD`"
+
 all: get_vendor_deps install test
 
 build:
 	@go build ./cmd/...
 
 install:
-	@go install ./cmd/...
-	@go install ./docs/guide/counter/cmd/...
+	@go install -ldflags $(LINKER_FLAGS) ./cmd/...
+	@go install -ldflags $(LINKER_FLAGS) ./docs/guide/counter/cmd/...
 
 dist:
 	@bash publish/dist.sh
@@ -72,6 +74,6 @@ clean:
 
 # when your repo is getting a little stale... just make fresh
 fresh: clean get_vendor_deps install
-	@if [[ `git status -s` ]]; then echo; echo "Warning: uncommited changes"; git status -s; fi
+	@if [ "$(git status -s)" ]; then echo; echo "Warning: uncommited changes"; git status -s; fi
 
 .PHONY: all build install test test_cli test_unit get_vendor_deps build-docker clean fresh benchmark
