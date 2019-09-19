@@ -1,11 +1,17 @@
 package commands
 
 import (
+	"encoding/hex"
+
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
+	wrsp "github.com/tepleton/wrsp/types"
+	cmn "github.com/tepleton/tmlibs/common"
+
 	"github.com/tepleton/basecoin"
 	txcmd "github.com/tepleton/basecoin/client/commands/txs"
+	"github.com/tepleton/basecoin/errors"
 	"github.com/tepleton/basecoin/modules/roles"
 )
 
@@ -44,5 +50,10 @@ func (RoleWrapper) Register(fs *pflag.FlagSet) {
 
 // parse role turns the string->byte... todo: support hex?
 func parseRole(role string) ([]byte, error) {
-	return []byte(role), nil
+	res, err := hex.DecodeString(cmn.StripHex(role))
+	if err != nil {
+		err = errors.WithMessage("Address is invalid hex", err,
+			wrsp.CodeType_EncodingError)
+	}
+	return res, err
 }
