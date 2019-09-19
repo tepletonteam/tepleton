@@ -162,6 +162,97 @@ test03QueryABI() {
     assertEquals "line=${LINENO}, tracked height" $UPDATE_2_HEIGHT $(echo $CHAIN_INFO | jq .data.remote_block)
 }
 
+# Trigger a cross-chain sendTx... from RICH on chain1 to POOR on chain2
+#   we make sure the money was reduced, but nothing arrived
+test04SendABIPacket() {
+    export BC_HOME=${CLIENT_1}
+
+    # make sure there are no packets yet
+    PACKETS=$(${CLIENT_EXE} query abi packets --to=$CHAIN_ID_2 2>/dev/null)
+    assertFalse "line=${LINENO}, packet query" $?
+
+    SENDER=$(getAddr $RICH)
+    RECV=$(BC_HOME=${CLIENT_2} getAddr $POOR)
+
+    TX=$(echo qwertyuiop | ${CLIENT_EXE} tx send --amount=20002mycoin \
+        --to=${CHAIN_ID_2}::${RECV} --name=$RICH)
+    txSucceeded $? "$TX" "${CHAIN_ID_2}::${RECV}"
+    # quit early if there is no point in more tests
+    if [ $? != 0 ]; then echo "aborting!"; return 1; fi
+
+    HASH=$(echo $TX | jq .hash | tr -d \")
+    TX_HEIGHT=$(echo $TX | jq .height)
+
+    # Make sure balance went down and tx is indexed
+    checkAccount $SENDER "9007199254720990"
+    checkSendTx $HASH $TX_HEIGHT $SENDER "20002"
+
+    # look, we wrote a packet
+    PACKETS=$(${CLIENT_EXE} query abi packets --to=$CHAIN_ID_2)
+    assertTrue "line=${LINENO}, packets query" $?
+    assertEquals "line=${LINENO}, packet count" 1 $(echo $PACKETS | jq .data)
+
+    # and look at the packet itself
+    PACKET=$(${CLIENT_EXE} query abi packet --to=$CHAIN_ID_2 --sequence=0)
+    assertTrue "line=${LINENO}, packet query" $?
+    assertEquals "line=${LINENO}, proper src" "\"$CHAIN_ID_1\"" $(echo $PACKET | jq .src_chain)
+    assertEquals "line=${LINENO}, proper dest" "\"$CHAIN_ID_2\"" $(echo $PACKET | jq .packet.dest_chain)
+    assertEquals "line=${LINENO}, proper sequence" "0" $(echo $PACKET | jq .packet.sequence)
+
+    # nothing arrived
+    ARRIVED=$(${CLIENT_EXE} query abi packets --from=$CHAIN_ID_1 --home=$CLIENT_2 2>/dev/null)
+    assertFalse "line=${LINENO}, packet query" $?
+    assertFalse "line=${LINENO}, no relay running" "BC_HOME=${CLIENT_2} ${CLIENT_EXE} query account $RECV"
+}
+
+# test05ReceiveABIPacket() {
+#     export BC_HOME=${CLIENT_2}
+
+#     # make some credit, so we can accept the packet
+#     TX=$(echo qwertyuiop | ${CLIENT_EXE} tx credit --amount=60006mycoin --to=$CHAIN_1:: --name=$RICH)
+#     txSucceeded $? "$TX" "${CHAIN_ID_2}::${RECV}"
+#     checkAccount $CHAIN_2:: "60006"
+
+#     # now, we try to post it.... (this is PACKET from last test)
+
+#     # get the seed and post it
+#     SRC_HEIGHT=$(echo $PACKET | jq .src_height)
+#     # FIXME: this should auto-update on proofs...
+#     ${CLIENT_EXE} seeds update --height=$SRC_HEIGHT --home=${CLIENT_1}  > /dev/null
+#     assertTrue "line=${LINENO}, update seed failed" $?
+
+#     PACKET_SEED="$BASE_DIR_1/packet_seed.json"
+#     ${CLIENT_EXE} seeds export $PACKET_SEED --home=${CLIENT_1} #--height=$SRC_HEIGHT
+#     assertTrue "line=${LINENO}, export seed failed" $?
+#     echo "**** SEED ****"
+#     cat $PACKET_SEED | jq .
+
+#     TX=$(echo qwertyuiop | ${CLIENT_EXE} tx abi-update \
+#         --seed=${PACKET_SEED} --name=$POOR)
+#     txSucceeded $? "$TX" "prepare packet chain1 on chain 2"
+#     # an example to quit early if there is no point in more tests
+#     if [ $? != 0 ]; then echo "aborting!"; return 1; fi
+
+#     # write the packet to the file
+#     POST_PACKET="$BASE_DIR_1/post_packet.json"
+#     echo $PACKET > $POST_PACKET
+#     echo "**** POST ****"
+#     cat $POST_PACKET | jq .
+
+#     # post it as a tx (cross-fingers)
+#     TX=$(echo qwertyuiop | ${CLIENT_EXE} tx abi-post \
+#         --packet=${POST_PACKET} --name=$POOR)
+#     txSucceeded $? "$TX" "post packet from chain1 on chain 2"
+
+#     # TODO: more queries on stuff...
+
+#     # look, we wrote a packet
+#     PACKETS=$(${CLIENT_EXE} query abi packets --from=$CHAIN_ID_1)
+#     assertTrue "line=${LINENO}, packets query" $?
+#     assertEquals "line=${LINENO}, packet count" 1 $(echo $PACKETS | jq .data)
+# }
+
+
 # XXX Ex Usage: assertNewHeight $MSG $SEED_1 $SEED_2
 # Desc: Asserts that seed2 has a higher block height than seed 1
 assertNewHeight() {

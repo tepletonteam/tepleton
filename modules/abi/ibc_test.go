@@ -381,29 +381,26 @@ func TestABIPostPacket(t *testing.T) {
 		// bad chain -> error
 		{packetBad, abiPerm, IsNotRegisteredErr},
 
-		// invalid permissions -> error
-		{packet0, nil, IsNeedsABIPermissionErr},
-
 		// no matching header -> error
-		{packet0badHeight, abiPerm, IsHeaderNotFoundErr},
+		{packet0badHeight, nil, IsHeaderNotFoundErr},
 
 		// out of order -> error
 		{packet1, abiPerm, IsPacketOutOfOrderErr},
 
-		// all good -> execute tx	}
+		// all good -> execute tx
 		{packet0, abiPerm, errors.NoErr},
 
 		// bad proof -> error
 		{packet1badProof, abiPerm, IsInvalidProofErr},
 
-		// all good -> execute tx }
-		{packet1, abiPerm, errors.NoErr},
+		// all good -> execute tx (no special permission needed)
+		{packet1, nil, errors.NoErr},
 
 		// repeat -> error
-		{packet0, abiPerm, IsPacketAlreadyExistsErr},
+		{packet0, nil, IsPacketAlreadyExistsErr},
 
 		// packet2 contains invalid permissions
-		{packet2, abiPerm, IsCannotSetPermissionErr},
+		{packet2, nil, IsCannotSetPermissionErr},
 	}
 
 	for i, tc := range cases {

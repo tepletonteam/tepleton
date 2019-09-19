@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -9,7 +11,12 @@ import (
 	proofcmd "github.com/tepleton/basecoin/client/commands/proofs"
 	"github.com/tepleton/basecoin/modules/abi"
 	"github.com/tepleton/basecoin/stack"
+	"github.com/tepleton/go-wire/data"
+	"github.com/tepleton/light-client/proofs"
+	"github.com/tepleton/merkleeyes/iavl"
 )
+
+// TODO: query seeds (register/update)
 
 // ABIQueryCmd - parent command to query abi info
 var ABIQueryCmd = &cobra.Command{
@@ -73,7 +80,7 @@ func init() {
 	fs2 := PacketQueryCmd.Flags()
 	fs2.String(FlagFromChain, "", "Name of the input chain (where packets came from)")
 	fs2.String(FlagToChain, "", "Name of the output chain (where packets go to)")
-	fs2.Int(FlagSequence, -1, "Name of the output chain (where packets go to)")
+	fs2.Int(FlagSequence, -1, "Index of the packet in the queue (starts with 0)")
 }
 
 func abiQueryCmd(cmd *cobra.Command, args []string) error {
@@ -175,11 +182,45 @@ func packetQueryCmd(cmd *cobra.Command, args []string) error {
 		key = stack.PrefixedKey(abi.NameABI, abi.QueueOutPacketKey(to, uint64(seq)))
 	}
 
-	var res abi.Packet
-	proof, err := proofcmd.GetAndParseAppProof(key, &res)
+	// Input queue just display the results
+	if from != "" {
+		var packet abi.Packet
+		proof, err := proofcmd.GetAndParseAppProof(key, &packet)
+		if err != nil {
+			return err
+		}
+		return proofcmd.OutputProof(packet, proof.BlockHeight())
+	}
+
+	// output queue, create a post packet
+	var packet abi.Packet
+	proof, err := proofcmd.GetAndParseAppProof(key, &packet)
 	if err != nil {
 		return err
 	}
 
-	return proofcmd.OutputProof(res, proof.BlockHeight())
+	// TODO: oh so ugly.  fix before merge!
+	// wait, i want to change go-merkle too....
+	appProof := proof.(proofs.AppProof)
+	extractedProof, err := iavl.ReadProof(appProof.Proof)
+	if err != nil {
+		return err
+	}
+
+	// create the post packet here.
+	post := abi.PostPacketTx{
+		FromChainID:     commands.GetChainID(),
+		FromChainHeight: proof.BlockHeight(),
+		Key:             key,
+		Packet:          packet,
+		Proof:           extractedProof,
+	}
+
+	// print json direct, as we don't need to wrap with the height
+	res, err := data.ToJSON(post)
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(res))
+	return nil
 }

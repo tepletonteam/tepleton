@@ -71,6 +71,7 @@ func main() {
 		// these are for handling abi
 		abicmd.RegisterChainTxCmd,
 		abicmd.UpdateChainTxCmd,
+		abicmd.PostPacketTxCmd,
 	)
 
 	// Set up the various commands to use

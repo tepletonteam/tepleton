@@ -80,15 +80,6 @@ func (m Middleware) verifyPost(ctx basecoin.Context, store state.SimpleDB,
 		return ictx, itx, ErrCannotSetPermission()
 	}
 
-	// make sure it has AllowABI
-	mod, err := packet.Tx.GetMod()
-	if err != nil {
-		return ictx, itx, err
-	}
-	if !ctx.HasPermission(AllowABI(mod)) {
-		return ictx, itx, ErrNeedsABIPermission()
-	}
-
 	// make sure this sequence number is the next in the list
 	q := InputQueue(store, from)
 	tail := q.Tail()
