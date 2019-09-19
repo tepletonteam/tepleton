@@ -112,7 +112,7 @@ func (s *Store) Info() wrsp.ResponseInfo {
 		"height", s.height,
 		"hash", fmt.Sprintf("%X", s.hash))
 	return wrsp.ResponseInfo{
-		Data:             cmn.Fmt("size:%v", s.State.Committed().Size()),
+		Data:             cmn.Fmt("size:%v", s.State.Size()),
 		LastBlockHeight:  s.height - 1,
 		LastBlockAppHash: s.hash,
 	}
@@ -144,7 +144,7 @@ func (s *Store) Commit() wrsp.Result {
 		return wrsp.NewError(wrsp.CodeType_InternalError, "AppHash is incorrect")
 	}
 
-	if s.State.Committed().Size() == 0 {
+	if s.State.Size() == 0 {
 		return wrsp.NewResultOK(nil, "Empty hash for empty tree")
 	}
 	return wrsp.NewResultOK(s.hash, "")
