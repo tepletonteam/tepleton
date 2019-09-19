@@ -19,6 +19,7 @@ import (
 	basecmd "github.com/tepleton/basecoin/modules/base/commands"
 	coincmd "github.com/tepleton/basecoin/modules/coin/commands"
 	feecmd "github.com/tepleton/basecoin/modules/fee/commands"
+	abicmd "github.com/tepleton/basecoin/modules/abi/commands"
 	noncecmd "github.com/tepleton/basecoin/modules/nonce/commands"
 	rolecmd "github.com/tepleton/basecoin/modules/roles/commands"
 )
@@ -46,6 +47,7 @@ func main() {
 		coincmd.AccountQueryCmd,
 		noncecmd.NonceQueryCmd,
 		rolecmd.RoleQueryCmd,
+		abicmd.ABIQueryCmd,
 	)
 	proofs.TxPresenters.Register("base", txcmd.BaseTxPresenter{})
 
