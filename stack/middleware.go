@@ -1,6 +1,7 @@
 package stack
 
 import (
+	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/basecoin"
@@ -57,6 +58,12 @@ func (m *middleware) InitState(l log.Logger, store state.SimpleDB, module, key, 
 	store = stateSpace(store, m.space)
 
 	return m.middleware.InitState(l, store, module, key, value, m.next)
+}
+
+func (m *middleware) InitValidate(l log.Logger, store state.SimpleDB, vals []*wrsp.Validator) {
+	// set the namespace for the app
+	store = stateSpace(store, m.space)
+	m.middleware.InitValidate(l, store, vals, m.next)
 }
 
 // builder is used to associate info with the middleware, so we can build

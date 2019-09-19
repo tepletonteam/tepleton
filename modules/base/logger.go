@@ -3,6 +3,7 @@ package base
 import (
 	"time"
 
+	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/basecoin"
@@ -68,6 +69,15 @@ func (Logger) InitState(l log.Logger, store state.SimpleDB, module, key, value s
 		l.Error("InitState", "err", err)
 	}
 	return res, err
+}
+
+// InitValidate logs time and result - fulfills Middlware interface
+func (Logger) InitValidate(l log.Logger, store state.SimpleDB, vals []*wrsp.Validator, next basecoin.InitValidater) {
+	start := time.Now()
+	next.InitValidate(l, store, vals)
+	delta := time.Now().Sub(start)
+	l = l.With("duration", micros(delta))
+	l.Info("InitValidate")
 }
 
 // micros returns how many microseconds passed in a call
