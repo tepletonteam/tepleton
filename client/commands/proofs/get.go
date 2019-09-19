@@ -12,72 +12,104 @@ import (
 	"github.com/tepleton/go-wire/data"
 	lc "github.com/tepleton/light-client"
 	"github.com/tepleton/light-client/proofs"
+	"github.com/tepleton/merkleeyes/iavl"
 	"github.com/tepleton/tepleton/rpc/client"
 
 	"github.com/tepleton/basecoin/client/commands"
 )
 
-// GetAndParseAppProof does most of the work of the query commands, but is quite
-// opinionated, so if you want more control, set up the items and call GetProof
-// directly.  Notably, it always uses go-wire.ReadBinaryBytes to deserialize,
-// and Height and Node from standard flags.
+// GetParsed does most of the work of the query commands, but is quite
+// opinionated, so if you want more control about parsing, call Get
+// directly.
 //
 // It will try to get the proof for the given key.  If it is successful,
-// it will return the proof and also unserialize proof.Data into the data
+// it will return the height and also unserialize proof.Data into the data
 // argument (so pass in a pointer to the appropriate struct)
-func GetAndParseAppProof(key []byte, data interface{}) (lc.Proof, error) {
-	height := GetHeight()
-	node := commands.GetNode()
-
-	prover := proofs.NewAppProver(node)
-
-	proof, err := GetProof(node, prover, key, height)
+func GetParsed(key []byte, data interface{}, prove bool) (uint64, error) {
+	bs, h, err := Get(key, prove)
 	if err != nil {
-		return proof, err
+		return 0, err
 	}
-
-	err = wire.ReadBinaryBytes(proof.Data(), data)
-	return proof, err
+	err = wire.ReadBinaryBytes(bs, data)
+	if err != nil {
+		return 0, err
+	}
+	return h, nil
 }
 
-// GetProof performs the get command directly from the proof (not from the CLI)
-func GetProof(node client.Client, prover lc.Prover, key []byte, height int) (proof lc.Proof, err error) {
-	proof, err = prover.Get(key, uint64(height))
+// Get queries the given key and returns the value stored there and the
+// height we checked at.
+//
+// If prove is true (and why shouldn't it be?),
+// the data is fully verified before returning.  If prove is false,
+// we just repeat whatever any (potentially malicious) node gives us.
+// Only use that if you are running the full node yourself,
+// and it is localhost or you have a secure connection (not HTTP)
+func Get(key []byte, prove bool) (data.Bytes, uint64, error) {
+	if !prove {
+		node := commands.GetNode()
+		resp, err := node.WRSPQuery("/key", key, false)
+		return data.Bytes(resp.Value), resp.Height, err
+	}
+	val, h, _, err := GetWithProof(key)
+	return val, h, err
+}
+
+// GetWithProof returns the values stored under a given key at the named
+// height as in Get.  Additionally, it will return a validated merkle
+// proof for the key-value pair if it exists, and all checks pass.
+func GetWithProof(key []byte) (data.Bytes, uint64, *iavl.KeyExistsProof, error) {
+	node := commands.GetNode()
+
+	resp, err := node.WRSPQuery("/key", key, true)
 	if err != nil {
-		return
+		return nil, 0, nil, err
+	}
+	ph := int(resp.Height)
+
+	// make sure the proof is the proper height
+	if !resp.Code.IsOK() {
+		return nil, 0, nil, errors.Errorf("Query error %d: %s", resp.Code, resp.Code.String())
+	}
+	// TODO: Handle null proofs
+	if len(resp.Key) == 0 || len(resp.Value) == 0 || len(resp.Proof) == 0 {
+		return nil, 0, nil, lc.ErrNoData()
+	}
+	if ph != 0 && ph != int(resp.Height) {
+		return nil, 0, nil, lc.ErrHeightMismatch(ph, int(resp.Height))
 	}
 
-	// short-circuit with no proofs
-	if viper.GetBool(commands.FlagTrustNode) {
-		return proof, err
-	}
-
-	ph := int(proof.BlockHeight())
 	check, err := GetCertifiedCheckpoint(ph)
 	if err != nil {
-		return
+		return nil, 0, nil, err
+	}
+
+	proof := new(iavl.KeyExistsProof)
+	err = wire.ReadBinaryBytes(resp.Proof, &proof)
+	if err != nil {
+		return nil, 0, nil, err
 	}
 
 	// validate the proof against the certified header to ensure data integrity
-	err = proof.Validate(check)
+	err = proof.Verify(resp.Key, resp.Value, check.Header.AppHash)
 	if err != nil {
-		return
+		return nil, 0, nil, err
 	}
 
-	return proof, err
+	return data.Bytes(resp.Value), resp.Height, proof, nil
 }
 
 // GetCertifiedCheckpoint gets the signed header for a given height
 // and certifies it.  Returns error if unable to get a proven header.
 func GetCertifiedCheckpoint(h int) (empty lc.Checkpoint, err error) {
-	// here is the certifier, root of all knowledge
+	// here is the certifier, root of all trust
 	node := commands.GetNode()
 	cert, err := commands.GetCertifier()
 	if err != nil {
 		return
 	}
 
-	// get and validate a signed header for this proof
+	// get the checkpoint for this height
 
 	// FIXME: cannot use cert.GetByHeight for now, as it also requires
 	// Validators and will fail on querying tepleton for non-current height.
@@ -91,12 +123,11 @@ func GetCertifiedCheckpoint(h int) (empty lc.Checkpoint, err error) {
 		Header: commit.Header,
 		Commit: commit.Commit,
 	}
-	// double check we got the same height
+
+	// validate downloaded checkpoint with our request and trust store.
 	if check.Height() != h {
 		return empty, lc.ErrHeightMismatch(h, check.Height())
 	}
-
-	// and now verify it matches our validators
 	err = cert.Certify(check)
 	return check, nil
 }
@@ -118,6 +149,7 @@ func ParseHexKey(args []string, argname string) ([]byte, error) {
 	return proofs.ParseHexKey(rawkey)
 }
 
+// GetHeight reads the viper config for the query height
 func GetHeight() int {
 	return viper.GetInt(FlagHeight)
 }
