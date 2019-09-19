@@ -112,7 +112,7 @@ func (app *Basecoin) DeliverTx(txBytes []byte) wrsp.Result {
 		return errors.Result(err)
 	}
 	app.addValChange(res.Diff)
-	return res.ToWRSP()
+	return basecoin.ToWRSP(res)
 }
 
 // CheckTx - WRSP
@@ -132,7 +132,7 @@ func (app *Basecoin) CheckTx(txBytes []byte) wrsp.Result {
 	if err != nil {
 		return errors.Result(err)
 	}
-	return res.ToWRSP()
+	return basecoin.ToWRSP(res)
 }
 
 // Query - WRSP
@@ -182,7 +182,7 @@ func (app *Basecoin) EndBlock(height uint64) (res wrsp.ResponseEndBlock) {
 
 func (app *Basecoin) addValChange(diffs []*wrsp.Validator) {
 	for _, d := range diffs {
-		idx := findVal(d, app.pending)
+		idx := pubKeyIndex(d, app.pending)
 		if idx >= 0 {
 			app.pending[idx] = d
 		} else {
@@ -192,7 +192,7 @@ func (app *Basecoin) addValChange(diffs []*wrsp.Validator) {
 }
 
 // return index of list with validator of same PubKey, or -1 if no match
-func findVal(val *wrsp.Validator, list []*wrsp.Validator) int {
+func pubKeyIndex(val *wrsp.Validator, list []*wrsp.Validator) int {
 	for i, v := range list {
 		if bytes.Equal(val.PubKey, v.PubKey) {
 			return i

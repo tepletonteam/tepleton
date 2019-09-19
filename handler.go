@@ -35,7 +35,7 @@ type Checker interface {
 	CheckTx(ctx Context, store state.SimpleDB, tx Tx) (CheckResult, error)
 }
 
-// CheckerFunc (like http.HandlerFunc) is a shortcut for making wrapers
+// CheckerFunc (like http.HandlerFunc) is a shortcut for making wrappers
 type CheckerFunc func(Context, state.SimpleDB, Tx) (CheckResult, error)
 
 func (c CheckerFunc) CheckTx(ctx Context, store state.SimpleDB, tx Tx) (CheckResult, error) {
@@ -47,7 +47,7 @@ type Deliver interface {
 	DeliverTx(ctx Context, store state.SimpleDB, tx Tx) (DeliverResult, error)
 }
 
-// DeliverFunc (like http.HandlerFunc) is a shortcut for making wrapers
+// DeliverFunc (like http.HandlerFunc) is a shortcut for making wrappers
 type DeliverFunc func(Context, state.SimpleDB, Tx) (DeliverResult, error)
 
 func (c DeliverFunc) DeliverTx(ctx Context, store state.SimpleDB, tx Tx) (DeliverResult, error) {
@@ -59,7 +59,7 @@ type InitStater interface {
 	InitState(l log.Logger, store state.SimpleDB, module, key, value string) (string, error)
 }
 
-// InitStateFunc (like http.HandlerFunc) is a shortcut for making wrapers
+// InitStateFunc (like http.HandlerFunc) is a shortcut for making wrappers
 type InitStateFunc func(log.Logger, state.SimpleDB, string, string, string) (string, error)
 
 func (c InitStateFunc) InitState(l log.Logger, store state.SimpleDB, module, key, value string) (string, error) {
@@ -71,7 +71,7 @@ type InitValidater interface {
 	InitValidate(log log.Logger, store state.SimpleDB, vals []*wrsp.Validator)
 }
 
-// InitValidateFunc (like http.HandlerFunc) is a shortcut for making wrapers
+// InitValidateFunc (like http.HandlerFunc) is a shortcut for making wrappers
 type InitValidateFunc func(log.Logger, state.SimpleDB, []*wrsp.Validator)
 
 func (c InitValidateFunc) InitValidate(l log.Logger, store state.SimpleDB, vals []*wrsp.Validator) {
@@ -80,8 +80,17 @@ func (c InitValidateFunc) InitValidate(l log.Logger, store state.SimpleDB, vals 
 
 //---------- results and some wrappers --------
 
-type Dataer interface {
+// Result is a common interface of CheckResult and GetResult
+type Result interface {
 	GetData() data.Bytes
+	GetLog() string
+}
+
+func ToWRSP(r Result) wrsp.Result {
+	return wrsp.Result{
+		Data: r.GetData(),
+		Log:  r.GetLog(),
+	}
 }
 
 // CheckResult captures any non-error wrsp result
@@ -90,31 +99,28 @@ type CheckResult struct {
 	Data data.Bytes
 	Log  string
 	// GasAllocated is the maximum units of work we allow this tx to perform
-	GasAllocated uint
+	GasAllocated uint64
 	// GasPayment is the total fees for this tx (or other source of payment)
-	GasPayment uint
+	GasPayment uint64
 }
 
 // NewCheck sets the gas used and the response data but no more info
 // these are the most common info needed to be set by the Handler
-func NewCheck(gasAllocated uint, log string) CheckResult {
+func NewCheck(gasAllocated uint64, log string) CheckResult {
 	return CheckResult{
 		GasAllocated: gasAllocated,
 		Log:          log,
 	}
 }
 
-var _ Dataer = CheckResult{}
-
-func (r CheckResult) ToWRSP() wrsp.Result {
-	return wrsp.Result{
-		Data: r.Data,
-		Log:  r.Log,
-	}
-}
+var _ Result = CheckResult{}
 
 func (r CheckResult) GetData() data.Bytes {
 	return r.Data
+}
+
+func (r CheckResult) GetLog() string {
+	return r.Log
 }
 
 // DeliverResult captures any non-error wrsp result
@@ -123,20 +129,17 @@ type DeliverResult struct {
 	Data    data.Bytes
 	Log     string
 	Diff    []*wrsp.Validator
-	GasUsed uint
+	GasUsed uint64
 }
 
-var _ Dataer = DeliverResult{}
-
-func (r DeliverResult) ToWRSP() wrsp.Result {
-	return wrsp.Result{
-		Data: r.Data,
-		Log:  r.Log,
-	}
-}
+var _ Result = DeliverResult{}
 
 func (r DeliverResult) GetData() data.Bytes {
 	return r.Data
+}
+
+func (r DeliverResult) GetLog() string {
+	return r.Log
 }
 
 // placeholders

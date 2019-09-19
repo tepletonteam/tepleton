@@ -15,22 +15,21 @@ import (
 //-----------------------------------
 // Test cases start here
 
-func power() uint64 {
-	// % can return negative numbers, so this ensures result is positive
+func randPower() uint64 {
 	return uint64(cmn.RandInt()%50 + 60)
 }
 
 func makeVal() *wrsp.Validator {
 	return &wrsp.Validator{
 		PubKey: cmn.RandBytes(10),
-		Power:  power(),
+		Power:  randPower(),
 	}
 }
 
-// newPower returns a copy of the validator with a different power
-func newPower(val *wrsp.Validator) *wrsp.Validator {
+// withNewPower returns a copy of the validator with a different power
+func withNewPower(val *wrsp.Validator) *wrsp.Validator {
 	res := *val
-	res.Power = power()
+	res.Power = randPower()
 	if res.Power == val.Power {
 		panic("no no")
 	}
@@ -48,8 +47,8 @@ func TestEndBlock(t *testing.T) {
 	val1 := makeVal()
 	val2 := makeVal()
 	val3 := makeVal()
-	val1a := newPower(val1)
-	val2a := newPower(val2)
+	val1a := withNewPower(val1)
+	val2a := withNewPower(val2)
 
 	cases := [...]struct {
 		changes  [][]*wrsp.Validator
