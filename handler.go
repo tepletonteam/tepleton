@@ -57,6 +57,12 @@ func (c SetOptionFunc) SetOption(l log.Logger, store state.SimpleDB, module, key
 	return c(l, store, module, key, value)
 }
 
+//---------- results and some wrappers --------
+
+type Dataer interface {
+	GetData() data.Bytes
+}
+
 // CheckResult captures any non-error wrsp result
 // to make sure people use error for error cases
 type CheckResult struct {
@@ -66,11 +72,17 @@ type CheckResult struct {
 	GasPrice     uint
 }
 
+var _ Dataer = CheckResult{}
+
 func (r CheckResult) ToWRSP() wrsp.Result {
 	return wrsp.Result{
 		Data: r.Data,
 		Log:  r.Log,
 	}
+}
+
+func (r CheckResult) GetData() data.Bytes {
+	return r.Data
 }
 
 // DeliverResult captures any non-error wrsp result
@@ -82,11 +94,17 @@ type DeliverResult struct {
 	GasUsed uint
 }
 
+var _ Dataer = DeliverResult{}
+
 func (r DeliverResult) ToWRSP() wrsp.Result {
 	return wrsp.Result{
 		Data: r.Data,
 		Log:  r.Log,
 	}
+}
+
+func (r DeliverResult) GetData() data.Bytes {
+	return r.Data
 }
 
 // placeholders
