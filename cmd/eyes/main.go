@@ -6,6 +6,7 @@ import (
 	"github.com/tepleton/tmlibs/cli"
 
 	"github.com/tepleton/basecoin"
+	client "github.com/tepleton/basecoin/client/commands"
 	"github.com/tepleton/basecoin/cmd/basecoin/commands"
 	"github.com/tepleton/basecoin/modules/base"
 	"github.com/tepleton/basecoin/modules/eyes"
@@ -36,7 +37,7 @@ func main() {
 		InitCmd,
 		commands.StartCmd,
 		commands.UnsafeResetAllCmd,
-		commands.VersionCmd,
+		client.VersionCmd,
 	)
 
 	cmd := cli.PrepareMainCmd(rt, "EYE", os.ExpandEnv("$HOME/.eyes"))

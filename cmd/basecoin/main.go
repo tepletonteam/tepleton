@@ -6,6 +6,7 @@ import (
 	"github.com/tepleton/tmlibs/cli"
 
 	"github.com/tepleton/basecoin"
+	client "github.com/tepleton/basecoin/client/commands"
 	"github.com/tepleton/basecoin/cmd/basecoin/commands"
 	"github.com/tepleton/basecoin/modules/auth"
 	"github.com/tepleton/basecoin/modules/base"
@@ -51,7 +52,7 @@ func main() {
 		commands.StartCmd,
 		//commands.RelayCmd,
 		commands.UnsafeResetAllCmd,
-		commands.VersionCmd,
+		client.VersionCmd,
 	)
 
 	cmd := cli.PrepareMainCmd(rt, "BC", os.ExpandEnv("$HOME/.basecoin"))

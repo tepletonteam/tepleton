@@ -7,6 +7,7 @@ import (
 
 	"github.com/tepleton/tmlibs/cli"
 
+	client "github.com/tepleton/basecoin/client/commands"
 	"github.com/tepleton/basecoin/cmd/basecoin/commands"
 	"github.com/tepleton/basecoin/docs/guide/counter/plugins/counter"
 )
@@ -24,7 +25,7 @@ func main() {
 		commands.InitCmd,
 		commands.StartCmd,
 		commands.UnsafeResetAllCmd,
-		commands.VersionCmd,
+		client.VersionCmd,
 	)
 
 	cmd := cli.PrepareMainCmd(RootCmd, "CT", os.ExpandEnv("$HOME/.counter"))
