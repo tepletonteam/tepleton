@@ -13,6 +13,7 @@ import (
 	"github.com/tepleton/basecoin/client/commands"
 	rest "github.com/tepleton/basecoin/client/rest"
 	coinrest "github.com/tepleton/basecoin/modules/coin/rest"
+	noncerest "github.com/tepleton/basecoin/modules/nonce/rest"
 	rolerest "github.com/tepleton/basecoin/modules/roles/rest"
 	"github.com/tepleton/tmlibs/cli"
 )
@@ -58,6 +59,9 @@ func serve(cmd *cobra.Command, args []string) error {
 		rest.RegisterSignTx,
 		// Basecoin post transaction handler
 		rest.RegisterPostTx,
+
+		// Nonce query handler
+		noncerest.RegisterQueryNonce,
 	}
 
 	for _, routeRegistrar := range routeRegistrars {
