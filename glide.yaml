@@ -1,4 +1,4 @@
-package: github.com/tepleton/basecoin
+package: github.com/tepleton/tepleton-sdk
 import:
 - package: github.com/gorilla/websocket
 - package: github.com/pkg/errors
