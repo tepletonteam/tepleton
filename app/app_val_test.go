@@ -5,11 +5,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	wrsp "github.com/tepleton/wrsp/types"
-	"github.com/tepleton/tepleton-sdk/modules/base"
 	wire "github.com/tepleton/go-wire"
 	cmn "github.com/tepleton/tmlibs/common"
 	"github.com/tepleton/tmlibs/log"
+
+	"github.com/tepleton/tepleton-sdk/modules/base"
 )
 
 //-----------------------------------
@@ -30,9 +32,6 @@ func makeVal() *wrsp.Validator {
 func withNewPower(val *wrsp.Validator) *wrsp.Validator {
 	res := *val
 	res.Power = randPower()
-	if res.Power == val.Power {
-		panic("no no")
-	}
 	return &res
 }
 
