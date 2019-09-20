@@ -31,7 +31,7 @@ var (
 
 func init() {
 	InitCmd.Flags().String(FlagChainID, "test_chain_id", "Chain ID")
-	InitCmd.Flags().StringSlice(FlagOption, []string{}, "Genesis option in the format <app>/<option>/<value>")
+	InitCmd.Flags().StringSliceP(FlagOption, "p", []string{}, "Genesis option in the format <app>/<option>/<value>")
 }
 
 // returns 1 iff it set a file, otherwise 0 (so we can add them)
@@ -67,22 +67,29 @@ func initCmd(cmd *cobra.Command, args []string) error {
 		return errors.New("Address must be 20-bytes in hex")
 	}
 
-	var options []string
 	var optionsStr string
-	sep := ",\n      "
 	optionsRaw := viper.GetStringSlice(FlagOption)
 	if len(optionsRaw) > 0 {
-		optionsStr = sep
+
+		var options []string
+		sep := ",\n      "
+
 		for i := 0; i < len(optionsRaw); i++ {
 			s := strings.SplitN(optionsRaw[i], "/", 3)
 			if len(s) != 3 {
 				return errors.New("Genesis option must be in the format <app>/<option>/<value>")
 			}
-			option := `"` + s[0] + `/` + s[1] + `", "` + s[2] + `"`
+
+			//Add quotes if the value (s[2]) is not json
+			if !strings.Contains(s[2], "\"") {
+				s[2] = `"` + s[2] + `"`
+			}
+
+			option := `"` + s[0] + `/` + s[1] + `", ` + s[2]
 			options = append(options, option)
 		}
+		optionsStr = sep + strings.Join(options[:], sep)
 	}
-	optionsStr += strings.Join(options[:], sep)
 
 	genesis := GetGenesisJSON(viper.GetString(FlagChainID), userAddr, optionsStr)
 	return CreateGenesisValidatorFiles(cfg, genesis, cmd.Root().Name())
