@@ -3,7 +3,9 @@ GOTOOLS =	github.com/mitchellh/gox \
 			github.com/rigelrozanski/shelldown/cmd/shelldown
 TUTORIALS=$(shell find docs/guide -name "*md" -type f)
 
-EXAMPLES := counter
+EXAMPLES := counter eyes
+INSTALL_EXAMPLES := $(addprefix install_,${EXAMPLES})
+TEST_EXAMPLES := $(addprefix testex_,${EXAMPLES})
 
 LINKER_FLAGS:="-X github.com/tepleton/tepleton-sdk/client/commands.CommitHash=`git rev-parse --short HEAD`"
 
@@ -12,11 +14,14 @@ all: get_vendor_deps install test
 build:
 	@go build ./cmd/...
 
-install:
+$(INSTALL_EXAMPLES): install_%:
+	cd ./examples/$* && make install
+
+$(TEST_EXAMPLES): testex_%:
+	cd ./examples/$* && make test_cli
+
+install: $(INSTALL_EXAMPLES)
 	@go install -ldflags $(LINKER_FLAGS) ./cmd/...
-	@for EX in $(EXAMPLES); do \
-		go install -ldflags $(LINKER_FLAGS) ./examples/$$EX/cmd/...; \
-	done
 
 dist:
 	@bash publish/dist.sh
@@ -30,34 +35,24 @@ test: test_unit test_cli
 
 test_unit:
 	@go test `glide novendor`
-	#go run tests/tepleton/*.go
 
-test_cli: tests/cli/shunit2
+test_cli: $(TEST_EXAMPLES)
 	# sudo apt-get install jq
+	# wget "https://raw.githubusercontent.com/kward/shunit2/master/source/2.1/src/shunit2"
 	./tests/cli/keys.sh
 	./tests/cli/rpc.sh
 	./tests/cli/init.sh
 	./tests/cli/basictx.sh
-	./tests/cli/eyes.sh
 	./tests/cli/roles.sh
-	./tests/cli/counter.sh
 	./tests/cli/restart.sh
 	./tests/cli/rest.sh
 	./tests/cli/ibc.sh
 
-test_tutorial: docs/guide/shunit2
+test_tutorial:
 	@shelldown ${TUTORIALS}
 	@for script in docs/guide/*.sh ; do \
 		bash $$script ; \
 	done
-
-tests/cli/shunit2:
-	@wget "https://raw.githubusercontent.com/kward/shunit2/master/source/2.1/src/shunit2" \
-    	-q -O tests/cli/shunit2
-
-docs/guide/shunit2:
-	@wget "https://raw.githubusercontent.com/kward/shunit2/master/source/2.1/src/shunit2" \
-    	-q -O docs/guide/shunit2
 
 get_vendor_deps: tools
 	@glide install
