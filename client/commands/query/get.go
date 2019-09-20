@@ -11,6 +11,7 @@ import (
 	wire "github.com/tepleton/go-wire"
 	"github.com/tepleton/go-wire/data"
 	lc "github.com/tepleton/light-client"
+	"github.com/tepleton/light-client/certifiers"
 	"github.com/tepleton/light-client/proofs"
 	"github.com/tepleton/merkleeyes/iavl"
 	"github.com/tepleton/tepleton/rpc/client"
@@ -51,64 +52,85 @@ func Get(key []byte, prove bool) (data.Bytes, uint64, error) {
 		resp, err := node.WRSPQuery("/key", key, false)
 		return data.Bytes(resp.Value), resp.Height, err
 	}
-	val, h, _, err := GetWithProof(key)
+	val, h, _, _, err := GetWithProof(key)
 	return val, h, err
 }
 
 // GetWithProof returns the values stored under a given key at the named
 // height as in Get.  Additionally, it will return a validated merkle
 // proof for the key-value pair if it exists, and all checks pass.
-func GetWithProof(key []byte) (data.Bytes, uint64, *iavl.KeyExistsProof, error) {
+func GetWithProof(key []byte) (data.Bytes, uint64,
+	*iavl.KeyExistsProof, *iavl.KeyNotExistsProof, error) {
+
 	node := commands.GetNode()
+	cert, err := commands.GetCertifier()
+	if err != nil {
+		return nil, 0, nil, nil, err
+	}
+	return getWithProof(key, node, cert)
+}
+
+func getWithProof(key []byte, node client.Client, cert certifiers.Certifier) (data.Bytes, uint64,
+	*iavl.KeyExistsProof, *iavl.KeyNotExistsProof, error) {
 
 	resp, err := node.WRSPQuery("/key", key, true)
 	if err != nil {
-		return nil, 0, nil, err
+		return nil, 0, nil, nil, err
 	}
-	ph := int(resp.Height)
 
 	// make sure the proof is the proper height
 	if !resp.Code.IsOK() {
-		return nil, 0, nil, errors.Errorf("Query error %d: %s", resp.Code, resp.Code.String())
+		return nil, 0, nil, nil, errors.Errorf("Query error %d: %s", resp.Code, resp.Code.String())
 	}
-	// TODO: Handle null proofs
-	if len(resp.Key) == 0 || len(resp.Value) == 0 || len(resp.Proof) == 0 {
-		return nil, 0, nil, lc.ErrNoData()
+	if len(resp.Key) == 0 || len(resp.Proof) == 0 {
+		return nil, 0, nil, nil, lc.ErrNoData()
 	}
-	if ph != 0 && ph != int(resp.Height) {
-		return nil, 0, nil, lc.ErrHeightMismatch(ph, int(resp.Height))
+	if resp.Height == 0 {
+		return nil, 0, nil, nil, errors.New("Height returned is zero")
 	}
 
-	check, err := GetCertifiedCheckpoint(ph)
+	check, err := GetCertifiedCheckpoint(int(resp.Height), node, cert)
 	if err != nil {
-		return nil, 0, nil, err
+		return nil, 0, nil, nil, err
 	}
 
-	proof := new(iavl.KeyExistsProof)
+	if len(resp.Value) > 0 {
+		// The key was found, construct a proof of existence.
+		proof := new(iavl.KeyExistsProof)
+		err = wire.ReadBinaryBytes(resp.Proof, &proof)
+		if err != nil {
+			return nil, 0, nil, nil, err
+		}
+
+		// validate the proof against the certified header to ensure data integrity
+		err = proof.Verify(resp.Key, resp.Value, check.Header.AppHash)
+		if err != nil {
+			return nil, 0, nil, nil, err
+		}
+
+		return data.Bytes(resp.Value), resp.Height, proof, nil, nil
+	}
+
+	// The key wasn't found, construct a proof of non-existence.
+	proof := new(iavl.KeyNotExistsProof)
 	err = wire.ReadBinaryBytes(resp.Proof, &proof)
 	if err != nil {
-		return nil, 0, nil, err
+		return nil, 0, nil, nil, err
 	}
 
 	// validate the proof against the certified header to ensure data integrity
-	err = proof.Verify(resp.Key, resp.Value, check.Header.AppHash)
+	err = proof.Verify(resp.Key, check.Header.AppHash)
 	if err != nil {
-		return nil, 0, nil, err
+		return nil, 0, nil, nil, err
 	}
 
-	return data.Bytes(resp.Value), resp.Height, proof, nil
+	return nil, resp.Height, nil, proof, lc.ErrNoData()
 }
 
 // GetCertifiedCheckpoint gets the signed header for a given height
 // and certifies it.  Returns error if unable to get a proven header.
-func GetCertifiedCheckpoint(h int) (empty lc.Checkpoint, err error) {
-	// here is the certifier, root of all trust
-	node := commands.GetNode()
-	cert, err := commands.GetCertifier()
-	if err != nil {
-		return
-	}
-
+func GetCertifiedCheckpoint(h int, node client.Client,
+	cert certifiers.Certifier) (empty lc.Checkpoint, err error) {
 	// get the checkpoint for this height
 
 	// FIXME: cannot use cert.GetByHeight for now, as it also requires

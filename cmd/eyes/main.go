@@ -8,7 +8,7 @@ import (
 	"github.com/tepleton/basecoin"
 	"github.com/tepleton/basecoin/cmd/basecoin/commands"
 	"github.com/tepleton/basecoin/modules/base"
-	"github.com/tepleton/basecoin/modules/etc"
+	"github.com/tepleton/basecoin/modules/eyes"
 	"github.com/tepleton/basecoin/stack"
 )
 
@@ -20,7 +20,7 @@ func BuildApp() basecoin.Handler {
 	).
 		// We do this to demo real usage, also embeds it under it's own namespace
 		Dispatch(
-			stack.WrapHandler(etc.NewHandler()),
+			stack.WrapHandler(eyes.NewHandler()),
 		)
 }
 

@@ -15,7 +15,7 @@ import (
 	rpccmd "github.com/tepleton/basecoin/client/commands/rpc"
 	"github.com/tepleton/basecoin/client/commands/seeds"
 	txcmd "github.com/tepleton/basecoin/client/commands/txs"
-	etccmd "github.com/tepleton/basecoin/modules/etc/commands"
+	eyescmd "github.com/tepleton/basecoin/modules/eyes/commands"
 )
 
 // EyesCli - main basecoin client command
@@ -34,7 +34,7 @@ func main() {
 		query.TxQueryCmd,
 		query.KeyQueryCmd,
 		// this is our custom parser
-		etccmd.EtcQueryCmd,
+		eyescmd.EyesQueryCmd,
 	)
 
 	// no middleware wrapers
@@ -43,8 +43,8 @@ func main() {
 
 	// just the etc commands
 	txcmd.RootCmd.AddCommand(
-		etccmd.SetTxCmd,
-		etccmd.RemoveTxCmd,
+		eyescmd.SetTxCmd,
+		eyescmd.RemoveTxCmd,
 	)
 
 	// Set up the various commands to use
