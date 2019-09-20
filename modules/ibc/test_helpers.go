@@ -1,4 +1,4 @@
-package abi
+package ibc
 
 import (
 	"fmt"
@@ -12,8 +12,8 @@ import (
 	"github.com/tepleton/basecoin/state"
 )
 
-// MockChain is used to simulate a chain for abi tests.
-// It is able to produce abi packets and all verification for
+// MockChain is used to simulate a chain for ibc tests.
+// It is able to produce ibc packets and all verification for
 // them, but cannot respond to any responses.
 type MockChain struct {
 	keys    certifiers.ValKeys

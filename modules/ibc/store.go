@@ -1,4 +1,4 @@
-package abi
+package ibc
 
 import (
 	"github.com/tepleton/basecoin"
@@ -7,7 +7,7 @@ import (
 	wire "github.com/tepleton/go-wire"
 )
 
-// HandlerInfo is the global state of the abi.Handler
+// HandlerInfo is the global state of the ibc.Handler
 type HandlerInfo struct {
 	Registrar basecoin.Actor `json:"registrar"`
 }

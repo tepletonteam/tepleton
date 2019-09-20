@@ -14,7 +14,7 @@ import (
 type middleware struct {
 	middleware Middleware
 	space      string
-	allowABI   bool
+	allowIBC   bool
 	next       basecoin.Handler
 }
 
@@ -25,8 +25,8 @@ func (m *middleware) Name() string {
 }
 
 func (m *middleware) wrapCtx(ctx basecoin.Context) basecoin.Context {
-	if m.allowABI {
-		return withABI(ctx)
+	if m.allowIBC {
+		return withIBC(ctx)
 	}
 	return withApp(ctx, m.space)
 }
@@ -71,14 +71,14 @@ func (m *middleware) InitValidate(l log.Logger, store state.SimpleDB, vals []*wr
 type builder struct {
 	middleware Middleware
 	stateSpace string
-	allowABI   bool
+	allowIBC   bool
 }
 
-func prep(m Middleware, abi bool) builder {
+func prep(m Middleware, ibc bool) builder {
 	return builder{
 		middleware: m,
 		stateSpace: m.Name(),
-		allowABI:   abi,
+		allowIBC:   ibc,
 	}
 }
 
@@ -87,7 +87,7 @@ func (b builder) wrap(next basecoin.Handler) basecoin.Handler {
 	return &middleware{
 		middleware: b.middleware,
 		space:      b.stateSpace,
-		allowABI:   b.allowABI,
+		allowIBC:   b.allowIBC,
 		next:       next,
 	}
 }
@@ -118,9 +118,9 @@ func (s *Stack) Apps(middlewares ...Middleware) *Stack {
 	return s
 }
 
-// ABI add the following middleware with permission to add cross-chain
+// IBC add the following middleware with permission to add cross-chain
 // permissions
-func (s *Stack) ABI(m Middleware) *Stack {
+func (s *Stack) IBC(m Middleware) *Stack {
 	// TODO: some wrapper...
 	s.middles = append(s.middles, prep(m, true))
 	return s

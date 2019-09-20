@@ -13,7 +13,7 @@ import (
 	"github.com/tepleton/basecoin/modules/base"
 	"github.com/tepleton/basecoin/modules/coin"
 	"github.com/tepleton/basecoin/modules/fee"
-	"github.com/tepleton/basecoin/modules/abi"
+	"github.com/tepleton/basecoin/modules/ibc"
 	"github.com/tepleton/basecoin/modules/nonce"
 	"github.com/tepleton/basecoin/modules/roles"
 	"github.com/tepleton/basecoin/stack"
@@ -22,11 +22,11 @@ import (
 	"github.com/tepleton/tmlibs/log"
 )
 
-// DefaultHandler for the tests (coin, roles, abi)
+// DefaultHandler for the tests (coin, roles, ibc)
 func DefaultHandler(feeDenom string) basecoin.Handler {
 	// use the default stack
 	r := roles.NewHandler()
-	i := abi.NewHandler()
+	i := ibc.NewHandler()
 
 	return stack.New(
 		base.Logger{},
@@ -36,7 +36,7 @@ func DefaultHandler(feeDenom string) basecoin.Handler {
 		stack.Checkpoint{OnCheck: true},
 		nonce.ReplayCheck{},
 	).
-		ABI(abi.NewMiddleware()).
+		IBC(ibc.NewMiddleware()).
 		Apps(
 			roles.NewMiddleware(),
 			fee.NewSimpleFeeMiddleware(coin.Coin{feeDenom, 0}, fee.Bank),

@@ -9,7 +9,7 @@ import (
 
 	"github.com/tepleton/basecoin/client/commands"
 	proofcmd "github.com/tepleton/basecoin/client/commands/proofs"
-	"github.com/tepleton/basecoin/modules/abi"
+	"github.com/tepleton/basecoin/modules/ibc"
 	"github.com/tepleton/basecoin/stack"
 	"github.com/tepleton/go-wire/data"
 	"github.com/tepleton/light-client/proofs"
@@ -18,11 +18,11 @@ import (
 
 // TODO: query seeds (register/update)
 
-// ABIQueryCmd - parent command to query abi info
-var ABIQueryCmd = &cobra.Command{
-	Use:   "abi",
-	Short: "Get information about ABI",
-	RunE:  commands.RequireInit(abiQueryCmd),
+// IBCQueryCmd - parent command to query ibc info
+var IBCQueryCmd = &cobra.Command{
+	Use:   "ibc",
+	Short: "Get information about IBC",
+	RunE:  commands.RequireInit(ibcQueryCmd),
 	// HandlerInfo
 }
 
@@ -66,7 +66,7 @@ const (
 )
 
 func init() {
-	ABIQueryCmd.AddCommand(
+	IBCQueryCmd.AddCommand(
 		ChainQueryCmd,
 		ChainsQueryCmd,
 		PacketQueryCmd,
@@ -83,9 +83,9 @@ func init() {
 	fs2.Int(FlagSequence, -1, "Index of the packet in the queue (starts with 0)")
 }
 
-func abiQueryCmd(cmd *cobra.Command, args []string) error {
-	var res abi.HandlerInfo
-	key := stack.PrefixedKey(abi.NameABI, abi.HandlerKey())
+func ibcQueryCmd(cmd *cobra.Command, args []string) error {
+	var res ibc.HandlerInfo
+	key := stack.PrefixedKey(ibc.NameIBC, ibc.HandlerKey())
 	proof, err := proofcmd.GetAndParseAppProof(key, &res)
 	if err != nil {
 		return err
@@ -95,7 +95,7 @@ func abiQueryCmd(cmd *cobra.Command, args []string) error {
 
 func chainsQueryCmd(cmd *cobra.Command, args []string) error {
 	list := [][]byte{}
-	key := stack.PrefixedKey(abi.NameABI, abi.ChainsKey())
+	key := stack.PrefixedKey(ibc.NameIBC, ibc.ChainsKey())
 	proof, err := proofcmd.GetAndParseAppProof(key, &list)
 	if err != nil {
 		return err
@@ -116,8 +116,8 @@ func chainQueryCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	var res abi.ChainInfo
-	key := stack.PrefixedKey(abi.NameABI, abi.ChainKey(arg))
+	var res ibc.ChainInfo
+	key := stack.PrefixedKey(ibc.NameIBC, ibc.ChainKey(arg))
 	proof, err := proofcmd.GetAndParseAppProof(key, &res)
 	if err != nil {
 		return err
@@ -148,9 +148,9 @@ func packetsQueryCmd(cmd *cobra.Command, args []string) error {
 
 	var key []byte
 	if from != "" {
-		key = stack.PrefixedKey(abi.NameABI, abi.QueueInKey(from))
+		key = stack.PrefixedKey(ibc.NameIBC, ibc.QueueInKey(from))
 	} else {
-		key = stack.PrefixedKey(abi.NameABI, abi.QueueOutKey(to))
+		key = stack.PrefixedKey(ibc.NameIBC, ibc.QueueOutKey(to))
 	}
 
 	var res uint64
@@ -177,14 +177,14 @@ func packetQueryCmd(cmd *cobra.Command, args []string) error {
 
 	var key []byte
 	if from != "" {
-		key = stack.PrefixedKey(abi.NameABI, abi.QueueInPacketKey(from, uint64(seq)))
+		key = stack.PrefixedKey(ibc.NameIBC, ibc.QueueInPacketKey(from, uint64(seq)))
 	} else {
-		key = stack.PrefixedKey(abi.NameABI, abi.QueueOutPacketKey(to, uint64(seq)))
+		key = stack.PrefixedKey(ibc.NameIBC, ibc.QueueOutPacketKey(to, uint64(seq)))
 	}
 
 	// Input queue just display the results
 	if from != "" {
-		var packet abi.Packet
+		var packet ibc.Packet
 		proof, err := proofcmd.GetAndParseAppProof(key, &packet)
 		if err != nil {
 			return err
@@ -193,7 +193,7 @@ func packetQueryCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// output queue, create a post packet
-	var packet abi.Packet
+	var packet ibc.Packet
 	proof, err := proofcmd.GetAndParseAppProof(key, &packet)
 	if err != nil {
 		return err
@@ -208,7 +208,7 @@ func packetQueryCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// create the post packet here.
-	post := abi.PostPacketTx{
+	post := ibc.PostPacketTx{
 		FromChainID:     commands.GetChainID(),
 		FromChainHeight: proof.BlockHeight(),
 		Key:             key,

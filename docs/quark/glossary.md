@@ -163,7 +163,7 @@ then each tx is handled by the appropriate module.
 
 We usually will want to have multiple modules working together, and need to
 make sure the correct transactions get to the correct module. So we have have
-`coin` sending money, `roles` creating multi-sig accounts, and `abi` following
+`coin` sending money, `roles` creating multi-sig accounts, and `ibc` following
 other chains all working together without interference.
 
 After the chain of middleware, we can register a `Dispatcher`, which also
@@ -233,9 +233,9 @@ type Actor struct {
 Here, the `Actor` abstracts any address that can authorize actions, hold funds,
 or initiate any sort of transaction. It doesn't just have to be a pubkey on
 this chain, it could stem from another app (such as multi-sig account), or even
-another chain (via ABI)
+another chain (via IBC)
 
-`ChainID` is to be used for ABI, which is discussed below, but right now focus
+`ChainID` is to be used for IBC, which is discussed below, but right now focus
 on `App` and `Address`.  For a signature, the App is `auth`, and any modules
 can check to see if a specific public key address signed like this
 `ctx.HasPermission(auth.SigPerm(addr))`.  However, we can also authorize a tx
@@ -295,6 +295,6 @@ this can be achieved using separate modules in a stack, one to send the coins
 and the other to charge the fee, however both modules do not need to check the
 nonce. This can occur as a separate module earlier in the stack.
 
-## ABI (Inter-Blockchain Communication)
+## IBC (Inter-Blockchain Communication)
 
 Wow, this is a big topic.  Also a WIP.  Add more here...

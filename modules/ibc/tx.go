@@ -1,4 +1,4 @@
-package abi
+package ibc
 
 import (
 	"github.com/tepleton/go-wire/data"
@@ -10,16 +10,16 @@ import (
 
 // nolint
 const (
-	// 0x3? series for abi
+	// 0x3? series for ibc
 	ByteRegisterChain = byte(0x30)
 	ByteUpdateChain   = byte(0x31)
 	ByteCreatePacket  = byte(0x32)
 	BytePostPacket    = byte(0x33)
 
-	TypeRegisterChain = NameABI + "/register"
-	TypeUpdateChain   = NameABI + "/update"
-	TypeCreatePacket  = NameABI + "/create"
-	TypePostPacket    = NameABI + "/post"
+	TypeRegisterChain = NameIBC + "/register"
+	TypeUpdateChain   = NameIBC + "/update"
+	TypeCreatePacket  = NameIBC + "/create"
+	TypePostPacket    = NameIBC + "/post"
 )
 
 func init() {
@@ -83,7 +83,7 @@ func (u UpdateChainTx) Wrap() basecoin.Tx {
 // this is the tx that will be sent to another app and the permissions it
 // comes with (which must be a subset of the permissions on the current tx)
 //
-// If must have the special `AllowABI` permission from the app
+// If must have the special `AllowIBC` permission from the app
 // that can send this packet (so only coins can request SendTx packet)
 type CreatePacketTx struct {
 	DestChain   string          `json:"dest_chain"`

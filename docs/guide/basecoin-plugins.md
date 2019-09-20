@@ -253,6 +253,6 @@ plugins](https://github.com/tepleton/basecoin-examples).
 In this guide, we demonstrated how to create a new plugin and how to extend the
 `basecoin` tool to start a blockchain with the plugin enabled and send
 transactions to it.  In the next guide, we introduce a [plugin for Inter
-Blockchain Communication](abi.md), which allows us to publish proofs of the
+Blockchain Communication](ibc.md), which allows us to publish proofs of the
 state of one blockchain to another, and thus to transfer tokens and data
 between them.

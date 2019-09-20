@@ -1,4 +1,4 @@
-package abi
+package ibc
 
 import (
 	"fmt"
@@ -12,54 +12,54 @@ var (
 	errChainNotRegistered  = fmt.Errorf("Chain not registered")
 	errChainAlreadyExists  = fmt.Errorf("Chain already exists")
 	errWrongDestChain      = fmt.Errorf("This is not the destination")
-	errNeedsABIPermission  = fmt.Errorf("Needs app-permission to send ABI")
-	errCannotSetPermission = fmt.Errorf("Requesting invalid permission on ABI")
+	errNeedsIBCPermission  = fmt.Errorf("Needs app-permission to send IBC")
+	errCannotSetPermission = fmt.Errorf("Requesting invalid permission on IBC")
 	errHeaderNotFound      = fmt.Errorf("Header not found")
 	errPacketAlreadyExists = fmt.Errorf("Packet already handled")
 	errPacketOutOfOrder    = fmt.Errorf("Packet out of order")
 	errInvalidProof        = fmt.Errorf("Invalid merkle proof")
 	msgInvalidCommit       = "Invalid header and commit"
 
-	ABICodeChainNotRegistered    = wrsp.CodeType(1001)
-	ABICodeChainAlreadyExists    = wrsp.CodeType(1002)
-	ABICodeUnknownChain          = wrsp.CodeType(1003)
-	ABICodeInvalidPacketSequence = wrsp.CodeType(1004)
-	ABICodeUnknownHeight         = wrsp.CodeType(1005)
-	ABICodeInvalidCommit         = wrsp.CodeType(1006)
-	ABICodeInvalidProof          = wrsp.CodeType(1007)
-	ABICodeInvalidCall           = wrsp.CodeType(1008)
+	IBCCodeChainNotRegistered    = wrsp.CodeType(1001)
+	IBCCodeChainAlreadyExists    = wrsp.CodeType(1002)
+	IBCCodeUnknownChain          = wrsp.CodeType(1003)
+	IBCCodeInvalidPacketSequence = wrsp.CodeType(1004)
+	IBCCodeUnknownHeight         = wrsp.CodeType(1005)
+	IBCCodeInvalidCommit         = wrsp.CodeType(1006)
+	IBCCodeInvalidProof          = wrsp.CodeType(1007)
+	IBCCodeInvalidCall           = wrsp.CodeType(1008)
 )
 
 func ErrNotRegistered(chainID string) error {
-	return errors.WithMessage(chainID, errChainNotRegistered, ABICodeChainNotRegistered)
+	return errors.WithMessage(chainID, errChainNotRegistered, IBCCodeChainNotRegistered)
 }
 func IsNotRegisteredErr(err error) bool {
 	return errors.IsSameError(errChainNotRegistered, err)
 }
 
 func ErrAlreadyRegistered(chainID string) error {
-	return errors.WithMessage(chainID, errChainAlreadyExists, ABICodeChainAlreadyExists)
+	return errors.WithMessage(chainID, errChainAlreadyExists, IBCCodeChainAlreadyExists)
 }
 func IsAlreadyRegisteredErr(err error) bool {
 	return errors.IsSameError(errChainAlreadyExists, err)
 }
 
 func ErrWrongDestChain(chainID string) error {
-	return errors.WithMessage(chainID, errWrongDestChain, ABICodeUnknownChain)
+	return errors.WithMessage(chainID, errWrongDestChain, IBCCodeUnknownChain)
 }
 func IsWrongDestChainErr(err error) bool {
 	return errors.IsSameError(errWrongDestChain, err)
 }
 
-func ErrNeedsABIPermission() error {
-	return errors.WithCode(errNeedsABIPermission, ABICodeInvalidCall)
+func ErrNeedsIBCPermission() error {
+	return errors.WithCode(errNeedsIBCPermission, IBCCodeInvalidCall)
 }
-func IsNeedsABIPermissionErr(err error) bool {
-	return errors.IsSameError(errNeedsABIPermission, err)
+func IsNeedsIBCPermissionErr(err error) bool {
+	return errors.IsSameError(errNeedsIBCPermission, err)
 }
 
 func ErrCannotSetPermission() error {
-	return errors.WithCode(errCannotSetPermission, ABICodeInvalidCall)
+	return errors.WithCode(errCannotSetPermission, IBCCodeInvalidCall)
 }
 func IsCannotSetPermissionErr(err error) bool {
 	return errors.IsSameError(errCannotSetPermission, err)
@@ -67,14 +67,14 @@ func IsCannotSetPermissionErr(err error) bool {
 
 func ErrHeaderNotFound(h int) error {
 	msg := fmt.Sprintf("height %d", h)
-	return errors.WithMessage(msg, errHeaderNotFound, ABICodeUnknownHeight)
+	return errors.WithMessage(msg, errHeaderNotFound, IBCCodeUnknownHeight)
 }
 func IsHeaderNotFoundErr(err error) bool {
 	return errors.IsSameError(errHeaderNotFound, err)
 }
 
 func ErrPacketAlreadyExists() error {
-	return errors.WithCode(errPacketAlreadyExists, ABICodeInvalidPacketSequence)
+	return errors.WithCode(errPacketAlreadyExists, IBCCodeInvalidPacketSequence)
 }
 func IsPacketAlreadyExistsErr(err error) bool {
 	return errors.IsSameError(errPacketAlreadyExists, err)
@@ -82,14 +82,14 @@ func IsPacketAlreadyExistsErr(err error) bool {
 
 func ErrPacketOutOfOrder(seq uint64) error {
 	msg := fmt.Sprintf("expected %d", seq)
-	return errors.WithMessage(msg, errPacketOutOfOrder, ABICodeInvalidPacketSequence)
+	return errors.WithMessage(msg, errPacketOutOfOrder, IBCCodeInvalidPacketSequence)
 }
 func IsPacketOutOfOrderErr(err error) bool {
 	return errors.IsSameError(errPacketOutOfOrder, err)
 }
 
 func ErrInvalidProof() error {
-	return errors.WithCode(errInvalidProof, ABICodeInvalidProof)
+	return errors.WithCode(errInvalidProof, IBCCodeInvalidProof)
 }
 func IsInvalidProofErr(err error) bool {
 	return errors.IsSameError(errInvalidProof, err)
@@ -99,8 +99,8 @@ func ErrInvalidCommit(err error) error {
 	if err == nil {
 		return nil
 	}
-	return errors.WithMessage(msgInvalidCommit, err, ABICodeInvalidCommit)
+	return errors.WithMessage(msgInvalidCommit, err, IBCCodeInvalidCommit)
 }
 func IsInvalidCommitErr(err error) bool {
-	return errors.HasErrorCode(err, ABICodeInvalidCommit)
+	return errors.HasErrorCode(err, IBCCodeInvalidCommit)
 }

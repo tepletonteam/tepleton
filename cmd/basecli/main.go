@@ -19,7 +19,7 @@ import (
 	basecmd "github.com/tepleton/basecoin/modules/base/commands"
 	coincmd "github.com/tepleton/basecoin/modules/coin/commands"
 	feecmd "github.com/tepleton/basecoin/modules/fee/commands"
-	abicmd "github.com/tepleton/basecoin/modules/abi/commands"
+	ibccmd "github.com/tepleton/basecoin/modules/ibc/commands"
 	noncecmd "github.com/tepleton/basecoin/modules/nonce/commands"
 	rolecmd "github.com/tepleton/basecoin/modules/roles/commands"
 )
@@ -47,7 +47,7 @@ func main() {
 		coincmd.AccountQueryCmd,
 		noncecmd.NonceQueryCmd,
 		rolecmd.RoleQueryCmd,
-		abicmd.ABIQueryCmd,
+		ibccmd.IBCQueryCmd,
 	)
 	proofs.TxPresenters.Register("base", txcmd.BaseTxPresenter{})
 
@@ -68,10 +68,10 @@ func main() {
 		coincmd.CreditTxCmd,
 		// this enables creating roles
 		rolecmd.CreateRoleTxCmd,
-		// these are for handling abi
-		abicmd.RegisterChainTxCmd,
-		abicmd.UpdateChainTxCmd,
-		abicmd.PostPacketTxCmd,
+		// these are for handling ibc
+		ibccmd.RegisterChainTxCmd,
+		ibccmd.UpdateChainTxCmd,
+		ibccmd.PostPacketTxCmd,
 	)
 
 	// Set up the various commands to use

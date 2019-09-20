@@ -8,7 +8,7 @@ import (
 	"github.com/tepleton/basecoin"
 	"github.com/tepleton/basecoin/errors"
 	"github.com/tepleton/basecoin/modules/auth"
-	"github.com/tepleton/basecoin/modules/abi"
+	"github.com/tepleton/basecoin/modules/ibc"
 	"github.com/tepleton/basecoin/stack"
 	"github.com/tepleton/basecoin/state"
 	wire "github.com/tepleton/go-wire"
@@ -18,7 +18,7 @@ import (
 
 // This makes sure we respond properly to posttx
 // TODO: set credit limit
-func TestABIPostPacket(t *testing.T) {
+func TestIBCPostPacket(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -28,15 +28,15 @@ func TestABIPostPacket(t *testing.T) {
 
 	// create the app and our chain
 	app := stack.New().
-		ABI(abi.NewMiddleware()).
+		IBC(ibc.NewMiddleware()).
 		Dispatch(
 			NewHandler(),
-			stack.WrapHandler(abi.NewHandler()),
+			stack.WrapHandler(ibc.NewHandler()),
 		)
-	ourChain := abi.NewAppChain(app, ourID)
+	ourChain := ibc.NewAppChain(app, ourID)
 
 	// set up the other chain and register it with us
-	otherChain := abi.NewMockChain(otherID, 7)
+	otherChain := ibc.NewMockChain(otherID, 7)
 	registerTx := otherChain.GetRegistrationTx(start).Wrap()
 	_, err := ourChain.DeliverTx(registerTx)
 	require.Nil(err, "%+v", err)
@@ -60,45 +60,45 @@ func TestABIPostPacket(t *testing.T) {
 	require.Equal(wealth, acct.Coins)
 
 	// make sure there is a proper packet for this....
-	istore := ourChain.GetStore(abi.NameABI)
+	istore := ourChain.GetStore(ibc.NameIBC)
 	assertPacket(t, istore, otherID, wealth)
 
-	// these are the people for testing incoming abi from the other chain
+	// these are the people for testing incoming ibc from the other chain
 	recipient := basecoin.Actor{ChainID: ourID, App: auth.NameSigs, Address: []byte("bar")}
 	sender := basecoin.Actor{ChainID: otherID, App: auth.NameSigs, Address: []byte("foo")}
 	payment := Coins{{"eth", 100}, {"ltc", 300}}
 	coinTx := NewSendOneTx(sender, recipient, payment)
 	wrongCoin := NewSendOneTx(sender, recipient, Coins{{"missing", 20}})
 
-	p0 := abi.NewPacket(coinTx, ourID, 0, sender)
+	p0 := ibc.NewPacket(coinTx, ourID, 0, sender)
 	packet0, update0 := otherChain.MakePostPacket(p0, start+5)
 	require.Nil(ourChain.Update(update0))
 
-	p1 := abi.NewPacket(coinTx, ourID, 1, sender)
+	p1 := ibc.NewPacket(coinTx, ourID, 1, sender)
 	packet1, update1 := otherChain.MakePostPacket(p1, start+25)
 	require.Nil(ourChain.Update(update1))
 
-	p2 := abi.NewPacket(wrongCoin, ourID, 2, sender)
+	p2 := ibc.NewPacket(wrongCoin, ourID, 2, sender)
 	packet2, update2 := otherChain.MakePostPacket(p2, start+50)
 	require.Nil(ourChain.Update(update2))
 
-	abiPerm := basecoin.Actors{abi.AllowABI(NameCoin)}
+	ibcPerm := basecoin.Actors{ibc.AllowIBC(NameCoin)}
 	cases := []struct {
-		packet      abi.PostPacketTx
+		packet      ibc.PostPacketTx
 		permissions basecoin.Actors
 		checker     errors.CheckErr
 	}{
 		// out of order -> error
-		{packet1, abiPerm, abi.IsPacketOutOfOrderErr},
+		{packet1, ibcPerm, ibc.IsPacketOutOfOrderErr},
 
 		// all good -> execute tx
-		{packet0, abiPerm, errors.NoErr},
+		{packet0, ibcPerm, errors.NoErr},
 
 		// all good -> execute tx (even if earlier attempt failed)
-		{packet1, abiPerm, errors.NoErr},
+		{packet1, ibcPerm, errors.NoErr},
 
 		// packet 2 attempts to spend money this chain doesn't have
-		{packet2, abiPerm, IsInsufficientFundsErr},
+		{packet2, ibcPerm, IsInsufficientFundsErr},
 	}
 
 	for i, tc := range cases {
@@ -121,13 +121,13 @@ func assertPacket(t *testing.T, istore state.SimpleDB, destID string, amount Coi
 	assert := assert.New(t)
 	require := require.New(t)
 
-	iq := abi.InputQueue(istore, destID)
+	iq := ibc.InputQueue(istore, destID)
 	require.Equal(0, iq.Size())
 
-	q := abi.OutputQueue(istore, destID)
+	q := ibc.OutputQueue(istore, destID)
 	require.Equal(1, q.Size())
 	d := q.Item(0)
-	var res abi.Packet
+	var res ibc.Packet
 	err := wire.ReadBinaryBytes(d, &res)
 	require.Nil(err, "%+v", err)
 	assert.Equal(destID, res.DestChain)

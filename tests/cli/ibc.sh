@@ -10,17 +10,17 @@ RICH=${ACCOUNTS[0]}
 POOR=${ACCOUNTS[4]}
 
 # For full stack traces in error output, run
-# BC_TRACE=1 ./abi.sh
+# BC_TRACE=1 ./ibc.sh
 
 oneTimeSetUp() {
     # These are passed in as args
-    BASE_DIR_1=$HOME/.basecoin_test_abi/chain1
+    BASE_DIR_1=$HOME/.basecoin_test_ibc/chain1
     CHAIN_ID_1=test-chain-1
     CLIENT_1=${BASE_DIR_1}/client
     PREFIX_1=1234
     PORT_1=${PREFIX_1}7
 
-    BASE_DIR_2=$HOME/.basecoin_test_abi/chain2
+    BASE_DIR_2=$HOME/.basecoin_test_ibc/chain2
     CHAIN_ID_2=test-chain-2
     CLIENT_2=${BASE_DIR_2}/client
     PREFIX_2=2345
@@ -94,7 +94,7 @@ test01RegisterChains() {
     assertTrue "line=${LINENO}, export seed failed" $?
 
     # register chain2 on chain1
-    TX=$(echo qwertyuiop | ${CLIENT_EXE} tx abi-register \
+    TX=$(echo qwertyuiop | ${CLIENT_EXE} tx ibc-register \
         --sequence=1 --seed=${ROOT_2} --name=$POOR --home=${CLIENT_1})
     txSucceeded $? "$TX" "register chain2 on chain 1"
     # an example to quit early if there is no point in more tests
@@ -103,7 +103,7 @@ test01RegisterChains() {
     REG_HEIGHT=$(echo $TX | jq .height)
 
     # register chain1 on chain2 (no money needed... yet)
-    TX=$(echo qwertyuiop | ${CLIENT_EXE} tx abi-register \
+    TX=$(echo qwertyuiop | ${CLIENT_EXE} tx ibc-register \
         --sequence=1 --seed=${ROOT_1} --name=$POOR --home=${CLIENT_2})
     txSucceeded $? "$TX" "register chain1 on chain 2"
     # an example to quit early if there is no point in more tests
@@ -129,34 +129,34 @@ test02UpdateChains() {
     UPDATE_2_HEIGHT=$(cat $UPDATE_2 | jq .checkpoint.header.height)
 
     # update chain2 on chain1
-    TX=$(echo qwertyuiop | ${CLIENT_EXE} tx abi-update \
+    TX=$(echo qwertyuiop | ${CLIENT_EXE} tx ibc-update \
         --sequence=2 --seed=${UPDATE_2} --name=$POOR --home=${CLIENT_1})
     txSucceeded $? "$TX" "update chain2 on chain 1"
     # an example to quit early if there is no point in more tests
     if [ $? != 0 ]; then echo "aborting!"; return 1; fi
 
     # update chain1 on chain2 (no money needed... yet)
-    TX=$(echo qwertyuiop | ${CLIENT_EXE} tx abi-update \
+    TX=$(echo qwertyuiop | ${CLIENT_EXE} tx ibc-update \
         --sequence=2 --seed=${UPDATE_1} --name=$POOR --home=${CLIENT_2})
     txSucceeded $? "$TX" "update chain1 on chain 2"
     # an example to quit early if there is no point in more tests
     if [ $? != 0 ]; then echo "aborting!"; return 1; fi
 }
 
-# make sure all query commands about abi work...
-test03QueryABI() {
+# make sure all query commands about ibc work...
+test03QueryIBC() {
     # just test on one chain, as they are all symetrical
     export BC_HOME=${CLIENT_1}
 
     # make sure we can list all chains
-    CHAINS=$(${CLIENT_EXE} query abi chains)
+    CHAINS=$(${CLIENT_EXE} query ibc chains)
     assertTrue "line=${LINENO}, cannot query chains" $?
     assertEquals "1" $(echo $CHAINS | jq '.data | length')
     assertEquals "line=${LINENO}" "\"$CHAIN_ID_2\"" $(echo $CHAINS | jq '.data[0]')
 
     # error on unknown chain, data on proper chain
-    assertFalse "line=${LINENO}, unknown chain" "${CLIENT_EXE} query abi chain random 2>/dev/null"
-    CHAIN_INFO=$(${CLIENT_EXE} query abi chain $CHAIN_ID_2)
+    assertFalse "line=${LINENO}, unknown chain" "${CLIENT_EXE} query ibc chain random 2>/dev/null"
+    CHAIN_INFO=$(${CLIENT_EXE} query ibc chain $CHAIN_ID_2)
     assertTrue "line=${LINENO}, cannot query chain $CHAIN_ID_2" $?
     assertEquals "line=${LINENO}, register height" $REG_HEIGHT $(echo $CHAIN_INFO | jq .data.registered_at)
     assertEquals "line=${LINENO}, tracked height" $UPDATE_2_HEIGHT $(echo $CHAIN_INFO | jq .data.remote_block)
@@ -164,11 +164,11 @@ test03QueryABI() {
 
 # Trigger a cross-chain sendTx... from RICH on chain1 to POOR on chain2
 #   we make sure the money was reduced, but nothing arrived
-test04SendABIPacket() {
+test04SendIBCPacket() {
     export BC_HOME=${CLIENT_1}
 
     # make sure there are no packets yet
-    PACKETS=$(${CLIENT_EXE} query abi packets --to=$CHAIN_ID_2 2>/dev/null)
+    PACKETS=$(${CLIENT_EXE} query ibc packets --to=$CHAIN_ID_2 2>/dev/null)
     assertFalse "line=${LINENO}, packet query" $?
 
     SENDER=$(getAddr $RICH)
@@ -188,24 +188,24 @@ test04SendABIPacket() {
     checkSendTx $HASH $TX_HEIGHT $SENDER "20002"
 
     # look, we wrote a packet
-    PACKETS=$(${CLIENT_EXE} query abi packets --to=$CHAIN_ID_2)
+    PACKETS=$(${CLIENT_EXE} query ibc packets --to=$CHAIN_ID_2)
     assertTrue "line=${LINENO}, packets query" $?
     assertEquals "line=${LINENO}, packet count" 1 $(echo $PACKETS | jq .data)
 
     # and look at the packet itself
-    PACKET=$(${CLIENT_EXE} query abi packet --to=$CHAIN_ID_2 --sequence=0)
+    PACKET=$(${CLIENT_EXE} query ibc packet --to=$CHAIN_ID_2 --sequence=0)
     assertTrue "line=${LINENO}, packet query" $?
     assertEquals "line=${LINENO}, proper src" "\"$CHAIN_ID_1\"" $(echo $PACKET | jq .src_chain)
     assertEquals "line=${LINENO}, proper dest" "\"$CHAIN_ID_2\"" $(echo $PACKET | jq .packet.dest_chain)
     assertEquals "line=${LINENO}, proper sequence" "0" $(echo $PACKET | jq .packet.sequence)
 
     # nothing arrived
-    ARRIVED=$(${CLIENT_EXE} query abi packets --from=$CHAIN_ID_1 --home=$CLIENT_2 2>/dev/null)
+    ARRIVED=$(${CLIENT_EXE} query ibc packets --from=$CHAIN_ID_1 --home=$CLIENT_2 2>/dev/null)
     assertFalse "line=${LINENO}, packet query" $?
     assertFalse "line=${LINENO}, no relay running" "BC_HOME=${CLIENT_2} ${CLIENT_EXE} query account $RECV"
 }
 
-test05ReceiveABIPacket() {
+test05ReceiveIBCPacket() {
     export BC_HOME=${CLIENT_2}
 
     # make some credit, so we can accept the packet
@@ -227,7 +227,7 @@ test05ReceiveABIPacket() {
     # echo "**** SEED ****"
     # cat $PACKET_SEED | jq .
 
-    TX=$(echo qwertyuiop | ${CLIENT_EXE} tx abi-update \
+    TX=$(echo qwertyuiop | ${CLIENT_EXE} tx ibc-update \
         --seed=${PACKET_SEED} --name=$POOR)
     txSucceeded $? "$TX" "prepare packet chain1 on chain 2"
     # an example to quit early if there is no point in more tests
@@ -240,14 +240,14 @@ test05ReceiveABIPacket() {
     # cat $POST_PACKET | jq .
 
     # post it as a tx (cross-fingers)
-    TX=$(echo qwertyuiop | ${CLIENT_EXE} tx abi-post \
+    TX=$(echo qwertyuiop | ${CLIENT_EXE} tx ibc-post \
         --packet=${POST_PACKET} --name=$POOR)
     txSucceeded $? "$TX" "post packet from chain1 on chain 2"
 
     # TODO: more queries on stuff...
 
     # look, we wrote a packet
-    PACKETS=$(${CLIENT_EXE} query abi packets --from=$CHAIN_ID_1)
+    PACKETS=$(${CLIENT_EXE} query ibc packets --from=$CHAIN_ID_1)
     assertTrue "line=${LINENO}, packets query" $?
     assertEquals "line=${LINENO}, packet count" 1 $(echo $PACKETS | jq .data)
 }
@@ -262,7 +262,7 @@ assertNewHeight() {
     return $?
 }
 
-# test01SendABITx() {
+# test01SendIBCTx() {
 #     # Trigger a cross-chain sendTx... from RICH on chain1 to POOR on chain2
 #     #   we make sure the money was reduced, but nothing arrived
 #     SENDER=$(BC_HOME=${CLIENT_1} getAddr $RICH)
@@ -298,7 +298,7 @@ assertNewHeight() {
 #     waitForBlock ${PORT_2}
 
 #     # Check the new account
-#     echo "checking abi recipient..."
+#     echo "checking ibc recipient..."
 #     BC_HOME=${CLIENT_2} checkAccount $RECV "0" "20002"
 
 #     # Stop relay

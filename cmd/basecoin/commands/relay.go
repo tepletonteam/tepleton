@@ -17,7 +17,7 @@ package commands
 // 	"github.com/tepleton/merkleeyes/iavl"
 // 	cmn "github.com/tepleton/tmlibs/common"
 
-// 	"github.com/tepleton/basecoin/plugins/abi"
+// 	"github.com/tepleton/basecoin/plugins/ibc"
 // 	"github.com/tepleton/basecoin/types"
 // 	"github.com/tepleton/tepleton/rpc/client"
 // 	tmtypes "github.com/tepleton/tepleton/types"
@@ -25,12 +25,12 @@ package commands
 
 // var RelayCmd = &cobra.Command{
 // 	Use:   "relay",
-// 	Short: "Relay abi packets between two chains",
+// 	Short: "Relay ibc packets between two chains",
 // }
 
 // var RelayStartCmd = &cobra.Command{
 // 	Use:   "start",
-// 	Short: "Start basecoin relayer to relay ABI packets between chains",
+// 	Short: "Start basecoin relayer to relay IBC packets between chains",
 // 	RunE:  relayStartCmd,
 // }
 
@@ -99,8 +99,8 @@ package commands
 // 		return errors.Errorf("Error reading genesis file %v: %v\n", registerGenesis, err)
 // 	}
 
-// 	abiTx := abi.ABIRegisterChainTx{
-// 		abi.BlockchainGenesis{
+// 	ibcTx := ibc.IBCRegisterChainTx{
+// 		ibc.BlockchainGenesis{
 // 			ChainID: registerChainID,
 // 			Genesis: string(genesisBytes),
 // 		},
@@ -111,7 +111,7 @@ package commands
 // 		return err
 // 	}
 // 	relay := newRelayer(privKey, chainID, node)
-// 	return relay.appTx(abiTx)
+// 	return relay.appTx(ibcTx)
 // }
 
 // func loop(addr1, addr2, id1, id2 string) {
@@ -136,8 +136,8 @@ package commands
 
 // 		time.Sleep(time.Second)
 
-// 		// get the latest abi packet sequence number
-// 		key := fmt.Sprintf("abi,egress,%v,%v", id1, id2)
+// 		// get the latest ibc packet sequence number
+// 		key := fmt.Sprintf("ibc,egress,%v,%v", id1, id2)
 // 		query, err := queryWithClient(httpClient, []byte(key))
 // 		if err != nil {
 // 			logger.Error("Error querying for latest sequence", "key", key, "error", err.Error())
@@ -161,14 +161,14 @@ package commands
 
 // 		// get all packets since the last one we relayed
 // 		for ; nextSeq <= int(seq); nextSeq++ {
-// 			key := fmt.Sprintf("abi,egress,%v,%v,%d", id1, id2, nextSeq)
+// 			key := fmt.Sprintf("ibc,egress,%v,%v,%d", id1, id2, nextSeq)
 // 			query, err := queryWithClient(httpClient, []byte(key))
 // 			if err != nil {
 // 				logger.Error("Error querying for packet", "seqeuence", nextSeq, "key", key, "error", err.Error())
 // 				continue OUTER
 // 			}
 
-// 			var packet abi.Packet
+// 			var packet ibc.Packet
 // 			err = wire.ReadBinaryBytes(query.Value, &packet)
 // 			if err != nil {
 // 				logger.Error("Error unmarshalling packet", "key", key, "query.Value", query.Value, "error", err.Error())
@@ -197,19 +197,19 @@ package commands
 // 			}
 
 // 			// update the chain state on the other chain
-// 			updateTx := abi.ABIUpdateChainTx{
+// 			updateTx := ibc.IBCUpdateChainTx{
 // 				Header: *res.Header,
 // 				Commit: *res.Commit,
 // 			}
 // 			logger.Info("Updating chain", "src-chain", id1, "height", res.Header.Height, "appHash", res.Header.AppHash)
 // 			if err := thisRelayer.appTx(updateTx); err != nil {
-// 				logger.Error("Error creating/sending ABIUpdateChainTx", "error", err.Error())
+// 				logger.Error("Error creating/sending IBCUpdateChainTx", "error", err.Error())
 // 				continue OUTER
 // 			}
 
 // 			// relay the packet and proof
 // 			logger.Info("Relaying packet", "src-chain", id1, "height", query.Height, "sequence", nextSeq)
-// 			postTx := abi.ABIPacketPostTx{
+// 			postTx := ibc.IBCPacketPostTx{
 // 				FromChainID:     id1,
 // 				FromChainHeight: query.Height,
 // 				Packet:          packet,
@@ -217,7 +217,7 @@ package commands
 // 			}
 
 // 			if err := thisRelayer.appTx(postTx); err != nil {
-// 				logger.Error("Error creating/sending ABIPacketPostTx", "error", err.Error())
+// 				logger.Error("Error creating/sending IBCPacketPostTx", "error", err.Error())
 // 				// dont `continue OUTER` here. the error might be eg. Already exists
 // 				// TODO: catch this programmatically ?
 // 			}
@@ -242,7 +242,7 @@ package commands
 // 	}
 // }
 
-// func (r *relayer) appTx(abiTx abi.ABITx) error {
+// func (r *relayer) appTx(ibcTx ibc.IBCTx) error {
 // 	acc, err := getAccWithClient(r.client, r.privKey.Address[:])
 // 	if err != nil {
 // 		return err
@@ -250,8 +250,8 @@ package commands
 // 	sequence := acc.Sequence + 1
 
 // 	data := []byte(wire.BinaryBytes(struct {
-// 		abi.ABITx `json:"unwrap"`
-// 	}{abiTx}))
+// 		ibc.IBCTx `json:"unwrap"`
+// 	}{ibcTx}))
 
 // 	smallCoins := coin.Coin{"mycoin", 1}
 
@@ -259,7 +259,7 @@ package commands
 // 	tx := &types.AppTx{
 // 		Gas:   0,
 // 		Fee:   smallCoins,
-// 		Name:  "ABI",
+// 		Name:  "IBC",
 // 		Input: input,
 // 		Data:  data,
 // 	}

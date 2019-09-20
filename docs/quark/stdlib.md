@@ -40,7 +40,7 @@ months before being committed to the chain. This functionality is provided in
 To avoid replay attacks, a nonce can be associated with each actor. A separate
 nonce is used for each distinct group signers required for a transaction as
 well as for each separate application and chain-id. This creates replay
-protection cross-ABI and cross-plugins and also allows signing parties to not
+protection cross-IBC and cross-plugins and also allows signing parties to not
 be bound to waiting for a particular transaction to be completed before being
 able to sign a separate transaction.
 
@@ -85,7 +85,7 @@ requires some payment solution, like fees or trader.
 Roles encapsulates what are typically called N-of-M multi-signatures accounts
 in the crypto world. However, I view this as a type of role or group, which can
 be the basis for building a permission system. For example, a set of people
-could be called registrars, which can authorize a new ABI chain, and need eg. 2
+could be called registrars, which can authorize a new IBC chain, and need eg. 2
 out of 7 signatures to approve it.
 
 Currently, one can create a role with `modules.roles.Handler`, and assume one
@@ -93,21 +93,21 @@ of those roles by wrapping another transaction with `AssumeRoleTx`, which is
 processed by `modules.roles.Middleware`. Updating the set of actors in
 a role is planned in the near future.
 
-### Inter-Blockchain Communication (ABI)
+### Inter-Blockchain Communication (IBC)
 
-ABI, is the cornerstone of The Cosmos Network, and is built into the quark
+IBC, is the cornerstone of The Cosmos Network, and is built into the quark
 framework as a basic primitive. To fully grasp these concepts requires
 a much longer explanation, but in short, the chain works as a light-client to
 another chain and maintains input and output queue to send packets with that
 chain. This mechanism allows blockchains to prove the state of their respective
 blockchains to each other ultimately invoke inter-blockchain transactions.
 
-Most functionality is implemented in `modules.abi.Handler`. Registering a chain
+Most functionality is implemented in `modules.ibc.Handler`. Registering a chain
 is a seed of trust that requires verification of the proper seed (or genesis
 block), and this generally requires approval of an authorized registrar (which
 may be a multi-sig role).  Updating a registered chain can be done by anyone,
 as the new header can be completely verified by the existing knowledge of the
-chain.  Also, modules can initiate an outgoing ABI message to another chain
+chain.  Also, modules can initiate an outgoing IBC message to another chain
 by calling `CreatePacketTx` over IPC (inter-plugin communication) with a tx
 that belongs to their module. (This must be explicitly authorized by the
 same module, so only the eg. coin module can authorize a `SendTx` to another

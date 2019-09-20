@@ -14,7 +14,7 @@ import (
 // or initiate any sort of transaction.
 //
 // It doesn't just have to be a pubkey on this chain, it could stem from
-// another app (like multi-sig account), or even another chain (via ABI)
+// another app (like multi-sig account), or even another chain (via IBC)
 type Actor struct {
 	ChainID string     `json:"chain"` // this is empty unless it comes from a different chain
 	App     string     `json:"app"`   // the app that the actor belongs to

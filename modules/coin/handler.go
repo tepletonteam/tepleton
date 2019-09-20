@@ -7,7 +7,7 @@ import (
 	"github.com/tepleton/basecoin"
 	"github.com/tepleton/basecoin/errors"
 	"github.com/tepleton/basecoin/modules/auth"
-	"github.com/tepleton/basecoin/modules/abi"
+	"github.com/tepleton/basecoin/modules/ibc"
 	"github.com/tepleton/basecoin/stack"
 	"github.com/tepleton/basecoin/state"
 )
@@ -107,7 +107,7 @@ func (h Handler) sendTx(ctx basecoin.Context, store state.SimpleDB,
 	// add to all output accounts
 	for _, out := range send.Outputs {
 		// TODO: cleaner way, this makes sure we don't consider
-		// incoming abi packets with our chain to be remote packets
+		// incoming ibc packets with our chain to be remote packets
 		if out.Address.ChainID == ctx.ChainID() {
 			out.Address.ChainID = ""
 		}
@@ -116,7 +116,7 @@ func (h Handler) sendTx(ctx basecoin.Context, store state.SimpleDB,
 		if err != nil {
 			return err
 		}
-		// now send abi packet if needed...
+		// now send ibc packet if needed...
 		if out.Address.ChainID != "" {
 			// FIXME: if there are many outputs, we need to adjust inputs
 			// so the amounts in and out match.  how?
@@ -127,13 +127,13 @@ func (h Handler) sendTx(ctx basecoin.Context, store state.SimpleDB,
 			}
 
 			outTx := NewSendTx(inputs, []TxOutput{out})
-			packet := abi.CreatePacketTx{
+			packet := ibc.CreatePacketTx{
 				DestChain:   out.Address.ChainID,
 				Permissions: senders,
 				Tx:          outTx,
 			}
-			abiCtx := ctx.WithPermissions(abi.AllowABI(NameCoin))
-			_, err := cb.DeliverTx(abiCtx, store, packet.Wrap())
+			ibcCtx := ctx.WithPermissions(ibc.AllowIBC(NameCoin))
+			_, err := cb.DeliverTx(ibcCtx, store, packet.Wrap())
 			if err != nil {
 				return err
 			}

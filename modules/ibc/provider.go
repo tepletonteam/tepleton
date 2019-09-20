@@ -1,4 +1,4 @@
-package abi
+package ibc
 
 import (
 	wire "github.com/tepleton/go-wire"

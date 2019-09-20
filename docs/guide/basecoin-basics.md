@@ -220,7 +220,7 @@ as there have not been major changes and it is secure to do so. So, if you
 wonder why the query may take a second... there is a lot of work going on in
 the background to make sure even a lying full node can't trick your client.
 
-In a latter [guide on InterBlockchainCommunication](abi.md), we'll use these
+In a latter [guide on InterBlockchainCommunication](ibc.md), we'll use these
 proofs to post transactions to other chains.
 
 ## Accounts and Transactions

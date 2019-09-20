@@ -10,28 +10,28 @@ import (
 
 	"github.com/tepleton/basecoin/client/commands"
 	txcmd "github.com/tepleton/basecoin/client/commands/txs"
-	"github.com/tepleton/basecoin/modules/abi"
+	"github.com/tepleton/basecoin/modules/ibc"
 	"github.com/tepleton/light-client/certifiers"
 )
 
-// RegisterChainTxCmd is CLI command to register a new chain for abi
+// RegisterChainTxCmd is CLI command to register a new chain for ibc
 var RegisterChainTxCmd = &cobra.Command{
-	Use:   "abi-register",
+	Use:   "ibc-register",
 	Short: "Register a new chain",
 	RunE:  commands.RequireInit(registerChainTxCmd),
 }
 
-// UpdateChainTxCmd is CLI command to update the header for an abi chain
+// UpdateChainTxCmd is CLI command to update the header for an ibc chain
 var UpdateChainTxCmd = &cobra.Command{
-	Use:   "abi-update",
+	Use:   "ibc-update",
 	Short: "Add new header to an existing chain",
 	RunE:  commands.RequireInit(updateChainTxCmd),
 }
 
-// PostPacketTxCmd is CLI command to post abi packet on the destination chain
+// PostPacketTxCmd is CLI command to post ibc packet on the destination chain
 var PostPacketTxCmd = &cobra.Command{
-	Use:   "abi-post",
-	Short: "Post an abi packet on the destination chain",
+	Use:   "ibc-post",
+	Short: "Post an ibc packet on the destination chain",
 	RunE:  commands.RequireInit(postPacketTxCmd),
 }
 
@@ -59,7 +59,7 @@ func registerChainTxCmd(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	tx := abi.RegisterChainTx{seed}.Wrap()
+	tx := ibc.RegisterChainTx{seed}.Wrap()
 	return txcmd.DoTx(tx)
 }
 
@@ -68,7 +68,7 @@ func updateChainTxCmd(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	tx := abi.UpdateChainTx{seed}.Wrap()
+	tx := ibc.UpdateChainTx{seed}.Wrap()
 	return txcmd.DoTx(tx)
 }
 
@@ -90,7 +90,7 @@ func readSeed() (seed certifiers.Seed, err error) {
 	return
 }
 
-func readPostPacket() (post abi.PostPacketTx, err error) {
+func readPostPacket() (post ibc.PostPacketTx, err error) {
 	name := viper.GetString(FlagPacket)
 	if name == "" {
 		return post, errors.New("You must specify a packet file")

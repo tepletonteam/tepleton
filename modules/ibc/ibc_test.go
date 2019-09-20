@@ -1,4 +1,4 @@
-package abi
+package ibc
 
 import (
 	"encoding/json"
@@ -18,7 +18,7 @@ import (
 )
 
 // this tests registration without registrar permissions
-func TestABIRegister(t *testing.T) {
+func TestIBCRegister(t *testing.T) {
 	assert := assert.New(t)
 
 	// the validators we use to make seeds
@@ -64,8 +64,8 @@ func TestABIRegister(t *testing.T) {
 	}
 }
 
-// this tests permission controls on abi registration
-func TestABIRegisterPermissions(t *testing.T) {
+// this tests permission controls on ibc registration
+func TestIBCRegisterPermissions(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -131,7 +131,7 @@ func TestABIRegisterPermissions(t *testing.T) {
 		msg, err := json.Marshal(tc.registrar)
 		require.Nil(err, "%+v", err)
 		_, err = app.InitState(log.NewNopLogger(), store,
-			NameABI, OptionRegistrar, string(msg))
+			NameIBC, OptionRegistrar, string(msg))
 		require.Nil(err, "%+v", err)
 
 		// add permissions to the context
@@ -143,7 +143,7 @@ func TestABIRegisterPermissions(t *testing.T) {
 }
 
 // this verifies that we can properly update the headers on the chain
-func TestABIUpdate(t *testing.T) {
+func TestIBCUpdate(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -217,8 +217,8 @@ func TestABIUpdate(t *testing.T) {
 	}
 }
 
-// try to create an abi packet and verify the number we get back
-func TestABICreatePacket(t *testing.T) {
+// try to create an ibc packet and verify the number we get back
+func TestIBCCreatePacket(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -239,48 +239,48 @@ func TestABICreatePacket(t *testing.T) {
 
 	// this is the tx we send, and the needed permission to send it
 	raw := stack.NewRawTx([]byte{0xbe, 0xef})
-	abiPerm := AllowABI(stack.NameOK)
+	ibcPerm := AllowIBC(stack.NameOK)
 	somePerm := basecoin.Actor{App: "some", Address: []byte("perm")}
 
 	cases := []struct {
 		dest     string
-		abiPerms basecoin.Actors
+		ibcPerms basecoin.Actors
 		ctxPerms basecoin.Actors
 		checker  errors.CheckErr
 	}{
 		// wrong chain -> error
 		{
 			dest:     "some-other-chain",
-			ctxPerms: basecoin.Actors{abiPerm},
+			ctxPerms: basecoin.Actors{ibcPerm},
 			checker:  IsNotRegisteredErr,
 		},
 
-		// no abi permission -> error
+		// no ibc permission -> error
 		{
 			dest:    chainID,
-			checker: IsNeedsABIPermissionErr,
+			checker: IsNeedsIBCPermissionErr,
 		},
 
 		// correct -> nice sequence
 		{
 			dest:     chainID,
-			ctxPerms: basecoin.Actors{abiPerm},
+			ctxPerms: basecoin.Actors{ibcPerm},
 			checker:  errors.NoErr,
 		},
 
 		// requesting invalid permissions -> error
 		{
 			dest:     chainID,
-			abiPerms: basecoin.Actors{somePerm},
-			ctxPerms: basecoin.Actors{abiPerm},
+			ibcPerms: basecoin.Actors{somePerm},
+			ctxPerms: basecoin.Actors{ibcPerm},
 			checker:  IsCannotSetPermissionErr,
 		},
 
 		// requesting extra permissions when present
 		{
 			dest:     chainID,
-			abiPerms: basecoin.Actors{somePerm},
-			ctxPerms: basecoin.Actors{abiPerm, somePerm},
+			ibcPerms: basecoin.Actors{somePerm},
+			ctxPerms: basecoin.Actors{ibcPerm, somePerm},
 			checker:  errors.NoErr,
 		},
 	}
@@ -288,7 +288,7 @@ func TestABICreatePacket(t *testing.T) {
 	for i, tc := range cases {
 		tx := CreatePacketTx{
 			DestChain:   tc.dest,
-			Permissions: tc.abiPerms,
+			Permissions: tc.ibcPerms,
 			Tx:          raw,
 		}.Wrap()
 
@@ -298,7 +298,7 @@ func TestABICreatePacket(t *testing.T) {
 	}
 
 	// query packet state - make sure both packets are properly writen
-	p := stack.PrefixedStore(NameABI, store)
+	p := stack.PrefixedStore(NameIBC, store)
 	q := OutputQueue(p, chainID)
 	if assert.Equal(2, q.Size()) {
 		expected := []struct {
@@ -321,7 +321,7 @@ func TestABICreatePacket(t *testing.T) {
 	}
 }
 
-func TestABIPostPacket(t *testing.T) {
+func TestIBCPostPacket(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -332,7 +332,7 @@ func TestABIPostPacket(t *testing.T) {
 
 	// create the app and our chain
 	app := stack.New().
-		ABI(NewMiddleware()).
+		IBC(NewMiddleware()).
 		Dispatch(
 			stack.WrapHandler(NewHandler()),
 			stack.WrapHandler(stack.OKHandler{Log: msg}),
@@ -372,26 +372,26 @@ func TestABIPostPacket(t *testing.T) {
 	packet2, update2 := otherChain.MakePostPacket(p2, start+50)
 	require.Nil(ourChain.Update(update2))
 
-	abiPerm := basecoin.Actors{AllowABI(stack.NameOK)}
+	ibcPerm := basecoin.Actors{AllowIBC(stack.NameOK)}
 	cases := []struct {
 		packet      PostPacketTx
 		permissions basecoin.Actors
 		checker     errors.CheckErr
 	}{
 		// bad chain -> error
-		{packetBad, abiPerm, IsNotRegisteredErr},
+		{packetBad, ibcPerm, IsNotRegisteredErr},
 
 		// no matching header -> error
 		{packet0badHeight, nil, IsHeaderNotFoundErr},
 
 		// out of order -> error
-		{packet1, abiPerm, IsPacketOutOfOrderErr},
+		{packet1, ibcPerm, IsPacketOutOfOrderErr},
 
 		// all good -> execute tx
-		{packet0, abiPerm, errors.NoErr},
+		{packet0, ibcPerm, errors.NoErr},
 
 		// bad proof -> error
-		{packet1badProof, abiPerm, IsInvalidProofErr},
+		{packet1badProof, ibcPerm, IsInvalidProofErr},
 
 		// all good -> execute tx (no special permission needed)
 		{packet1, nil, errors.NoErr},

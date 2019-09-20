@@ -12,7 +12,7 @@ import (
 	"github.com/tepleton/basecoin/modules/base"
 	"github.com/tepleton/basecoin/modules/coin"
 	"github.com/tepleton/basecoin/modules/fee"
-	"github.com/tepleton/basecoin/modules/abi"
+	"github.com/tepleton/basecoin/modules/ibc"
 	"github.com/tepleton/basecoin/modules/nonce"
 	"github.com/tepleton/basecoin/modules/roles"
 	"github.com/tepleton/basecoin/stack"
@@ -100,7 +100,7 @@ func NewHandler(feeDenom string) basecoin.Handler {
 		stack.Checkpoint{OnCheck: true},
 		nonce.ReplayCheck{},
 	).
-		ABI(abi.NewMiddleware()).
+		IBC(ibc.NewMiddleware()).
 		Apps(
 			roles.NewMiddleware(),
 			fee.NewSimpleFeeMiddleware(coin.Coin{feeDenom, 0}, fee.Bank),

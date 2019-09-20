@@ -1,4 +1,4 @@
-package abi
+package ibc
 
 import (
 	"testing"

@@ -1,4 +1,4 @@
-package abi
+package ibc
 
 import (
 	"fmt"
@@ -13,10 +13,10 @@ import (
 )
 
 const (
-	// NameABI is the name of this module
-	NameABI = "abi"
+	// NameIBC is the name of this module
+	NameIBC = "ibc"
 	// OptionRegistrar is the option name to set the actor
-	// to handle abi chain registration
+	// to handle ibc chain registration
 	OptionRegistrar = "registrar"
 )
 
@@ -24,23 +24,23 @@ var (
 	// Semi-random bytes that shouldn't conflict with keys (20 bytes)
 	// or any strings (non-ascii).
 	// TODO: consider how to make this more collision-proof....
-	allowABI = []byte{0x42, 0xbe, 0xef, 0x1}
+	allowIBC = []byte{0x42, 0xbe, 0xef, 0x1}
 )
 
-// AllowABI returns a specially crafted Actor that
-// enables sending ABI packets for this app type
-func AllowABI(app string) basecoin.Actor {
-	return basecoin.Actor{App: app, Address: allowABI}
+// AllowIBC returns a specially crafted Actor that
+// enables sending IBC packets for this app type
+func AllowIBC(app string) basecoin.Actor {
+	return basecoin.Actor{App: app, Address: allowIBC}
 }
 
-// Handler updates the chain state or creates an abi packet
+// Handler updates the chain state or creates an ibc packet
 type Handler struct {
 	basecoin.NopInitValidate
 }
 
 var _ basecoin.Handler = Handler{}
 
-// NewHandler returns a Handler that allows all chains to connect via ABI.
+// NewHandler returns a Handler that allows all chains to connect via IBC.
 // Set a Registrar via InitState to restrict it.
 func NewHandler() Handler {
 	return Handler{}
@@ -48,12 +48,12 @@ func NewHandler() Handler {
 
 // Name returns name space
 func (Handler) Name() string {
-	return NameABI
+	return NameIBC
 }
 
-// InitState sets the registrar for ABI
+// InitState sets the registrar for IBC
 func (h Handler) InitState(l log.Logger, store state.SimpleDB, module, key, value string) (log string, err error) {
-	if module != NameABI {
+	if module != NameIBC {
 		return "", errors.ErrUnknownModule(module)
 	}
 	if key == OptionRegistrar {
@@ -176,13 +176,13 @@ func (h Handler) createPacket(ctx basecoin.Context, store state.SimpleDB,
 		return res, ErrNotRegistered(dest)
 	}
 
-	// make sure we have the special ABI permission
+	// make sure we have the special IBC permission
 	mod, err := t.Tx.GetMod()
 	if err != nil {
 		return res, err
 	}
-	if !ctx.HasPermission(AllowABI(mod)) {
-		return res, ErrNeedsABIPermission()
+	if !ctx.HasPermission(AllowIBC(mod)) {
+		return res, ErrNeedsIBCPermission()
 	}
 
 	// start making the packet to send

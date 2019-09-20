@@ -23,11 +23,12 @@ const (
 
 // Basecoin - The WRSP application
 type Basecoin struct {
-	info *sm.ChainState
-
+	info  *sm.ChainState
 	state *Store
 
 	handler basecoin.Handler
+
+	pending []*wrsp.Validator
 	height  uint64
 	logger  log.Logger
 }
@@ -109,6 +110,9 @@ func (app *Basecoin) DeliverTx(txBytes []byte) wrsp.Result {
 	if err != nil {
 		return errors.Result(err)
 	}
+	if len(res.Diff) > 0 {
+		app.pending = append(app.pending, res.Diff...)
+	}
 	return res.ToWRSP()
 }
 
@@ -169,11 +173,11 @@ func (app *Basecoin) BeginBlock(hash []byte, header *wrsp.Header) {
 }
 
 // EndBlock - WRSP
+// Returns a list of all validator changes made in this block
 func (app *Basecoin) EndBlock(height uint64) (res wrsp.ResponseEndBlock) {
-	// for _, plugin := range app.plugins.GetList() {
-	// 	pluginRes := plugin.EndBlock(app.state, height)
-	// 	res.Diffs = append(res.Diffs, pluginRes.Diffs...)
-	// }
+	// TODO: cleanup in case a validator exists multiple times in the list
+	res.Diffs = app.pending
+	app.pending = nil
 	return
 }
 
