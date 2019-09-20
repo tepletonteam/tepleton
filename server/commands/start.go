@@ -9,8 +9,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/tepleton/wrsp/server"
 	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/wrsp/server"
 	"github.com/tepleton/tmlibs/cli"
 	cmn "github.com/tepleton/tmlibs/common"
 
@@ -22,10 +22,10 @@ import (
 	"github.com/tepleton/tepleton-sdk/app"
 )
 
-// StartCmd - command to start running the basecoin node!
+// StartCmd - command to start running the wrsp app (and tepleton)!
 var StartCmd = &cobra.Command{
 	Use:   "start",
-	Short: "Start basecoin",
+	Short: "Start this full node",
 	RunE:  startCmd,
 }
 
@@ -47,7 +47,7 @@ var (
 func init() {
 	flags := StartCmd.Flags()
 	flags.String(FlagAddress, "tcp://0.0.0.0:46658", "Listen address")
-	flags.Bool(FlagWithoutTendermint, false, "Only run basecoin wrsp app, assume external tepleton process")
+	flags.Bool(FlagWithoutTendermint, false, "Only run wrsp app, assume external tepleton process")
 	// add all standard 'tepleton node' flags
 	tcmd.AddNodeFlags(StartCmd)
 }
