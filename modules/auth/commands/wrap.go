@@ -4,9 +4,9 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"github.com/tepleton/basecoin"
-	txcmd "github.com/tepleton/basecoin/client/commands/txs"
-	"github.com/tepleton/basecoin/modules/auth"
+	sdk "github.com/tepleton/tepleton-sdk"
+	txcmd "github.com/tepleton/tepleton-sdk/client/commands/txs"
+	"github.com/tepleton/tepleton-sdk/modules/auth"
 )
 
 //nolint
@@ -20,7 +20,7 @@ type SigWrapper struct{}
 var _ txcmd.Wrapper = SigWrapper{}
 
 // Wrap will wrap the tx with OneSig or MultiSig depending on flags
-func (SigWrapper) Wrap(tx basecoin.Tx) (res basecoin.Tx, err error) {
+func (SigWrapper) Wrap(tx sdk.Tx) (res sdk.Tx, err error) {
 	if !viper.GetBool(FlagMulti) {
 		res = auth.NewSig(tx).Wrap()
 	} else {

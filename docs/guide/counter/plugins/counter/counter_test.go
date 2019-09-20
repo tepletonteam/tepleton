@@ -10,12 +10,12 @@ import (
 	"github.com/tepleton/go-wire"
 	"github.com/tepleton/tmlibs/log"
 
-	"github.com/tepleton/basecoin"
-	"github.com/tepleton/basecoin/app"
-	"github.com/tepleton/basecoin/modules/auth"
-	"github.com/tepleton/basecoin/modules/base"
-	"github.com/tepleton/basecoin/modules/coin"
-	"github.com/tepleton/basecoin/modules/nonce"
+	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/app"
+	"github.com/tepleton/tepleton-sdk/modules/auth"
+	"github.com/tepleton/tepleton-sdk/modules/base"
+	"github.com/tepleton/tepleton-sdk/modules/coin"
+	"github.com/tepleton/tepleton-sdk/modules/nonce"
 )
 
 func TestCounterPlugin(t *testing.T) {
@@ -47,7 +47,7 @@ func TestCounterPlugin(t *testing.T) {
 	// Deliver a CounterTx
 	DeliverCounterTx := func(valid bool, counterFee coin.Coins, sequence uint32) wrsp.Result {
 		tx := NewTx(valid, counterFee)
-		tx = nonce.NewTx(sequence, []basecoin.Actor{acct.Actor()}, tx)
+		tx = nonce.NewTx(sequence, []sdk.Actor{acct.Actor()}, tx)
 		tx = base.NewChainTx(chainID, 0, tx)
 		stx := auth.NewSig(tx)
 		auth.Sign(stx, acct.Key)

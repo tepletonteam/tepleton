@@ -6,16 +6,16 @@ import (
 	cmn "github.com/tepleton/tmlibs/common"
 	"github.com/tepleton/tmlibs/log"
 
-	"github.com/tepleton/basecoin"
-	"github.com/tepleton/basecoin/stack"
-	"github.com/tepleton/basecoin/state"
+	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/stack"
+	"github.com/tepleton/tepleton-sdk/state"
 )
 
 func makeHandler() stack.Dispatchable {
 	return NewHandler()
 }
 
-func makeSimpleTx(from, to basecoin.Actor, amount Coins) basecoin.Tx {
+func makeSimpleTx(from, to sdk.Actor, amount Coins) sdk.Tx {
 	in := []TxInput{{Address: from, Coins: amount}}
 	out := []TxOutput{{Address: to, Coins: amount}}
 	return NewSendTx(in, out)
@@ -30,7 +30,7 @@ func BenchmarkSimpleTransfer(b *testing.B) {
 	acct := NewAccountWithKey(Coins{{"mycoin", 1234567890}})
 	h.InitState(logger, store, NameCoin, "account", acct.MakeOption(), nil)
 	sender := acct.Actor()
-	receiver := basecoin.Actor{App: "foo", Address: cmn.RandBytes(20)}
+	receiver := sdk.Actor{App: "foo", Address: cmn.RandBytes(20)}
 
 	// now, loop...
 	for i := 1; i <= b.N; i++ {

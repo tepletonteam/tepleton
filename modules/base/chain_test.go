@@ -8,9 +8,9 @@ import (
 
 	"github.com/tepleton/tmlibs/log"
 
-	"github.com/tepleton/basecoin"
-	"github.com/tepleton/basecoin/stack"
-	"github.com/tepleton/basecoin/state"
+	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/stack"
+	"github.com/tepleton/tepleton-sdk/state"
 )
 
 func TestChainValidate(t *testing.T) {
@@ -39,7 +39,7 @@ func TestChainValidate(t *testing.T) {
 		}
 	}
 
-	empty := NewChainTx("okay", 0, basecoin.Tx{})
+	empty := NewChainTx("okay", 0, sdk.Tx{})
 	err := empty.ValidateBasic()
 	assert.NotNil(err)
 }
@@ -52,7 +52,7 @@ func TestChain(t *testing.T) {
 
 	raw := stack.NewRawTx([]byte{1, 2, 3, 4})
 	cases := []struct {
-		tx       basecoin.Tx
+		tx       sdk.Tx
 		valid    bool
 		errorMsg string
 	}{

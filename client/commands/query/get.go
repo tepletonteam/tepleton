@@ -16,7 +16,7 @@ import (
 	"github.com/tepleton/merkleeyes/iavl"
 	"github.com/tepleton/tepleton/rpc/client"
 
-	"github.com/tepleton/basecoin/client/commands"
+	"github.com/tepleton/tepleton-sdk/client/commands"
 )
 
 // GetParsed does most of the work of the query commands, but is quite

@@ -11,7 +11,7 @@ import (
 	cmn "github.com/tepleton/tmlibs/common"
 	"github.com/tepleton/tmlibs/log"
 
-	"github.com/tepleton/basecoin/modules/coin"
+	"github.com/tepleton/tepleton-sdk/modules/coin"
 )
 
 const genesisFilepath = "./testdata/genesis.json"

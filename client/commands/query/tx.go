@@ -4,11 +4,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/tepleton/basecoin"
+	sdk "github.com/tepleton/tepleton-sdk"
 	wire "github.com/tepleton/go-wire"
 	"github.com/tepleton/tepleton/types"
 
-	"github.com/tepleton/basecoin/client/commands"
+	"github.com/tepleton/tepleton-sdk/client/commands"
 )
 
 // TxQueryCmd - CLI command to query a transaction with proof
@@ -65,9 +65,9 @@ func txQueryCmd(cmd *cobra.Command, args []string) error {
 	return showTx(res.Height, res.Proof.Data)
 }
 
-// showTx parses anything that was previously registered as basecoin.Tx
+// showTx parses anything that was previously registered as sdk.Tx
 func showTx(h int, tx types.Tx) error {
-	var info basecoin.Tx
+	var info sdk.Tx
 	err := wire.ReadBinaryBytes(tx, &info)
 	if err != nil {
 		return err

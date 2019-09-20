@@ -1,11 +1,11 @@
-package basecoin
+package sdk
 
 import (
 	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/go-wire/data"
 	"github.com/tepleton/tmlibs/log"
 
-	"github.com/tepleton/basecoin/state"
+	"github.com/tepleton/tepleton-sdk/state"
 )
 
 // Handler is anything that processes a transaction

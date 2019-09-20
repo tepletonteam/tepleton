@@ -7,13 +7,13 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
 
-	"github.com/tepleton/basecoin"
-	"github.com/tepleton/basecoin/client/commands"
-	"github.com/tepleton/basecoin/client/commands/query"
-	"github.com/tepleton/basecoin/errors"
-	"github.com/tepleton/basecoin/modules/coin"
-	"github.com/tepleton/basecoin/modules/nonce"
-	"github.com/tepleton/basecoin/stack"
+	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/client/commands"
+	"github.com/tepleton/tepleton-sdk/client/commands/query"
+	"github.com/tepleton/tepleton-sdk/errors"
+	"github.com/tepleton/tepleton-sdk/modules/coin"
+	"github.com/tepleton/tepleton-sdk/modules/nonce"
+	"github.com/tepleton/tepleton-sdk/stack"
 	wire "github.com/tepleton/go-wire"
 	lightclient "github.com/tepleton/light-client"
 	"github.com/tepleton/tmlibs/common"
@@ -29,7 +29,7 @@ func doQueryNonce(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	actor = coin.ChainAddr(actor)
-	key := nonce.GetSeqKey([]basecoin.Actor{actor})
+	key := nonce.GetSeqKey([]sdk.Actor{actor})
 	key = stack.PrefixedKey(nonce.NameNonce, key)
 
 	prove := !viper.GetBool(commands.FlagTrustNode)

@@ -9,10 +9,10 @@ import (
 	wrsp "github.com/tepleton/wrsp/types"
 	cmn "github.com/tepleton/tmlibs/common"
 
-	"github.com/tepleton/basecoin"
-	txcmd "github.com/tepleton/basecoin/client/commands/txs"
-	"github.com/tepleton/basecoin/errors"
-	"github.com/tepleton/basecoin/modules/roles"
+	sdk "github.com/tepleton/tepleton-sdk"
+	txcmd "github.com/tepleton/tepleton-sdk/client/commands/txs"
+	"github.com/tepleton/tepleton-sdk/errors"
+	"github.com/tepleton/tepleton-sdk/modules/roles"
 )
 
 // nolint
@@ -28,7 +28,7 @@ var _ txcmd.Wrapper = RoleWrapper{}
 // Wrap grabs the sequence number from the flag and wraps
 // the tx with this nonce.  Grabs the permission from the signer,
 // as we still only support single sig on the cli
-func (RoleWrapper) Wrap(tx basecoin.Tx) (basecoin.Tx, error) {
+func (RoleWrapper) Wrap(tx sdk.Tx) (sdk.Tx, error) {
 	assume := viper.GetStringSlice(FlagAssumeRole)
 
 	// we wrap from inside-out, so we must wrap them in the reverse order,

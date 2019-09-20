@@ -9,11 +9,11 @@ import (
 	cmn "github.com/tepleton/tmlibs/common"
 	"github.com/tepleton/tmlibs/log"
 
-	"github.com/tepleton/basecoin"
-	"github.com/tepleton/basecoin/errors"
-	"github.com/tepleton/basecoin/stack"
-	sm "github.com/tepleton/basecoin/state"
-	"github.com/tepleton/basecoin/version"
+	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/errors"
+	"github.com/tepleton/tepleton-sdk/stack"
+	sm "github.com/tepleton/tepleton-sdk/state"
+	"github.com/tepleton/tepleton-sdk/version"
 )
 
 //nolint
@@ -27,7 +27,7 @@ type Basecoin struct {
 	info  *sm.ChainState
 	state *Store
 
-	handler basecoin.Handler
+	handler sdk.Handler
 
 	pending []*wrsp.Validator
 	height  uint64
@@ -37,7 +37,7 @@ type Basecoin struct {
 var _ wrsp.Application = &Basecoin{}
 
 // NewBasecoin - create a new instance of the basecoin application
-func NewBasecoin(handler basecoin.Handler, store *Store, logger log.Logger) *Basecoin {
+func NewBasecoin(handler sdk.Handler, store *Store, logger log.Logger) *Basecoin {
 	return &Basecoin{
 		handler: handler,
 		info:    sm.NewChainState(),
@@ -96,7 +96,7 @@ func (app *Basecoin) SetOption(key string, value string) string {
 
 // DeliverTx - WRSP
 func (app *Basecoin) DeliverTx(txBytes []byte) wrsp.Result {
-	tx, err := basecoin.LoadTx(txBytes)
+	tx, err := sdk.LoadTx(txBytes)
 	if err != nil {
 		return errors.Result(err)
 	}
@@ -112,12 +112,12 @@ func (app *Basecoin) DeliverTx(txBytes []byte) wrsp.Result {
 		return errors.Result(err)
 	}
 	app.addValChange(res.Diff)
-	return basecoin.ToWRSP(res)
+	return sdk.ToWRSP(res)
 }
 
 // CheckTx - WRSP
 func (app *Basecoin) CheckTx(txBytes []byte) wrsp.Result {
-	tx, err := basecoin.LoadTx(txBytes)
+	tx, err := sdk.LoadTx(txBytes)
 	if err != nil {
 		return errors.Result(err)
 	}
@@ -132,7 +132,7 @@ func (app *Basecoin) CheckTx(txBytes []byte) wrsp.Result {
 	if err != nil {
 		return errors.Result(err)
 	}
-	return basecoin.ToWRSP(res)
+	return sdk.ToWRSP(res)
 }
 
 // Query - WRSP

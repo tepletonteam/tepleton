@@ -10,7 +10,7 @@ import (
 
 	"github.com/tepleton/light-client/certifiers"
 
-	"github.com/tepleton/basecoin/client/commands"
+	"github.com/tepleton/tepleton-sdk/client/commands"
 )
 
 const (

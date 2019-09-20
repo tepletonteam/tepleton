@@ -7,10 +7,10 @@ import (
 
 	lc "github.com/tepleton/light-client"
 
-	"github.com/tepleton/basecoin/client/commands"
-	"github.com/tepleton/basecoin/client/commands/query"
-	"github.com/tepleton/basecoin/modules/coin"
-	"github.com/tepleton/basecoin/stack"
+	"github.com/tepleton/tepleton-sdk/client/commands"
+	"github.com/tepleton/tepleton-sdk/client/commands/query"
+	"github.com/tepleton/tepleton-sdk/modules/coin"
+	"github.com/tepleton/tepleton-sdk/stack"
 )
 
 // AccountQueryCmd - command to query an account

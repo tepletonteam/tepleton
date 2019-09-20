@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/tepleton/basecoin/errors"
+	"github.com/tepleton/tepleton-sdk/errors"
 )
 
 func TestChecks(t *testing.T) {

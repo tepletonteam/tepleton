@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	wrsp "github.com/tepleton/wrsp/types"
-	"github.com/tepleton/basecoin/modules/base"
+	"github.com/tepleton/tepleton-sdk/modules/base"
 	wire "github.com/tepleton/go-wire"
 	cmn "github.com/tepleton/tmlibs/common"
 	"github.com/tepleton/tmlibs/log"

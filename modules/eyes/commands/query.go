@@ -8,10 +8,10 @@ import (
 
 	cmn "github.com/tepleton/tmlibs/common"
 
-	"github.com/tepleton/basecoin/client/commands"
-	"github.com/tepleton/basecoin/client/commands/query"
-	"github.com/tepleton/basecoin/modules/eyes"
-	"github.com/tepleton/basecoin/stack"
+	"github.com/tepleton/tepleton-sdk/client/commands"
+	"github.com/tepleton/tepleton-sdk/client/commands/query"
+	"github.com/tepleton/tepleton-sdk/modules/eyes"
+	"github.com/tepleton/tepleton-sdk/stack"
 )
 
 // EyesQueryCmd - command to query raw data

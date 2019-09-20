@@ -12,13 +12,13 @@ import (
 	"github.com/tepleton/go-crypto/keys/storage/memstorage"
 	wire "github.com/tepleton/go-wire"
 
-	"github.com/tepleton/basecoin"
-	"github.com/tepleton/basecoin/stack"
+	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/stack"
 )
 
 func checkSignBytes(t *testing.T, bytes []byte, expected string) {
 	// load it back... unwrap the tx
-	var preTx basecoin.Tx
+	var preTx sdk.Tx
 	err := wire.ReadBinaryBytes(bytes, &preTx)
 	require.Nil(t, err)
 

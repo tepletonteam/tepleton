@@ -9,7 +9,7 @@ import (
 	certclient "github.com/tepleton/light-client/certifiers/client"
 	"github.com/tepleton/tepleton/rpc/client"
 
-	"github.com/tepleton/basecoin/client/commands"
+	"github.com/tepleton/tepleton-sdk/client/commands"
 )
 
 const (

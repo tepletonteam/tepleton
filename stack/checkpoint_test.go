@@ -10,8 +10,8 @@ import (
 	"github.com/tepleton/merkleeyes/iavl"
 	"github.com/tepleton/tmlibs/log"
 
-	"github.com/tepleton/basecoin"
-	"github.com/tepleton/basecoin/state"
+	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/state"
 )
 
 func makeState() state.SimpleDB {
@@ -45,7 +45,7 @@ func TestCheckpointer(t *testing.T) {
 			WrapHandler(bad),
 		))
 
-	basecoin.TxMapper.RegisterImplementation(RawTx{}, good.Name(), byte(80))
+	sdk.TxMapper.RegisterImplementation(RawTx{}, good.Name(), byte(80))
 
 	mid := state.Model{
 		Key:   []byte{'b', 'i', 'n', 'g', 0, 1, 2},
@@ -58,7 +58,7 @@ func TestCheckpointer(t *testing.T) {
 
 	cases := []struct {
 		// tx to send down the line
-		tx basecoin.Tx
+		tx sdk.Tx
 		// expect no error?
 		valid bool
 		// models to check afterwards

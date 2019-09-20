@@ -15,7 +15,7 @@ import (
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
 
-	"github.com/tepleton/basecoin/state"
+	"github.com/tepleton/tepleton-sdk/state"
 )
 
 // Store contains the merkle tree, and all info to handle wrsp requests

@@ -7,7 +7,7 @@ func main() {}
 // 	"time"
 
 // 	"github.com/gorilla/websocket"
-// 	"github.com/tepleton/basecoin/types"
+// 	"github.com/tepleton/tepleton-sdk/types"
 // 	wire "github.com/tepleton/go-wire"
 // 	_ "github.com/tepleton/tepleton/rpc/core/types" // Register RPCResponse > Result types
 // 	"github.com/tepleton/tepleton/rpc/lib/client"

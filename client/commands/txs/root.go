@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/tepleton/basecoin"
+	sdk "github.com/tepleton/tepleton-sdk"
 )
 
 // nolint
@@ -39,7 +39,7 @@ func doRawTx(cmd *cobra.Command, args []string) error {
 	}
 
 	// parse the input
-	var tx basecoin.Tx
+	var tx sdk.Tx
 	err = json.Unmarshal(raw, &tx)
 	if err != nil {
 		return errors.WithStack(err)

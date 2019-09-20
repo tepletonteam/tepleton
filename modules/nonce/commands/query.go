@@ -9,11 +9,11 @@ import (
 
 	lc "github.com/tepleton/light-client"
 
-	"github.com/tepleton/basecoin"
-	"github.com/tepleton/basecoin/client/commands"
-	"github.com/tepleton/basecoin/client/commands/query"
-	"github.com/tepleton/basecoin/modules/nonce"
-	"github.com/tepleton/basecoin/stack"
+	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/client/commands"
+	"github.com/tepleton/tepleton-sdk/client/commands/query"
+	"github.com/tepleton/tepleton-sdk/modules/nonce"
+	"github.com/tepleton/tepleton-sdk/stack"
 )
 
 // NonceQueryCmd - command to query an nonce account
@@ -42,7 +42,7 @@ func nonceQueryCmd(cmd *cobra.Command, args []string) error {
 	return query.OutputProof(seq, height)
 }
 
-func doNonceQuery(signers []basecoin.Actor) (sequence uint32, height uint64, err error) {
+func doNonceQuery(signers []sdk.Actor) (sequence uint32, height uint64, err error) {
 	key := stack.PrefixedKey(nonce.NameNonce, nonce.GetSeqKey(signers))
 	prove := !viper.GetBool(commands.FlagTrustNode)
 	height, err = query.GetParsed(key, &sequence, prove)

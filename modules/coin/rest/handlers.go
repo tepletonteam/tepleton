@@ -8,15 +8,15 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
 
-	"github.com/tepleton/basecoin"
-	"github.com/tepleton/basecoin/client/commands"
-	"github.com/tepleton/basecoin/client/commands/query"
-	"github.com/tepleton/basecoin/modules/auth"
-	"github.com/tepleton/basecoin/modules/base"
-	"github.com/tepleton/basecoin/modules/coin"
-	"github.com/tepleton/basecoin/modules/fee"
-	"github.com/tepleton/basecoin/modules/nonce"
-	"github.com/tepleton/basecoin/stack"
+	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/client/commands"
+	"github.com/tepleton/tepleton-sdk/client/commands/query"
+	"github.com/tepleton/tepleton-sdk/modules/auth"
+	"github.com/tepleton/tepleton-sdk/modules/base"
+	"github.com/tepleton/tepleton-sdk/modules/coin"
+	"github.com/tepleton/tepleton-sdk/modules/fee"
+	"github.com/tepleton/tepleton-sdk/modules/nonce"
+	"github.com/tepleton/tepleton-sdk/stack"
 	lightclient "github.com/tepleton/light-client"
 	"github.com/tepleton/tmlibs/common"
 )
@@ -30,8 +30,8 @@ type SendInput struct {
 	Multi    bool       `json:"multi,omitempty"`
 	Sequence uint32     `json:"sequence"`
 
-	To     *basecoin.Actor `json:"to"`
-	From   *basecoin.Actor `json:"from"`
+	To     *sdk.Actor `json:"to"`
+	From   *sdk.Actor `json:"from"`
 	Amount coin.Coins      `json:"amount"`
 }
 
@@ -64,14 +64,14 @@ func doQueryAccount(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func PrepareSendTx(si *SendInput) basecoin.Tx {
+func PrepareSendTx(si *SendInput) sdk.Tx {
 	tx := coin.NewSendOneTx(*si.From, *si.To, si.Amount)
 	// fees are optional
 	if si.Fees != nil && !si.Fees.IsZero() {
 		tx = fee.NewFee(tx, *si.Fees, *si.From)
 	}
 	// only add the actual signer to the nonce
-	signers := []basecoin.Actor{*si.From}
+	signers := []sdk.Actor{*si.From}
 	tx = nonce.NewTx(si.Sequence, signers, tx)
 	tx = base.NewChainTx(commands.GetChainID(), 0, tx)
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/tepleton/basecoin/version"
+	"github.com/tepleton/tepleton-sdk/version"
 )
 
 // CommitHash should be filled by linker flags

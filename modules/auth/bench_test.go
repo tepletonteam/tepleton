@@ -8,12 +8,12 @@ import (
 	cmn "github.com/tepleton/tmlibs/common"
 	"github.com/tepleton/tmlibs/log"
 
-	"github.com/tepleton/basecoin"
-	"github.com/tepleton/basecoin/stack"
-	"github.com/tepleton/basecoin/state"
+	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/stack"
+	"github.com/tepleton/tepleton-sdk/state"
 )
 
-func makeSignTx() basecoin.Tx {
+func makeSignTx() sdk.Tx {
 	key := crypto.GenPrivKeyEd25519().Wrap()
 	payload := cmn.RandBytes(32)
 	tx := NewSig(stack.NewRawTx(payload))
@@ -21,7 +21,7 @@ func makeSignTx() basecoin.Tx {
 	return tx.Wrap()
 }
 
-func makeMultiSignTx(cnt int) basecoin.Tx {
+func makeMultiSignTx(cnt int) sdk.Tx {
 	payload := cmn.RandBytes(32)
 	tx := NewMulti(stack.NewRawTx(payload))
 	for i := 0; i < cnt; i++ {
@@ -31,7 +31,7 @@ func makeMultiSignTx(cnt int) basecoin.Tx {
 	return tx.Wrap()
 }
 
-func makeHandler() basecoin.Handler {
+func makeHandler() sdk.Handler {
 	return stack.New(Signatures{}).Use(stack.OKHandler{})
 }
 

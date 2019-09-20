@@ -4,8 +4,8 @@ import (
 	crypto "github.com/tepleton/go-crypto"
 	"github.com/tepleton/go-wire/data"
 
-	"github.com/tepleton/basecoin"
-	"github.com/tepleton/basecoin/modules/auth"
+	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/modules/auth"
 )
 
 // AccountWithKey is a helper for tests, that includes and account
@@ -31,7 +31,7 @@ func (a *AccountWithKey) Address() []byte {
 }
 
 // Actor returns the basecoin actor associated with this account
-func (a *AccountWithKey) Actor() basecoin.Actor {
+func (a *AccountWithKey) Actor() sdk.Actor {
 	return auth.SigPerm(a.Key.PubKey().Address())
 }
 

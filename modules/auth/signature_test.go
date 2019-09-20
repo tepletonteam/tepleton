@@ -9,9 +9,9 @@ import (
 	crypto "github.com/tepleton/go-crypto"
 	"github.com/tepleton/tmlibs/log"
 
-	"github.com/tepleton/basecoin"
-	"github.com/tepleton/basecoin/stack"
-	"github.com/tepleton/basecoin/state"
+	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/stack"
+	"github.com/tepleton/tepleton-sdk/state"
 )
 
 func TestSignatureChecks(t *testing.T) {
@@ -32,7 +32,7 @@ func TestSignatureChecks(t *testing.T) {
 	cases := []struct {
 		useMultiSig bool
 		keys        []crypto.PrivKey
-		check       basecoin.Actor
+		check       sdk.Actor
 		valid       bool
 	}{
 		// test with single sigs
@@ -61,7 +61,7 @@ func TestSignatureChecks(t *testing.T) {
 			stack.CheckMiddleware{Required: tc.check},
 		).Use(stack.OKHandler{})
 
-		var tx basecoin.Tx
+		var tx sdk.Tx
 		// this does the signing as needed
 		if tc.useMultiSig {
 			mtx := NewMulti(raw)

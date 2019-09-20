@@ -5,8 +5,8 @@ import (
 
 	wire "github.com/tepleton/go-wire"
 
-	"github.com/tepleton/basecoin/errors"
-	"github.com/tepleton/basecoin/state"
+	"github.com/tepleton/tepleton-sdk/errors"
+	"github.com/tepleton/tepleton-sdk/state"
 )
 
 func getSeq(store state.SimpleDB, key []byte) (seq uint32, err error) {

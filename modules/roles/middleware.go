@@ -1,9 +1,9 @@
 package roles
 
 import (
-	"github.com/tepleton/basecoin"
-	"github.com/tepleton/basecoin/stack"
-	"github.com/tepleton/basecoin/state"
+	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/stack"
+	"github.com/tepleton/tepleton-sdk/state"
 )
 
 // Middleware allows us to add a requested role as a permission
@@ -28,7 +28,7 @@ func (Middleware) Name() string {
 // CheckTx tries to assume the named role if requested.
 // If no role is requested, do nothing.
 // If insufficient authority to assume the role, return error.
-func (m Middleware) CheckTx(ctx basecoin.Context, store state.SimpleDB, tx basecoin.Tx, next basecoin.Checker) (res basecoin.CheckResult, err error) {
+func (m Middleware) CheckTx(ctx sdk.Context, store state.SimpleDB, tx sdk.Tx, next sdk.Checker) (res sdk.CheckResult, err error) {
 	// if this is not an AssumeRoleTx, then continue
 	assume, ok := tx.Unwrap().(AssumeRoleTx)
 	if !ok { // this also breaks the recursion below
@@ -50,7 +50,7 @@ func (m Middleware) CheckTx(ctx basecoin.Context, store state.SimpleDB, tx basec
 // DeliverTx tries to assume the named role if requested.
 // If no role is requested, do nothing.
 // If insufficient authority to assume the role, return error.
-func (m Middleware) DeliverTx(ctx basecoin.Context, store state.SimpleDB, tx basecoin.Tx, next basecoin.Deliver) (res basecoin.DeliverResult, err error) {
+func (m Middleware) DeliverTx(ctx sdk.Context, store state.SimpleDB, tx sdk.Tx, next sdk.Deliver) (res sdk.DeliverResult, err error) {
 	// if this is not an AssumeRoleTx, then continue
 	assume, ok := tx.Unwrap().(AssumeRoleTx)
 	if !ok { // this also breaks the recursion below
@@ -66,7 +66,7 @@ func (m Middleware) DeliverTx(ctx basecoin.Context, store state.SimpleDB, tx bas
 	return m.DeliverTx(ctx, store, assume.Tx, next)
 }
 
-func assumeRole(ctx basecoin.Context, store state.SimpleDB, assume AssumeRoleTx) (basecoin.Context, error) {
+func assumeRole(ctx sdk.Context, store state.SimpleDB, assume AssumeRoleTx) (sdk.Context, error) {
 	err := assume.ValidateBasic()
 	if err != nil {
 		return nil, err

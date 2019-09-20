@@ -7,12 +7,12 @@ import (
 	"github.com/gorilla/mux"
 
 	wrsp "github.com/tepleton/wrsp/types"
-	"github.com/tepleton/basecoin"
-	"github.com/tepleton/basecoin/client/commands"
-	"github.com/tepleton/basecoin/errors"
-	"github.com/tepleton/basecoin/modules/base"
-	"github.com/tepleton/basecoin/modules/nonce"
-	"github.com/tepleton/basecoin/modules/roles"
+	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/client/commands"
+	"github.com/tepleton/tepleton-sdk/errors"
+	"github.com/tepleton/tepleton-sdk/modules/base"
+	"github.com/tepleton/tepleton-sdk/modules/nonce"
+	"github.com/tepleton/tepleton-sdk/modules/roles"
 	"github.com/tepleton/tmlibs/common"
 )
 
@@ -25,7 +25,7 @@ type RoleInput struct {
 
 	MinimumSigners uint32 `json:"min_sigs" validate:"required,min=1"`
 
-	Signers []basecoin.Actor `json:"signers" validate:"required,min=1"`
+	Signers []sdk.Actor `json:"signers" validate:"required,min=1"`
 
 	// Sequence is the user defined field whose purpose is to
 	// prevent replay attacks when creating a role, since it

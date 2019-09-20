@@ -8,17 +8,17 @@ import (
 	keycmd "github.com/tepleton/go-crypto/cmd"
 	"github.com/tepleton/tmlibs/cli"
 
-	"github.com/tepleton/basecoin/client/commands"
-	"github.com/tepleton/basecoin/client/commands/proxy"
-	"github.com/tepleton/basecoin/client/commands/query"
-	"github.com/tepleton/basecoin/client/commands/seeds"
-	txcmd "github.com/tepleton/basecoin/client/commands/txs"
-	bcount "github.com/tepleton/basecoin/docs/guide/counter/cmd/countercli/commands"
-	authcmd "github.com/tepleton/basecoin/modules/auth/commands"
-	basecmd "github.com/tepleton/basecoin/modules/base/commands"
-	coincmd "github.com/tepleton/basecoin/modules/coin/commands"
-	feecmd "github.com/tepleton/basecoin/modules/fee/commands"
-	noncecmd "github.com/tepleton/basecoin/modules/nonce/commands"
+	"github.com/tepleton/tepleton-sdk/client/commands"
+	"github.com/tepleton/tepleton-sdk/client/commands/proxy"
+	"github.com/tepleton/tepleton-sdk/client/commands/query"
+	"github.com/tepleton/tepleton-sdk/client/commands/seeds"
+	txcmd "github.com/tepleton/tepleton-sdk/client/commands/txs"
+	bcount "github.com/tepleton/tepleton-sdk/docs/guide/counter/cmd/countercli/commands"
+	authcmd "github.com/tepleton/tepleton-sdk/modules/auth/commands"
+	basecmd "github.com/tepleton/tepleton-sdk/modules/base/commands"
+	coincmd "github.com/tepleton/tepleton-sdk/modules/coin/commands"
+	feecmd "github.com/tepleton/tepleton-sdk/modules/fee/commands"
+	noncecmd "github.com/tepleton/tepleton-sdk/modules/nonce/commands"
 )
 
 // BaseCli represents the base command when called without any subcommands

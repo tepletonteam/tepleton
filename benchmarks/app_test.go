@@ -9,15 +9,15 @@ import (
 	cmn "github.com/tepleton/tmlibs/common"
 	"github.com/tepleton/tmlibs/log"
 
-	"github.com/tepleton/basecoin"
-	"github.com/tepleton/basecoin/app"
-	"github.com/tepleton/basecoin/modules/auth"
-	"github.com/tepleton/basecoin/modules/base"
-	"github.com/tepleton/basecoin/modules/coin"
-	"github.com/tepleton/basecoin/modules/fee"
-	"github.com/tepleton/basecoin/modules/nonce"
-	"github.com/tepleton/basecoin/modules/roles"
-	"github.com/tepleton/basecoin/stack"
+	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/app"
+	"github.com/tepleton/tepleton-sdk/modules/auth"
+	"github.com/tepleton/tepleton-sdk/modules/base"
+	"github.com/tepleton/tepleton-sdk/modules/coin"
+	"github.com/tepleton/tepleton-sdk/modules/fee"
+	"github.com/tepleton/tepleton-sdk/modules/nonce"
+	"github.com/tepleton/tepleton-sdk/modules/roles"
+	"github.com/tepleton/tepleton-sdk/stack"
 )
 
 type BenchApp struct {
@@ -27,7 +27,7 @@ type BenchApp struct {
 }
 
 // DefaultHandler - placeholder to just handle sendtx
-func DefaultHandler(feeDenom string) basecoin.Handler {
+func DefaultHandler(feeDenom string) sdk.Handler {
 	// use the default stack
 	c := coin.NewHandler()
 	r := roles.NewHandler()
@@ -46,7 +46,7 @@ func DefaultHandler(feeDenom string) basecoin.Handler {
 	).Use(d)
 }
 
-func NewBenchApp(h basecoin.Handler, chainID string, n int,
+func NewBenchApp(h sdk.Handler, chainID string, n int,
 	persist bool) BenchApp {
 
 	logger := log.NewNopLogger()
@@ -107,7 +107,7 @@ func (b BenchApp) makeTx(useFee bool) []byte {
 		tx = fee.NewFee(tx, toll, sender.Actor())
 	}
 	sequence := sender.NextSequence()
-	tx = nonce.NewTx(sequence, []basecoin.Actor{sender.Actor()}, tx)
+	tx = nonce.NewTx(sequence, []sdk.Actor{sender.Actor()}, tx)
 	tx = base.NewChainTx(b.ChainID, 0, tx)
 	stx := auth.NewMulti(tx)
 	auth.Sign(stx, sender.Key)

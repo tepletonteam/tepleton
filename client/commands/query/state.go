@@ -4,7 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/tepleton/basecoin/client/commands"
+	"github.com/tepleton/tepleton-sdk/client/commands"
 )
 
 // KeyQueryCmd - CLI command to query a state by key with proof

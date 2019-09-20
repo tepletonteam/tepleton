@@ -5,16 +5,16 @@ import (
 
 	"github.com/tepleton/tmlibs/cli"
 
-	"github.com/tepleton/basecoin"
-	client "github.com/tepleton/basecoin/client/commands"
-	"github.com/tepleton/basecoin/cmd/basecoin/commands"
-	"github.com/tepleton/basecoin/modules/base"
-	"github.com/tepleton/basecoin/modules/eyes"
-	"github.com/tepleton/basecoin/stack"
+	sdk "github.com/tepleton/tepleton-sdk"
+	client "github.com/tepleton/tepleton-sdk/client/commands"
+	"github.com/tepleton/tepleton-sdk/cmd/basecoin/commands"
+	"github.com/tepleton/tepleton-sdk/modules/base"
+	"github.com/tepleton/tepleton-sdk/modules/eyes"
+	"github.com/tepleton/tepleton-sdk/stack"
 )
 
 // BuildApp constructs the stack we want to use for this app
-func BuildApp() basecoin.Handler {
+func BuildApp() sdk.Handler {
 	return stack.New(
 		base.Logger{},
 		stack.Recovery{},

@@ -8,9 +8,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/tepleton/basecoin/client/commands"
-	txcmd "github.com/tepleton/basecoin/client/commands/txs"
-	"github.com/tepleton/basecoin/modules/ibc"
+	"github.com/tepleton/tepleton-sdk/client/commands"
+	txcmd "github.com/tepleton/tepleton-sdk/client/commands/txs"
+	"github.com/tepleton/tepleton-sdk/modules/ibc"
 	"github.com/tepleton/light-client/certifiers"
 )
 

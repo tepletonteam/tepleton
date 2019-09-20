@@ -4,8 +4,8 @@ import (
 	wire "github.com/tepleton/go-wire"
 	"github.com/tepleton/light-client/certifiers"
 
-	"github.com/tepleton/basecoin/stack"
-	"github.com/tepleton/basecoin/state"
+	"github.com/tepleton/tepleton-sdk/stack"
+	"github.com/tepleton/tepleton-sdk/state"
 )
 
 const (

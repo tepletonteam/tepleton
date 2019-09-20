@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tepleton/basecoin/state"
+	"github.com/tepleton/tepleton-sdk/state"
 	"github.com/tepleton/light-client/certifiers"
 )
 

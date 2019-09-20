@@ -8,11 +8,11 @@ import (
 
 	"github.com/tepleton/tmlibs/log"
 
-	"github.com/tepleton/basecoin"
-	"github.com/tepleton/basecoin/modules/coin"
-	"github.com/tepleton/basecoin/modules/fee"
-	"github.com/tepleton/basecoin/stack"
-	"github.com/tepleton/basecoin/state"
+	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/modules/coin"
+	"github.com/tepleton/tepleton-sdk/modules/fee"
+	"github.com/tepleton/tepleton-sdk/stack"
+	"github.com/tepleton/tepleton-sdk/state"
 )
 
 func TestFeeChecks(t *testing.T) {
@@ -30,7 +30,7 @@ func TestFeeChecks(t *testing.T) {
 	pure := atoms(46657)
 
 	// these are some accounts
-	collector := basecoin.Actor{App: fee.NameFee, Address: []byte("mine")}
+	collector := sdk.Actor{App: fee.NameFee, Address: []byte("mine")}
 	key1 := coin.NewAccountWithKey(mixed)
 	key2 := coin.NewAccountWithKey(pure)
 	act1, act2 := key1.Actor(), key2.Actor()
@@ -60,12 +60,12 @@ func TestFeeChecks(t *testing.T) {
 	cases := []struct {
 		valid bool
 		// this is the middleware stack to test
-		app basecoin.Handler
+		app sdk.Handler
 		// they sign the tx
-		signer basecoin.Actor
+		signer sdk.Actor
 		// wrap with the given fee if hasFee is true
 		hasFee bool
-		payer  basecoin.Actor
+		payer  sdk.Actor
 		fee    coin.Coin
 		// expected balance after the tx
 		left      coin.Coins

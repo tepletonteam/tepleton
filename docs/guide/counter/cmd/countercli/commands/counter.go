@@ -4,10 +4,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/tepleton/basecoin"
-	txcmd "github.com/tepleton/basecoin/client/commands/txs"
-	"github.com/tepleton/basecoin/docs/guide/counter/plugins/counter"
-	"github.com/tepleton/basecoin/modules/coin"
+	sdk "github.com/tepleton/tepleton-sdk"
+	txcmd "github.com/tepleton/tepleton-sdk/client/commands/txs"
+	"github.com/tepleton/tepleton-sdk/docs/guide/counter/plugins/counter"
+	"github.com/tepleton/tepleton-sdk/modules/coin"
 )
 
 //CounterTxCmd is the CLI command to execute the counter
@@ -41,7 +41,7 @@ func counterTx(cmd *cobra.Command, args []string) error {
 	return txcmd.DoTx(tx)
 }
 
-func readCounterTxFlags() (tx basecoin.Tx, err error) {
+func readCounterTxFlags() (tx sdk.Tx, err error) {
 	feeCoins, err := coin.ParseCoins(viper.GetString(FlagCountFee))
 	if err != nil {
 		return tx, err

@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/tepleton/wrsp/server"
-	"github.com/tepleton/basecoin"
+	sdk "github.com/tepleton/tepleton-sdk"
 	"github.com/tepleton/tmlibs/cli"
 	cmn "github.com/tepleton/tmlibs/common"
 
@@ -19,7 +19,7 @@ import (
 	"github.com/tepleton/tepleton/proxy"
 	"github.com/tepleton/tepleton/types"
 
-	"github.com/tepleton/basecoin/app"
+	"github.com/tepleton/tepleton-sdk/app"
 )
 
 // StartCmd - command to start running the basecoin node!
@@ -41,7 +41,7 @@ const (
 var (
 	// Handler - use a global to store the handler, so we can set it in main.
 	// TODO: figure out a cleaner way to register plugins
-	Handler basecoin.Handler
+	Handler sdk.Handler
 )
 
 func init() {

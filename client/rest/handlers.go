@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
-	"github.com/tepleton/basecoin"
+	sdk "github.com/tepleton/tepleton-sdk"
 	keysutils "github.com/tepleton/go-crypto/cmd"
 	keys "github.com/tepleton/go-crypto/keys"
 	"github.com/tepleton/tmlibs/common"
@@ -126,7 +126,7 @@ func (k *Keys) DeleteKey(w http.ResponseWriter, r *http.Request) {
 }
 
 func doPostTx(w http.ResponseWriter, r *http.Request) {
-	tx := new(basecoin.Tx)
+	tx := new(sdk.Tx)
 	if err := common.ParseRequestAndValidateJSON(r, tx); err != nil {
 		common.WriteError(w, err)
 		return

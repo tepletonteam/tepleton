@@ -3,7 +3,7 @@ package rpc
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/tepleton/basecoin/client/commands"
+	"github.com/tepleton/tepleton-sdk/client/commands"
 )
 
 var statusCmd = &cobra.Command{

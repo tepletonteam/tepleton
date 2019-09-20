@@ -17,8 +17,8 @@ package commands
 // 	"github.com/tepleton/merkleeyes/iavl"
 // 	cmn "github.com/tepleton/tmlibs/common"
 
-// 	"github.com/tepleton/basecoin/plugins/ibc"
-// 	"github.com/tepleton/basecoin/types"
+// 	"github.com/tepleton/tepleton-sdk/plugins/ibc"
+// 	"github.com/tepleton/tepleton-sdk/types"
 // 	"github.com/tepleton/tepleton/rpc/client"
 // 	tmtypes "github.com/tepleton/tepleton/types"
 // )

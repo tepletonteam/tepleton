@@ -6,7 +6,7 @@ import (
 
 	wrsp "github.com/tepleton/wrsp/types"
 
-	"github.com/tepleton/basecoin/errors"
+	"github.com/tepleton/tepleton-sdk/errors"
 )
 
 var (

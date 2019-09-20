@@ -9,8 +9,8 @@ import (
 
 	"github.com/tepleton/tmlibs/log"
 
-	"github.com/tepleton/basecoin"
-	"github.com/tepleton/basecoin/state"
+	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/state"
 )
 
 func TestRecovery(t *testing.T) {
@@ -19,7 +19,7 @@ func TestRecovery(t *testing.T) {
 	// generic args here...
 	ctx := NewContext("test-chain", 20, log.NewNopLogger())
 	store := state.NewMemKVStore()
-	tx := basecoin.Tx{}
+	tx := sdk.Tx{}
 
 	cases := []struct {
 		msg      string // what to send to panic

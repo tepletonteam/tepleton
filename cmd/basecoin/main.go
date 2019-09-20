@@ -5,21 +5,21 @@ import (
 
 	"github.com/tepleton/tmlibs/cli"
 
-	"github.com/tepleton/basecoin"
-	client "github.com/tepleton/basecoin/client/commands"
-	"github.com/tepleton/basecoin/cmd/basecoin/commands"
-	"github.com/tepleton/basecoin/modules/auth"
-	"github.com/tepleton/basecoin/modules/base"
-	"github.com/tepleton/basecoin/modules/coin"
-	"github.com/tepleton/basecoin/modules/fee"
-	"github.com/tepleton/basecoin/modules/ibc"
-	"github.com/tepleton/basecoin/modules/nonce"
-	"github.com/tepleton/basecoin/modules/roles"
-	"github.com/tepleton/basecoin/stack"
+	sdk "github.com/tepleton/tepleton-sdk"
+	client "github.com/tepleton/tepleton-sdk/client/commands"
+	"github.com/tepleton/tepleton-sdk/cmd/basecoin/commands"
+	"github.com/tepleton/tepleton-sdk/modules/auth"
+	"github.com/tepleton/tepleton-sdk/modules/base"
+	"github.com/tepleton/tepleton-sdk/modules/coin"
+	"github.com/tepleton/tepleton-sdk/modules/fee"
+	"github.com/tepleton/tepleton-sdk/modules/ibc"
+	"github.com/tepleton/tepleton-sdk/modules/nonce"
+	"github.com/tepleton/tepleton-sdk/modules/roles"
+	"github.com/tepleton/tepleton-sdk/stack"
 )
 
 // BuildApp constructs the stack we want to use for this app
-func BuildApp(feeDenom string) basecoin.Handler {
+func BuildApp(feeDenom string) sdk.Handler {
 	return stack.New(
 		base.Logger{},
 		stack.Recovery{},

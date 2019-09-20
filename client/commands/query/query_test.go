@@ -17,8 +17,8 @@ import (
 	"github.com/tepleton/tepleton/types"
 	"github.com/tepleton/tmlibs/log"
 
-	"github.com/tepleton/basecoin/app"
-	"github.com/tepleton/basecoin/modules/eyes"
+	"github.com/tepleton/tepleton-sdk/app"
+	"github.com/tepleton/tepleton-sdk/modules/eyes"
 )
 
 var node *nm.Node

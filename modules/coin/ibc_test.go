@@ -5,12 +5,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tepleton/basecoin"
-	"github.com/tepleton/basecoin/errors"
-	"github.com/tepleton/basecoin/modules/auth"
-	"github.com/tepleton/basecoin/modules/ibc"
-	"github.com/tepleton/basecoin/stack"
-	"github.com/tepleton/basecoin/state"
+	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/errors"
+	"github.com/tepleton/tepleton-sdk/modules/auth"
+	"github.com/tepleton/tepleton-sdk/modules/ibc"
+	"github.com/tepleton/tepleton-sdk/stack"
+	"github.com/tepleton/tepleton-sdk/state"
 	wire "github.com/tepleton/go-wire"
 )
 
@@ -48,7 +48,7 @@ func TestIBCPostPacket(t *testing.T) {
 	require.Nil(err, "%+v", err)
 
 	// sends money to another guy on a different chain, now other chain has credit
-	buddy := basecoin.Actor{ChainID: otherID, App: auth.NameSigs, Address: []byte("dude")}
+	buddy := sdk.Actor{ChainID: otherID, App: auth.NameSigs, Address: []byte("dude")}
 	outTx := NewSendOneTx(rich.Actor(), buddy, wealth)
 	_, err = ourChain.DeliverTx(outTx, rich.Actor())
 	require.Nil(err, "%+v", err)
@@ -64,8 +64,8 @@ func TestIBCPostPacket(t *testing.T) {
 	assertPacket(t, istore, otherID, wealth)
 
 	// these are the people for testing incoming ibc from the other chain
-	recipient := basecoin.Actor{ChainID: ourID, App: auth.NameSigs, Address: []byte("bar")}
-	sender := basecoin.Actor{ChainID: otherID, App: auth.NameSigs, Address: []byte("foo")}
+	recipient := sdk.Actor{ChainID: ourID, App: auth.NameSigs, Address: []byte("bar")}
+	sender := sdk.Actor{ChainID: otherID, App: auth.NameSigs, Address: []byte("foo")}
 	payment := Coins{{"eth", 100}, {"ltc", 300}}
 	coinTx := NewSendOneTx(sender, recipient, payment)
 	wrongCoin := NewSendOneTx(sender, recipient, Coins{{"missing", 20}})
@@ -82,10 +82,10 @@ func TestIBCPostPacket(t *testing.T) {
 	packet2, update2 := otherChain.MakePostPacket(p2, start+50)
 	require.Nil(ourChain.Update(update2))
 
-	ibcPerm := basecoin.Actors{ibc.AllowIBC(NameCoin)}
+	ibcPerm := sdk.Actors{ibc.AllowIBC(NameCoin)}
 	cases := []struct {
 		packet      ibc.PostPacketTx
-		permissions basecoin.Actors
+		permissions sdk.Actors
 		checker     errors.CheckErr
 	}{
 		// out of order -> error

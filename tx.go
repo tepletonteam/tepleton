@@ -1,11 +1,11 @@
-package basecoin
+package sdk
 
 import (
 	"strings"
 
 	"github.com/tepleton/go-wire/data"
 
-	"github.com/tepleton/basecoin/errors"
+	"github.com/tepleton/tepleton-sdk/errors"
 )
 
 const maxTxSize = 10240

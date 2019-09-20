@@ -8,14 +8,14 @@ import (
 	keycmd "github.com/tepleton/go-crypto/cmd"
 	"github.com/tepleton/tmlibs/cli"
 
-	"github.com/tepleton/basecoin/client/commands"
-	"github.com/tepleton/basecoin/client/commands/auto"
-	"github.com/tepleton/basecoin/client/commands/proxy"
-	"github.com/tepleton/basecoin/client/commands/query"
-	rpccmd "github.com/tepleton/basecoin/client/commands/rpc"
-	"github.com/tepleton/basecoin/client/commands/seeds"
-	txcmd "github.com/tepleton/basecoin/client/commands/txs"
-	eyescmd "github.com/tepleton/basecoin/modules/eyes/commands"
+	"github.com/tepleton/tepleton-sdk/client/commands"
+	"github.com/tepleton/tepleton-sdk/client/commands/auto"
+	"github.com/tepleton/tepleton-sdk/client/commands/proxy"
+	"github.com/tepleton/tepleton-sdk/client/commands/query"
+	rpccmd "github.com/tepleton/tepleton-sdk/client/commands/rpc"
+	"github.com/tepleton/tepleton-sdk/client/commands/seeds"
+	txcmd "github.com/tepleton/tepleton-sdk/client/commands/txs"
+	eyescmd "github.com/tepleton/tepleton-sdk/modules/eyes/commands"
 )
 
 // EyesCli - main basecoin client command

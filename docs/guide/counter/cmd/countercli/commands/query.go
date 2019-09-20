@@ -4,11 +4,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/tepleton/basecoin/client/commands"
-	"github.com/tepleton/basecoin/client/commands/query"
+	"github.com/tepleton/tepleton-sdk/client/commands"
+	"github.com/tepleton/tepleton-sdk/client/commands/query"
 
-	"github.com/tepleton/basecoin/docs/guide/counter/plugins/counter"
-	"github.com/tepleton/basecoin/stack"
+	"github.com/tepleton/tepleton-sdk/docs/guide/counter/plugins/counter"
+	"github.com/tepleton/tepleton-sdk/stack"
 )
 
 //CounterQueryCmd - CLI command to query the counter state

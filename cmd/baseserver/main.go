@@ -10,11 +10,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/tepleton/basecoin/client/commands"
-	rest "github.com/tepleton/basecoin/client/rest"
-	coinrest "github.com/tepleton/basecoin/modules/coin/rest"
-	noncerest "github.com/tepleton/basecoin/modules/nonce/rest"
-	rolerest "github.com/tepleton/basecoin/modules/roles/rest"
+	"github.com/tepleton/tepleton-sdk/client/commands"
+	rest "github.com/tepleton/tepleton-sdk/client/rest"
+	coinrest "github.com/tepleton/tepleton-sdk/modules/coin/rest"
+	noncerest "github.com/tepleton/tepleton-sdk/modules/nonce/rest"
+	rolerest "github.com/tepleton/tepleton-sdk/modules/roles/rest"
 	"github.com/tepleton/tmlibs/cli"
 )
 

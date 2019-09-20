@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 
-	"github.com/tepleton/basecoin/state"
+	"github.com/tepleton/tepleton-sdk/state"
 )
 
 type prefixStore struct {

@@ -8,7 +8,7 @@ import (
 
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 
-	"github.com/tepleton/basecoin/cmd/basecoin/commands"
+	"github.com/tepleton/tepleton-sdk/cmd/basecoin/commands"
 )
 
 // InitCmd - node initialization command

@@ -1,8 +1,8 @@
 package ibc
 
 import (
-	"github.com/tepleton/basecoin/stack"
-	"github.com/tepleton/basecoin/state"
+	"github.com/tepleton/tepleton-sdk/stack"
+	"github.com/tepleton/tepleton-sdk/state"
 )
 
 const (

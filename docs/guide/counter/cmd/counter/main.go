@@ -7,9 +7,9 @@ import (
 
 	"github.com/tepleton/tmlibs/cli"
 
-	client "github.com/tepleton/basecoin/client/commands"
-	"github.com/tepleton/basecoin/cmd/basecoin/commands"
-	"github.com/tepleton/basecoin/docs/guide/counter/plugins/counter"
+	client "github.com/tepleton/tepleton-sdk/client/commands"
+	"github.com/tepleton/tepleton-sdk/cmd/basecoin/commands"
+	"github.com/tepleton/tepleton-sdk/docs/guide/counter/plugins/counter"
 )
 
 func main() {

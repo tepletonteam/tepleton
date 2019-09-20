@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/tepleton/basecoin"
-	"github.com/tepleton/basecoin/stack"
-	"github.com/tepleton/basecoin/state"
+	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/stack"
+	"github.com/tepleton/tepleton-sdk/state"
 	wire "github.com/tepleton/go-wire"
 	"github.com/tepleton/go-wire/data"
 	"github.com/tepleton/tmlibs/log"
@@ -41,7 +41,7 @@ func TestMultiplexer(t *testing.T) {
 	}
 
 	cases := [...]struct {
-		tx           basecoin.Tx
+		tx           sdk.Tx
 		valid        bool
 		gasAllocated uint64
 		gasPayment   uint64
