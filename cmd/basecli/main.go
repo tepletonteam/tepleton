@@ -10,8 +10,8 @@ import (
 
 	"github.com/tepleton/basecoin/client/commands"
 	"github.com/tepleton/basecoin/client/commands/auto"
-	"github.com/tepleton/basecoin/client/commands/proofs"
 	"github.com/tepleton/basecoin/client/commands/proxy"
+	"github.com/tepleton/basecoin/client/commands/query"
 	rpccmd "github.com/tepleton/basecoin/client/commands/rpc"
 	"github.com/tepleton/basecoin/client/commands/seeds"
 	txcmd "github.com/tepleton/basecoin/client/commands/txs"
@@ -40,10 +40,10 @@ func main() {
 	commands.AddBasicFlags(BaseCli)
 
 	// Prepare queries
-	proofs.RootCmd.AddCommand(
+	query.RootCmd.AddCommand(
 		// These are default parsers, but optional in your app (you can remove key)
-		proofs.TxQueryCmd,
-		proofs.KeyQueryCmd,
+		query.TxQueryCmd,
+		query.KeyQueryCmd,
 		coincmd.AccountQueryCmd,
 		noncecmd.NonceQueryCmd,
 		rolecmd.RoleQueryCmd,
@@ -80,7 +80,7 @@ func main() {
 		keycmd.RootCmd,
 		seeds.RootCmd,
 		rpccmd.RootCmd,
-		proofs.RootCmd,
+		query.RootCmd,
 		txcmd.RootCmd,
 		proxy.RootCmd,
 		commands.VersionCmd,

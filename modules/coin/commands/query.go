@@ -8,7 +8,7 @@ import (
 	lc "github.com/tepleton/light-client"
 
 	"github.com/tepleton/basecoin/client/commands"
-	proofcmd "github.com/tepleton/basecoin/client/commands/proofs"
+	"github.com/tepleton/basecoin/client/commands/query"
 	"github.com/tepleton/basecoin/modules/coin"
 	"github.com/tepleton/basecoin/stack"
 )
@@ -34,12 +34,12 @@ func accountQueryCmd(cmd *cobra.Command, args []string) error {
 
 	acc := coin.Account{}
 	prove := !viper.GetBool(commands.FlagTrustNode)
-	height, err := proofcmd.GetParsed(key, &acc, prove)
+	height, err := query.GetParsed(key, &acc, prove)
 	if lc.IsNoDataErr(err) {
 		return errors.Errorf("Account bytes are empty for address %s ", addr)
 	} else if err != nil {
 		return err
 	}
 
-	return proofcmd.OutputProof(acc, height)
+	return query.OutputProof(acc, height)
 }

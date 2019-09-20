@@ -9,8 +9,8 @@ import (
 	"github.com/tepleton/tmlibs/cli"
 
 	"github.com/tepleton/basecoin/client/commands"
-	"github.com/tepleton/basecoin/client/commands/proofs"
 	"github.com/tepleton/basecoin/client/commands/proxy"
+	"github.com/tepleton/basecoin/client/commands/query"
 	"github.com/tepleton/basecoin/client/commands/seeds"
 	txcmd "github.com/tepleton/basecoin/client/commands/txs"
 	bcount "github.com/tepleton/basecoin/docs/guide/counter/cmd/countercli/commands"
@@ -37,10 +37,10 @@ func main() {
 	commands.AddBasicFlags(BaseCli)
 
 	// Prepare queries
-	proofs.RootCmd.AddCommand(
+	query.RootCmd.AddCommand(
 		// These are default parsers, optional in your app
-		proofs.TxQueryCmd,
-		proofs.KeyQueryCmd,
+		query.TxQueryCmd,
+		query.KeyQueryCmd,
 		coincmd.AccountQueryCmd,
 		noncecmd.NonceQueryCmd,
 
@@ -72,7 +72,7 @@ func main() {
 		commands.ResetCmd,
 		keycmd.RootCmd,
 		seeds.RootCmd,
-		proofs.RootCmd,
+		query.RootCmd,
 		txcmd.RootCmd,
 		proxy.RootCmd,
 	)

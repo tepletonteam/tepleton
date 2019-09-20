@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/tepleton/basecoin/client/commands"
-	proofcmd "github.com/tepleton/basecoin/client/commands/proofs"
+	"github.com/tepleton/basecoin/client/commands/query"
 	"github.com/tepleton/basecoin/modules/roles"
 	"github.com/tepleton/basecoin/stack"
 )
@@ -30,10 +30,10 @@ func roleQueryCmd(cmd *cobra.Command, args []string) error {
 	var res roles.Role
 	key := stack.PrefixedKey(roles.NameRole, role)
 	prove := !viper.GetBool(commands.FlagTrustNode)
-	height, err := proofcmd.GetParsed(key, &res, prove)
+	height, err := query.GetParsed(key, &res, prove)
 	if err != nil {
 		return err
 	}
 
-	return proofcmd.OutputProof(res, height)
+	return query.OutputProof(res, height)
 }
