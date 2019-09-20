@@ -7,7 +7,7 @@ import (
 
 	sdk "github.com/tepleton/tepleton-sdk"
 	client "github.com/tepleton/tepleton-sdk/client/commands"
-	"github.com/tepleton/tepleton-sdk/examples/basecoin/cmd/basecoin/commands"
+	"github.com/tepleton/tepleton-sdk/server/commands"
 	"github.com/tepleton/tepleton-sdk/modules/auth"
 	"github.com/tepleton/tepleton-sdk/modules/base"
 	"github.com/tepleton/tepleton-sdk/modules/coin"

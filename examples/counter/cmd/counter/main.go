@@ -8,7 +8,7 @@ import (
 	"github.com/tepleton/tmlibs/cli"
 
 	client "github.com/tepleton/tepleton-sdk/client/commands"
-	"github.com/tepleton/tepleton-sdk/examples/basecoin/cmd/basecoin/commands"
+	"github.com/tepleton/tepleton-sdk/server/commands"
 	"github.com/tepleton/tepleton-sdk/examples/counter/plugins/counter"
 )
 
