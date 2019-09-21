@@ -3,7 +3,7 @@ package state
 import (
 	"math/rand"
 
-	"github.com/tepleton/merkleeyes/iavl"
+	"github.com/tepleton/iavl"
 )
 
 // store nonce as it's own type so no one can even try to fake it

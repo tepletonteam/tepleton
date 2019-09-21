@@ -28,11 +28,8 @@ import:
   - certifiers
   - certifiers/client
   - certifiers/files
-- package: github.com/tepleton/merkleeyes
+- package: github.com/tepleton/iavl
   version: develop
-  subpackages:
-  - client
-  - iavl
 - package: github.com/tepleton/tepleton
   version: develop
   subpackages:

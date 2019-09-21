@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/go-wire"
-	"github.com/tepleton/merkleeyes/iavl"
+	"github.com/tepleton/iavl"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
@@ -180,18 +180,13 @@ func (s *Store) Query(reqQuery wrsp.RequestQuery) (resQuery wrsp.ResponseQuery) 
 		key := reqQuery.Data // Data holds the key bytes
 		resQuery.Key = key
 		if reqQuery.Prove {
-			value, proofExists, proofNotExists, err := tree.GetWithProof(key)
+			value, proof, err := tree.GetWithProof(key)
 			if err != nil {
 				resQuery.Log = err.Error()
 				break
 			}
-
-			if value != nil {
-				resQuery.Value = value
-				resQuery.Proof = wire.BinaryBytes(proofExists)
-			} else {
-				resQuery.Proof = wire.BinaryBytes(proofNotExists)
-			}
+			resQuery.Value = value
+			resQuery.Proof = proof.Bytes()
 		} else {
 			value := tree.Get(key)
 			resQuery.Value = value

@@ -14,7 +14,7 @@ package commands
 // 	// 	"github.com/tepleton/tmlibs/log"
 
 // 	"github.com/tepleton/go-wire"
-// 	"github.com/tepleton/merkleeyes/iavl"
+// 	"github.com/tepleton/iavl"
 // 	cmn "github.com/tepleton/tmlibs/common"
 
 // 	"github.com/tepleton/tepleton-sdk/plugins/ibc"
