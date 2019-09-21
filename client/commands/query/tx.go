@@ -8,6 +8,7 @@ import (
 	wire "github.com/tepleton/go-wire"
 	"github.com/tepleton/tepleton/types"
 
+	"github.com/tepleton/tepleton-sdk/client"
 	"github.com/tepleton/tepleton-sdk/client/commands"
 )
 
@@ -51,7 +52,7 @@ func txQueryCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	check, err := getCertifiedCheckpoint(res.Height, node, cert)
+	check, err := client.GetCertifiedCheckpoint(res.Height, node, cert)
 	if err != nil {
 		return err
 	}
