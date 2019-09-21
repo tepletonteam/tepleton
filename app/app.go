@@ -57,7 +57,7 @@ func (app *Basecoin) GetState() sm.SimpleDB {
 }
 
 // Info - WRSP
-func (app *Basecoin) Info() wrsp.ResponseInfo {
+func (app *Basecoin) Info(req wrsp.RequestInfo) wrsp.ResponseInfo {
 	resp := app.state.Info()
 	app.height = resp.LastBlockHeight
 	return wrsp.ResponseInfo{
@@ -157,15 +157,34 @@ func (app *Basecoin) Commit() (res wrsp.Result) {
 }
 
 // InitChain - WRSP
-func (app *Basecoin) InitChain(validators []*wrsp.Validator) {
+func (app *Basecoin) InitChain(req wrsp.RequestInitChain) {
 	// for _, plugin := range app.plugins.GetList() {
 	// 	plugin.InitChain(app.state, validators)
 	// }
 }
 
+// Ticker - has the ticker function
+type Ticker interface {
+	Tick(ctx sdk.Context, store sm.SimpleDB) ([]*wrsp.Validator, error)
+}
+
 // BeginBlock - WRSP
-func (app *Basecoin) BeginBlock(hash []byte, header *wrsp.Header) {
+func (app *Basecoin) BeginBlock(req wrsp.RequestBeginBlock) {
 	app.height++
+
+	ticker, ok := app.handler.(Ticker)
+	if ok {
+		ctx := stack.NewContext(
+			app.GetChainID(),
+			app.height,
+			app.logger.With("call", "delivertx"),
+		)
+		diff, err := ticker.Tick(ctx, app.state.Append())
+		if err != nil {
+			panic(err)
+		}
+		app.addValChange(diff)
+	}
 	// for _, plugin := range app.plugins.GetList() {
 	// 	plugin.BeginBlock(app.state, hash, header)
 	// }

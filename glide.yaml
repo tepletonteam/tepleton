@@ -30,7 +30,7 @@ import:
 - package: github.com/tepleton/iavl
   version: develop
 - package: github.com/tepleton/tepleton
-  version: develop
+  version: fix/autofile
   subpackages:
   - config
   - node
