@@ -1,7 +1,6 @@
 package rest
 
 import (
-	keycmd "github.com/tepleton/go-crypto/cmd"
 	"github.com/tepleton/go-crypto/keys"
 	wire "github.com/tepleton/go-wire"
 
@@ -9,6 +8,7 @@ import (
 
 	sdk "github.com/tepleton/tepleton-sdk"
 	"github.com/tepleton/tepleton-sdk/client/commands"
+	keycmd "github.com/tepleton/tepleton-sdk/client/commands/keys"
 )
 
 // PostTx is same as a tx

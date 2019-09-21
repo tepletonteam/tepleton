@@ -6,10 +6,11 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
-	sdk "github.com/tepleton/tepleton-sdk"
-	keysutils "github.com/tepleton/go-crypto/cmd"
 	keys "github.com/tepleton/go-crypto/keys"
 	"github.com/tepleton/tmlibs/common"
+
+	sdk "github.com/tepleton/tepleton-sdk"
+	keycmd "github.com/tepleton/tepleton-sdk/client/commands/keys"
 )
 
 type Keys struct {
@@ -18,7 +19,7 @@ type Keys struct {
 }
 
 func DefaultKeysManager() keys.Manager {
-	return keysutils.GetKeyManager()
+	return keycmd.GetKeyManager()
 }
 
 func NewDefaultKeysManager(algo string) *Keys {

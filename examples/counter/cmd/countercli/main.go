@@ -5,10 +5,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	keycmd "github.com/tepleton/go-crypto/cmd"
 	"github.com/tepleton/tmlibs/cli"
 
 	"github.com/tepleton/tepleton-sdk/client/commands"
+	"github.com/tepleton/tepleton-sdk/client/commands/keys"
 	"github.com/tepleton/tepleton-sdk/client/commands/proxy"
 	"github.com/tepleton/tepleton-sdk/client/commands/query"
 	"github.com/tepleton/tepleton-sdk/client/commands/seeds"
@@ -73,7 +73,7 @@ func main() {
 		commands.InitCmd,
 		commands.ResetCmd,
 		commands.VersionCmd,
-		keycmd.RootCmd,
+		keys.RootCmd,
 		seeds.RootCmd,
 		query.RootCmd,
 		txcmd.RootCmd,

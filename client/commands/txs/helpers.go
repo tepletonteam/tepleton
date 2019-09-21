@@ -10,12 +10,11 @@ import (
 	"strings"
 
 	"github.com/bgentry/speakeasy"
-	"github.com/mattn/go-isatty"
+	isatty "github.com/mattn/go-isatty"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 
 	crypto "github.com/tepleton/go-crypto"
-	keycmd "github.com/tepleton/go-crypto/cmd"
 	"github.com/tepleton/go-crypto/keys"
 	wire "github.com/tepleton/go-wire"
 	"github.com/tepleton/go-wire/data"
@@ -24,6 +23,7 @@ import (
 
 	sdk "github.com/tepleton/tepleton-sdk"
 	"github.com/tepleton/tepleton-sdk/client/commands"
+	keycmd "github.com/tepleton/tepleton-sdk/client/commands/keys"
 	"github.com/tepleton/tepleton-sdk/modules/auth"
 )
 
