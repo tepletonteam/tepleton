@@ -46,8 +46,8 @@ func MockStore() *Store {
 	return res
 }
 
-// NewStore initializes an in-memory iavl.VersionedTree, or attempts to load a
-// persistant tree from disk
+// NewStore initializes an in-memory IAVLTree, or attempts to load a persistant
+// tree from disk
 func NewStore(dbName string, cacheSize int, logger log.Logger) (*Store, error) {
 	// start at 1 so the height returned by query is for the
 	// next block, ie. the one that includes the AppHash for our current state
@@ -55,12 +55,12 @@ func NewStore(dbName string, cacheSize int, logger log.Logger) (*Store, error) {
 
 	// Non-persistent case
 	if dbName == "" {
-		tree := iavl.NewVersionedTree(
+		tree := iavl.NewIAVLTree(
 			0,
-			dbm.NewMemDB(),
+			nil,
 		)
 		store := &Store{
-			State:  state.NewState(tree, true),
+			State:  state.NewState(tree, false),
 			height: initialHeight,
 			logger: logger,
 		}
@@ -85,26 +85,24 @@ func NewStore(dbName string, cacheSize int, logger log.Logger) (*Store, error) {
 
 	// Open database called "dir/name.db", if it doesn't exist it will be created
 	db := dbm.NewDB(name, dbm.LevelDBBackendStr, dir)
-	tree := iavl.NewVersionedTree(cacheSize, db)
+	tree := iavl.NewIAVLTree(cacheSize, db)
 
 	var chainState ChainState
 	if empty {
 		logger.Info("no existing db, creating new db")
 		chainState = ChainState{
-			Hash:   nil,
+			Hash:   tree.Save(),
 			Height: initialHeight,
 		}
 		db.Set(stateKey, wire.BinaryBytes(chainState))
 	} else {
 		logger.Info("loading existing db")
 		eyesStateBytes := db.Get(stateKey)
-
-		if err = wire.ReadBinaryBytes(eyesStateBytes, &chainState); err != nil {
+		err = wire.ReadBinaryBytes(eyesStateBytes, &chainState)
+		if err != nil {
 			return nil, errors.Wrap(err, "Reading MerkleEyesState")
 		}
-		if err = tree.Load(); err != nil {
-			return nil, errors.Wrap(err, "Loading tree")
-		}
+		tree.Load(chainState.Hash)
 	}
 
 	res := &Store{
@@ -148,7 +146,7 @@ func (s *Store) Commit() wrsp.Result {
 		Height: s.height,
 	}))
 
-	hash, err := s.State.Commit(s.height)
+	hash, err := s.State.Commit()
 	if err != nil {
 		return wrsp.NewError(wrsp.CodeType_InternalError, err.Error())
 	}
@@ -164,25 +162,25 @@ func (s *Store) Commit() wrsp.Result {
 
 // Query implements wrsp.Application
 func (s *Store) Query(reqQuery wrsp.RequestQuery) (resQuery wrsp.ResponseQuery) {
-	// set the query response height to current
-	tree := s.State.Committed()
 
-	height := reqQuery.Height
-	if height == 0 {
-		if tree.Tree.VersionExists(s.height - 1) {
-			height = s.height - 1
-		} else {
-			height = s.height
-		}
+	if reqQuery.Height != 0 {
+		// TODO: support older commits
+		resQuery.Code = wrsp.CodeType_InternalError
+		resQuery.Log = "merkleeyes only supports queries on latest commit"
+		return
 	}
-	resQuery.Height = height
+
+	// set the query response height to current
+	resQuery.Height = s.height
+
+	tree := s.State.Committed()
 
 	switch reqQuery.Path {
 	case "/store", "/key": // Get by key
 		key := reqQuery.Data // Data holds the key bytes
 		resQuery.Key = key
 		if reqQuery.Prove {
-			value, proof, err := tree.GetVersionedWithProof(key, height)
+			value, proof, err := tree.GetWithProof(key)
 			if err != nil {
 				resQuery.Log = err.Error()
 				break

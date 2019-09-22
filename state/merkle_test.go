@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/tepleton/iavl"
-	db "github.com/tepleton/tmlibs/db"
 )
 
 type keyVal struct {
@@ -65,7 +64,7 @@ func TestStateCommitHash(t *testing.T) {
 			result := make([][]byte, len(tc.rounds))
 
 			// make the store...
-			tree := iavl.NewVersionedTree(0, db.NewMemDB())
+			tree := iavl.NewIAVLTree(0, nil)
 			store := NewState(tree, false)
 
 			for n, r := range tc.rounds {

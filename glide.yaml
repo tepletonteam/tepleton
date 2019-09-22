@@ -8,6 +8,7 @@ import:
 - package: github.com/spf13/viper
 - package: github.com/tepleton/wrsp
   version: develop
+  version:
   subpackages:
   - server
   - types
