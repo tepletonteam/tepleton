@@ -19,6 +19,7 @@ import (
 // Store contains the merkle tree, and all info to handle wrsp requests
 type Store struct {
 	state.State
+	height uint64
 	logger log.Logger
 }
 
@@ -81,12 +82,8 @@ func NewStore(dbName string, cacheSize int, logger log.Logger) (*Store, error) {
 		State:  state.NewState(tree),
 		logger: logger,
 	}
+	res.height = res.State.LatestHeight()
 	return res, nil
-}
-
-// Height gets the last height stored in the database
-func (s *Store) Height() uint64 {
-	return s.State.LatestHeight()
 }
 
 // Hash gets the last hash stored in the database
@@ -98,32 +95,31 @@ func (s *Store) Hash() []byte {
 // The height is the block that holds the transactions, not the apphash itself.
 func (s *Store) Info() wrsp.ResponseInfo {
 	s.logger.Info("Info synced",
-		"height", s.Height(),
+		"height", s.height,
 		"hash", fmt.Sprintf("%X", s.Hash()))
 	return wrsp.ResponseInfo{
 		Data:             cmn.Fmt("size:%v", s.State.Size()),
-		LastBlockHeight:  s.Height() - 1,
+		LastBlockHeight:  s.height - 1,
 		LastBlockAppHash: s.Hash(),
 	}
 }
 
 // Commit implements wrsp.Application
 func (s *Store) Commit() wrsp.Result {
-	height := s.Height() + 1
+	s.height++
 
-	hash, err := s.State.Commit(height)
+	hash, err := s.State.Commit(s.height)
 	if err != nil {
 		return wrsp.NewError(wrsp.CodeType_InternalError, err.Error())
 	}
 	s.logger.Debug("Commit synced",
-		"height", height,
+		"height", s.height,
 		"hash", fmt.Sprintf("%X", hash),
 	)
 
 	if s.State.Size() == 0 {
 		return wrsp.NewResultOK(nil, "Empty hash for empty tree")
 	}
-	fmt.Printf("WRSP Commit: %d / %X\n", height, hash)
 	return wrsp.NewResultOK(hash, "")
 }
 
@@ -134,10 +130,10 @@ func (s *Store) Query(reqQuery wrsp.RequestQuery) (resQuery wrsp.ResponseQuery) 
 
 	height := reqQuery.Height
 	if height == 0 {
-		if tree.Tree.VersionExists(s.Height() - 1) {
-			height = s.Height() - 1
+		if tree.Tree.VersionExists(s.height - 1) {
+			height = s.height - 1
 		} else {
-			height = s.Height()
+			height = s.height
 		}
 	}
 	resQuery.Height = height
