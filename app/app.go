@@ -165,6 +165,7 @@ func (app *Basecoin) InitChain(req wrsp.RequestInitChain) {
 
 // BeginBlock - WRSP
 func (app *Basecoin) BeginBlock(req wrsp.RequestBeginBlock) {
+	fmt.Println("BeginBlock")
 	app.height++
 	// for _, plugin := range app.plugins.GetList() {
 	// 	plugin.BeginBlock(app.state, hash, header)

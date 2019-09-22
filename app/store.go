@@ -84,12 +84,14 @@ func NewStore(dbName string, cacheSize int, logger log.Logger) (*Store, error) {
 	return res, nil
 }
 
+// Height gets the last height stored in the database
 func (s *Store) Height() uint64 {
-	return s.State.Committed().Tree.LatestVersion()
+	return s.State.LatestHeight()
 }
 
+// Hash gets the last hash stored in the database
 func (s *Store) Hash() []byte {
-	return s.State.Committed().Tree.Hash()
+	return s.State.LatestHash()
 }
 
 // Info implements wrsp.Application. It returns the height, hash and size (in the data).
@@ -121,6 +123,7 @@ func (s *Store) Commit() wrsp.Result {
 	if s.State.Size() == 0 {
 		return wrsp.NewResultOK(nil, "Empty hash for empty tree")
 	}
+	fmt.Printf("WRSP Commit: %d / %X\n", height, hash)
 	return wrsp.NewResultOK(hash, "")
 }
 
