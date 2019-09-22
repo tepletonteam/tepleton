@@ -59,6 +59,9 @@ func (app *Basecoin) GetState() sm.SimpleDB {
 // Info - WRSP
 func (app *Basecoin) Info(req wrsp.RequestInfo) wrsp.ResponseInfo {
 	resp := app.state.Info()
+	app.logger.Debug("Info",
+		"height", resp.LastBlockHeight,
+		"hash", fmt.Sprintf("%X", resp.LastBlockAppHash))
 	app.height = resp.LastBlockHeight
 	return wrsp.ResponseInfo{
 		Data:             fmt.Sprintf("Basecoin v%v", version.Version),
@@ -70,7 +73,6 @@ func (app *Basecoin) Info(req wrsp.RequestInfo) wrsp.ResponseInfo {
 // InitState - used to setup state (was SetOption)
 // to be used by InitChain later
 func (app *Basecoin) InitState(key string, value string) string {
-
 	module, key := splitKey(key)
 	state := app.state.Append()
 

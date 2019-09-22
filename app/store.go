@@ -99,7 +99,7 @@ func (s *Store) Info() wrsp.ResponseInfo {
 		"hash", fmt.Sprintf("%X", s.Hash()))
 	return wrsp.ResponseInfo{
 		Data:             cmn.Fmt("size:%v", s.State.Size()),
-		LastBlockHeight:  s.height - 1,
+		LastBlockHeight:  s.height,
 		LastBlockAppHash: s.Hash(),
 	}
 }
