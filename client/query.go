@@ -39,9 +39,7 @@ func GetWithProof(key []byte, node client.Client, cert certifiers.Certifier) (
 		return
 	}
 
-	// AppHash for height H is in header H+1
-	var check lc.Checkpoint
-	check, err = GetCertifiedCheckpoint(int(resp.Height+1), node, cert)
+	check, err := GetCertifiedCheckpoint(int(resp.Height), node, cert)
 	if err != nil {
 		return
 	}
@@ -71,6 +69,7 @@ func GetWithProof(key []byte, node client.Client, cert certifiers.Certifier) (
 			err = errors.Wrap(err, "Error reading proof")
 			return
 		}
+
 		// Validate the proof against the certified header to ensure data integrity.
 		err = aproof.Verify(resp.Key, nil, check.Header.AppHash)
 		if err != nil {

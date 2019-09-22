@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"fmt"
 	"path"
 	"path/filepath"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	wrsp "github.com/tepleton/wrsp/types"
+	"github.com/tepleton/go-wire"
 	"github.com/tepleton/iavl"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
@@ -19,8 +21,19 @@ import (
 // Store contains the merkle tree, and all info to handle wrsp requests
 type Store struct {
 	state.State
-	height uint64
+	height    uint64
+	hash      []byte
+	persisted bool
+
 	logger log.Logger
+}
+
+var stateKey = []byte("merkle:state") // Database key for merkle tree save value db values
+
+// ChainState contains the latest Merkle root hash and the number of times `Commit` has been called
+type ChainState struct {
+	Hash   []byte
+	Height uint64
 }
 
 // MockStore returns an in-memory store only intended for testing
@@ -33,17 +46,22 @@ func MockStore() *Store {
 	return res
 }
 
-// NewStore initializes an in-memory iavl.VersionedTree, or attempts to load a
-// persistant tree from disk
+// NewStore initializes an in-memory IAVLTree, or attempts to load a persistant
+// tree from disk
 func NewStore(dbName string, cacheSize int, logger log.Logger) (*Store, error) {
-	// memory backed case, just for testing
+	// start at 1 so the height returned by query is for the
+	// next block, ie. the one that includes the AppHash for our current state
+	initialHeight := uint64(1)
+
+	// Non-persistent case
 	if dbName == "" {
-		tree := iavl.NewVersionedTree(
+		tree := iavl.NewIAVLTree(
 			0,
-			dbm.NewMemDB(),
+			nil,
 		)
 		store := &Store{
-			State:  state.NewState(tree),
+			State:  state.NewState(tree, false),
+			height: initialHeight,
 			logger: logger,
 		}
 		return store, nil
@@ -67,28 +85,34 @@ func NewStore(dbName string, cacheSize int, logger log.Logger) (*Store, error) {
 
 	// Open database called "dir/name.db", if it doesn't exist it will be created
 	db := dbm.NewDB(name, dbm.LevelDBBackendStr, dir)
-	tree := iavl.NewVersionedTree(cacheSize, db)
+	tree := iavl.NewIAVLTree(cacheSize, db)
 
+	var chainState ChainState
 	if empty {
 		logger.Info("no existing db, creating new db")
+		chainState = ChainState{
+			Hash:   tree.Save(),
+			Height: initialHeight,
+		}
+		db.Set(stateKey, wire.BinaryBytes(chainState))
 	} else {
 		logger.Info("loading existing db")
-		if err = tree.Load(); err != nil {
-			return nil, errors.Wrap(err, "Loading tree")
+		eyesStateBytes := db.Get(stateKey)
+		err = wire.ReadBinaryBytes(eyesStateBytes, &chainState)
+		if err != nil {
+			return nil, errors.Wrap(err, "Reading MerkleEyesState")
 		}
+		tree.Load(chainState.Hash)
 	}
 
 	res := &Store{
-		State:  state.NewState(tree),
-		logger: logger,
+		State:     state.NewState(tree, true),
+		height:    chainState.Height,
+		hash:      chainState.Hash,
+		persisted: true,
+		logger:    logger,
 	}
-	res.height = res.State.LatestHeight()
 	return res, nil
-}
-
-// Hash gets the last hash stored in the database
-func (s *Store) Hash() []byte {
-	return s.State.LatestHash()
 }
 
 // Info implements wrsp.Application. It returns the height, hash and size (in the data).
@@ -96,59 +120,67 @@ func (s *Store) Hash() []byte {
 func (s *Store) Info() wrsp.ResponseInfo {
 	s.logger.Info("Info synced",
 		"height", s.height,
-		"hash", fmt.Sprintf("%X", s.Hash()))
+		"hash", fmt.Sprintf("%X", s.hash))
 	return wrsp.ResponseInfo{
 		Data:             cmn.Fmt("size:%v", s.State.Size()),
-		LastBlockHeight:  s.height,
-		LastBlockAppHash: s.Hash(),
+		LastBlockHeight:  s.height - 1,
+		LastBlockAppHash: s.hash,
 	}
 }
 
 // Commit implements wrsp.Application
 func (s *Store) Commit() wrsp.Result {
+	var err error
 	s.height++
-
-	hash, err := s.State.Commit(s.height)
+	s.hash, err = s.State.Hash()
 	if err != nil {
 		return wrsp.NewError(wrsp.CodeType_InternalError, err.Error())
 	}
+
 	s.logger.Debug("Commit synced",
 		"height", s.height,
-		"hash", fmt.Sprintf("%X", hash),
-	)
+		"hash", fmt.Sprintf("%X", s.hash))
+
+	s.State.BatchSet(stateKey, wire.BinaryBytes(ChainState{
+		Hash:   s.hash,
+		Height: s.height,
+	}))
+
+	hash, err := s.State.Commit()
+	if err != nil {
+		return wrsp.NewError(wrsp.CodeType_InternalError, err.Error())
+	}
+	if !bytes.Equal(hash, s.hash) {
+		return wrsp.NewError(wrsp.CodeType_InternalError, "AppHash is incorrect")
+	}
 
 	if s.State.Size() == 0 {
 		return wrsp.NewResultOK(nil, "Empty hash for empty tree")
 	}
-	return wrsp.NewResultOK(hash, "")
+	return wrsp.NewResultOK(s.hash, "")
 }
 
 // Query implements wrsp.Application
 func (s *Store) Query(reqQuery wrsp.RequestQuery) (resQuery wrsp.ResponseQuery) {
-	// set the query response height to current
-	tree := s.State.Committed()
 
-	height := reqQuery.Height
-	if height == 0 {
-		// TODO: once the rpc actually passes in non-zero
-		// heights we can use to query right after a tx
-		// we must retrun most recent, even if apphash
-		// is not yet in the blockchain
-
-		// if tree.Tree.VersionExists(s.height - 1) {
-		// 	height = s.height - 1
-		// } else {
-		height = s.height
-		// }
+	if reqQuery.Height != 0 {
+		// TODO: support older commits
+		resQuery.Code = wrsp.CodeType_InternalError
+		resQuery.Log = "merkleeyes only supports queries on latest commit"
+		return
 	}
-	resQuery.Height = height
+
+	// set the query response height to current
+	resQuery.Height = s.height
+
+	tree := s.State.Committed()
 
 	switch reqQuery.Path {
 	case "/store", "/key": // Get by key
 		key := reqQuery.Data // Data holds the key bytes
 		resQuery.Key = key
 		if reqQuery.Prove {
-			value, proof, err := tree.GetVersionedWithProof(key, height)
+			value, proof, err := tree.GetWithProof(key)
 			if err != nil {
 				resQuery.Log = err.Error()
 				break

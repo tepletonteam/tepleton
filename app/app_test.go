@@ -294,10 +294,9 @@ func TestQuery(t *testing.T) {
 	res = at.app.Commit()
 	assert.True(res.IsOK(), res)
 
-	key := stack.PrefixedKey(coin.NameCoin, at.acctIn.Address())
 	resQueryPostCommit := at.app.Query(wrsp.RequestQuery{
-		Path: "/key",
-		Data: key,
+		Path: "/account",
+		Data: at.acctIn.Address(),
 	})
 	assert.NotEqual(resQueryPreCommit, resQueryPostCommit, "Query should change before/after commit")
 }
