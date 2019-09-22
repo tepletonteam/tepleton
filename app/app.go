@@ -28,11 +28,15 @@ type Basecoin struct {
 	state *Store
 
 	handler sdk.Handler
+	tick    Ticker
 
 	pending []*wrsp.Validator
 	height  uint64
 	logger  log.Logger
 }
+
+// Ticker - tick function
+type Ticker func(sm.SimpleDB) ([]*wrsp.Validator, error)
 
 var _ wrsp.Application = &Basecoin{}
 
@@ -43,6 +47,17 @@ func NewBasecoin(handler sdk.Handler, store *Store, logger log.Logger) *Basecoin
 		info:    sm.NewChainState(),
 		state:   store,
 		logger:  logger,
+	}
+}
+
+// NewBasecoinTick - create a new instance of the basecoin application with tick functionality
+func NewBasecoinTick(handler sdk.Handler, store *Store, logger log.Logger, tick Ticker) *Basecoin {
+	return &Basecoin{
+		handler: handler,
+		info:    sm.NewChainState(),
+		state:   store,
+		logger:  logger,
+		tick:    tick,
 	}
 }
 
@@ -163,31 +178,21 @@ func (app *Basecoin) InitChain(req wrsp.RequestInitChain) {
 	// }
 }
 
-// Ticker - has the ticker function
-type Ticker interface {
-	Tick(ctx sdk.Context, store sm.SimpleDB) ([]*wrsp.Validator, error)
-}
-
 // BeginBlock - WRSP
 func (app *Basecoin) BeginBlock(req wrsp.RequestBeginBlock) {
 	app.height++
 
-	ticker, ok := app.handler.(Ticker)
-	if ok {
-		ctx := stack.NewContext(
-			app.GetChainID(),
-			app.height,
-			app.logger.With("call", "delivertx"),
-		)
-		diff, err := ticker.Tick(ctx, app.state.Append())
+	// for _, plugin := range app.plugins.GetList() {
+	// 	plugin.BeginBlock(app.state, hash, header)
+	// }
+
+	if app.tick != nil {
+		diff, err := app.tick(app.state.Append())
 		if err != nil {
 			panic(err)
 		}
 		app.addValChange(diff)
 	}
-	// for _, plugin := range app.plugins.GetList() {
-	// 	plugin.BeginBlock(app.state, hash, header)
-	// }
 }
 
 // EndBlock - WRSP
