@@ -3,15 +3,17 @@ package app
 import (
 	"bytes"
 	"fmt"
+	"path"
+	"path/filepath"
 	"strings"
 
 	wrsp "github.com/tepleton/wrsp/types"
+	"github.com/tepleton/iavl"
 	cmn "github.com/tepleton/tmlibs/common"
+	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
 
-	sdk "github.com/tepleton/tepleton-sdk"
 	"github.com/tepleton/tepleton-sdk/errors"
-	"github.com/tepleton/tepleton-sdk/stack"
 	sm "github.com/tepleton/tepleton-sdk/state"
 	"github.com/tepleton/tepleton-sdk/version"
 )
@@ -22,145 +24,42 @@ const (
 	ChainKey       = "chain_id"
 )
 
-// Basecoin - The WRSP application
-type Basecoin struct {
-	*BaseApp
-	handler sdk.Handler
-	tick    Ticker
-}
-
-// Ticker - tick function
-type Ticker func(sm.SimpleDB) ([]*wrsp.Validator, error)
-
-var _ wrsp.Application = &Basecoin{}
-
-// NewBasecoin - create a new instance of the basecoin application
-func NewBasecoin(handler sdk.Handler, store *Store, logger log.Logger) *Basecoin {
-	return &Basecoin{
-		BaseApp: NewBaseApp(store, logger),
-		handler: handler,
-	}
-}
-
-// NewBasecoinTick - create a new instance of the basecoin application with tick functionality
-func NewBasecoinTick(handler sdk.Handler, store *Store, logger log.Logger, tick Ticker) *Basecoin {
-	return &Basecoin{
-		BaseApp: NewBaseApp(store, logger),
-		handler: handler,
-		tick:    tick,
-	}
-}
-
-// InitState - used to setup state (was SetOption)
-// to be used by InitChain later
-func (app *Basecoin) InitState(key string, value string) string {
-	module, key := splitKey(key)
-	state := app.state.Append()
-
-	if module == ModuleNameBase {
-		if key == ChainKey {
-			app.info.SetChainID(state, value)
-			return "Success"
-		}
-		return fmt.Sprintf("Error: unknown base option: %s", key)
-	}
-
-	log, err := app.handler.InitState(app.Logger(), state, module, key, value)
-	if err == nil {
-		return log
-	}
-	return "Error: " + err.Error()
-}
-
-// DeliverTx - WRSP
-func (app *Basecoin) DeliverTx(txBytes []byte) wrsp.Result {
-	tx, err := sdk.LoadTx(txBytes)
-	if err != nil {
-		return errors.Result(err)
-	}
-
-	ctx := stack.NewContext(
-		app.GetChainID(),
-		app.height,
-		app.Logger().With("call", "delivertx"),
-	)
-	res, err := app.handler.DeliverTx(ctx, app.state.Append(), tx)
-
-	if err != nil {
-		return errors.Result(err)
-	}
-	app.AddValChange(res.Diff)
-	return sdk.ToWRSP(res)
-}
-
-// CheckTx - WRSP
-func (app *Basecoin) CheckTx(txBytes []byte) wrsp.Result {
-	tx, err := sdk.LoadTx(txBytes)
-	if err != nil {
-		return errors.Result(err)
-	}
-
-	ctx := stack.NewContext(
-		app.GetChainID(),
-		app.height,
-		app.Logger().With("call", "checktx"),
-	)
-	res, err := app.handler.CheckTx(ctx, app.state.Check(), tx)
-
-	if err != nil {
-		return errors.Result(err)
-	}
-	return sdk.ToWRSP(res)
-}
-
-// BeginBlock - WRSP
-func (app *Basecoin) BeginBlock(req wrsp.RequestBeginBlock) {
-	// call the embeded Begin
-	app.BaseApp.BeginBlock(req)
-
-	// now execute tick
-	if app.tick != nil {
-		diff, err := app.tick(app.state.Append())
-		if err != nil {
-			panic(err)
-		}
-		app.AddValChange(diff)
-	}
-}
-
-/////////////////////////// Move to SDK ///////
-
 // BaseApp contains a data store and all info needed
 // to perform queries and handshakes.
 //
 // It should be embeded in another struct for CheckTx,
 // DeliverTx and initializing state from the genesis.
 type BaseApp struct {
-	info  *sm.ChainState
-	state *Store
+	info *sm.ChainState
+	*sm.State
 
+	// cached validator changes from DeliverTx
 	pending []*wrsp.Validator
-	height  uint64
-	logger  log.Logger
+
+	// height is last committed block, DeliverTx is the next one
+	height uint64
+
+	logger log.Logger
 }
 
 // NewBaseApp creates a data store to handle queries
-func NewBaseApp(store *Store, logger log.Logger) *BaseApp {
-	return &BaseApp{
+func NewBaseApp(dbName string, cacheSize int, logger log.Logger) (*BaseApp, error) {
+	state, err := loadState(dbName, cacheSize)
+	if err != nil {
+		return nil, err
+	}
+	app := &BaseApp{
+		State:  state,
+		height: state.LatestHeight(),
 		info:   sm.NewChainState(),
-		state:  store,
 		logger: logger,
 	}
+	return app, nil
 }
 
 // GetChainID returns the currently stored chain
 func (app *BaseApp) GetChainID() string {
-	return app.info.GetChainID(app.state.Committed())
-}
-
-// GetState returns the delivertx state, should be removed
-func (app *BaseApp) GetState() sm.SimpleDB {
-	return app.state.Append()
+	return app.info.GetChainID(app.Committed())
 }
 
 // Logger returns the application base logger
@@ -168,17 +67,27 @@ func (app *BaseApp) Logger() log.Logger {
 	return app.logger
 }
 
-// Info - WRSP
+// Hash gets the last hash stored in the database
+func (app *BaseApp) Hash() []byte {
+	return app.State.LatestHash()
+}
+
+// Info implements wrsp.Application. It returns the height and hash,
+// as well as the wrsp name and version.
+//
+// The height is the block that holds the transactions, not the apphash itself.
 func (app *BaseApp) Info(req wrsp.RequestInfo) wrsp.ResponseInfo {
-	resp := app.state.Info()
-	app.logger.Debug("Info",
-		"height", resp.LastBlockHeight,
-		"hash", fmt.Sprintf("%X", resp.LastBlockAppHash))
-	app.height = resp.LastBlockHeight
+	hash := app.Hash()
+
+	app.logger.Info("Info synced",
+		"height", app.height,
+		"hash", fmt.Sprintf("%X", hash))
+
 	return wrsp.ResponseInfo{
+		// TODO
 		Data:             fmt.Sprintf("Basecoin v%v", version.Version),
-		LastBlockHeight:  resp.LastBlockHeight,
-		LastBlockAppHash: resp.LastBlockAppHash,
+		LastBlockHeight:  app.height,
+		LastBlockAppHash: hash,
 	}
 }
 
@@ -195,29 +104,74 @@ func (app *BaseApp) Query(reqQuery wrsp.RequestQuery) (resQuery wrsp.ResponseQue
 		return
 	}
 
-	return app.state.Query(reqQuery)
+	// set the query response height to current
+	tree := app.State.Committed()
+
+	height := reqQuery.Height
+	if height == 0 {
+		// TODO: once the rpc actually passes in non-zero
+		// heights we can use to query right after a tx
+		// we must retrun most recent, even if apphash
+		// is not yet in the blockchain
+
+		// if tree.Tree.VersionExists(app.height - 1) {
+		//  height = app.height - 1
+		// } else {
+		height = app.height
+		// }
+	}
+	resQuery.Height = height
+
+	switch reqQuery.Path {
+	case "/store", "/key": // Get by key
+		key := reqQuery.Data // Data holds the key bytes
+		resQuery.Key = key
+		if reqQuery.Prove {
+			value, proof, err := tree.GetVersionedWithProof(key, height)
+			if err != nil {
+				resQuery.Log = err.Error()
+				break
+			}
+			resQuery.Value = value
+			resQuery.Proof = proof.Bytes()
+		} else {
+			value := tree.Get(key)
+			resQuery.Value = value
+		}
+
+	default:
+		resQuery.Code = wrsp.CodeType_UnknownRequest
+		resQuery.Log = cmn.Fmt("Unexpected Query path: %v", reqQuery.Path)
+	}
+	return
 }
 
-// Commit - WRSP
+// Commit implements wrsp.Application
 func (app *BaseApp) Commit() (res wrsp.Result) {
-	// Commit state
-	res = app.state.Commit()
-	if res.IsErr() {
-		cmn.PanicSanity("Error getting hash: " + res.Error())
+	app.height++
+
+	hash, err := app.State.Commit(app.height)
+	if err != nil {
+		// die if we can't commit, not to recover
+		panic(err)
 	}
-	return res
+	app.logger.Debug("Commit synced",
+		"height", app.height,
+		"hash", fmt.Sprintf("%X", hash),
+	)
+
+	if app.State.Size() == 0 {
+		return wrsp.NewResultOK(nil, "Empty hash for empty tree")
+	}
+	return wrsp.NewResultOK(hash, "")
 }
 
 // InitChain - WRSP
 func (app *BaseApp) InitChain(req wrsp.RequestInitChain) {
-	// for _, plugin := range app.plugins.GetList() {
-	// 	plugin.InitChain(app.state, validators)
-	// }
 }
 
 // BeginBlock - WRSP
 func (app *BaseApp) BeginBlock(req wrsp.RequestBeginBlock) {
-	app.height++
 }
 
 // EndBlock - WRSP
@@ -229,6 +183,9 @@ func (app *BaseApp) EndBlock(height uint64) (res wrsp.ResponseEndBlock) {
 	return
 }
 
+// AddValChange is meant to be called by apps on DeliverTx
+// results, this is added to the cache for the endblock
+// changeset
 func (app *BaseApp) AddValChange(diffs []*wrsp.Validator) {
 	for _, d := range diffs {
 		idx := pubKeyIndex(d, app.pending)
@@ -250,8 +207,6 @@ func pubKeyIndex(val *wrsp.Validator, list []*wrsp.Validator) int {
 	return -1
 }
 
-//TODO move split key to tmlibs?
-
 // Splits the string at the first '/'.
 // if there are none, assign default module ("base").
 func splitKey(key string) (string, string) {
@@ -260,4 +215,40 @@ func splitKey(key string) (string, string) {
 		return keyParts[0], keyParts[1]
 	}
 	return ModuleNameBase, key
+}
+
+func loadState(dbName string, cacheSize int) (*sm.State, error) {
+	// memory backed case, just for testing
+	if dbName == "" {
+		tree := iavl.NewVersionedTree(0, dbm.NewMemDB())
+		return sm.NewState(tree), nil
+	}
+
+	// Expand the path fully
+	dbPath, err := filepath.Abs(dbName)
+	if err != nil {
+		return nil, errors.ErrInternal("Invalid Database Name")
+	}
+
+	// Some external calls accidently add a ".db", which is now removed
+	dbPath = strings.TrimSuffix(dbPath, path.Ext(dbPath))
+
+	// Split the database name into it's components (dir, name)
+	dir := path.Dir(dbPath)
+	name := path.Base(dbPath)
+
+	// Make sure the path exists
+	empty, _ := cmn.IsDirEmpty(dbPath + ".db")
+
+	// Open database called "dir/name.db", if it doesn't exist it will be created
+	db := dbm.NewDB(name, dbm.LevelDBBackendStr, dir)
+	tree := iavl.NewVersionedTree(cacheSize, db)
+
+	if !empty {
+		if err = tree.Load(); err != nil {
+			return nil, errors.ErrInternal("Loading tree: " + err.Error())
+		}
+	}
+
+	return sm.NewState(tree), nil
 }
