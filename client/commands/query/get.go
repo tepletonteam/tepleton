@@ -12,6 +12,7 @@ import (
 	"github.com/tepleton/go-wire/data"
 	"github.com/tepleton/iavl"
 	"github.com/tepleton/light-client/proofs"
+	rpcclient "github.com/tepleton/tepleton/rpc/client"
 
 	"github.com/tepleton/tepleton-sdk/client"
 	"github.com/tepleton/tepleton-sdk/client/commands"
@@ -47,7 +48,8 @@ func GetParsed(key []byte, data interface{}, prove bool) (uint64, error) {
 func Get(key []byte, prove bool) (data.Bytes, uint64, error) {
 	if !prove {
 		node := commands.GetNode()
-		resp, err := node.WRSPQuery("/key", key, false)
+		resp, err := node.WRSPQueryWithOptions("/key", key,
+			rpcclient.WRSPQueryOptions{Trusted: true})
 		return data.Bytes(resp.Value), resp.Height, err
 	}
 	val, h, _, err := GetWithProof(key)
