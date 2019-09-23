@@ -11,6 +11,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/modules/auth"
 	"github.com/tepleton/tepleton-sdk/modules/base"
 	"github.com/tepleton/tepleton-sdk/modules/coin"
+	"github.com/tepleton/tepleton-sdk/modules/eyes"
 	"github.com/tepleton/tepleton-sdk/modules/fee"
 	"github.com/tepleton/tepleton-sdk/modules/ibc"
 	"github.com/tepleton/tepleton-sdk/modules/nonce"
@@ -45,6 +46,8 @@ func BuildApp(feeDenom string) sdk.Handler {
 			coin.NewHandler(),
 			stack.WrapHandler(roles.NewHandler()),
 			stack.WrapHandler(ibc.NewHandler()),
+			// and just for run, add eyes as well
+			stack.WrapHandler(eyes.NewHandler()),
 		)
 }
 
