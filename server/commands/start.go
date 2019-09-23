@@ -21,6 +21,7 @@ import (
 
 	sdk "github.com/tepleton/tepleton-sdk"
 	"github.com/tepleton/tepleton-sdk/app"
+	"github.com/tepleton/tepleton-sdk/genesis"
 	"github.com/tepleton/tepleton-sdk/version"
 )
 
@@ -119,7 +120,7 @@ func start(rootDir string, basecoinApp *app.BaseApp) error {
 		// If genesis file exists, set key-value options
 		genesisFile := path.Join(rootDir, "genesis.json")
 		if _, err := os.Stat(genesisFile); err == nil {
-			err = app.LoadGenesis(basecoinApp, genesisFile)
+			err = genesis.LoadGenesis(basecoinApp, genesisFile)
 			if err != nil {
 				return errors.Errorf("Error in LoadGenesis: %v\n", err)
 			}

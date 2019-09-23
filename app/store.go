@@ -17,11 +17,6 @@ import (
 	sm "github.com/tepleton/tepleton-sdk/state"
 )
 
-//nolint
-const (
-	ChainKey = "chain_id"
-)
-
 // StoreApp contains a data store and all info needed
 // to perform queries and handshakes.
 //
