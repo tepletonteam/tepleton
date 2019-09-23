@@ -18,7 +18,7 @@ import (
 	"github.com/tepleton/tepleton/types"
 	"github.com/tepleton/tmlibs/log"
 
-	"github.com/tepleton/tepleton-sdk/app"
+	sdkapp "github.com/tepleton/tepleton-sdk/app"
 	"github.com/tepleton/tepleton-sdk/modules/eyes"
 )
 
@@ -26,10 +26,11 @@ var node *nm.Node
 
 func TestMain(m *testing.M) {
 	logger := log.TestingLogger()
-	app, err := app.NewBasecoin(eyes.NewHandler(), "", 0, logger)
+	store, err := sdkapp.MockStoreApp("query", logger)
 	if err != nil {
 		panic(err)
 	}
+	app := sdkapp.NewBaseApp(store, eyes.NewHandler(), nil)
 
 	node = rpctest.StartTendermint(app)
 
