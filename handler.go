@@ -25,6 +25,18 @@ type Handler interface {
 	// BeginBlock(store state.SimpleDB, hash []byte, header *wrsp.Header)
 }
 
+// Ticker can be executed every block
+type Ticker interface {
+	Tick(Context, state.SimpleDB) ([]*wrsp.Validator, error)
+}
+
+// TickerFunc allows a function to implement the interface
+type TickerFunc func(Context, state.SimpleDB) ([]*wrsp.Validator, error)
+
+func (t TickerFunc) Tick(ctx Context, store state.SimpleDB) ([]*wrsp.Validator, error) {
+	return t(ctx, store)
+}
+
 // Named ensures there is a name for the item
 type Named interface {
 	Name() string
