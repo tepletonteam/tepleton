@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	wrsp "github.com/tepleton/wrsp/types"
+	"github.com/tepleton/wrsp/version"
 	"github.com/tepleton/tmlibs/log"
 
 	sdk "github.com/tepleton/tepleton-sdk"
@@ -26,7 +27,8 @@ var _ wrsp.Application = &Basecoin{}
 
 // NewBasecoin - create a new instance of the basecoin application
 func NewBasecoin(handler sdk.Handler, dbName string, cacheSize int, logger log.Logger) (*Basecoin, error) {
-	base, err := NewBaseApp(dbName, cacheSize, logger)
+	appName := fmt.Sprintf("Basecoin v%v", version.Version)
+	base, err := NewBaseApp(appName, dbName, cacheSize, logger)
 	app := &Basecoin{
 		BaseApp: base,
 		handler: handler,
@@ -36,7 +38,8 @@ func NewBasecoin(handler sdk.Handler, dbName string, cacheSize int, logger log.L
 
 // NewBasecoinTick - create a new instance of the basecoin application with tick functionality
 func NewBasecoinTick(handler sdk.Handler, tick Ticker, dbName string, cacheSize int, logger log.Logger) (*Basecoin, error) {
-	base, err := NewBaseApp(dbName, cacheSize, logger)
+	appName := fmt.Sprintf("Basecoin v%v", version.Version)
+	base, err := NewBaseApp(appName, dbName, cacheSize, logger)
 	app := &Basecoin{
 		BaseApp: base,
 		handler: handler,
