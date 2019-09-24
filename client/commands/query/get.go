@@ -12,7 +12,6 @@ import (
 	"github.com/tepleton/go-wire/data"
 	"github.com/tepleton/iavl"
 	"github.com/tepleton/light-client/proofs"
-	rpcclient "github.com/tepleton/tepleton/rpc/client"
 
 	rpcclient "github.com/tepleton/tepleton/rpc/client"
 
