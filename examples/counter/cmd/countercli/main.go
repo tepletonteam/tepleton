@@ -8,10 +8,10 @@ import (
 	"github.com/tepleton/tmlibs/cli"
 
 	"github.com/tepleton/tepleton-sdk/client/commands"
+	"github.com/tepleton/tepleton-sdk/client/commands/commits"
 	"github.com/tepleton/tepleton-sdk/client/commands/keys"
 	"github.com/tepleton/tepleton-sdk/client/commands/proxy"
 	"github.com/tepleton/tepleton-sdk/client/commands/query"
-	"github.com/tepleton/tepleton-sdk/client/commands/seeds"
 
 	txcmd "github.com/tepleton/tepleton-sdk/client/commands/txs"
 	bcount "github.com/tepleton/tepleton-sdk/examples/counter/cmd/countercli/commands"
@@ -74,7 +74,7 @@ func main() {
 		commands.ResetCmd,
 		commands.VersionCmd,
 		keys.RootCmd,
-		seeds.RootCmd,
+		commits.RootCmd,
 		query.RootCmd,
 		txcmd.RootCmd,
 		proxy.RootCmd,

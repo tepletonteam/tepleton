@@ -9,11 +9,11 @@ import (
 
 	"github.com/tepleton/tepleton-sdk/client/commands"
 	"github.com/tepleton/tepleton-sdk/client/commands/auto"
+	"github.com/tepleton/tepleton-sdk/client/commands/commits"
 	"github.com/tepleton/tepleton-sdk/client/commands/keys"
 	"github.com/tepleton/tepleton-sdk/client/commands/proxy"
 	"github.com/tepleton/tepleton-sdk/client/commands/query"
 	rpccmd "github.com/tepleton/tepleton-sdk/client/commands/rpc"
-	"github.com/tepleton/tepleton-sdk/client/commands/seeds"
 	txcmd "github.com/tepleton/tepleton-sdk/client/commands/txs"
 	authcmd "github.com/tepleton/tepleton-sdk/modules/auth/commands"
 	basecmd "github.com/tepleton/tepleton-sdk/modules/base/commands"
@@ -77,7 +77,7 @@ func main() {
 		commands.InitCmd,
 		commands.ResetCmd,
 		keys.RootCmd,
-		seeds.RootCmd,
+		commits.RootCmd,
 		rpccmd.RootCmd,
 		query.RootCmd,
 		txcmd.RootCmd,
