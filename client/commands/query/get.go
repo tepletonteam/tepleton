@@ -14,6 +14,8 @@ import (
 	"github.com/tepleton/light-client/proofs"
 	rpcclient "github.com/tepleton/tepleton/rpc/client"
 
+	rpcclient "github.com/tepleton/tepleton/rpc/client"
+
 	"github.com/tepleton/tepleton-sdk/client"
 	"github.com/tepleton/tepleton-sdk/client/commands"
 )
