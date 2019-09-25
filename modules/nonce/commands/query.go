@@ -7,9 +7,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	lc "github.com/tepleton/light-client"
-
 	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/client"
 	"github.com/tepleton/tepleton-sdk/client/commands"
 	"github.com/tepleton/tepleton-sdk/client/commands/query"
 	"github.com/tepleton/tepleton-sdk/modules/nonce"
@@ -46,7 +45,7 @@ func doNonceQuery(signers []sdk.Actor) (sequence uint32, height uint64, err erro
 	key := stack.PrefixedKey(nonce.NameNonce, nonce.GetSeqKey(signers))
 	prove := !viper.GetBool(commands.FlagTrustNode)
 	height, err = query.GetParsed(key, &sequence, query.GetHeight(), prove)
-	if lc.IsNoDataErr(err) {
+	if client.IsNoDataErr(err) {
 		// no data, return sequence 0
 		return 0, 0, nil
 	}

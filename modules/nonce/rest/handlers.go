@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/viper"
 
 	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/client"
 	"github.com/tepleton/tepleton-sdk/client/commands"
 	"github.com/tepleton/tepleton-sdk/client/commands/query"
 	"github.com/tepleton/tepleton-sdk/errors"
@@ -16,7 +17,6 @@ import (
 	"github.com/tepleton/tepleton-sdk/modules/nonce"
 	"github.com/tepleton/tepleton-sdk/stack"
 	wire "github.com/tepleton/go-wire"
-	lightclient "github.com/tepleton/light-client"
 	"github.com/tepleton/tmlibs/common"
 )
 
@@ -48,7 +48,7 @@ func doQueryNonce(w http.ResponseWriter, r *http.Request) {
 
 	// query sequence number
 	data, height, err := query.Get(key, h, prove)
-	if lightclient.IsNoDataErr(err) {
+	if client.IsNoDataErr(err) {
 		err = fmt.Errorf("nonce empty for address: %q", signature)
 		common.WriteError(w, err)
 		return

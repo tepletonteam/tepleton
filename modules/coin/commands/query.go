@@ -5,8 +5,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	lc "github.com/tepleton/light-client"
-
+	"github.com/tepleton/tepleton-sdk/client"
 	"github.com/tepleton/tepleton-sdk/client/commands"
 	"github.com/tepleton/tepleton-sdk/client/commands/query"
 	"github.com/tepleton/tepleton-sdk/modules/coin"
@@ -35,7 +34,7 @@ func accountQueryCmd(cmd *cobra.Command, args []string) error {
 	acc := coin.Account{}
 	prove := !viper.GetBool(commands.FlagTrustNode)
 	height, err := query.GetParsed(key, &acc, query.GetHeight(), prove)
-	if lc.IsNoDataErr(err) {
+	if client.IsNoDataErr(err) {
 		return errors.Errorf("Account bytes are empty for address %s ", addr)
 	} else if err != nil {
 		return err

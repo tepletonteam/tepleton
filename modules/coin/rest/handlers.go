@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/viper"
 
 	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/client"
 	"github.com/tepleton/tepleton-sdk/client/commands"
 	"github.com/tepleton/tepleton-sdk/client/commands/query"
 	"github.com/tepleton/tepleton-sdk/modules/auth"
@@ -18,7 +19,6 @@ import (
 	"github.com/tepleton/tepleton-sdk/modules/fee"
 	"github.com/tepleton/tepleton-sdk/modules/nonce"
 	"github.com/tepleton/tepleton-sdk/stack"
-	lightclient "github.com/tepleton/light-client"
 	"github.com/tepleton/tmlibs/common"
 )
 
@@ -62,7 +62,7 @@ func doQueryAccount(w http.ResponseWriter, r *http.Request) {
 	account := new(coin.Account)
 	prove := !viper.GetBool(commands.FlagTrustNode)
 	height, err := query.GetParsed(key, account, h, prove)
-	if lightclient.IsNoDataErr(err) {
+	if client.IsNoDataErr(err) {
 		err := fmt.Errorf("account bytes are empty for address: %q", signature)
 		common.WriteError(w, err)
 		return
