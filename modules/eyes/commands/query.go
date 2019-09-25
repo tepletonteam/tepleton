@@ -11,7 +11,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/commands"
 	"github.com/tepleton/tepleton-sdk/client/commands/query"
 	"github.com/tepleton/tepleton-sdk/modules/eyes"
-	"github.com/tepleton/tepleton-sdk/stack"
+	"github.com/tepleton/tepleton-sdk/util"
 )
 
 // EyesQueryCmd - command to query raw data
@@ -33,7 +33,7 @@ func eyesQueryCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	key = stack.PrefixedKey(eyes.Name, key)
+	key = util.PrefixedKey(eyes.Name, key)
 	prove := !viper.GetBool(commands.FlagTrustNode)
 	height, err := query.GetParsed(key, &res, query.GetHeight(), prove)
 	if err != nil {

@@ -13,6 +13,7 @@ import (
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
 
+	sdk "github.com/tepleton/tepleton-sdk"
 	"github.com/tepleton/tepleton-sdk/errors"
 	sm "github.com/tepleton/tepleton-sdk/state"
 )
@@ -78,19 +79,13 @@ func (app *StoreApp) Hash() []byte {
 	return app.state.LatestHash()
 }
 
-// Committed returns the committed state,
-// also exposing historical queries
-// func (app *StoreApp) Committed() *Bonsai {
-// 	return app.state.committed
-// }
-
 // Append returns the working state for DeliverTx
-func (app *StoreApp) Append() sm.SimpleDB {
+func (app *StoreApp) Append() sdk.SimpleDB {
 	return app.state.Append()
 }
 
 // Check returns the working state for CheckTx
-func (app *StoreApp) Check() sm.SimpleDB {
+func (app *StoreApp) Check() sdk.SimpleDB {
 	return app.state.Check()
 }
 

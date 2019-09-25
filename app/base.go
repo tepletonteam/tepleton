@@ -1,13 +1,11 @@
 package app
 
 import (
-	"fmt"
-
 	wrsp "github.com/tepleton/wrsp/types"
 
 	sdk "github.com/tepleton/tepleton-sdk"
 	"github.com/tepleton/tepleton-sdk/errors"
-	"github.com/tepleton/tepleton-sdk/stack"
+	"github.com/tepleton/tepleton-sdk/util"
 )
 
 // BaseApp - The WRSP application
@@ -31,17 +29,14 @@ func NewBaseApp(store *StoreApp, handler sdk.Handler, clock sdk.Ticker) *BaseApp
 
 // DeliverTx - WRSP - dispatches to the handler
 func (app *BaseApp) DeliverTx(txBytes []byte) wrsp.Result {
-	tx, err := sdk.LoadTx(txBytes)
-	if err != nil {
-		return errors.Result(err)
-	}
 
-	ctx := stack.NewContext(
+	// TODO: use real context on refactor
+	ctx := util.MockContext(
 		app.GetChainID(),
 		app.WorkingHeight(),
-		app.Logger().With("call", "delivertx"),
 	)
-	res, err := app.handler.DeliverTx(ctx, app.Append(), tx)
+	// Note: first decorator must parse bytes
+	res, err := app.handler.DeliverTx(ctx, app.Append(), txBytes)
 
 	if err != nil {
 		return errors.Result(err)
@@ -52,17 +47,13 @@ func (app *BaseApp) DeliverTx(txBytes []byte) wrsp.Result {
 
 // CheckTx - WRSP - dispatches to the handler
 func (app *BaseApp) CheckTx(txBytes []byte) wrsp.Result {
-	tx, err := sdk.LoadTx(txBytes)
-	if err != nil {
-		return errors.Result(err)
-	}
-
-	ctx := stack.NewContext(
+	// TODO: use real context on refactor
+	ctx := util.MockContext(
 		app.GetChainID(),
 		app.WorkingHeight(),
-		app.Logger().With("call", "checktx"),
 	)
-	res, err := app.handler.CheckTx(ctx, app.Check(), tx)
+	// Note: first decorator must parse bytes
+	res, err := app.handler.CheckTx(ctx, app.Check(), txBytes)
 
 	if err != nil {
 		return errors.Result(err)
@@ -74,10 +65,9 @@ func (app *BaseApp) CheckTx(txBytes []byte) wrsp.Result {
 func (app *BaseApp) BeginBlock(req wrsp.RequestBeginBlock) {
 	// execute tick if present
 	if app.clock != nil {
-		ctx := stack.NewContext(
+		ctx := util.MockContext(
 			app.GetChainID(),
 			app.WorkingHeight(),
-			app.Logger().With("call", "tick"),
 		)
 
 		diff, err := app.clock.Tick(ctx, app.Append())
@@ -86,30 +76,4 @@ func (app *BaseApp) BeginBlock(req wrsp.RequestBeginBlock) {
 		}
 		app.AddValChange(diff)
 	}
-}
-
-// InitState - used to setup state (was SetOption)
-// to be used by InitChain later
-//
-// TODO: rethink this a bit more....
-func (app *BaseApp) InitState(module, key, value string) error {
-	state := app.Append()
-	logger := app.Logger().With("module", module, "key", key)
-
-	if module == sdk.ModuleNameBase {
-		if key == sdk.ChainKey {
-			app.info.SetChainID(state, value)
-			return nil
-		}
-		logger.Error("Invalid genesis option")
-		return fmt.Errorf("Unknown base option: %s", key)
-	}
-
-	log, err := app.handler.InitState(logger, state, module, key, value)
-	if err != nil {
-		logger.Error("Invalid genesis option", "err", err)
-	} else {
-		logger.Info(log)
-	}
-	return err
 }

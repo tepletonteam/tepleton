@@ -8,9 +8,11 @@ import (
 
 	sdk "github.com/tepleton/tepleton-sdk"
 	client "github.com/tepleton/tepleton-sdk/client/commands"
-	"github.com/tepleton/tepleton-sdk/modules/eyes"
+	eyesmod "github.com/tepleton/tepleton-sdk/modules/eyes"
 	"github.com/tepleton/tepleton-sdk/server/commands"
 	"github.com/tepleton/tepleton-sdk/util"
+
+	"github.com/tepleton/tepleton-sdk/examples/eyes"
 )
 
 // RootCmd is the entry point for this binary
@@ -25,8 +27,11 @@ func BuildApp() sdk.Handler {
 	return sdk.ChainDecorators(
 		util.Logger{},
 		util.Recovery{},
+		eyes.Parser{},
+		util.Chain{},
 	).WithHandler(
-		eyes.NewHandler())
+		eyesmod.NewHandler(),
+	)
 }
 
 func main() {
