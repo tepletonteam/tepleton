@@ -1,6 +1,6 @@
 package types
 
-import "github.com/tepleton/tmlibs/crypto"
+import crypto "github.com/tepleton/go-crypto"
 
 // The parsed tx bytes is called a Msg.
 type Msg interface {
