@@ -5,9 +5,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tepleton/tepleton-sdk/stack"
-	"github.com/tepleton/tepleton-sdk/state"
+
 	wire "github.com/tepleton/go-wire"
+
+	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/state"
+	"github.com/tepleton/tepleton-sdk/util"
 )
 
 func TestHandler(t *testing.T) {
@@ -18,12 +21,12 @@ func TestHandler(t *testing.T) {
 	var height uint64 = 123
 
 	h := NewHandler()
-	ctx := stack.MockContext("role-chain", height)
+	ctx := util.MockContext("role-chain", height)
 	store := state.NewMemKVStore()
 
-	set := SetTx{Key: key, Value: val}.Wrap()
-	remove := RemoveTx{Key: key}.Wrap()
-	invalid := SetTx{}.Wrap()
+	set := sdk.WrapTx(NewSetTx(key, val))
+	remove := sdk.WrapTx(NewRemoveTx(key))
+	invalid := sdk.WrapTx(NewSetTx(nil, nil))
 
 	// make sure pricing makes sense
 	cres, err := h.CheckTx(ctx, store, set)
