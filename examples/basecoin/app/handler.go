@@ -1,13 +1,10 @@
-XXX Rename AppHandler to DefaultAppHandler.
-XXX Register with a sdk.BaseApp instance to create Basecoin.
-XXX Create TxParser in anotehr file.
+// XXX Rename AppHandler to DefaultAppHandler.
+// XXX Register with a sdk.BaseApp instance to create Basecoin.
+// XXX Create TxParser in anotehr file.
 
 package app
 
 import (
-	wire "github.com/tepleton/go-wire"
-	"github.com/tepleton/go-wire/data"
-
 	sdk "github.com/tepleton/tepleton-sdk"
 	"github.com/tepleton/tepleton-sdk/store"
 )
