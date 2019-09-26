@@ -30,14 +30,14 @@ type BaseApp struct {
 	// CheckTx state
 	msCheck CacheMultiStore
 
-	// Cached validator changes from DeliverTx
-	pending []*wrsp.Validator
-
-	// Parser for the tx.
-	txParser sdk.TxParser
+	// Current block header
+	header *wrsp.Header
 
 	// Handler for CheckTx and DeliverTx.
 	handler sdk.Handler
+
+	// Cached validator changes from DeliverTx
+	valSetDiff []wrsp.Validator
 }
 
 var _ wrsp.Application = &BaseApp{}
@@ -80,20 +80,17 @@ func NewBaseApp(name string, ms MultiStore) (*BaseApp, error) {
 	}
 
 	return &BaseApp{
-		logger:  logger,
-		name:    name,
-		ms:      ms,
-		msCheck: msCheck,
-		pending: nil,
-		header:  header,
+		logger:     logger,
+		name:       name,
+		ms:         ms,
+		msCheck:    msCheck,
+		header:     header,
+		hander:     nil, // set w/ .WithHandler()
+		valSetDiff: nil,
 	}
 }
 
-func (app *BaseApp) SetTxParser(parser TxParser) {
-	app.txParser = parser
-}
-
-func (app *BaseApp) SetHandler(handler sdk.Handler) {
+func (app *BaseApp) WithHandler(handler sdk.Handler) *BaseApp {
 	app.handler = handler
 }
 
@@ -102,60 +99,36 @@ func (app *BaseApp) SetHandler(handler sdk.Handler) {
 // DeliverTx - WRSP - dispatches to the handler
 func (app *BaseApp) DeliverTx(txBytes []byte) wrsp.ResponseDeliverTx {
 
-	// TODO: use real context on refactor
-	ctx := util.MockContext(
-		app.GetChainID(),
-		app.WorkingHeight(),
-	)
-
-	// Parse the transaction
-	tx, err := app.parseTxFn(ctx, txBytes)
-	if err != nil {
-		err := sdk.TxParseError("").WithCause(err)
-		return sdk.ResponseDeliverTxFromErr(err)
+	ctx := sdk.NewContext(app.header, false, txBytes)
+	// NOTE: Tx is nil until a decorator parses it.
+	result := app.handler(ctx, nil)
+	if result.Code == wrsp.CodeType_OK {
+		app.ValSetDiff = append(app.ValSetDiff, result.ValSetDiff)
+	} else {
+		// Even though the Code is not OK, there will be some side effects,
+		// like those caused by fee deductions or sequence incrementations.
 	}
-
-	// Make handler deal with it
-	data, err := app.handler.DeliverTx(ctx, app.ms, tx)
-	if err != nil {
-		return sdk.ResponseDeliverTxFromErr(err)
-	}
-
-	app.AddValChange(res.Diff)
-
 	return wrsp.ResponseDeliverTx{
-		Code: wrsp.CodeType_OK,
-		Data: data,
-		Log:  "", // TODO add log from ctx.logger
+		Code: result.Code,
+		Data: result.Data,
+		Log:  result.Log,
+		Tags: result.Tags,
 	}
 }
 
 // CheckTx - WRSP - dispatches to the handler
 func (app *BaseApp) CheckTx(txBytes []byte) wrsp.ResponseCheckTx {
 
-	// TODO: use real context on refactor
-	ctx := util.MockContext(
-		app.GetChainID(),
-		app.WorkingHeight(),
-	)
-
-	// Parse the transaction
-	tx, err := app.parseTxFn(ctx, txBytes)
-	if err != nil {
-		err := sdk.TxParseError("").WithCause(err)
-		return sdk.ResponseCheckTxFromErr(err)
-	}
-
-	// Make handler deal with it
-	data, err := app.handler.CheckTx(ctx, app.ms, tx)
-	if err != nil {
-		return sdk.ResponseCheckTx(err)
-	}
-
+	ctx := sdk.NewContext(app.header, true, txBytes)
+	// NOTE: Tx is nil until a decorator parses it.
+	result := app.handler(ctx, nil)
 	return wrsp.ResponseCheckTx{
-		Code: wrsp.CodeType_OK,
-		Data: data,
-		Log:  "", // TODO add log from ctx.logger
+		Code:      result.Code,
+		Data:      result.Data,
+		Log:       result.Log,
+		Gas:       result.Gas,
+		FeeDenom:  result.FeeDenom,
+		FeeAmount: result.FeeAmount,
 	}
 }
 
@@ -172,12 +145,12 @@ func (app *BaseApp) Info(req wrsp.RequestInfo) wrsp.ResponseInfo {
 }
 
 // SetOption - WRSP
-func (app *StoreApp) SetOption(key string, value string) string {
+func (app *BaseApp) SetOption(key string, value string) string {
 	return "Not Implemented"
 }
 
 // Query - WRSP
-func (app *StoreApp) Query(reqQuery wrsp.RequestQuery) (resQuery wrsp.ResponseQuery) {
+func (app *BaseApp) Query(reqQuery wrsp.RequestQuery) (resQuery wrsp.ResponseQuery) {
 	/* TODO
 
 	if len(reqQuery.Data) == 0 {
@@ -231,7 +204,7 @@ func (app *StoreApp) Query(reqQuery wrsp.RequestQuery) (resQuery wrsp.ResponseQu
 }
 
 // Commit implements wrsp.Application
-func (app *StoreApp) Commit() (res wrsp.Result) {
+func (app *BaseApp) Commit() (res wrsp.Result) {
 	/*
 		hash, err := app.state.Commit(app.height)
 		if err != nil {
@@ -251,37 +224,23 @@ func (app *StoreApp) Commit() (res wrsp.Result) {
 }
 
 // InitChain - WRSP
-func (app *StoreApp) InitChain(req wrsp.RequestInitChain) {}
+func (app *BaseApp) InitChain(req wrsp.RequestInitChain) {}
 
 // BeginBlock - WRSP
-func (app *StoreApp) BeginBlock(req wrsp.RequestBeginBlock) {
-	// TODO
+func (app *BaseApp) BeginBlock(req wrsp.RequestBeginBlock) {
+	app.header = req.Header
 }
 
 // EndBlock - WRSP
 // Returns a list of all validator changes made in this block
-func (app *StoreApp) EndBlock(height uint64) (res wrsp.ResponseEndBlock) {
-	// TODO: cleanup in case a validator exists multiple times in the list
-	res.Diffs = app.pending
-	app.pending = nil
+func (app *BaseApp) EndBlock(height uint64) (res wrsp.ResponseEndBlock) {
+	// TODO: Compress duplicates
+	res.Diffs = app.valSetDiff
+	app.valSetDiff = nil
 	return
 }
 
-// AddValChange is meant to be called by apps on DeliverTx
-// results, this is added to the cache for the endblock
-// changeset
-func (app *StoreApp) AddValChange(diffs []*wrsp.Validator) {
-	for _, d := range diffs {
-		idx := pubKeyIndex(d, app.pending)
-		if idx >= 0 {
-			app.pending[idx] = d
-		} else {
-			app.pending = append(app.pending, d)
-		}
-	}
-}
-
-// return index of list with validator of same PubKey, or -1 if no match
+// Return index of list with validator of same PubKey, or -1 if no match
 func pubKeyIndex(val *wrsp.Validator, list []*wrsp.Validator) int {
 	for i, v := range list {
 		if bytes.Equal(val.PubKey, v.PubKey) {
