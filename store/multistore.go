@@ -2,7 +2,6 @@ package store
 
 import (
 	"fmt"
-	"sort"
 
 	"github.com/tepleton/go-wire"
 	dbm "github.com/tepleton/tmlibs/db"
