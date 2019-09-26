@@ -12,7 +12,6 @@ import (
 	"github.com/tepleton/tmlibs/log"
 
 	sdk "github.com/tepleton/tepleton-sdk"
-	"github.com/tepleton/tepleton-sdk/util"
 )
 
 const mainKeyHeader = "header"
