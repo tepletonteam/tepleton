@@ -7,47 +7,68 @@ import (
 	"github.com/tepleton/tepleton-sdk/errors"
 )
 
-var (
-	errNoAccount          = fmt.Errorf("No such account")
-	errInsufficientFunds  = fmt.Errorf("Insufficient funds")
-	errInsufficientCredit = fmt.Errorf("Insufficient credit")
-	errNoInputs           = fmt.Errorf("No input coins")
-	errNoOutputs          = fmt.Errorf("No output coins")
-	errInvalidAddress     = fmt.Errorf("Invalid address")
-	errInvalidCoins       = fmt.Errorf("Invalid coins")
-)
-
 const (
+	// Coin errors reserve 100 ~ 199.
 	CodeInvalidInput   uint32 = 101
 	CodeInvalidOutput  uint32 = 102
+	CodeInvalidAddress uint32 = 103
 	CodeUnknownAddress uint32 = 103
 	CodeUnknownRequest uint32 = errors.CodeUnknownRequest
 )
 
-func ErrNoAccount() errors.WRSPError {
-	return errors.WithCode(errNoAccount, CodeUnknownAddress)
+// NOTE: Don't stringer this, we'll put better messages in later.
+func codeToDefaultLog(code uint32) string {
+	switch code {
+	case CodeInvalidInput:
+		return "Invalid input coins"
+	case CodeInvalidOutput:
+		return "Invalid output coins"
+	case CodeInvalidAddress:
+		return "Invalid address"
+	case CodeUnknownAddress:
+		return "Unknown address"
+	case CodeUnknownRequest:
+		return "Unknown request"
+	default:
+		return errors.CodeToDefaultLog(code)
+	}
 }
 
-func ErrInvalidAddress() errors.WRSPError {
-	return errors.WithCode(errInvalidAddress, CodeInvalidInput)
+//----------------------------------------
+// Error constructors
+
+func ErrInvalidInput(log string) error {
+	return newError(CodeInvalidInput, log)
 }
 
-func ErrInvalidCoins() errors.WRSPError {
-	return errors.WithCode(errInvalidCoins, CodeInvalidInput)
+func ErrInvalidOutput(log string) error {
+	return newError(CodeInvalidOutput, log)
 }
 
-func ErrInsufficientFunds() errors.WRSPError {
-	return errors.WithCode(errInsufficientFunds, CodeInvalidInput)
+func ErrInvalidAddress(log string) error {
+	return newError(CodeInvalidAddress, log)
 }
 
-func ErrInsufficientCredit() errors.WRSPError {
-	return errors.WithCode(errInsufficientCredit, CodeInvalidInput)
+func ErrUnknownAddress(log string) error {
+	return newError(CodeUnknownAddress, log)
 }
 
-func ErrNoInputs() errors.WRSPError {
-	return errors.WithCode(errNoInputs, CodeInvalidInput)
+func ErrUnknownRequest(log string) error {
+	return newError(CodeUnknownRequest, log)
 }
 
-func ErrNoOutputs() errors.WRSPError {
-	return errors.WithCode(errNoOutputs, CodeInvalidOutput)
+//----------------------------------------
+// Misc
+
+func logOrDefault(log string, code uint32) string {
+	if log != "" {
+		return log
+	} else {
+		return codeToDefaultLog
+	}
+}
+
+func newError(code uint32, log string) error {
+	log = logOrDefaultLog(log, code)
+	return errors.NewWRSPError(code, log)
 }
