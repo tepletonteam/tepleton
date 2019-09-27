@@ -8,7 +8,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/client"
 	"github.com/tepleton/tepleton-sdk/client/commands"
 	"github.com/tepleton/tepleton-sdk/client/commands/query"
-	"github.com/tepleton/tepleton-sdk/modules/coin"
+	"github.com/tepleton/tepleton-sdk/x/coin"
 	"github.com/tepleton/tepleton-sdk/stack"
 )
 

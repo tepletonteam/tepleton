@@ -7,7 +7,7 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk"
 	"github.com/tepleton/tepleton-sdk/client/commands"
 	txcmd "github.com/tepleton/tepleton-sdk/client/commands/txs"
-	"github.com/tepleton/tepleton-sdk/modules/coin"
+	"github.com/tepleton/tepleton-sdk/x/coin"
 )
 
 // SendTxCmd is CLI command to send tokens between basecoin accounts

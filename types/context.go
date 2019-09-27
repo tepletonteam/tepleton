@@ -2,6 +2,7 @@ package types
 
 import (
 	"context"
+
 	wrsp "github.com/tepleton/wrsp/types"
 )
 
@@ -11,12 +12,12 @@ type Context struct {
 	// it's probably not what you want to do.
 }
 
-func NewContext(header tm.Header, isCheckTx bool, txBytes []byte) Context {
+func NewContext(header wrsp.Header, isCheckTx bool, txBytes []byte) Context {
 	c := Context{
 		Context: context.Background(),
 	}
 	c = c.setBlockHeader(header)
-	c = c.setBlockHeight(int64(header.Height))
+	c = c.setBlockHeight(header.Height)
 	c = c.setChainID(header.ChainID)
 	c = c.setIsCheckTx(isCheckTx)
 	c = c.setTxBytes(txBytes)
@@ -48,8 +49,8 @@ const (
 	contextKeyTxBytes
 )
 
-func (c Context) BlockHeader() tm.Header {
-	return c.Value(contextKeyBlockHeader).(tm.Header)
+func (c Context) BlockHeader() wrsp.Header {
+	return c.Value(contextKeyBlockHeader).(wrsp.Header)
 }
 
 func (c Context) BlockHeight() int64 {
@@ -69,18 +70,18 @@ func (c Context) TxBytes() []byte {
 }
 
 // Unexposed to prevent overriding.
-func (c Context) setBlockHeader(header tm.Header) Context {
+func (c Context) setBlockHeader(header wrsp.Header) Context {
 	return c.WithValueSDK(contextKeyBlockHeader, header)
 }
 
 // Unexposed to prevent overriding.
 func (c Context) setBlockHeight(height int64) Context {
-	return c.WithValueSDK(contextKeyBlockHeight, header)
+	return c.WithValueSDK(contextKeyBlockHeight, height)
 }
 
 // Unexposed to prevent overriding.
 func (c Context) setChainID(chainID string) Context {
-	return c.WithValueSDK(contextKeyChainID, header)
+	return c.WithValueSDK(contextKeyChainID, chainID)
 }
 
 // Unexposed to prevent overriding.
