@@ -16,8 +16,8 @@ import (
 
 const mainKeyHeader = "header"
 
-// BaseApp - The WRSP application
-type BaseApp struct {
+// App - The WRSP application
+type App struct {
 	logger log.Logger
 
 	// App name from wrsp.Info
@@ -39,64 +39,68 @@ type BaseApp struct {
 	valSetDiff []wrsp.Validator
 }
 
-var _ wrsp.Application = &BaseApp{}
+var _ wrsp.Application = &App{}
 
-// CONTRACT: There exists a "main" KVStore.
-func NewBaseApp(name string, store CommitMultiStore) (*BaseApp, error) {
-
-	if store.GetKVStore("main") == nil {
-		return nil, errors.New("BaseApp expects MultiStore with 'main' KVStore")
+func NewApp(name string) *App {
+	return &App{
+		name:   name,
+		logger: makeDefaultLogger(),
 	}
+}
 
-	logger := makeDefaultLogger()
+func (app *App) SetStore(store MultiStore) {
+	app.store = store
+}
+
+func (app *App) SetHandler(handler Handler) {
+	app.handler = handler
+}
+
+func (app *App) LoadLatestVersion() error {
+	curVersion := app.store.NextVersion()
+	app.
+}
+
+func (app *App) LoadVersion(version int64) error {
+	store := app.store
 	lastCommitID := store.LastCommitID()
-	curVersion := store.CurrentVersion()
+	curVersion := store.NextVersion()
 	main := store.GetKVStore("main")
 	header := (*wrsp.Header)(nil)
 	storeCheck := store.CacheMultiStore()
 
-	// SANITY
-	if curVersion != lastCommitID.Version+1 {
-		panic("CurrentVersion != LastCommitID.Version+1")
+	// Main store should exist.
+	if store.GetKVStore("main") == nil {
+		return errors.New("App expects MultiStore with 'main' KVStore")
 	}
 
-	// If we've committed before, we expect store.GetKVStore("main").Get("header")
+	// Basic sanity check.
+	if curVersion != lastCommitID.Version+1 {
+		return errors.New("NextVersion != LastCommitID.Version+1")
+	}
+
+	// If we've committed before, we expect store(main)/<mainKeyHeader>.
 	if !lastCommitID.IsZero() {
 		headerBytes, ok := main.Get(mainKeyHeader)
 		if !ok {
-			return nil, errors.New(fmt.Sprintf("Version > 0 but missing key %s", mainKeyHeader))
+			errStr := fmt.Sprintf("Version > 0 but missing key %s", mainKeyHeader)
+			return errors.New(errStr)
 		}
 		err = proto.Unmarshal(headerBytes, header)
 		if err != nil {
-			return nil, errors.Wrap(err, "Failed to parse Header")
+			return errors.Wrap(err, "Failed to parse Header")
 		}
-
-		// SANITY: Validate Header
 		if header.Height != curVersion-1 {
 			errStr := fmt.Sprintf("Expected header.Height %v but got %v", version, headerHeight)
-			panic(errStr)
+			return errors.New(errStr)
 		}
 	}
-
-	return &BaseApp{
-		logger:     logger,
-		name:       name,
-		store:      store,
-		storeCheck: storeCheck,
-		header:     header,
-		hander:     nil, // set w/ .WithHandler()
-		valSetDiff: nil,
-	}
-}
-
-func (app *BaseApp) WithHandler(handler sdk.Handler) *BaseApp {
-	app.handler = handler
 }
 
 //----------------------------------------
 
 // DeliverTx - WRSP - dispatches to the handler
-func (app *BaseApp) DeliverTx(txBytes []byte) wrsp.ResponseDeliverTx {
+func (app *App) DeliverTx(txBytes []byte) wrsp.ResponseDeliverTx {
 
 	// Initialize arguments to Handler.
 	var isCheckTx = false
@@ -127,7 +131,7 @@ func (app *BaseApp) DeliverTx(txBytes []byte) wrsp.ResponseDeliverTx {
 }
 
 // CheckTx - WRSP - dispatches to the handler
-func (app *BaseApp) CheckTx(txBytes []byte) wrsp.ResponseCheckTx {
+func (app *App) CheckTx(txBytes []byte) wrsp.ResponseCheckTx {
 
 	// Initialize arguments to Handler.
 	var isCheckTx = true
@@ -150,7 +154,7 @@ func (app *BaseApp) CheckTx(txBytes []byte) wrsp.ResponseCheckTx {
 }
 
 // Info - WRSP
-func (app *BaseApp) Info(req wrsp.RequestInfo) wrsp.ResponseInfo {
+func (app *App) Info(req wrsp.RequestInfo) wrsp.ResponseInfo {
 
 	lastCommitID := app.store.LastCommitID()
 
@@ -162,12 +166,12 @@ func (app *BaseApp) Info(req wrsp.RequestInfo) wrsp.ResponseInfo {
 }
 
 // SetOption - WRSP
-func (app *BaseApp) SetOption(key string, value string) string {
+func (app *App) SetOption(key string, value string) string {
 	return "Not Implemented"
 }
 
 // Query - WRSP
-func (app *BaseApp) Query(reqQuery wrsp.RequestQuery) (resQuery wrsp.ResponseQuery) {
+func (app *App) Query(reqQuery wrsp.RequestQuery) (resQuery wrsp.ResponseQuery) {
 	/*
 		XXX Make this work with MultiStore.
 		XXX It will require some interfaces updates in store/types.go.
@@ -223,7 +227,7 @@ func (app *BaseApp) Query(reqQuery wrsp.RequestQuery) (resQuery wrsp.ResponseQue
 }
 
 // Commit implements wrsp.Application
-func (app *BaseApp) Commit() (res wrsp.Result) {
+func (app *App) Commit() (res wrsp.Result) {
 	commitID := app.store.Commit()
 	app.logger.Debug("Commit synced",
 		"commit", commitID,
@@ -232,16 +236,16 @@ func (app *BaseApp) Commit() (res wrsp.Result) {
 }
 
 // InitChain - WRSP
-func (app *BaseApp) InitChain(req wrsp.RequestInitChain) {}
+func (app *App) InitChain(req wrsp.RequestInitChain) {}
 
 // BeginBlock - WRSP
-func (app *BaseApp) BeginBlock(req wrsp.RequestBeginBlock) {
+func (app *App) BeginBlock(req wrsp.RequestBeginBlock) {
 	app.header = req.Header
 }
 
 // EndBlock - WRSP
 // Returns a list of all validator changes made in this block
-func (app *BaseApp) EndBlock(height uint64) (res wrsp.ResponseEndBlock) {
+func (app *App) EndBlock(height uint64) (res wrsp.ResponseEndBlock) {
 	// XXX Update to res.Updates.
 	res.Diffs = app.valSetDiff
 	app.valSetDiff = nil
@@ -263,4 +267,39 @@ func pubKeyIndex(val *wrsp.Validator, list []*wrsp.Validator) int {
 // ResponseDeliverTx.Log and ResponseCheckTx.Log.
 func makeDefaultLogger() log.Logger {
 	return log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "sdk/app")
+}
+
+// InitState - used to setup state (was SetOption)
+// to be call from setting up the genesis file
+func (app *InitApp) InitState(module, key, value string) error {
+	state := app.Append()
+	logger := app.Logger().With("module", module, "key", key)
+
+	if module == sdk.ModuleNameBase {
+		if key == sdk.ChainKey {
+			app.info.SetChainID(state, value)
+			return nil
+		}
+		logger.Error("Invalid genesis option")
+		return fmt.Errorf("Unknown base option: %s", key)
+	}
+
+	log, err := app.initState.InitState(logger, state, module, key, value)
+	if err != nil {
+		logger.Error("Invalid genesis option", "err", err)
+	} else {
+		logger.Info(log)
+	}
+	return err
+}
+
+// InitChain - WRSP - sets the initial validators
+func (app *InitApp) InitChain(req wrsp.RequestInitChain) {
+	// return early if no InitValidator registered
+	if app.initVals == nil {
+		return
+	}
+
+	logger, store := app.Logger(), app.Append()
+	app.initVals.InitValidators(logger, store, req.Validators)
 }
