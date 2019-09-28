@@ -3,204 +3,263 @@ package app
 import (
 	"bytes"
 	"fmt"
-	"path"
-	"path/filepath"
-	"strings"
+	"os"
 
+	"github.com/golang/protobuf/proto"
+	"github.com/pkg/errors"
 	wrsp "github.com/tepleton/wrsp/types"
-	"github.com/tepleton/iavl"
 	cmn "github.com/tepleton/tmlibs/common"
-	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
 
-	"github.com/tepleton/tepleton-sdk/errors"
-	sm "github.com/tepleton/tepleton-sdk/state"
+	sdk "github.com/tepleton/tepleton-sdk"
 )
 
-//nolint
-const (
-	ChainKey = "chain_id"
-)
+const mainKeyHeader = "header"
 
-// BaseApp contains a data store and all info needed
-// to perform queries and handshakes.
-//
-// It should be embeded in another struct for CheckTx,
-// DeliverTx and initializing state from the genesis.
-type BaseApp struct {
-	// Name is what is returned from info
-	Name string
-
-	// this is the database state
-	info *sm.ChainState
-	*sm.State
-
-	// cached validator changes from DeliverTx
-	pending []*wrsp.Validator
-
-	// height is last committed block, DeliverTx is the next one
-	height uint64
-
+// App - The WRSP application
+type App struct {
 	logger log.Logger
+
+	// App name from wrsp.Info
+	name string
+
+	// DeliverTx (main) state
+	store MultiStore
+
+	// CheckTx state
+	storeCheck CacheMultiStore
+
+	// Current block header
+	header *wrsp.Header
+
+	// Handler for CheckTx and DeliverTx.
+	handler sdk.Handler
+
+	// Cached validator changes from DeliverTx
+	valUpdates []wrsp.Validator
 }
 
-// NewBaseApp creates a data store to handle queries
-func NewBaseApp(appName, dbName string, cacheSize int, logger log.Logger) (*BaseApp, error) {
-	state, err := loadState(dbName, cacheSize)
-	if err != nil {
-		return nil, err
+var _ wrsp.Application = &App{}
+
+func NewApp(name string) *App {
+	return &App{
+		name:   name,
+		logger: makeDefaultLogger(),
 	}
-	app := &BaseApp{
-		Name:   appName,
-		State:  state,
-		height: state.LatestHeight(),
-		info:   sm.NewChainState(),
-		logger: logger,
+}
+
+func (app *App) SetStore(store MultiStore) {
+	app.store = store
+}
+
+func (app *App) SetHandler(handler Handler) {
+	app.handler = handler
+}
+
+func (app *App) LoadLatestVersion() error {
+	store := app.store
+	store.LoadLastVersion()
+	return app.initFromStore()
+}
+
+func (app *App) LoadVersion(version int64) error {
+	store := app.store
+	store.LoadVersion(version)
+	return app.initFromStore()
+}
+
+// Initializes the remaining logic from app.store.
+func (app *App) initFromStore() error {
+	store := app.store
+	lastCommitID := store.LastCommitID()
+	main := store.GetKVStore("main")
+	header := (*wrsp.Header)(nil)
+	storeCheck := store.CacheMultiStore()
+
+	// Main store should exist.
+	if store.GetKVStore("main") == nil {
+		return errors.New("App expects MultiStore with 'main' KVStore")
 	}
-	return app, nil
+
+	// If we've committed before, we expect main://<mainKeyHeader>.
+	if !lastCommitID.IsZero() {
+		headerBytes, ok := main.Get(mainKeyHeader)
+		if !ok {
+			errStr := fmt.Sprintf("Version > 0 but missing key %s", mainKeyHeader)
+			return errors.New(errStr)
+		}
+		err = proto.Unmarshal(headerBytes, header)
+		if err != nil {
+			return errors.Wrap(err, "Failed to parse Header")
+		}
+		if header.Height != lastCommitID.Version {
+			errStr := fmt.Sprintf("Expected main://%s.Height %v but got %v", mainKeyHeader, version, headerHeight)
+			return errors.New(errStr)
+		}
+	}
+
+	// Set App state.
+	app.header = header
+	app.storeCheck = app.store.CacheMultiStore()
+	app.valUpdates = nil
+
+	return nil
 }
 
-// GetChainID returns the currently stored chain
-func (app *BaseApp) GetChainID() string {
-	return app.info.GetChainID(app.Committed())
+//----------------------------------------
+
+// DeliverTx - WRSP - dispatches to the handler
+func (app *App) DeliverTx(txBytes []byte) wrsp.ResponseDeliverTx {
+
+	// Initialize arguments to Handler.
+	var isCheckTx = false
+	var ctx = sdk.NewContext(app.header, isCheckTx, txBytes)
+	var store = app.store
+	var tx Tx = nil // nil until a decorator parses one.
+
+	// Run the handler.
+	var result = app.handler(ctx, app.store, tx)
+
+	// After-handler hooks.
+	if result.Code == wrsp.CodeType_OK {
+		app.valUpdates = append(app.valUpdates, result.ValUpdate)
+	} else {
+		// Even though the Code is not OK, there will be some side effects,
+		// like those caused by fee deductions or sequence incrementations.
+	}
+
+	// Tell the blockchain engine (i.e. Tendermint).
+	return wrsp.ResponseDeliverTx{
+		Code: result.Code,
+		Data: result.Data,
+		Log:  result.Log,
+		Tags: result.Tags,
+	}
 }
 
-// Logger returns the application base logger
-func (app *BaseApp) Logger() log.Logger {
-	return app.logger
+// CheckTx - WRSP - dispatches to the handler
+func (app *App) CheckTx(txBytes []byte) wrsp.ResponseCheckTx {
+
+	// Initialize arguments to Handler.
+	var isCheckTx = true
+	var ctx = sdk.NewContext(app.header, isCheckTx, txBytes)
+	var store = app.store
+	var tx Tx = nil // nil until a decorator parses one.
+
+	// Run the handler.
+	var result = app.handler(ctx, app.store, tx)
+
+	// Tell the blockchain engine (i.e. Tendermint).
+	return wrsp.ResponseDeliverTx{
+		Code:      result.Code,
+		Data:      result.Data,
+		Log:       result.Log,
+		Gas:       result.Gas,
+		FeeDenom:  result.FeeDenom,
+		FeeAmount: result.FeeAmount,
+	}
 }
 
-// Hash gets the last hash stored in the database
-func (app *BaseApp) Hash() []byte {
-	return app.State.LatestHash()
-}
+// Info - WRSP
+func (app *App) Info(req wrsp.RequestInfo) wrsp.ResponseInfo {
 
-// Info implements wrsp.Application. It returns the height and hash,
-// as well as the wrsp name and version.
-//
-// The height is the block that holds the transactions, not the apphash itself.
-func (app *BaseApp) Info(req wrsp.RequestInfo) wrsp.ResponseInfo {
-	hash := app.Hash()
-
-	app.logger.Info("Info synced",
-		"height", app.height,
-		"hash", fmt.Sprintf("%X", hash))
+	lastCommitID := app.store.LastCommitID()
 
 	return wrsp.ResponseInfo{
-		// TODO
 		Data:             app.Name,
-		LastBlockHeight:  app.height,
-		LastBlockAppHash: hash,
+		LastBlockHeight:  lastCommitID.Version,
+		LastBlockAppHash: lastCommitID.Hash,
 	}
 }
 
 // SetOption - WRSP
-func (app *BaseApp) SetOption(key string, value string) string {
+func (app *App) SetOption(key string, value string) string {
 	return "Not Implemented"
 }
 
 // Query - WRSP
-func (app *BaseApp) Query(reqQuery wrsp.RequestQuery) (resQuery wrsp.ResponseQuery) {
-	if len(reqQuery.Data) == 0 {
-		resQuery.Log = "Query cannot be zero length"
-		resQuery.Code = wrsp.CodeType_EncodingError
-		return
-	}
+func (app *App) Query(reqQuery wrsp.RequestQuery) (resQuery wrsp.ResponseQuery) {
+	/*
+		XXX Make this work with MultiStore.
+		XXX It will require some interfaces updates in store/types.go.
 
-	// set the query response height to current
-	tree := app.State.Committed()
-
-	height := reqQuery.Height
-	if height == 0 {
-		// TODO: once the rpc actually passes in non-zero
-		// heights we can use to query right after a tx
-		// we must retrun most recent, even if apphash
-		// is not yet in the blockchain
-
-		// if tree.Tree.VersionExists(app.height - 1) {
-		//  height = app.height - 1
-		// } else {
-		height = app.height
-		// }
-	}
-	resQuery.Height = height
-
-	switch reqQuery.Path {
-	case "/store", "/key": // Get by key
-		key := reqQuery.Data // Data holds the key bytes
-		resQuery.Key = key
-		if reqQuery.Prove {
-			value, proof, err := tree.GetVersionedWithProof(key, height)
-			if err != nil {
-				resQuery.Log = err.Error()
-				break
-			}
-			resQuery.Value = value
-			resQuery.Proof = proof.Bytes()
-		} else {
-			value := tree.Get(key)
-			resQuery.Value = value
+		if len(reqQuery.Data) == 0 {
+			resQuery.Log = "Query cannot be zero length"
+			resQuery.Code = wrsp.CodeType_EncodingError
+			return
 		}
 
-	default:
-		resQuery.Code = wrsp.CodeType_UnknownRequest
-		resQuery.Log = cmn.Fmt("Unexpected Query path: %v", reqQuery.Path)
-	}
-	return
+		// set the query response height to current
+		tree := app.state.Committed()
+
+		height := reqQuery.Height
+		if height == 0 {
+			// TODO: once the rpc actually passes in non-zero
+			// heights we can use to query right after a tx
+			// we must retrun most recent, even if apphash
+			// is not yet in the blockchain
+
+			withProof := app.CommittedHeight() - 1
+			if tree.Tree.VersionExists(withProof) {
+				height = withProof
+			} else {
+				height = app.CommittedHeight()
+			}
+		}
+		resQuery.Height = height
+
+		switch reqQuery.Path {
+		case "/store", "/key": // Get by key
+			key := reqQuery.Data // Data holds the key bytes
+			resQuery.Key = key
+			if reqQuery.Prove {
+				value, proof, err := tree.GetVersionedWithProof(key, height)
+				if err != nil {
+					resQuery.Log = err.Error()
+					break
+				}
+				resQuery.Value = value
+				resQuery.Proof = proof.Bytes()
+			} else {
+				value := tree.Get(key)
+				resQuery.Value = value
+			}
+
+		default:
+			resQuery.Code = wrsp.CodeType_UnknownRequest
+			resQuery.Log = cmn.Fmt("Unexpected Query path: %v", reqQuery.Path)
+		}
+		return
+	*/
 }
 
 // Commit implements wrsp.Application
-func (app *BaseApp) Commit() (res wrsp.Result) {
-	app.height++
-
-	hash, err := app.State.Commit(app.height)
-	if err != nil {
-		// die if we can't commit, not to recover
-		panic(err)
-	}
+func (app *App) Commit() (res wrsp.Result) {
+	commitID := app.store.Commit()
 	app.logger.Debug("Commit synced",
-		"height", app.height,
-		"hash", fmt.Sprintf("%X", hash),
+		"commit", commitID,
 	)
-
-	if app.State.Size() == 0 {
-		return wrsp.NewResultOK(nil, "Empty hash for empty tree")
-	}
 	return wrsp.NewResultOK(hash, "")
 }
 
 // InitChain - WRSP
-func (app *BaseApp) InitChain(req wrsp.RequestInitChain) {
-}
+func (app *App) InitChain(req wrsp.RequestInitChain) {}
 
 // BeginBlock - WRSP
-func (app *BaseApp) BeginBlock(req wrsp.RequestBeginBlock) {
+func (app *App) BeginBlock(req wrsp.RequestBeginBlock) {
+	app.header = req.Header
 }
 
 // EndBlock - WRSP
 // Returns a list of all validator changes made in this block
-func (app *BaseApp) EndBlock(height uint64) (res wrsp.ResponseEndBlock) {
-	// TODO: cleanup in case a validator exists multiple times in the list
-	res.Diffs = app.pending
-	app.pending = nil
+func (app *App) EndBlock(height uint64) (res wrsp.ResponseEndBlock) {
+	// XXX Update to res.Updates.
+	res.Diffs = app.valUpdates
+	app.valUpdates = nil
 	return
 }
 
-// AddValChange is meant to be called by apps on DeliverTx
-// results, this is added to the cache for the endblock
-// changeset
-func (app *BaseApp) AddValChange(diffs []*wrsp.Validator) {
-	for _, d := range diffs {
-		idx := pubKeyIndex(d, app.pending)
-		if idx >= 0 {
-			app.pending[idx] = d
-		} else {
-			app.pending = append(app.pending, d)
-		}
-	}
-}
-
-// return index of list with validator of same PubKey, or -1 if no match
+// Return index of list with validator of same PubKey, or -1 if no match
 func pubKeyIndex(val *wrsp.Validator, list []*wrsp.Validator) int {
 	for i, v := range list {
 		if bytes.Equal(val.PubKey, v.PubKey) {
@@ -210,38 +269,44 @@ func pubKeyIndex(val *wrsp.Validator, list []*wrsp.Validator) int {
 	return -1
 }
 
-func loadState(dbName string, cacheSize int) (*sm.State, error) {
-	// memory backed case, just for testing
-	if dbName == "" {
-		tree := iavl.NewVersionedTree(0, dbm.NewMemDB())
-		return sm.NewState(tree), nil
-	}
+// Make a simple default logger
+// TODO: Make log capturable for each transaction, and return it in
+// ResponseDeliverTx.Log and ResponseCheckTx.Log.
+func makeDefaultLogger() log.Logger {
+	return log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "sdk/app")
+}
 
-	// Expand the path fully
-	dbPath, err := filepath.Abs(dbName)
-	if err != nil {
-		return nil, errors.ErrInternal("Invalid Database Name")
-	}
+// InitState - used to setup state (was SetOption)
+// to be call from setting up the genesis file
+func (app *InitApp) InitState(module, key, value string) error {
+	state := app.Append()
+	logger := app.Logger().With("module", module, "key", key)
 
-	// Some external calls accidently add a ".db", which is now removed
-	dbPath = strings.TrimSuffix(dbPath, path.Ext(dbPath))
-
-	// Split the database name into it's components (dir, name)
-	dir := path.Dir(dbPath)
-	name := path.Base(dbPath)
-
-	// Make sure the path exists
-	empty, _ := cmn.IsDirEmpty(dbPath + ".db")
-
-	// Open database called "dir/name.db", if it doesn't exist it will be created
-	db := dbm.NewDB(name, dbm.LevelDBBackendStr, dir)
-	tree := iavl.NewVersionedTree(cacheSize, db)
-
-	if !empty {
-		if err = tree.Load(); err != nil {
-			return nil, errors.ErrInternal("Loading tree: " + err.Error())
+	if module == sdk.ModuleNameBase {
+		if key == sdk.ChainKey {
+			app.info.SetChainID(state, value)
+			return nil
 		}
+		logger.Error("Invalid genesis option")
+		return fmt.Errorf("Unknown base option: %s", key)
 	}
 
-	return sm.NewState(tree), nil
+	log, err := app.initState.InitState(logger, state, module, key, value)
+	if err != nil {
+		logger.Error("Invalid genesis option", "err", err)
+	} else {
+		logger.Info(log)
+	}
+	return err
+}
+
+// InitChain - WRSP - sets the initial validators
+func (app *InitApp) InitChain(req wrsp.RequestInitChain) {
+	// return early if no InitValidator registered
+	if app.initVals == nil {
+		return
+	}
+
+	logger, store := app.Logger(), app.Append()
+	app.initVals.InitValidators(logger, store, req.Validators)
 }

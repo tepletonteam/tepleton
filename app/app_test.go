@@ -1,292 +1,140 @@
 package app
 
-// import (
-// 	"encoding/hex"
-// 	"testing"
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"testing"
 
-// 	"github.com/stretchr/testify/assert"
-// 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
-// 	sdk "github.com/tepleton/tepleton-sdk"
-// 	"github.com/tepleton/tepleton-sdk/modules/auth"
-// 	"github.com/tepleton/tepleton-sdk/modules/base"
-// 	"github.com/tepleton/tepleton-sdk/modules/coin"
-// 	"github.com/tepleton/tepleton-sdk/modules/fee"
-// 	"github.com/tepleton/tepleton-sdk/modules/nonce"
-// 	"github.com/tepleton/tepleton-sdk/stack"
-// 	"github.com/tepleton/tepleton-sdk/state"
-// 	"github.com/tepleton/tepleton-sdk/util"
-// 	wrsp "github.com/tepleton/wrsp/types"
-// 	wire "github.com/tepleton/go-wire"
-// 	"github.com/tepleton/tmlibs/log"
-// )
+	sdk "github.com/tepleton/tepleton-sdk"
+	wrsp "github.com/tepleton/wrsp/types"
+	"github.com/tepleton/go-crypto"
+	cmn "github.com/tepleton/tmlibs/common"
+)
 
-// // DefaultHandler for the tests (coin, roles, ibc)
-// func DefaultHandler(feeDenom string) sdk.Handler {
-// 	// use the default stack
-// 	// r := roles.NewHandler()
-// 	// i := ibc.NewHandler()
+func TestBasic(t *testing.T) {
 
-// 	return sdk.ChainDecorators(
-// 		util.Logger{},
-// 		util.Recovery{},
-// 		auth.Signatures{},
-// 		util.Chain{},
-// 		// stack.Checkpoint{OnCheck: true},
-// 		// nonce.ReplayCheck{},
-// 	).
-// 		// IBC(ibc.NewMiddleware()).
-// 		// Apps(
-// 		// 	roles.NewMiddleware(),
-// 		// 	fee.NewSimpleFeeMiddleware(coin.Coin{feeDenom, 0}, fee.Bank),
-// 		// 	stack.Checkpoint{OnDeliver: true},
-// 		// ).
-// 		WithHandler(
-// 			coin.NewHandler(),
-// 			// stack.WrapHandler(r),
-// 			// stack.WrapHandler(i),
-// 		)
-// }
+	// A mock transaction to update a validator's voting power.
+	type testTx struct {
+		Addr     []byte
+		NewPower int64
+	}
 
-// //--------------------------------------------------------
-// // test environment is a list of input and output accounts
+	// Create app.
+	app := sdk.NewApp(t.Name())
+	app.SetStore(mockMultiStore())
+	app.SetHandler(func(ctx Context, store MultiStore, tx Tx) Result {
 
-// type appTest struct {
-// 	t       *testing.T
-// 	chainID string
-// 	app     *BaseApp
-// 	acctIn  *coin.AccountWithKey
-// 	acctOut *coin.AccountWithKey
-// }
+		// This could be a decorator.
+		fromJSON(ctx.TxBytes(), &tx)
 
-// func newAppTest(t *testing.T) *appTest {
-// 	at := &appTest{
-// 		t:       t,
-// 		chainID: "test_chain_id",
-// 	}
-// 	at.reset()
-// 	return at
-// }
+		fmt.Println(">>", tx)
+	})
 
-// // baseTx is the
-// func (at *appTest) baseTx(coins coin.Coins) sdk.Tx {
-// 	in := []coin.TxInput{{Address: at.acctIn.Actor(), Coins: coins}}
-// 	out := []coin.TxOutput{{Address: at.acctOut.Actor(), Coins: coins}}
-// 	tx := coin.NewSendTx(in, out)
-// 	return tx
-// }
+	// Load latest state, which should be empty.
+	err := app.LoadLatestVersion()
+	assert.Nil(t, err)
+	assert.Equal(t, app.NextVersion(), 1)
 
-// func (at *appTest) signTx(tx sdk.Tx) sdk.Tx {
-// 	stx := auth.NewMulti(tx)
-// 	auth.Sign(stx, at.acctIn.Key)
-// 	return stx.Wrap()
-// }
+	// Create the validators
+	var numVals = 3
+	var valSet = make([]*wrsp.Validator, numVals)
+	for i := 0; i < numVals; i++ {
+		valSet[i] = makeVal(secret(i))
+	}
 
-// func (at *appTest) getTx(coins coin.Coins, sequence uint32) sdk.Tx {
-// 	tx := at.baseTx(coins)
-// 	tx = nonce.NewTx(sequence, []sdk.Actor{at.acctIn.Actor()}, tx)
-// 	tx = base.NewChainTx(at.chainID, 0, tx)
-// 	return at.signTx(tx)
-// }
+	// Initialize the chain
+	app.InitChain(wrsp.RequestInitChain{
+		Validators: valset,
+	})
 
-// func (at *appTest) feeTx(coins coin.Coins, toll coin.Coin, sequence uint32) sdk.Tx {
-// 	tx := at.baseTx(coins)
-// 	tx = fee.NewFee(tx, toll, at.acctIn.Actor())
-// 	tx = nonce.NewTx(sequence, []sdk.Actor{at.acctIn.Actor()}, tx)
-// 	tx = base.NewChainTx(at.chainID, 0, tx)
-// 	return at.signTx(tx)
-// }
+	// Simulate the start of a block.
+	app.BeginBlock(wrsp.RequestBeginBlock{})
 
-// // set the account on the app through InitState
-// func (at *appTest) initAccount(acct *coin.AccountWithKey) {
-// 	err := at.app.InitState("coin", "account", acct.MakeOption())
-// 	require.Nil(at.t, err, "%+v", err)
-// }
+	// Add 1 to each validator's voting power.
+	for i, val := range valSet {
+		tx := testTx{
+			Addr:     makePubKey(secret(i)).Address(),
+			NewPower: val.Power + 1,
+		}
+		txBytes := toJSON(tx)
+		res := app.DeliverTx(txBytes)
+		require.True(res.IsOK(), "%#v", res)
+	}
 
-// // reset the in and out accs to be one account each with 7mycoin
-// func (at *appTest) reset() {
-// 	at.acctIn = coin.NewAccountWithKey(coin.Coins{{"mycoin", 7}})
-// 	at.acctOut = coin.NewAccountWithKey(coin.Coins{{"mycoin", 7}})
+	// Simulate the end of a block.
+	// Get the summary of validator updates.
+	res := app.EndBlock(app.height)
+	valUpdates := res.ValidatorUpdates
 
-// 	// Note: switch logger if you want to get more info
-// 	logger := log.TestingLogger()
-// 	// logger := log.NewTracingLogger(log.NewTMLogger(os.Stdout))
+	// Assert that validator updates are correct.
+	for _, val := range valSet {
 
-// 	store, err := NewStoreApp("app-test", "", 0, logger)
-// 	require.Nil(at.t, err, "%+v", err)
-// 	at.app = NewBaseApp(store, DefaultHandler("mycoin"), nil)
+		// Find matching update and splice it out.
+		for j := 0; j < len(valUpdates); {
+			assert.NotEqual(len(valUpdates.PubKey), 0)
 
-// 	err = at.app.InitState("base", "chain_id", at.chainID)
-// 	require.Nil(at.t, err, "%+v", err)
+			// Matched.
+			if bytes.Equal(valUpdate.PubKey, val.PubKey) {
+				assert.Equal(valUpdate.NewPower, val.Power+1)
+				if j < len(valUpdates)-1 {
+					// Splice it out.
+					valUpdates = append(valUpdates[:j], valUpdates[j+1:]...)
+				}
+				break
+			}
 
-// 	at.initAccount(at.acctIn)
-// 	at.initAccount(at.acctOut)
+			// Not matched.
+			j += 1
+		}
+	}
+	assert.Equal(t, len(valUpdates), 0, "Some validator updates were unexpected")
+}
 
-// 	reswrsp := at.app.Commit()
-// 	require.True(at.t, reswrsp.IsOK(), reswrsp)
-// }
+//----------------------------------------
 
-// func getBalance(key sdk.Actor, store state.SimpleDB) (coin.Coins, error) {
-// 	cspace := stack.PrefixedStore(coin.NameCoin, store)
-// 	acct, err := coin.GetAccount(cspace, key)
-// 	return acct.Coins, err
-// }
+func randPower() int64 {
+	return cmn.RandInt64()
+}
 
-// func getAddr(addr []byte, state state.SimpleDB) (coin.Coins, error) {
-// 	actor := auth.SigPerm(addr)
-// 	return getBalance(actor, state)
-// }
+func makeVal(secret string) *wrsp.Validator {
+	return &wrsp.Validator{
+		PubKey: makePubKey(string).Bytes(),
+		Power:  randPower(),
+	}
+}
 
-// // returns the final balance and expected balance for input and output accounts
-// func (at *appTest) exec(t *testing.T, tx sdk.Tx, checkTx bool) (res wrsp.Result, diffIn, diffOut coin.Coins) {
-// 	require := require.New(t)
+func makePubKey(secret string) crypto.PubKey {
+	return makePrivKey(secret).PubKey()
+}
 
-// 	initBalIn, err := getBalance(at.acctIn.Actor(), at.app.Append())
-// 	require.Nil(err, "%+v", err)
-// 	initBalOut, err := getBalance(at.acctOut.Actor(), at.app.Append())
-// 	require.Nil(err, "%+v", err)
+func makePrivKey(secret string) crypto.PrivKey {
+	return crypto.GenPrivKeyEd25519FromSecret([]byte(id))
+}
 
-// 	txBytes := wire.BinaryBytes(tx)
-// 	if checkTx {
-// 		res = at.app.CheckTx(txBytes)
-// 	} else {
-// 		res = at.app.DeliverTx(txBytes)
-// 	}
+func secret(index int) []byte {
+	return []byte(fmt.Sprintf("secret%d", index))
+}
 
-// 	endBalIn, err := getBalance(at.acctIn.Actor(), at.app.Append())
-// 	require.Nil(err, "%+v", err)
-// 	endBalOut, err := getBalance(at.acctOut.Actor(), at.app.Append())
-// 	require.Nil(err, "%+v", err)
-// 	return res, endBalIn.Minus(initBalIn), endBalOut.Minus(initBalOut)
-// }
+func copyVal(val *wrsp.Validator) *wrsp.Validator {
+	val2 := *val
+	return &val2
+}
 
-// //--------------------------------------------------------
+func toJSON(o interface{}) []byte {
+	bytes, err := json.Marshal(o)
+	if err != nil {
+		panic(err)
+	}
+	return bytes
+}
 
-// func TestInitState(t *testing.T) {
-// 	assert := assert.New(t)
-// 	require := require.New(t)
-
-// 	logger := log.TestingLogger()
-// 	store, err := NewStoreApp("app-test", "", 0, logger)
-// 	require.Nil(err, "%+v", err)
-// 	app := NewBaseApp(store, DefaultHandler("atom"), nil)
-
-// 	//testing ChainID
-// 	chainID := "testChain"
-// 	err = app.InitState("base", "chain_id", chainID)
-// 	require.Nil(err, "%+v", err)
-// 	assert.EqualValues(app.GetChainID(), chainID)
-
-// 	// make a nice account...
-// 	bal := coin.Coins{{"atom", 77}, {"eth", 12}}
-// 	acct := coin.NewAccountWithKey(bal)
-// 	err = app.InitState("coin", "account", acct.MakeOption())
-// 	require.Nil(err, "%+v", err)
-
-// 	// make sure it is set correctly, with some balance
-// 	coins, err := getBalance(acct.Actor(), app.Append())
-// 	require.Nil(err)
-// 	assert.Equal(bal, coins)
-
-// 	// let's parse an account with badly sorted coins...
-// 	unsortAddr, err := hex.DecodeString("C471FB670E44D219EE6DF2FC284BE38793ACBCE1")
-// 	require.Nil(err)
-// 	unsortCoins := coin.Coins{{"BTC", 789}, {"eth", 123}}
-// 	unsortAcc := `{
-//   "pub_key": {
-//     "type": "ed25519",
-//     "data": "AD084F0572C116D618B36F2EB08240D1BAB4B51716CCE0E7734B89C8936DCE9A"
-//   },
-//   "coins": [
-//     {
-//       "denom": "eth",
-//       "amount": 123
-//     },
-//     {
-//       "denom": "BTC",
-//       "amount": 789
-//     }
-//   ]
-// }`
-// 	err = app.InitState("coin", "account", unsortAcc)
-// 	require.Nil(err, "%+v", err)
-
-// 	coins, err = getAddr(unsortAddr, app.Append())
-// 	require.Nil(err)
-// 	assert.True(coins.IsValid())
-// 	assert.Equal(unsortCoins, coins)
-
-// 	err = app.InitState("base", "dslfkgjdas", "")
-// 	require.Error(err)
-
-// 	err = app.InitState("", "dslfkgjdas", "")
-// 	require.Error(err)
-
-// 	err = app.InitState("dslfkgjdas", "szfdjzs", "")
-// 	require.Error(err)
-// }
-
-// // Test CheckTx and DeliverTx with insufficient and sufficient balance
-// func TestTx(t *testing.T) {
-// 	assert := assert.New(t)
-// 	at := newAppTest(t)
-
-// 	//Bad Balance
-// 	at.acctIn.Coins = coin.Coins{{"mycoin", 2}}
-// 	at.initAccount(at.acctIn)
-// 	at.app.Commit()
-
-// 	res, _, _ := at.exec(t, at.getTx(coin.Coins{{"mycoin", 5}}, 1), true)
-// 	assert.True(res.IsErr(), "ExecTx/Bad CheckTx: Expected error return from ExecTx, returned: %v", res)
-// 	res, diffIn, diffOut := at.exec(t, at.getTx(coin.Coins{{"mycoin", 5}}, 1), false)
-// 	assert.True(res.IsErr(), "ExecTx/Bad DeliverTx: Expected error return from ExecTx, returned: %v", res)
-// 	assert.True(diffIn.IsZero())
-// 	assert.True(diffOut.IsZero())
-
-// 	//Regular CheckTx
-// 	at.reset()
-// 	res, _, _ = at.exec(t, at.getTx(coin.Coins{{"mycoin", 5}}, 1), true)
-// 	assert.True(res.IsOK(), "ExecTx/Good CheckTx: Expected OK return from ExecTx, Error: %v", res)
-
-// 	//Regular DeliverTx
-// 	at.reset()
-// 	amt := coin.Coins{{"mycoin", 3}}
-// 	res, diffIn, diffOut = at.exec(t, at.getTx(amt, 1), false)
-// 	assert.True(res.IsOK(), "ExecTx/Good DeliverTx: Expected OK return from ExecTx, Error: %v", res)
-// 	assert.Equal(amt.Negative(), diffIn)
-// 	assert.Equal(amt, diffOut)
-
-// 	//DeliverTx with fee.... 4 get to recipient, 1 extra taxed
-// 	at.reset()
-// 	amt = coin.Coins{{"mycoin", 4}}
-// 	toll := coin.Coin{"mycoin", 1}
-// 	res, diffIn, diffOut = at.exec(t, at.feeTx(amt, toll, 1), false)
-// 	assert.True(res.IsOK(), "ExecTx/Good DeliverTx: Expected OK return from ExecTx, Error: %v", res)
-// 	payment := amt.Plus(coin.Coins{toll}).Negative()
-// 	assert.Equal(payment, diffIn)
-// 	assert.Equal(amt, diffOut)
-
-// }
-
-// func TestQuery(t *testing.T) {
-// 	assert := assert.New(t)
-// 	at := newAppTest(t)
-
-// 	res, _, _ := at.exec(t, at.getTx(coin.Coins{{"mycoin", 5}}, 1), false)
-// 	assert.True(res.IsOK(), "Commit, DeliverTx: Expected OK return from DeliverTx, Error: %v", res)
-
-// 	resQueryPreCommit := at.app.Query(wrsp.RequestQuery{
-// 		Path: "/account",
-// 		Data: at.acctIn.Address(),
-// 	})
-
-// 	res = at.app.Commit()
-// 	assert.True(res.IsOK(), res)
-
-// 	key := stack.PrefixedKey(coin.NameCoin, at.acctIn.Address())
-// 	resQueryPostCommit := at.app.Query(wrsp.RequestQuery{
-// 		Path: "/key",
-// 		Data: key,
-// 	})
-// 	assert.NotEqual(resQueryPreCommit, resQueryPostCommit, "Query should change before/after commit")
-// }
+func fromJSON(bytes []byte, ptr interface{}) {
+	err := json.Unmarshal(bytes, ptr)
+	if err != nil {
+		panic(err)
+	}
+}

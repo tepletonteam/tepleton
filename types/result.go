@@ -1,13 +1,9 @@
 package types
 
 import (
+	cmn "github.com/tendemrint/tmlibs/common"
 	wrsp "github.com/tepleton/wrsp/types"
 )
-
-type KVPair struct {
-	Key   []byte
-	Value []byte
-}
 
 // Result is the union of ResponseDeliverTx and ResponseCheckTx.
 type Result struct {
@@ -35,5 +31,5 @@ type Result struct {
 	ValSetDiff []wrsp.Validator
 
 	// Tags are used for transaction indexing and pubsub.
-	Tags []KVPair
+	Tags []cmn.KVPair
 }
