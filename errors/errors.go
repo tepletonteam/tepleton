@@ -96,10 +96,7 @@ func NewWRSPError(code uint32, log string) WRSPError {
 		}
 	```
 
-	Then, to get the WRSP code/log:
-
-	1. Check if err.(WRSPError)
-	2. Check if err.(causer).Cause().(WRSPError)
+	Then, to get the WRSP code/log, use WRSPErrorCause()
 
 */
 type sdkError struct {
