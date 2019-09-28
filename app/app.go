@@ -8,12 +8,13 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	wrsp "github.com/tepleton/wrsp/types"
+	cmn "github.com/tepleton/tmlibs/common"
 	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/tepleton-sdk/types"
 )
 
-var mainHeaderKey = "header"
+var mainHeaderKey = []byte("header")
 
 // App - The WRSP application
 type App struct {
@@ -23,16 +24,16 @@ type App struct {
 	name string
 
 	// Main (uncached) state
-	store types.CommitMultiStore
+	ms types.CommitMultiStore
 
-	// CheckTx state, a cache-wrap of store.
-	storeCheck types.CacheMultiStore
+	// CheckTx state, a cache-wrap of `.ms`.
+	msCheck types.CacheMultiStore
 
-	// DeliverTx state, a cache-wrap of store.
-	storeDeliver types.CacheMultiStore
+	// DeliverTx state, a cache-wrap of `.ms`.
+	msDeliver types.CacheMultiStore
 
 	// Current block header
-	header *wrsp.Header
+	header wrsp.Header
 
 	// Handler for CheckTx and DeliverTx.
 	handler types.Handler
@@ -54,8 +55,8 @@ func (app *App) Name() string {
 	return app.name
 }
 
-func (app *App) SetCommitStore(store types.CommitMultiStore) {
-	app.store = store
+func (app *App) SetCommitMultiStore(ms types.CommitMultiStore) {
+	app.ms = ms
 }
 
 func (app *App) SetHandler(handler types.Handler) {
@@ -63,26 +64,33 @@ func (app *App) SetHandler(handler types.Handler) {
 }
 
 func (app *App) LoadLatestVersion() error {
-	store := app.store
-	store.LoadLatestVersion()
+	app.ms.LoadLatestVersion()
 	return app.initFromStore()
 }
 
 func (app *App) LoadVersion(version int64) error {
-	store := app.store
-	store.LoadVersion(version)
+	app.ms.LoadVersion(version)
 	return app.initFromStore()
 }
 
-// Initializes the remaining logic from app.store.
+// The last CommitID of the multistore.
+func (app *App) LastCommitID() types.CommitID {
+	return app.ms.LastCommitID()
+}
+
+// The last commited block height.
+func (app *App) LastBlockHeight() int64 {
+	return app.ms.LastCommitID().Version
+}
+
+// Initializes the remaining logic from app.ms.
 func (app *App) initFromStore() error {
-	store := app.store
-	lastCommitID := store.LastCommitID()
-	main := store.GetKVStore("main")
-	header := (*wrsp.Header)(nil)
+	lastCommitID := app.ms.LastCommitID()
+	main := app.ms.GetKVStore("main")
+	header := wrsp.Header{}
 
 	// Main store should exist.
-	if store.GetKVStore("main") == nil {
+	if app.ms.GetKVStore("main") == nil {
 		return errors.New("App expects MultiStore with 'main' KVStore")
 	}
 
@@ -93,7 +101,7 @@ func (app *App) initFromStore() error {
 			errStr := fmt.Sprintf("Version > 0 but missing key %s", mainHeaderKey)
 			return errors.New(errStr)
 		}
-		err := proto.Unmarshal(headerBytes, header)
+		err := proto.Unmarshal(headerBytes, &header)
 		if err != nil {
 			return errors.Wrap(err, "Failed to parse Header")
 		}
@@ -106,8 +114,8 @@ func (app *App) initFromStore() error {
 
 	// Set App state.
 	app.header = header
-	app.storeCheck = nil
-	app.storeDeliver = nil
+	app.msCheck = nil
+	app.msDeliver = nil
 	app.valUpdates = nil
 
 	return nil
@@ -118,7 +126,7 @@ func (app *App) initFromStore() error {
 // Implements WRSP
 func (app *App) Info(req wrsp.RequestInfo) wrsp.ResponseInfo {
 
-	lastCommitID := app.store.LastCommitID()
+	lastCommitID := app.ms.LastCommitID()
 
 	return wrsp.ResponseInfo{
 		Data:             app.name,
@@ -148,8 +156,8 @@ func (app *App) Query(req wrsp.RequestQuery) (res wrsp.ResponseQuery) {
 // Implements WRSP
 func (app *App) BeginBlock(req wrsp.RequestBeginBlock) (res wrsp.ResponseBeginBlock) {
 	app.header = req.Header
-	app.storeDeliver = app.store.CacheMultiStore()
-	app.storeCheck = app.store.CacheMultiStore()
+	app.msDeliver = app.ms.CacheMultiStore()
+	app.msCheck = app.ms.CacheMultiStore()
 	return
 }
 
@@ -159,20 +167,22 @@ func (app *App) CheckTx(txBytes []byte) (res wrsp.ResponseCheckTx) {
 	// Initialize arguments to Handler.
 	var isCheckTx = true
 	var ctx = types.NewContext(app.header, isCheckTx, txBytes)
-	var store = app.store
-	var tx Tx = nil // nil until a decorator parses one.
+	var tx types.Tx = nil // nil until a decorator parses one.
 
 	// Run the handler.
-	var result = app.handler(ctx, app.store, tx)
+	var result = app.handler(ctx, app.ms, tx)
 
 	// Tell the blockchain engine (i.e. Tendermint).
-	return wrsp.ResponseDeliverTx{
+	return wrsp.ResponseCheckTx{
 		Code:      result.Code,
 		Data:      result.Data,
 		Log:       result.Log,
-		Gas:       result.Gas,
-		FeeDenom:  result.FeeDenom,
-		FeeAmount: result.FeeAmount,
+		GasWanted: result.GasWanted,
+		Fee: cmn.KI64Pair{
+			[]byte(result.FeeDenom),
+			result.FeeAmount,
+		},
+		Tags: result.Tags,
 	}
 }
 
@@ -182,15 +192,14 @@ func (app *App) DeliverTx(txBytes []byte) (res wrsp.ResponseDeliverTx) {
 	// Initialize arguments to Handler.
 	var isCheckTx = false
 	var ctx = types.NewContext(app.header, isCheckTx, txBytes)
-	var store = app.store
-	var tx Tx = nil // nil until a decorator parses one.
+	var tx types.Tx = nil // nil until a decorator parses one.
 
 	// Run the handler.
-	var result = app.handler(ctx, app.store, tx)
+	var result = app.handler(ctx, app.ms, tx)
 
 	// After-handler hooks.
-	if result.Code == wrsp.CodeType_OK {
-		app.valUpdates = append(app.valUpdates, result.ValUpdate)
+	if result.Code == wrsp.CodeTypeOK {
+		app.valUpdates = append(app.valUpdates, result.ValidatorUpdates...)
 	} else {
 		// Even though the Code is not OK, there will be some side effects,
 		// like those caused by fee deductions or sequence incrementations.
@@ -198,10 +207,12 @@ func (app *App) DeliverTx(txBytes []byte) (res wrsp.ResponseDeliverTx) {
 
 	// Tell the blockchain engine (i.e. Tendermint).
 	return wrsp.ResponseDeliverTx{
-		Code: result.Code,
-		Data: result.Data,
-		Log:  result.Log,
-		Tags: result.Tags,
+		Code:      result.Code,
+		Data:      result.Data,
+		Log:       result.Log,
+		GasWanted: result.GasWanted,
+		GasUsed:   result.GasUsed,
+		Tags:      result.Tags,
 	}
 }
 
@@ -214,12 +225,14 @@ func (app *App) EndBlock(req wrsp.RequestEndBlock) (res wrsp.ResponseEndBlock) {
 
 // Implements WRSP
 func (app *App) Commit() (res wrsp.ResponseCommit) {
-	app.storeDeliver.Write()
-	commitID := app.store.Commit()
+	app.msDeliver.Write()
+	commitID := app.ms.Commit()
 	app.logger.Debug("Commit synced",
 		"commit", commitID,
 	)
-	return wrsp.NewResultOK(hash, "")
+	return wrsp.ResponseCommit{
+		Data: commitID.Hash,
+	}
 }
 
 //----------------------------------------
