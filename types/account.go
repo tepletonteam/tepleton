@@ -4,26 +4,24 @@ import (
 	crypto "github.com/tepleton/go-crypto"
 )
 
-type Address = crypto.Address
+// AccountStore indexes accounts by address.
+type AccountStore interface {
+	NewAccountWithAddress(addr crypto.Address) Account
+	GetAccount(addr crypto.Address) Account
+	SetAccount(acc Account)
+}
 
+// Account is a standard account using a sequence number for replay protection
+// and a pubkey for authentication.
 type Account interface {
-	Address() Address
+	Address() crypto.Address
 
-	PubKey() crypto.PubKey
+	GetPubKey() crypto.PubKey
 	SetPubKey(crypto.PubKey) error
-
-	GetCoins() Coins
-	SetCoins(Coins) error
 
 	GetSequence() int64
 	SetSequence(int64) error
 
 	Get(key interface{}) (value interface{}, err error)
 	Set(key interface{}, value interface{}) error
-}
-
-type AccountStore interface {
-	NewAccountWithAddress(addr Address) Account
-	GetAccount(addr Address) Account
-	SetAccount(acc Account)
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -11,8 +12,9 @@ import (
 	"github.com/tepleton/tepleton-sdk/app"
 	"github.com/tepleton/tepleton-sdk/store"
 	"github.com/tepleton/tepleton-sdk/types"
+	acm "github.com/tepleton/tepleton-sdk/x/account"
 	"github.com/tepleton/tepleton-sdk/x/auth"
-	"github.com/tepleton/tepleton-sdk/x/sendtx"
+	"github.com/tepleton/tepleton-sdk/x/coinstore"
 )
 
 func main() {
@@ -38,14 +40,14 @@ func main() {
 	handler := types.ChainDecorators(
 		// recover.Decorator(),
 		// logger.Decorator(),
-		auth.DecoratorFn(newAccountStore),
+		auth.DecoratorFn(acm.NewAccountStore),
 	).WithHandler(
-		sendtx.TransferHandlerFn(newAccountStore),
+		coinstore.TransferHandlerFn(acm.NewAccountStore),
 	)
 
 	// TODO: load genesis
 	// TODO: InitChain with validators
-	// accounts := newAccountStore(multiStore.GetKVStore("main"))
+	// accounts := acm.NewAccountStore(multiStore.GetKVStore("main"))
 	// TODO: set the genesis accounts
 
 	// Set everything on the app and load latest
@@ -72,3 +74,11 @@ func main() {
 	})
 	return
 }
+
+func txParser(txBytes []byte) (types.Tx, error) {
+	var tx coinstore.SendTx
+	err := json.Unmarshal(txBytes, &tx)
+	return tx, err
+}
+
+//-----------------------------------------------------------------------------

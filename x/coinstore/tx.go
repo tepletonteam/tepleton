@@ -1,35 +1,39 @@
-package coin
-
-// TODO rename this to msg.go
+package coinstore
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/tepleton/tepleton-sdk/types"
-	cmn "github.com/tepleton/tmlibs/common"
-)
 
-type CoinMsg interface {
-	AssertIsCoinMsg()
-	Type() string // "send", "credit"
-}
+	crypto "github.com/tepleton/go-crypto"
+
+	"github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/x/coin"
+)
 
 //-----------------------------------------------------------------------------
 
-// Input is a source of coins in a transaction.
-type Input struct {
-	Address cmn.Bytes
-	Coins   types.Coins
+// TxInput
+type TxInput struct {
+	Address  crypto.Address `json:"address"`
+	Coins    Coins          `json:"coins"`
+	Sequence int64          `json:"sequence"`
+
+	signature crypto.Signature
 }
 
-func (in Input) ValidateBasic() error {
-	if !auth.IsValidAddress(in.Address) {
-		return ErrInvalidAddress()
+// ValidateBasic - validate transaction input
+func (txIn TxInput) ValidateBasic() error {
+	if len(txIn.Address) == 0 {
+		return ErrInvalidAddress(txIn.Address.String())
 	}
-	if !in.Coins.IsValid() {
-		return ErrInvalidInput()
+	if txIn.Sequence < 0 {
+		return ErrInvalidSequence(txIn.Sequence)
 	}
-	if !in.Coins.IsPositive() {
-		return ErrInvalidInput()
+	if !txIn.Coins.IsValid() {
+		return ErrInvalidCoins(txIn.Coins.String())
+	}
+	if !txIn.Coins.IsPositive() {
+		return ErrInvalidCoins(txIn.Coins.String())
 	}
 	return nil
 }
@@ -39,7 +43,7 @@ func (txIn TxInput) String() string {
 }
 
 // NewTxInput - create a transaction input, used with SendTx
-func NewTxInput(addr Actor, coins types.Coins) TxInput {
+func NewTxInput(addr crypto.Address, coins Coins) TxInput {
 	input := TxInput{
 		Address: addr,
 		Coins:   coins,
@@ -47,28 +51,31 @@ func NewTxInput(addr Actor, coins types.Coins) TxInput {
 	return input
 }
 
+// NewTxInputWithSequence - create a transaction input, used with SendTx
+func NewTxInputWithSequence(addr crypto.Address, coins Coins, seq int64) TxInput {
+	input := NewTxInput(addr, coins)
+	input.Sequence = seq
+	return input
+}
+
 //-----------------------------------------------------------------------------
 
 // TxOutput - expected coin movement output, used with SendTx
 type TxOutput struct {
-	Address Actor       `json:"address"`
-	Coins   types.Coins `json:"coins"`
+	Address crypto.Address `json:"address"`
+	Coins   Coins          `json:"coins"`
 }
 
 // ValidateBasic - validate transaction output
 func (txOut TxOutput) ValidateBasic() error {
-	if txOut.Address.App == "" {
-		return ErrInvalidAddress()
-	}
-	// TODO: knowledge of app-specific codings?
-	if len(txOut.Address.Address) == 0 {
-		return ErrInvalidAddress()
+	if len(txOut.Address) == 0 {
+		return ErrInvalidAddress(txOut.Address.String())
 	}
 	if !txOut.Coins.IsValid() {
-		return ErrInvalidCoins()
+		return ErrInvalidCoins(txOut.Coins.String())
 	}
 	if !txOut.Coins.IsPositive() {
-		return ErrInvalidCoins()
+		return ErrInvalidCoins(txOut.Coins.String())
 	}
 	return nil
 }
@@ -78,7 +85,7 @@ func (txOut TxOutput) String() string {
 }
 
 // NewTxOutput - create a transaction output, used with SendTx
-func NewTxOutput(addr Actor, coins types.Coins) TxOutput {
+func NewTxOutput(addr crypto.Address, coins Coins) TxOutput {
 	output := TxOutput{
 		Address: addr,
 		Coins:   coins,
@@ -88,26 +95,12 @@ func NewTxOutput(addr Actor, coins types.Coins) TxOutput {
 
 //-----------------------------------------------------------------------------
 
+var _ types.Tx = (*SendTx)(nil)
+
 // SendTx - high level transaction of the coin module
-// Satisfies: TxInner
 type SendTx struct {
 	Inputs  []TxInput  `json:"inputs"`
 	Outputs []TxOutput `json:"outputs"`
-}
-
-// var _ types.Tx = NewSendTx(nil, nil)
-
-// NewSendTx - construct arbitrary multi-in, multi-out sendtx
-func NewSendTx(in []TxInput, out []TxOutput) SendTx { // types.Tx {
-	return SendTx{Inputs: in, Outputs: out}
-}
-
-// NewSendOneTx is a helper for the standard (?) case where there is exactly
-// one sender and one recipient
-func NewSendOneTx(sender, recipient Actor, amount types.Coins) SendTx {
-	in := []TxInput{{Address: sender, Coins: amount}}
-	out := []TxOutput{{Address: recipient, Coins: amount}}
-	return SendTx{Inputs: in, Outputs: out}
 }
 
 // ValidateBasic - validate the send transaction
@@ -121,7 +114,7 @@ func (tx SendTx) ValidateBasic() error {
 		return ErrNoOutputs()
 	}
 	// make sure all inputs and outputs are individually valid
-	var totalIn, totalOut types.Coins
+	var totalIn, totalOut Coins
 	for _, in := range tx.Inputs {
 		if err := in.ValidateBasic(); err != nil {
 			return err
@@ -136,7 +129,7 @@ func (tx SendTx) ValidateBasic() error {
 	}
 	// make sure inputs and outputs match
 	if !totalIn.IsEqual(totalOut) {
-		return ErrInvalidCoins()
+		return ErrInvalidCoins(totalIn.String()) // TODO
 	}
 	return nil
 }
@@ -145,24 +138,78 @@ func (tx SendTx) String() string {
 	return fmt.Sprintf("SendTx{%v->%v}", tx.Inputs, tx.Outputs)
 }
 
-//-----------------------------------------------------------------------------
-
-// CreditTx - this allows a special issuer to give an account credit
-// Satisfies: TxInner
-type CreditTx struct {
-	Debitor Actor `json:"debitor"`
-	// Credit is the amount to change the credit...
-	// This may be negative to remove some over-issued credit,
-	// but can never bring the credit or the balance to negative
-	Credit types.Coins `json:"credit"`
+// NewSendTx - construct arbitrary multi-in, multi-out sendtx
+func NewSendTx(in []TxInput, out []TxOutput) types.Tx {
+	return SendTx{Inputs: in, Outputs: out}
 }
 
-// NewCreditTx - modify the credit granted to a given account
-func NewCreditTx(debitor Actor, credit types.Coins) CreditTx {
-	return CreditTx{Debitor: debitor, Credit: credit}
+// NewSendOneTx is a helper for the standard (?) case where there is exactly
+// one sender and one recipient
+func NewSendOneTx(sender, recipient crypto.Address, amount coin.Coins) types.Tx {
+	in := []TxInput{{Address: sender, Coins: amount}}
+	out := []TxOutput{{Address: recipient, Coins: amount}}
+	return SendTx{Inputs: in, Outputs: out}
 }
 
-// ValidateBasic - used to satisfy TxInner
-func (tx CreditTx) ValidateBasic() error {
+//------------------------
+// Implements types.Tx
+
+func (tx SendTx) Get(key interface{}) (value interface{}) {
+	switch k := key.(type) {
+	case string:
+		switch k {
+		case "key":
+		case "value":
+		}
+	}
 	return nil
+}
+
+func (tx SendTx) SignBytes() []byte {
+	b, err := json.Marshal(tx) // XXX: ensure some canonical form
+	if err != nil {
+		panic(err)
+	}
+	return b
+}
+
+func (tx SendTx) Signers() []crypto.Address {
+	addrs := make([]crypto.Address, len(tx.Inputs))
+	for i, in := range tx.Inputs {
+		addrs[i] = in.Address
+	}
+	return addrs
+}
+
+func (tx SendTx) TxBytes() []byte {
+	b, err := json.Marshal(struct {
+		Tx        types.Tx           `json:"tx"`
+		Signature []crypto.Signature `json:"signature"`
+	}{
+		Tx:        tx,
+		Signature: tx.signatures(),
+	})
+	if err != nil {
+		panic(err)
+	}
+	return b
+}
+
+func (tx SendTx) Signatures() []types.StdSignature {
+	stdSigs := make([]types.StdSignature, len(tx.Inputs))
+	for i, in := range tx.Inputs {
+		stdSigs[i] = types.StdSignature{
+			Signature: in.signature,
+			Sequence:  in.Sequence,
+		}
+	}
+	return stdSigs
+}
+
+func (tx SendTx) signatures() []crypto.Signature {
+	sigs := make([]crypto.Signature, len(tx.Inputs))
+	for i, in := range tx.Inputs {
+		sigs[i] = in.signature
+	}
+	return sigs
 }

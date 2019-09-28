@@ -1,13 +1,16 @@
-package coin
+package coinstore
 
 import (
 	"fmt"
 
 	"github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/x/coin"
+	crypto "github.com/tepleton/go-crypto"
 )
 
-type Coins = types.Coins
+type Coins = coin.Coins
 
+// Coinser can get and set coins
 type Coinser interface {
 	GetCoins() Coins
 	SetCoins(Coins)
@@ -18,22 +21,8 @@ type CoinStore struct {
 	types.AccountStore
 }
 
-// get the account as a Coinser. if the account doesn't exist, return nil.
-// if it's not a Coinser, return error.
-func (cs CoinStore) getCoinserAccount(addr types.Address) (types.Coinser, error) {
-	_acc := cs.GetAccount(addr)
-	if _acc == nil {
-		return nil, nil
-	}
-
-	acc, ok := _acc.(Coinser)
-	if !ok {
-		return nil, fmt.Errorf("Account %s is not a Coinser", addr)
-	}
-	return acc, nil
-}
-
-func (cs CoinStore) SubtractCoins(addr types.Address, amt Coins) (Coins, error) {
+// SubtractCoins subtracts amt from the coins at the addr.
+func (cs CoinStore) SubtractCoins(addr crypto.Address, amt Coins) (Coins, error) {
 	acc, err := cs.getCoinserAccount(addr)
 	if err != nil {
 		return amt, err
@@ -52,7 +41,8 @@ func (cs CoinStore) SubtractCoins(addr types.Address, amt Coins) (Coins, error) 
 	return newCoins, nil
 }
 
-func (cs CoinStore) AddCoins(addr types.Address, amt Coins) (Coins, error) {
+// AddCoins adds amt to the coins at the addr.
+func (cs CoinStore) AddCoins(addr crypto.Address, amt Coins) (Coins, error) {
 	acc, err := cs.getCoinserAccount(addr)
 	if err != nil {
 		return amt, err
@@ -68,50 +58,17 @@ func (cs CoinStore) AddCoins(addr types.Address, amt Coins) (Coins, error) {
 	return newCoins, nil
 }
 
-/*
-// TransferCoins transfers coins from fromAddr to toAddr.
-// It returns an error if the from account doesn't exist,
-// if the accounts doin't implement Coinser,
-// or if the from account does not have enough coins.
-func (cs CoinStore) TransferCoins(fromAddr, toAddr types.Address, amt Coins) error {
-	var fromAcc, toAcc types.Account
-
-	// Get the accounts
-	_fromAcc := cs.GetAccount(fromAddr)
-	if _fromAcc == nil {
-		return ErrUnknownAccount(fromAddr)
+// get the account as a Coinser. if the account doesn't exist, return nil.
+// if it's not a Coinser, return error.
+func (cs CoinStore) getCoinserAccount(addr crypto.Address) (Coinser, error) {
+	_acc := cs.GetAccount(addr)
+	if _acc == nil {
+		return nil, nil
 	}
 
-	_toAcc := cs.GetAccount(to)
-	if _toAcc == nil {
-		toAcc = cs.AccountStore.NewAccountWithAddress(to)
-	}
-
-	// Ensure they are Coinser
-	fromAcc, ok := _fromAcc.(Coinser)
+	acc, ok := _acc.(Coinser)
 	if !ok {
-		return ErrAccountNotCoinser(from)
+		return nil, fmt.Errorf("Account %s is not a Coinser", addr)
 	}
-
-	toAcc, ok = _toAcc.(Coinser)
-	if !ok {
-		return ErrAccountNotCoinser(from)
-	}
-
-	// Coin math
-	fromCoins := fromAcc.GetCoins()
-	newFromCoins := fromCoins.Minus(amt)
-	if newFromCoins.Negative() {
-		return ErrInsufficientCoins(fromCoins, amt)
-	}
-	toCoins := toAcc.GetCoins()
-	newToCoins := toCoins.Plus(amt)
-
-	// Set everything!
-	fromAcc.SetCoins(newFromCoins)
-	toAcc.SetCoins(newToCoins)
-	cs.SetAccount(fromAcc)
-	cs.SetAccount(toAcc)
-
-	return nil
-}*/
+	return acc, nil
+}
