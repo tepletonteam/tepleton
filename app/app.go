@@ -193,7 +193,7 @@ func (app *App) CheckTx(txBytes []byte) (res wrsp.ResponseCheckTx) {
 	}
 
 	// Run the handler.
-	var result = app.handler(ctx, app.ms, tx)
+	var result = app.handler(ctx, app.msCheck, tx)
 
 	// Tell the blockchain engine (i.e. Tendermint).
 	return wrsp.ResponseCheckTx{
@@ -226,7 +226,7 @@ func (app *App) DeliverTx(txBytes []byte) (res wrsp.ResponseDeliverTx) {
 	}
 
 	// Run the handler.
-	var result = app.handler(ctx, app.ms, tx)
+	var result = app.handler(ctx, app.msDeliver, tx)
 
 	// After-handler hooks.
 	if result.Code == wrsp.CodeTypeOK {

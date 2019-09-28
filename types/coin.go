@@ -6,8 +6,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 // Coin hold some amount of one currency
@@ -203,14 +201,6 @@ var _ sort.Interface = Coins{}
 func (coins Coins) Sort() { sort.Sort(coins) }
 
 //----------------------------------------
-// Misc
-
-type Coinser interface {
-	GetCoins() Coins
-	SetCoins(Coins)
-}
-
-//----------------------------------------
 // Parsing
 
 var (
@@ -228,7 +218,7 @@ func ParseCoin(coinStr string) (coin Coin, err error) {
 
 	matches := reCoin.FindStringSubmatch(coinStr)
 	if matches == nil {
-		err = errors.Errorf("Invalid coin expression: %s", coinStr)
+		err = fmt.Errorf("Invalid coin expression: %s", coinStr)
 		return
 	}
 	denomStr, amountStr := matches[2], matches[1]
@@ -264,7 +254,7 @@ func ParseCoins(coinsStr string) (coins Coins, err error) {
 
 	// Validate coins before returning.
 	if !coins.IsValid() {
-		return nil, errors.Errorf("ParseCoins invalid: %#v", coins)
+		return nil, fmt.Errorf("ParseCoins invalid: %#v", coins)
 	}
 
 	return coins, nil
