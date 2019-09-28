@@ -1,8 +1,8 @@
 package types
 
 import (
-	cmn "github.com/tendemrint/tmlibs/common"
 	wrsp "github.com/tepleton/wrsp/types"
+	cmn "github.com/tepleton/tmlibs/common"
 )
 
 // Result is the union of ResponseDeliverTx and ResponseCheckTx.
