@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/tepleton/wrsp/server"
+	crypto "github.com/tepleton/go-crypto"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
 
@@ -89,7 +90,7 @@ func (tx dummyTx) ValidateBasic() error {
 	return nil
 }
 
-func (tx dummyTx) Signers() []types.Address {
+func (tx dummyTx) Signers() []crypto.Address {
 	return nil
 }
 

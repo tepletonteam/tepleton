@@ -2,6 +2,7 @@ package coin
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -139,7 +140,7 @@ func (coins Coins) IsGTE(coinsB Coins) bool {
 	if len(diff) == 0 {
 		return true
 	}
-	return diff.IsNonnegative()
+	return diff.IsNotNegative()
 }
 
 // IsZero returns true if there are no coins
@@ -174,9 +175,9 @@ func (coins Coins) IsPositive() bool {
 	return true
 }
 
-// IsNonnegative returns true if there is no currency with a negative value
+// IsNotNegative returns true if there is no currency with a negative value
 // (even no coins is true here)
-func (coins Coins) IsNonnegative() bool {
+func (coins Coins) IsNotNegative() bool {
 	if len(coins) == 0 {
 		return true
 	}
@@ -200,3 +201,63 @@ var _ sort.Interface = Coins{}
 
 // Sort is a helper function to sort the set of coins inplace
 func (coins Coins) Sort() { sort.Sort(coins) }
+
+//----------------------------------------
+// Parsing
+
+var (
+	// Denominations can be 3 ~ 16 characters long.
+	reDnm  = `[[:alpha:]][[:alnum:]]{2,15}`
+	reAmt  = `[[:digit:]]+`
+	reSpc  = `[[:space:]]*`
+	reCoin = regexp.MustCompile(fmt.Sprintf(`^(%s)%s(%s)$`, reAmt, reSpc, reDnm))
+)
+
+// ParseCoin parses a cli input for one coin type, returning errors if invalid.
+// This returns an error on an empty string as well.
+func ParseCoin(coinStr string) (coin Coin, err error) {
+	coinStr = strings.TrimSpace(coinStr)
+
+	matches := reCoin.FindStringSubmatch(coinStr)
+	if matches == nil {
+		err = errors.Errorf("Invalid coin expression: %s", coinStr)
+		return
+	}
+	denomStr, amountStr := matches[2], matches[1]
+
+	amount, err := strconv.Atoi(amountStr)
+	if err != nil {
+		return
+	}
+
+	return Coin{denomStr, int64(amount)}, nil
+}
+
+// ParseCoins will parse out a list of coins separated by commas.
+// If nothing is provided, it returns nil Coins.
+// Returned coins are sorted.
+func ParseCoins(coinsStr string) (coins Coins, err error) {
+	coinsStr = strings.TrimSpace(coinsStr)
+	if len(coinsStr) == 0 {
+		return nil, nil
+	}
+
+	coinStrs := strings.Split(coinsStr, ",")
+	for _, coinStr := range coinStrs {
+		coin, err := ParseCoin(coinStr)
+		if err != nil {
+			return nil, err
+		}
+		coins = append(coins, coin)
+	}
+
+	// Sort coins for determinism.
+	coins.Sort()
+
+	// Validate coins before returning.
+	if !coins.IsValid() {
+		return nil, errors.Errorf("ParseCoins invalid: %#v", coins)
+	}
+
+	return coins, nil
+}
