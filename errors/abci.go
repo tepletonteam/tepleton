@@ -4,10 +4,6 @@ import (
 	wrsp "github.com/tepleton/wrsp/types"
 )
 
-type causer interface {
-	Cause() error
-}
-
 func getWRSPError(err error) (WRSPError, bool) {
 	if err, ok := err.(WRSPError); ok {
 		return err, true
@@ -23,7 +19,7 @@ func getWRSPError(err error) (WRSPError, bool) {
 
 func ResponseDeliverTxFromErr(err error) *wrsp.ResponseDeliverTx {
 	var code = CodeInternalError
-	var log = codeToDefaultLog(code)
+	var log = CodeToDefaultLog(code)
 
 	wrspErr, ok := getWRSPError(err)
 	if ok {
@@ -41,7 +37,7 @@ func ResponseDeliverTxFromErr(err error) *wrsp.ResponseDeliverTx {
 
 func ResponseCheckTxFromErr(err error) *wrsp.ResponseCheckTx {
 	var code = CodeInternalError
-	var log = codeToDefaultLog(code)
+	var log = CodeToDefaultLog(code)
 
 	wrspErr, ok := getWRSPError(err)
 	if ok {
@@ -53,7 +49,7 @@ func ResponseCheckTxFromErr(err error) *wrsp.ResponseCheckTx {
 		Code: code,
 		Data: nil,
 		Log:  log,
-		Gas:  0, // TODO
-		Fee:  0, // TODO
+		//		Gas:  0, // TODO
+		//		Fee:  0, // TODO
 	}
 }

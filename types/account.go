@@ -1,21 +1,35 @@
-package main
+package types
 
-import "fmt"
+import (
+	"encoding/hex"
 
-func main() {
-	fmt.Println("vim-go")
+	crypto "github.com/tepleton/go-crypto"
+)
+
+type Address []byte // TODO: cmn.HexBytes
+
+func (a Address) String() string {
+	return hex.EncodeToString(a)
 }
 
 type Account interface {
-	Get(key interface{}) (value interface{})
-	Address() []byte
-	PubKey() crypto.PubKey
+	Address() Address
 
-	// Serialize the Account to bytes.
-	Bytes() []byte
+	PubKey() crypto.PubKey
+	SetPubKey(crypto.PubKey) error
+
+	GetCoins() Coins
+	SetCoins(Coins) error
+
+	GetSequence() int64
+	SetSequence(int64) error
+
+	Get(key interface{}) (value interface{}, err error)
+	Set(key interface{}, value interface{}) error
 }
 
 type AccountStore interface {
-	GetAccount(addr []byte) Account
+	NewAccountWithAddress(addr Address) Account
+	GetAccount(addr Address) Account
 	SetAccount(acc Account)
 }

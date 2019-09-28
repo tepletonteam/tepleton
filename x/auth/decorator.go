@@ -1,35 +1,78 @@
 package auth
 
 import (
-	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/types"
+	crypto "github.com/tepleton/go-crypto"
 )
 
-type CheckSignatures struct{}
+func DecoratorFn(newAccountStore func(types.KVStore) types.AccountStore) types.Decorator {
+	return func(ctx types.Context, ms types.MultiStore, tx types.Tx, next types.Handler) types.Result {
 
-var _ sdk.Decorator = CheckSignatures{}
+		accountStore := newAccountStore(ms.GetKVStore("main"))
 
-// CheckTx verifies the signatures are correct - fulfills Middlware interface
-func (Signatures) CheckTx(ctx sdk.Context, store sdk.SimpleDB,
-	tx interface{}, next sdk.Checker) (res sdk.CheckResult, err error) {
+		// NOTE: we actually dont need Signers() since we have pubkeys in Signatures()
+		signers := tx.Signers()
+		signatures := tx.Signatures()
 
-	// Check that signatures match
-	// TODO
+		// assert len
+		if len(signatures) == 0 {
+			return types.Result{
+				Code: 1, // TODO
+			}
+		}
+		if len(signatures) != len(signers) {
+			return types.Result{
+				Code: 1, // TODO
+			}
+		}
 
-	// Add info to context
-	// TODO
+		// check each nonce and sig
+		for i, sig := range signatures {
 
-	return next.CheckTx(ctx2, store, tx)
+			// get account
+			_acc := accountStore.GetAccount(signers[i])
+
+			// assert it has the right methods
+			acc, ok := _acc.(Auther)
+			if !ok {
+				return types.Result{
+					Code: 1, // TODO
+				}
+			}
+
+			// if no pubkey, set pubkey
+			if acc.GetPubKey().Empty() {
+				err := acc.SetPubKey(sig.PubKey)
+				if err != nil {
+					return types.Result{
+						Code: 1, // TODO
+					}
+				}
+			}
+
+			// check sequence number
+			seq := acc.GetSequence()
+			if seq != sig.Sequence {
+				return types.Result{
+					Code: 1, // TODO
+				}
+			}
+
+			// check sig
+			if !sig.PubKey.VerifyBytes(tx.SignBytes(), sig.Signature) {
+				return types.Result{
+					Code: 1, // TODO
+				}
+			}
+		}
+		return next(ctx, ms, tx)
+	}
 }
 
-// DeliverTx verifies the signatures are correct - fulfills Middlware interface
-func (Signatures) DeliverTx(ctx sdk.Context, store sdk.SimpleDB,
-	tx interface{}, next sdk.Deliverer) (res sdk.DeliverResult, err error) {
+type Auther interface {
+	GetPubKey() crypto.PubKey
+	SetPubKey(crypto.PubKey) error
 
-	// Check that signatures match
-	// TODO
-
-	// Add info to context
-	// TODO
-
-	return next.DeliverTx(ctx2, store, tx)
+	GetSequence() int64
+	SetSequence() (int64, error)
 }
