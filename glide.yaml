@@ -12,7 +12,7 @@ import:
   - server
   - types
 - package: github.com/tepleton/go-crypto
-  version: develop
+  version: sdk2
   subpackages:
   - keys
 - package: github.com/tepleton/go-wire
