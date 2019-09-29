@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/tepleton/tepleton-sdk/app"
 	"github.com/tepleton/tepleton-sdk/store"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/x/auth"
+	"github.com/tepleton/tepleton-sdk/x/bank"
 	"github.com/tepleton/wrsp/server"
 	"github.com/tepleton/go-wire"
 	cmn "github.com/tepleton/tmlibs/common"
@@ -16,9 +18,6 @@ import (
 )
 
 func main() {
-
-	// First, create the Application.
-	app := sdk.NewApp("basecoin")
 
 	// Create the underlying leveldb datastore which will
 	// persist the Merkle tree inner & leaf nodes.
@@ -42,7 +41,9 @@ func main() {
 	multiStore := store.NewCommitMultiStore(db)
 	multiStore.SetSubstoreLoader(mainStoreKey, mainLoader)
 	multiStore.SetSubstoreLoader(ibcStoreKey, ibcLoader)
-	app.SetCommitMultiStore(multiStore)
+
+	// Create the Application.
+	app := app.NewApp("basecoin", multiStore)
 
 	// Set Tx decoder
 	app.SetTxDecoder(decodeTx)
