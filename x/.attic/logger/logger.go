@@ -5,7 +5,7 @@ import (
 
 	abci "github.com/tendermint/abci/types"
 
-	sdk "github.com/cosmos/cosmos-sdk"
+	sdk "github.com/tepleton/tepleton-sdk"
 )
 
 // Logger writes out log messages on every request

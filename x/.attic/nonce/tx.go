@@ -10,8 +10,8 @@ package nonce
 import (
 	"sort"
 
-	sdk "github.com/cosmos/cosmos-sdk"
-	"github.com/cosmos/cosmos-sdk/state"
+	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/state"
 )
 
 // nolint

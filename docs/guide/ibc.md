@@ -1,6 +1,6 @@
 # InterBlockchain Communication with Basecoin
 
-One of the most exciting elements of the Cosmos Network is the InterBlockchain
+One of the most exciting elements of the tepleton Network is the InterBlockchain
 Communication (IBC) protocol, which enables interoperability across different
 blockchains. We implemented IBC as a basecoin plugin, and we'll show you how to
 use it to send tokens across blockchains!

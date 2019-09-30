@@ -3,8 +3,8 @@ package util
 import (
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk"
-	"github.com/cosmos/cosmos-sdk/errors"
+	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/errors"
 )
 
 // Recovery catches any panics and returns them as errors instead

@@ -25,12 +25,12 @@ import (
 // CounterCli represents the base command when called without any subcommands
 var CounterCli = &cobra.Command{
 	Use:   "countercli",
-	Short: "Example app built using the Cosmos SDK",
+	Short: "Example app built using the tepleton SDK",
 	Long: `Countercli is a demo app that includes custom logic to
 present a formatted interface to a custom blockchain structure.
 
 This is a useful tool and also serves to demonstrate how to configure
-the Cosmos SDK to work for any custom WRSP app, see:
+the tepleton SDK to work for any custom WRSP app, see:
 
 `,
 }

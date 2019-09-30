@@ -1,6 +1,6 @@
 ## Design philosphy
 
-The design of the Cosmos SDK is based on the principles of "cababilities systems".
+The design of the tepleton SDK is based on the principles of "cababilities systems".
 
 TODO If you see this on the sdk2 branch, it's because I'm still expanding this high-level section.
 

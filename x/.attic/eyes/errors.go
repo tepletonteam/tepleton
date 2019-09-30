@@ -5,7 +5,7 @@ import (
 
 	abci "github.com/tendermint/abci/types"
 
-	"github.com/cosmos/cosmos-sdk/errors"
+	"github.com/tepleton/tepleton-sdk/errors"
 )
 
 var (

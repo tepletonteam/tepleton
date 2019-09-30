@@ -4,7 +4,7 @@ If you aren't used to compile go programs and just want the released
 version of the code, please head to our [downloads](https://tepleton.com/download)
 page to get a pre-compiled binary for your platform.
 
-Usually, Cosmos SDK can be installed like a normal Go program:
+Usually, tepleton SDK can be installed like a normal Go program:
 
 ```
 go get -u github.com/tepleton/tepleton-sdk/cmd/...

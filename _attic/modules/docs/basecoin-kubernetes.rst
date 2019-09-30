@@ -95,7 +95,7 @@ $EDITOR app.yaml
 
 and configure the parameters required for your application.
 
-The Cosmos SDK will help us create our own
+The tepleton SDK will help us create our own
 currency, extensible with plugins. Writing plugins is out of scope of
 this article, but you can read about it
 `here <https://github.com/tepleton/tepleton-sdk/blob/master/docs/guide/basecoin-plugins.md>`__.

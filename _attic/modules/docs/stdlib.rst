@@ -1,7 +1,7 @@
 Standard Library
 ================
 
-The Cosmos-SDK comes bundled with a number of standard modules that
+The tepleton-SDK comes bundled with a number of standard modules that
 provide common functionality useful across a wide variety of
 applications. See examples below. It is recommended to investigate if
 desired functionality is already provided before developing new modules.
@@ -112,8 +112,8 @@ Updating the set of actors in a role is planned in the near future.
 Inter-Blockchain Communication (IBC)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-IBC, is the cornerstone of The Cosmos Network, and is built into the
-Cosmos-SDK framework as a basic primitive. To fully grasp these concepts
+IBC, is the cornerstone of The tepleton Network, and is built into the
+tepleton-SDK framework as a basic primitive. To fully grasp these concepts
 requires a much longer explanation, but in short, the chain works as a
 light-client to another chain and maintains input and output queue to
 send packets with that chain. This mechanism allows blockchains to prove
@@ -146,5 +146,5 @@ headers on the other chain.
 Example Apps
 ------------
 
-See the `Cosmos Academy <https://github.com/tepleton/tepleton-academy>`__
+See the `tepleton Academy <https://github.com/tepleton/tepleton-academy>`__
 for example applications.

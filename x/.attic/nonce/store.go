@@ -5,8 +5,8 @@ import (
 
 	wire "github.com/tendermint/go-wire"
 
-	"github.com/cosmos/cosmos-sdk/errors"
-	"github.com/cosmos/cosmos-sdk/state"
+	"github.com/tepleton/tepleton-sdk/errors"
+	"github.com/tepleton/tepleton-sdk/state"
 )
 
 func getSeq(store state.SimpleDB, key []byte) (seq uint32, err error) {

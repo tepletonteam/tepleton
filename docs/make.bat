@@ -9,7 +9,7 @@ if "%SPHINXBUILD%" == "" (
 )
 set SOURCEDIR=.
 set BUILDDIR=_build
-set SPHINXPROJ=Cosmos-SDK
+set SPHINXPROJ=tepleton-SDK
 
 if "%1" == "" goto help
 

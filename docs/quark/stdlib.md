@@ -95,7 +95,7 @@ a role is planned in the near future.
 
 ### Inter-Blockchain Communication (IBC)
 
-IBC, is the cornerstone of The Cosmos Network, and is built into the quark
+IBC, is the cornerstone of The tepleton Network, and is built into the quark
 framework as a basic primitive. To fully grasp these concepts requires
 a much longer explanation, but in short, the chain works as a light-client to
 another chain and maintains input and output queue to send packets with that

@@ -8,10 +8,10 @@ import (
 
 	cmn "github.com/tendermint/tmlibs/common"
 
-	"github.com/cosmos/cosmos-sdk/client/commands"
-	"github.com/cosmos/cosmos-sdk/client/commands/query"
-	"github.com/cosmos/cosmos-sdk/modules/eyes"
-	"github.com/cosmos/cosmos-sdk/util"
+	"github.com/tepleton/tepleton-sdk/client/commands"
+	"github.com/tepleton/tepleton-sdk/client/commands/query"
+	"github.com/tepleton/tepleton-sdk/modules/eyes"
+	"github.com/tepleton/tepleton-sdk/util"
 )
 
 // EyesQueryCmd - command to query raw data

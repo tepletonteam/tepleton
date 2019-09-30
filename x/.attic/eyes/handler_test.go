@@ -8,9 +8,9 @@ import (
 
 	wire "github.com/tendermint/go-wire"
 
-	sdk "github.com/cosmos/cosmos-sdk"
-	"github.com/cosmos/cosmos-sdk/state"
-	"github.com/cosmos/cosmos-sdk/util"
+	sdk "github.com/tepleton/tepleton-sdk"
+	"github.com/tepleton/tepleton-sdk/state"
+	"github.com/tepleton/tepleton-sdk/util"
 )
 
 func TestHandler(t *testing.T) {

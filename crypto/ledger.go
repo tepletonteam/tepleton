@@ -156,7 +156,7 @@ func (pk PrivKeyLedgerSecp256k1) forceGetPubKey() (key PubKey, err error) {
 	}
 	key, err = pubkeyLedgerSecp256k1(dev, pk.Path)
 	if err != nil {
-		return key, errors.New(fmt.Sprintf("Please open Cosmos app on the Ledger device - error: %v", err))
+		return key, errors.New(fmt.Sprintf("Please open tepleton app on the Ledger device - error: %v", err))
 	}
 	return key, err
 }
