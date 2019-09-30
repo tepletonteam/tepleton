@@ -95,12 +95,32 @@ func (app *BaseApp) MountStore(key sdk.StoreKey, typ sdk.StoreType) {
 	app.ms.MountStoreWithDB(key, typ, app.db)
 }
 
+func (app *BaseApp) TxDecoder() sdk.TxDecoder {
+	return app.txDecoder
+}
+
 func (app *BaseApp) SetTxDecoder(txDecoder sdk.TxDecoder) {
 	app.txDecoder = txDecoder
 }
 
+func (app *BaseApp) DefaultAnteHandler() sdk.AnteHandler {
+	return app.defaultAnteHandler
+}
+
 func (app *BaseApp) SetDefaultAnteHandler(ah sdk.AnteHandler) {
 	app.defaultAnteHandler = ah
+}
+
+func (app *BaseApp) MultiStore() sdk.MultiStore {
+	return app.ms
+}
+
+func (app *BaseApp) MultiStoreCheck() sdk.MultiStore {
+	return app.msCheck
+}
+
+func (app *BaseApp) MultiStoreDeliver() sdk.MultiStore {
+	return app.msDeliver
 }
 
 func (app *BaseApp) Router() Router {
@@ -173,7 +193,7 @@ func (app *BaseApp) initFromStore(mainKey sdk.StoreKey) error {
 
 //----------------------------------------
 
-// Implements WRSP
+// Implements WRSP.
 func (app *BaseApp) Info(req wrsp.RequestInfo) wrsp.ResponseInfo {
 
 	lastCommitID := app.ms.LastCommitID()
@@ -185,25 +205,25 @@ func (app *BaseApp) Info(req wrsp.RequestInfo) wrsp.ResponseInfo {
 	}
 }
 
-// Implements WRSP
+// Implements WRSP.
 func (app *BaseApp) SetOption(req wrsp.RequestSetOption) (res wrsp.ResponseSetOption) {
 	// TODO: Implement
 	return
 }
 
-// Implements WRSP
+// Implements WRSP.
 func (app *BaseApp) InitChain(req wrsp.RequestInitChain) (res wrsp.ResponseInitChain) {
 	// TODO: Use req.Validators
 	return
 }
 
-// Implements WRSP
+// Implements WRSP.
 func (app *BaseApp) Query(req wrsp.RequestQuery) (res wrsp.ResponseQuery) {
 	// TODO: See app/query.go
 	return
 }
 
-// Implements WRSP
+// Implements WRSP.
 func (app *BaseApp) BeginBlock(req wrsp.RequestBeginBlock) (res wrsp.ResponseBeginBlock) {
 	app.header = req.Header
 	app.msDeliver = app.ms.CacheMultiStore()
@@ -211,7 +231,7 @@ func (app *BaseApp) BeginBlock(req wrsp.RequestBeginBlock) (res wrsp.ResponseBeg
 	return
 }
 
-// Implements WRSP
+// Implements WRSP.
 func (app *BaseApp) CheckTx(txBytes []byte) (res wrsp.ResponseCheckTx) {
 
 	result := app.runTx(true, txBytes)
@@ -230,7 +250,7 @@ func (app *BaseApp) CheckTx(txBytes []byte) (res wrsp.ResponseCheckTx) {
 
 }
 
-// Implements WRSP
+// Implements WRSP.
 func (app *BaseApp) DeliverTx(txBytes []byte) (res wrsp.ResponseDeliverTx) {
 
 	result := app.runTx(false, txBytes)
@@ -267,20 +287,8 @@ func (app *BaseApp) runTx(isCheckTx bool, txBytes []byte) (result sdk.Result) {
 		}
 	}()
 
-	var store sdk.MultiStore
-	if isCheckTx {
-		store = app.msCheck
-	} else {
-		store = app.msDeliver
-	}
-
-	// Initialize arguments to Handler.
-	var ctx = sdk.NewContext(
-		store,
-		app.header,
-		isCheckTx,
-		txBytes,
-	)
+	// Construct a Context.
+	var ctx = app.NewContext(isCheckTx, txBytes)
 
 	// Decode the Tx.
 	tx, err := app.txDecoder(txBytes)
@@ -306,14 +314,14 @@ func (app *BaseApp) runTx(isCheckTx bool, txBytes []byte) (result sdk.Result) {
 	return result
 }
 
-// Implements WRSP
+// Implements WRSP.
 func (app *BaseApp) EndBlock(req wrsp.RequestEndBlock) (res wrsp.ResponseEndBlock) {
 	res.ValidatorUpdates = app.valUpdates
 	app.valUpdates = nil
 	return
 }
 
-// Implements WRSP
+// Implements WRSP.
 func (app *BaseApp) Commit() (res wrsp.ResponseCommit) {
 	app.msDeliver.Write()
 	commitID := app.ms.Commit()
