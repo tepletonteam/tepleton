@@ -1,0 +1,4 @@
+package: github.com/tepleton/tepleton-sdk/examples/basecoin
+import:
+- package: github.com/tepleton/tepleton-sdk
+  version: sdk2

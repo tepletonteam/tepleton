@@ -1,22 +1,41 @@
-LINKER_FLAGS:="-X github.com/tepleton/tepleton-sdk/client/commands.CommitHash=`git rev-parse --short HEAD`"
+PACKAGES=$(shell go list ./... | grep -v '/vendor/' | grep -v '_attic')
+BUILD_FLAGS = -ldflags "-X github.com/tepleton/tepleton-sdk/examples/basecoin/version.GitCommit=`git rev-parse --short HEAD`"
 
-install:
-	@go install -ldflags $(LINKER_FLAGS) ./cmd/...
+all: check_tools get_vendor_deps build test 
 
-test: test_unit test_cli
+########################################
+### Build
 
-test_unit:
-	@go test `glide novendor`
+build:
+	go build $(BUILD_FLAGS) -o build/basecoin ./cmd/...
 
-test_cli:
-	./tests/cli/keys.sh
-	./tests/cli/rpc.sh
-	./tests/cli/init.sh
-	./tests/cli/init-server.sh
-	./tests/cli/basictx.sh
-	./tests/cli/roles.sh
-	./tests/cli/restart.sh
-	./tests/cli/rest.sh
-	./tests/cli/ibc.sh
 
-.PHONY: install test test_unit test_cli
+########################################
+### Tools & dependencies
+
+check_tools:
+	cd tools && $(MAKE) check
+
+get_tools:
+	cd tools && $(MAKE)
+
+get_vendor_deps:
+	@rm -rf vendor/
+	@echo "--> Running glide install"
+	@glide install
+
+
+########################################
+### Testing
+
+test:
+	@go test $(PACKAGES)
+
+benchmark:
+	@go test -bench=. $(PACKAGES)
+
+
+# To avoid unintended conflicts with file names, always add to .PHONY
+# unless there is a reason not to.
+# https://www.gnu.org/software/make/manual/html_node/Phony-Targets.html
+.PHONY: build check_tools get_tools get_vendor_deps test benchmark 
