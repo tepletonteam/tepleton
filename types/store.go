@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 
+	wrsp "github.com/tepleton/wrsp/types"
 	dbm "github.com/tepleton/tmlibs/db"
 )
 
@@ -23,6 +24,14 @@ type Committer interface {
 type CommitStore interface {
 	Committer
 	Store
+}
+
+// Queryable allows a Store to expose internal state to the wrsp.Query
+// interface. Multistore can route requests to the proper Store.
+//
+// This is an optional, but useful extension to any CommitStore
+type Queryable interface {
+	Query(wrsp.RequestQuery) wrsp.ResponseQuery
 }
 
 //----------------------------------------

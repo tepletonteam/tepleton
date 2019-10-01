@@ -2,8 +2,9 @@ package types
 
 import (
 	"fmt"
-	"github.com/tepleton/go-crypto"
 	"runtime"
+
+	"github.com/tepleton/go-crypto"
 )
 
 type CodeType uint32
