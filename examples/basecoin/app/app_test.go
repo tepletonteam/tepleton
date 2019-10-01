@@ -1,0 +1,36 @@
+package app
+
+import (
+	"testing"
+
+	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/x/bank"
+	"github.com/stretchr/testify/assert"
+	crypto "github.com/tepleton/go-crypto"
+)
+
+func TestSendMsg(t *testing.T) {
+	tba := newTestBasecoinApp()
+	tba.RunBeginBlock()
+
+	// Construct a SendMsg.
+	var msg = bank.SendMsg{
+		Inputs: []bank.Input{
+			{
+				Address:  crypto.Address([]byte("input")),
+				Coins:    sdk.Coins{{"atom", 10}},
+				Sequence: 1,
+			},
+		},
+		Outputs: []bank.Output{
+			{
+				Address: crypto.Address([]byte("output")),
+				Coins:   sdk.Coins{{"atom", 10}},
+			},
+		},
+	}
+
+	// Run a SendMsg.
+	res := tba.RunCheckMsg(msg)
+	assert.Equal(t, sdk.CodeOK, res.Code, res.Log)
+}
