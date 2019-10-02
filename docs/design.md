@@ -4,9 +4,9 @@
 
 When thinking about security, it's good to start with a specific threat model.  Our threat model is the following:
 
-> We want to assume a thriving ecosystem of tepleton-SDK modules that are easy to compose into a blockchain application. Some of these modules will be faulty or malicious.
+> We want to assume a thriving ecosystem of Cosmos-SDK modules that are easy to compose into a blockchain application. Some of these modules will be faulty or malicious.
 
-The tepleton-SDK is designed to address this threat by being the foundation of an object capability system.
+The Cosmos-SDK is designed to address this threat by being the foundation of an object capability system.
 
 ```
 The structural properties of object capability systems favor
@@ -69,7 +69,7 @@ The method "ComputeSumValue" implies a pure function, yet the implied capability
 var sumValue := externalModule.ComputeSumValue(*account)
 ```
 
-In the tepleton SDK, you can see the application of this principle in the basecoin examples folder.
+In the Cosmos SDK, you can see the application of this principle in the basecoin examples folder.
 
 ```golang
 // File: tepleton-sdk/examples/basecoin/app/init_handlers.go
@@ -93,4 +93,4 @@ In the Basecoin example, the sketchy handler isn't provided an account mapper, w
 
 ### More Resources
 
-* Read the [tepleton SDK Guide](./guide.md).
+* Read the [Cosmos SDK Guide](./guide.md).
