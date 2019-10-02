@@ -1,9 +1,10 @@
 package main
 
-import (
-	"fmt"
-)
+import "github.com/tepleton/tepleton-sdk/examples/basecoin/app"
 
 func main() {
-	fmt.Println("TODO: move examples/basecoin/main.go here and refactor")
+	// TODO CREATE CLI
+
+	bapp := app.NewBasecoinApp("")
+	bapp.RunForever()
 }
