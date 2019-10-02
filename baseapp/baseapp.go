@@ -59,6 +59,7 @@ type BaseApp struct {
 
 var _ wrsp.Application = &BaseApp{}
 
+// NewBaseApp - create and name new BaseApp
 func NewBaseApp(name string) *BaseApp {
 	var baseapp = &BaseApp{
 		logger: makeDefaultLogger(),
@@ -88,22 +89,26 @@ func (app *BaseApp) initMultiStore() {
 	app.cms = cms
 }
 
+// Name - BaseApp Name
 func (app *BaseApp) Name() string {
 	return app.name
 }
 
+// MountStore - Mount a store to the provided key in the BaseApp multistore
 func (app *BaseApp) MountStore(key sdk.StoreKey, typ sdk.StoreType) {
 	app.cms.MountStoreWithDB(key, typ, app.db)
 }
 
+// nolint
 func (app *BaseApp) SetTxDecoder(txDecoder sdk.TxDecoder) {
 	app.txDecoder = txDecoder
 }
-
+func (app *BaseApp) SetInitStater(initStater sdk.InitStater) {
+	app.initStater = initStater
+}
 func (app *BaseApp) SetDefaultAnteHandler(ah sdk.AnteHandler) {
 	app.defaultAnteHandler = ah
 }
-
 func (app *BaseApp) Router() Router {
 	return app.router
 }
@@ -111,25 +116,26 @@ func (app *BaseApp) Router() Router {
 /* TODO consider:
 func (app *BaseApp) SetBeginBlocker(...) {}
 func (app *BaseApp) SetEndBlocker(...) {}
-func (app *BaseApp) SetInitStater(...) {}
 */
 
+// LoadLatestVersion - TODO add description
 func (app *BaseApp) LoadLatestVersion(mainKey sdk.StoreKey) error {
 	app.cms.LoadLatestVersion()
 	return app.initFromStore(mainKey)
 }
 
+// LoadVersion - load application version
 func (app *BaseApp) LoadVersion(version int64, mainKey sdk.StoreKey) error {
 	app.cms.LoadVersion(version)
 	return app.initFromStore(mainKey)
 }
 
-// The last CommitID of the multistore.
+// LastCommitID -  The last CommitID of the multistore.
 func (app *BaseApp) LastCommitID() sdk.CommitID {
 	return app.cms.LastCommitID()
 }
 
-// The last commited block height.
+// LastBlockHeight -  The last commited block height.
 func (app *BaseApp) LastBlockHeight() int64 {
 	return app.cms.LastCommitID().Version
 }
@@ -174,7 +180,7 @@ func (app *BaseApp) initFromStore(mainKey sdk.StoreKey) error {
 
 //----------------------------------------
 
-// Implements WRSP.
+// Info - Implements WRSP
 func (app *BaseApp) Info(req wrsp.RequestInfo) wrsp.ResponseInfo {
 
 	lastCommitID := app.cms.LastCommitID()
@@ -186,13 +192,13 @@ func (app *BaseApp) Info(req wrsp.RequestInfo) wrsp.ResponseInfo {
 	}
 }
 
-// Implements WRSP.
+// SetOption - Implements WRSP
 func (app *BaseApp) SetOption(req wrsp.RequestSetOption) (res wrsp.ResponseSetOption) {
 	// TODO: Implement
 	return
 }
 
-// Implements WRSP.
+// InitChain - Implements WRSP
 func (app *BaseApp) InitChain(req wrsp.RequestInitChain) (res wrsp.ResponseInitChain) {
 	// TODO: Use req.Validators
 	return
@@ -209,7 +215,7 @@ func (app *BaseApp) Query(req wrsp.RequestQuery) (res wrsp.ResponseQuery) {
 	return queryable.Query(req)
 }
 
-// Implements WRSP.
+// BeginBlock - Implements WRSP
 func (app *BaseApp) BeginBlock(req wrsp.RequestBeginBlock) (res wrsp.ResponseBeginBlock) {
 	// NOTE: For consistency we should unset these upon EndBlock.
 	app.header = &req.Header
@@ -219,7 +225,7 @@ func (app *BaseApp) BeginBlock(req wrsp.RequestBeginBlock) (res wrsp.ResponseBeg
 	return
 }
 
-// Implements WRSP.
+// CheckTx - Implements WRSP
 func (app *BaseApp) CheckTx(txBytes []byte) (res wrsp.ResponseCheckTx) {
 
 	// Decode the Tx.
@@ -245,7 +251,7 @@ func (app *BaseApp) CheckTx(txBytes []byte) (res wrsp.ResponseCheckTx) {
 
 }
 
-// Implements WRSP.
+// DeliverTx - Implements WRSP
 func (app *BaseApp) DeliverTx(txBytes []byte) (res wrsp.ResponseDeliverTx) {
 
 	// Decode the Tx.
@@ -333,7 +339,7 @@ func (app *BaseApp) runTx(isCheckTx bool, txBytes []byte, tx sdk.Tx) (result sdk
 	return result
 }
 
-// Implements WRSP.
+// EndBlock - Implements WRSP
 func (app *BaseApp) EndBlock(req wrsp.RequestEndBlock) (res wrsp.ResponseEndBlock) {
 	res.ValidatorUpdates = app.valUpdates
 	app.valUpdates = nil
@@ -343,7 +349,7 @@ func (app *BaseApp) EndBlock(req wrsp.RequestEndBlock) (res wrsp.ResponseEndBloc
 	return
 }
 
-// Implements WRSP.
+// Commit - Implements WRSP
 func (app *BaseApp) Commit() (res wrsp.ResponseCommit) {
 	app.msDeliver.Write()
 	commitID := app.cms.Commit()
@@ -361,9 +367,8 @@ func (app *BaseApp) Commit() (res wrsp.ResponseCommit) {
 func (app *BaseApp) getMultiStore(isCheckTx bool) sdk.MultiStore {
 	if isCheckTx {
 		return app.msCheck
-	} else {
-		return app.msDeliver
 	}
+	return app.msDeliver
 }
 
 // Return index of list with validator of same PubKey, or -1 if no match
