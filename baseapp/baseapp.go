@@ -201,12 +201,12 @@ func (app *BaseApp) InitChain(req wrsp.RequestInitChain) (res wrsp.ResponseInitC
 // Implements WRSP.
 // Delegates to CommitMultiStore if it implements Queryable
 func (app *BaseApp) Query(req wrsp.RequestQuery) (res wrsp.ResponseQuery) {
-	query, ok := app.cms.(sdk.Queryable)
+	queryable, ok := app.cms.(sdk.Queryable)
 	if !ok {
 		msg := "application doesn't support queries"
 		return sdk.ErrUnknownRequest(msg).Result().ToQuery()
 	}
-	return query.Query(req)
+	return queryable.Query(req)
 }
 
 // Implements WRSP.
