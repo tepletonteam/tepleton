@@ -51,15 +51,15 @@ func NewBasecoinApp(genesisPath string) *BasecoinApp {
 		panic(fmt.Errorf("error loading genesis state: %v", err))
 	}
 
-	// TODO: InitChain with validators from genesis transaction bytes
-
 	// set up the cache store for ctx, get ctx
+	// TODO: can InitChain handle this too ?
 	app.BaseApp.BeginBlock(wrsp.RequestBeginBlock{Header: wrsp.Header{}})
 	ctx := app.BaseApp.NewContext(false, nil) // context for DeliverTx
 
+	// TODO: combine with InitChain and let tepleton invoke it.
 	err = app.BaseApp.InitStater(ctx, genesisiDoc.AppState)
 	if err != nil {
-		panic(fmt.Errorf("error loading application genesis state: %v", err))
+		panic(fmt.Errorf("error initializing application genesis state: %v", err))
 	}
 
 	app.loadStores()
