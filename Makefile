@@ -1,7 +1,7 @@
-PACKAGES=$(shell go list ./... | grep -v '/vendor/' | grep -v '_attic')
+PACKAGES=$(shell go list ./... | grep -v '/vendor/')
 BUILD_FLAGS = -ldflags "-X github.com/tepleton/tepleton-sdk/version.GitCommit=`git rev-parse --short HEAD`"
 
-all: check_tools get_vendor_deps build test 
+all: check_tools get_vendor_deps build test
 
 ########################################
 ### CI
@@ -10,6 +10,10 @@ ci: get_tools get_vendor_deps build test_cover
 
 ########################################
 ### Build
+
+# This can be unified later, here for easy demos
+chub:
+	go install $(BUILD_FLAGS) ./examples/chub
 
 build:
 	@rm -rf examples/basecoin/vendor/
