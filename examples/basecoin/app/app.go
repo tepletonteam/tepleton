@@ -8,6 +8,7 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
 
 	"github.com/tepleton/wrsp/server"
+	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/go-wire"
 	cmn "github.com/tepleton/tmlibs/common"
 )
@@ -36,6 +37,7 @@ func NewBasecoinApp(genesisPath string) *BasecoinApp {
 
 	// Create and configure app.
 	var app = &BasecoinApp{}
+
 	app.initCapKeys()  // ./init_capkeys.go
 	app.initBaseApp()  // ./init_baseapp.go
 	app.initStores()   // ./init_stores.go
@@ -48,13 +50,33 @@ func NewBasecoinApp(genesisPath string) *BasecoinApp {
 
 	// TODO: InitChain with validators from genesis transaction bytes
 
-	// load application initial state
-	err = app.BaseApp.InitStater(genesisiDoc.AppState)
+	// set first begin block
+	header := wrsp.Header{
+		ChainID:        "",
+		Height:         0,
+		Time:           -1, // TODO
+		NumTxs:         -1, // TODO
+		LastCommitHash: []byte{0x00},
+		DataHash:       nil, // TODO
+		ValidatorsHash: nil, // TODO
+		AppHash:        nil, // TODO
+	}
+	app.BaseApp.BeginBlock(wrsp.RequestBeginBlock{
+		Hash:                nil, // TODO
+		Header:              header,
+		AbsentValidators:    nil, // TODO
+		ByzantineValidators: nil, // TODO
+	})
+
+	ctxCheckTx := app.BaseApp.NewContext(true, nil)
+	ctxDeliverTx := app.BaseApp.NewContext(false, nil)
+	err = app.BaseApp.InitStater(ctxCheckTx, ctxDeliverTx, genesisiDoc.AppState)
 	if err != nil {
 		panic(fmt.Errorf("error loading application genesis state: %v", err))
 	}
 
 	app.loadStores()
+
 	return app
 }
 
