@@ -6,6 +6,10 @@ import (
 	"github.com/tepleton/tepleton-sdk/app"
 )
 
+const (
+	flagWithTendermint = "with-tepleton"
+)
+
 var (
 	initNodeCmd = &cobra.Command{
 		Use:   "init <flags???>",
@@ -20,25 +24,29 @@ var (
 	}
 )
 
-func startNodeCmd(node app.App) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "start",
-		Short: "Run the full node",
-		RunE:  todoNotImplemented,
-	}
-	return cmd
-}
-
-func nodeCommand(node app.App) *cobra.Command {
+// NodeCommands registers a sub-tree of commands to interact with
+// a local full-node.
+//
+// Accept an application it should start
+func NodeCommands(node app.App) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "node",
 		Short: "Run the full node",
-		Run:   help,
 	}
 	cmd.AddCommand(
 		initNodeCmd,
 		startNodeCmd(node),
 		resetNodeCmd,
 	)
+	return cmd
+}
+
+func startNodeCmd(node app.App) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "start",
+		Short: "Run the full node",
+		RunE:  todoNotImplemented,
+	}
+	cmd.Flags().Bool(flagWithTendermint, true, "run wrsp app embedded in-process with tepleton")
 	return cmd
 }
