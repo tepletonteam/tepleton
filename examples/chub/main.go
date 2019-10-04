@@ -8,7 +8,7 @@ import (
 
 	"github.com/tepleton/tmlibs/cli"
 
-	"github.com/tepleton/tepleton-sdk/app"
+	"github.com/tepleton/tepleton-sdk/baseapp"
 )
 
 const (
@@ -54,7 +54,7 @@ func main() {
 	cobra.EnableCommandSorting = false
 
 	// TODO: set this to something real
-	var node app.App
+	var node baseapp.BaseApp
 
 	// add commands
 	AddGetCommand(getAccountCmd)
