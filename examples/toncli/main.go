@@ -15,11 +15,11 @@ const (
 	flagFee    = "fee"
 )
 
-// chubCmd is the entry point for this binary
+// toncliCmd is the entry point for this binary
 var (
-	chubCmd = &cobra.Command{
-		Use:   "chub",
-		Short: "tepleton Hub command-line tool",
+	toncliCmd = &cobra.Command{
+		Use:   "toncli",
+		Short: "Gaia light-client",
 	}
 
 	lineBreak = &cobra.Command{Run: func(*cobra.Command, []string) {}}
@@ -55,16 +55,15 @@ func main() {
 	AddGetCommand(getAccountCmd)
 	AddPostCommand(postSendCommand())
 
-	chubCmd.AddCommand(
+	AddClientCommands(toncliCmd)
+	toncliCmd.AddCommand(
 		KeyCommands(),
-		ClientCommands(),
 
 		lineBreak,
 		VersionCmd,
 	)
 
 	// prepare and add flags
-	// executor := cli.PrepareMainCmd(chubCmd, "CH", os.ExpandEnv("$HOME/.tepleton-chub"))
-	executor := cli.PrepareBaseCmd(chubCmd, "CH", os.ExpandEnv("$HOME/.tepleton-chub"))
+	executor := cli.PrepareBaseCmd(toncliCmd, "GA", os.ExpandEnv("$HOME/.tepleton-chub"))
 	executor.Execute()
 }
