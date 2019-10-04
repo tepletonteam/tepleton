@@ -59,6 +59,7 @@ func main() {
 	// post tx commands (custom to binary)
 	toncliCmd.AddCommand(
 		PostCommands(postSendCommand())...)
+
 	// add proxy, version and key info
 	toncliCmd.AddCommand(
 		lineBreak,
@@ -69,6 +70,6 @@ func main() {
 	)
 
 	// prepare and add flags
-	executor := cli.PrepareBaseCmd(toncliCmd, "GA", os.ExpandEnv("$HOME/.tepleton-chub"))
+	executor := cli.PrepareBaseCmd(toncliCmd, "GA", os.ExpandEnv("$HOME/.toncli"))
 	executor.Execute()
 }
