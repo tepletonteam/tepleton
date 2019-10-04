@@ -13,8 +13,8 @@ ci: get_tools get_vendor_deps build test_cover
 
 # This can be unified later, here for easy demos
 ton:
-	go build $(BUILD_FLAGS) -o build/tond ./examples/tond
-	go build $(BUILD_FLAGS) -o build/toncli ./examples/toncli
+	go build $(BUILD_FLAGS) -o build/tond ./examples/ton/tond
+	go build $(BUILD_FLAGS) -o build/toncli ./examples/ton/toncli
 
 build:
 	@rm -rf examples/basecoin/vendor/
