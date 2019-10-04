@@ -51,14 +51,19 @@ func main() {
 	// disable sorting
 	cobra.EnableCommandSorting = false
 
-	// add commands
-	AddGetCommand(getAccountCmd)
-	AddPostCommand(postSendCommand())
-
+	// generic client commands
 	AddClientCommands(toncliCmd)
+	// query commands (custom to binary)
 	toncliCmd.AddCommand(
+		GetCommands(getAccountCmd)...)
+	// post tx commands (custom to binary)
+	toncliCmd.AddCommand(
+		PostCommands(postSendCommand())...)
+	// add proxy, version and key info
+	toncliCmd.AddCommand(
+		lineBreak,
+		serveCommand(),
 		KeyCommands(),
-
 		lineBreak,
 		VersionCmd,
 	)
