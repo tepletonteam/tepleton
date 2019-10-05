@@ -11,13 +11,10 @@ import (
 	"github.com/tepleton/tepleton-sdk/x/bank"
 	"github.com/tepleton/tepleton-sdk/x/sketchy"
 
-	wrsp "github.com/tepleton/wrsp/types"
 	crypto "github.com/tepleton/go-crypto"
 	"github.com/tepleton/go-wire"
 	cmn "github.com/tepleton/tmlibs/common"
 )
-
-const appName = "BasecoinApp"
 
 // Extended WRSP application
 type BasecoinApp struct {
@@ -27,53 +24,54 @@ type BasecoinApp struct {
 	// keys to access the substores
 	capKeyMainStore *sdk.KVStoreKey
 	capKeyIBCStore  *sdk.KVStoreKey
+
+	// Manage getting and setting accounts
+	accountMapper sdk.AccountMapper
 }
 
 func NewBasecoinApp(genesisPath string) *BasecoinApp {
 
+	// create your application object
 	var app = &BasecoinApp{
-		cdc:             makeCodex(),
+		BaseApp:         bam.NewBaseApp("BasecoinApp"),
+		cdc:             MakeTxCodec(),
 		capKeyMainStore: sdk.NewKVStoreKey("main"),
 		capKeyIBCStore:  sdk.NewKVStoreKey("ibc"),
 	}
 
-	var accMapper = auth.NewAccountMapper(
+	// define the accountMapper
+	app.accountMapper = auth.NewAccountMapperSealed(
 		app.capKeyMainStore, // target store
 		&types.AppAccount{}, // prototype
 	)
 
-	app.BaseApp = bam.NewBaseAppExpanded(appName, accMapper)
-	app.initBaseAppTxDecoder()
-	app.initBaseAppInitStater(genesisPath)
-
-	// Add the handlers
-	app.Router().AddRoute("bank", bank.NewHandler(bank.NewCoinKeeper(app.AccountMapper())))
+	// add handlers
+	app.Router().AddRoute("bank", bank.NewHandler(bank.NewCoinKeeper(app.accountMapper)))
 	app.Router().AddRoute("sketchy", sketchy.NewHandler())
 
-	// load the stores
-	if err := app.LoadLatestVersion(app.capKeyMainStore); err != nil {
+	// initialize BaseApp
+	app.SetTxDecoder()
+	app.SetInitStater(genesisPath)
+	app.MountStoresIAVL(app.capKeyMainStore, app.capKeyIBCStore)
+	app.SetAnteHandler(auth.NewAnteHandler(app.accountMapper))
+	err := app.LoadLatestVersion(app.capKeyMainStore)
+	if err != nil {
 		cmn.Exit(err.Error())
 	}
 
 	return app
 }
 
-// Wire requires registration of interfaces & concrete types. All
-// interfaces to be encoded/decoded in a Msg must be registered
-// here, along with all the concrete types that implement them.
-func makeTxCodec() (cdc *wire.Codec) {
-	cdc = wire.NewCodec()
-
-	// Register crypto.[PubKey,PrivKey,Signature] types.
-	crypto.RegisterWire(cdc)
-
-	// Register bank.[SendMsg,IssueMsg] types.
-	bank.RegisterWire(cdc)
-
-	return
+// custom tx codec
+func MakeTxCodec() *wire.Codec {
+	cdc := wire.NewCodec()
+	crypto.RegisterWire(cdc) // Register crypto.[PubKey,PrivKey,Signature] types.
+	bank.RegisterWire(cdc)   // Register bank.[SendMsg,IssueMsg] types.
+	return cdc
 }
 
-func (app *BasecoinApp) initBaseAppTxDecoder() {
+// custom logic for transaction decoding
+func (app *BasecoinApp) SetTxDecoder() {
 	app.BaseApp.SetTxDecoder(func(txBytes []byte) (sdk.Tx, sdk.Error) {
 		var tx = sdk.StdTx{}
 		// StdTx.Msg is an interface whose concrete
@@ -86,24 +84,21 @@ func (app *BasecoinApp) initBaseAppTxDecoder() {
 	})
 }
 
-// define the custom logic for basecoin initialization
-func (app *BasecoinApp) initBaseAppInitStater(genesisPath string) {
+// custom logic for basecoin initialization
+func (app *BasecoinApp) SetInitStater(genesisPath string) {
 
-	genesisAppState, err := bam.ReadGenesisAppState(genesisPath)
+	// TODO remove, use state WRSP
+	genesisAppState, err := bam.LoadGenesisAppState(genesisPath)
 	if err != nil {
 		panic(fmt.Errorf("error loading genesis state: %v", err))
 	}
 
-	// set up the cache store for ctx, get ctx
-	// TODO: combine with InitChain and let tepleton invoke it.
-	app.BaseApp.BeginBlock(wrsp.RequestBeginBlock{Header: wrsp.Header{}})
-	ctx := app.BaseApp.NewContext(false, nil) // context for DeliverTx
-	err = app.BaseApp.InitStater(ctx, genesisAppState)
-	if err != nil {
-		cmn.Exit(fmt.Sprintf("error initializing application genesis state: %v", err))
-	}
-
 	app.BaseApp.SetInitStater(func(ctx sdk.Context, state json.RawMessage) sdk.Error {
+
+		// TODO use state WRSP
+		if state == nil {
+			state = genesisAppState
+		}
 		if state == nil {
 			return nil
 		}
@@ -119,7 +114,7 @@ func (app *BasecoinApp) initBaseAppInitStater(genesisPath string) {
 			if err != nil {
 				return sdk.ErrGenesisParse("").TraceCause(err, "")
 			}
-			app.AccountMapper().SetAccount(ctx, acc)
+			app.accountMapper.SetAccount(ctx, acc)
 		}
 		return nil
 	})
