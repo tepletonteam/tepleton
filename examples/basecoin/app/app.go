@@ -3,19 +3,20 @@ package app
 import (
 	"encoding/json"
 
-	bam "github.com/tepleton/tepleton-sdk/baseapp"
-	"github.com/tepleton/tepleton-sdk/examples/basecoin/types"
-	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/x/auth"
-	"github.com/tepleton/tepleton-sdk/x/bank"
-	"github.com/tepleton/tepleton-sdk/x/sketchy"
-
 	wrsp "github.com/tepleton/wrsp/types"
 	crypto "github.com/tepleton/go-crypto"
 	"github.com/tepleton/go-wire"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
+
+	bam "github.com/tepleton/tepleton-sdk/baseapp"
+	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/x/auth"
+	"github.com/tepleton/tepleton-sdk/x/bank"
+
+	"github.com/tepleton/tepleton-sdk/examples/basecoin/types"
+	"github.com/tepleton/tepleton-sdk/examples/basecoin/x/sketchy"
 )
 
 const (
