@@ -27,12 +27,14 @@ type BaseApp struct {
 	cms    sdk.CommitMultiStore // Main (uncached) state
 	router Router               // handle any kind of message
 
+	// must be set
+	txDecoder   sdk.TxDecoder   // unmarshal []byte into sdk.Tx
+	anteHandler sdk.AnteHandler // ante handler for fee and auth
+
 	// may be nil
-	txDecoder    sdk.TxDecoder    // unmarshal []byte into sdk.Tx
 	initChainer  sdk.InitChainer  // initialize state with validators and state blob
 	beginBlocker sdk.BeginBlocker // logic to run before any txs
 	endBlocker   sdk.EndBlocker   // logic to run after all txs, and to determine valset changes
-	anteHandler  sdk.AnteHandler  // ante handler for fee and auth
 
 	//--------------------
 	// Volatile
@@ -85,6 +87,12 @@ func (app *BaseApp) SetTxDecoder(txDecoder sdk.TxDecoder) {
 func (app *BaseApp) SetInitChainer(initChainer sdk.InitChainer) {
 	app.initChainer = initChainer
 }
+func (app *BaseApp) SetBeginBlocker(beginBlocker sdk.BeginBlocker) {
+	app.beginBlocker = beginBlocker
+}
+func (app *BaseApp) SetEndBlocker(endBlocker sdk.EndBlocker) {
+	app.endBlocker = endBlocker
+}
 func (app *BaseApp) SetAnteHandler(ah sdk.AnteHandler) {
 	// deducts fee from payer, verifies signatures and nonces, sets Signers to ctx.
 	app.anteHandler = ah
@@ -92,11 +100,6 @@ func (app *BaseApp) SetAnteHandler(ah sdk.AnteHandler) {
 
 // nolint - Get functions
 func (app *BaseApp) Router() Router { return app.router }
-
-/* TODO consider:
-func (app *BaseApp) SetBeginBlocker(...) {}
-func (app *BaseApp) SetEndBlocker(...) {}
-*/
 
 // load latest application version
 func (app *BaseApp) LoadLatestVersion(mainKey sdk.StoreKey) error {
