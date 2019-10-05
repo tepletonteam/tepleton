@@ -87,7 +87,7 @@ func TestGenesis(t *testing.T) {
 	bapp.InitChain(wrsp.RequestInitChain{vals, stateBytes})
 
 	// a checkTx context
-	ctx := bapp.BaseApp.NewContext(true, nil)
+	ctx := bapp.BaseApp.NewContext(true, wrsp.Header{})
 
 	res1 := bapp.accountMapper.GetAccount(ctx, baseAcc.Address)
 	assert.Equal(t, acc, res1)

@@ -65,10 +65,10 @@ func TestInitChainer(t *testing.T) {
 	key, value := []byte("hello"), []byte("goodbye")
 
 	// initChainer sets a value in the store
-	var initChainer sdk.InitChainer = func(ctx sdk.Context, req wrsp.RequestInitChain) sdk.Error {
+	var initChainer sdk.InitChainer = func(ctx sdk.Context, req wrsp.RequestInitChain) wrsp.ResponseInitChain {
 		store := ctx.KVStore(capKey)
 		store.Set(key, value)
-		return nil
+		return wrsp.ResponseInitChain{}
 	}
 
 	query := wrsp.RequestQuery{
