@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,12 +13,23 @@ import (
 	"github.com/tepleton/go-crypto"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
+func defaultLogger() log.Logger {
+	return log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "sdk/app")
+}
+
+func newBaseApp(name string) *BaseApp {
+	logger := defaultLogger()
+	db := dbm.NewMemDB()
+	return NewBaseApp(name, logger, db)
+}
+
 func TestMountStores(t *testing.T) {
-	app := NewBaseApp(t.Name())
+	app := newBaseApp(t.Name())
 
 	// make some cap keys
 	capKey1 := sdk.NewKVStoreKey("key1")
@@ -65,7 +77,7 @@ func (tx testUpdatePowerTx) GetSignatures() []sdk.StdSignature       { return ni
 func TestExecution(t *testing.T) {
 
 	// Create app.
-	app := NewBaseApp(t.Name())
+	app := newBaseApp(t.Name())
 	storeKeys := createMounts(app.cms)
 	app.SetTxDecoder(func(txBytes []byte) (sdk.Tx, sdk.Error) {
 		var ttx testUpdatePowerTx
