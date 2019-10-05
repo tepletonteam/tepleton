@@ -2,38 +2,31 @@ package app
 
 import (
 	"encoding/json"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	bam "github.com/tepleton/tepleton-sdk/baseapp"
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/types"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/bank"
 
+	wrsp "github.com/tepleton/wrsp/types"
 	crypto "github.com/tepleton/go-crypto"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 )
 
-type testBasecoinApp struct {
-	*BasecoinApp
-	*bam.TestApp
-}
-
-func newTestBasecoinApp() *testBasecoinApp {
-	app := NewBasecoinApp("")
-	tba := &testBasecoinApp{
-		BasecoinApp: app,
-	}
-	tba.TestApp = bam.NewTestApp(app.BaseApp)
-	return tba
+func newBasecoinApp() *BasecoinApp {
+	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "sdk/app")
+	db := dbm.NewMemDB()
+	return NewBasecoinApp(logger, db)
 }
 
 func TestSendMsg(t *testing.T) {
-	tba := newTestBasecoinApp()
-	tba.RunBeginBlock()
-	defer tba.Close()
+	bapp := newBasecoinApp()
 
 	// Construct a SendMsg.
 	var msg = bank.SendMsg{
@@ -52,19 +45,25 @@ func TestSendMsg(t *testing.T) {
 		},
 	}
 
-	// Run a Check on SendMsg.
-	res := tba.RunCheckMsg(msg)
-	assert.Equal(t, sdk.CodeOK, res.Code, res.Log)
+	priv := crypto.GenPrivKeyEd25519()
+	sig := priv.Sign(msg.GetSignBytes())
+	tx := sdk.NewStdTx(msg, []sdk.StdSignature{{
+		PubKey:    priv.PubKey(),
+		Signature: sig,
+	}})
 
-	// Run a Deliver on SendMsg.
-	res = tba.RunDeliverMsg(msg)
+	// Run a Check
+	res := bapp.Check(tx)
+	assert.Equal(t, sdk.CodeUnrecognizedAddress, res.Code, res.Log)
+
+	// Simulate a Block
+	bapp.BeginBlock(wrsp.RequestBeginBlock{})
+	res = bapp.Deliver(tx)
 	assert.Equal(t, sdk.CodeUnrecognizedAddress, res.Code, res.Log)
 }
 
 func TestGenesis(t *testing.T) {
-	tba := newTestBasecoinApp()
-	tba.RunBeginBlock()
-	defer tba.Close()
+	bapp := newBasecoinApp()
 
 	// construct some genesis bytes to reflect basecoin/types/AppAccount
 	pk := crypto.GenPrivKeyEd25519().PubKey()
@@ -82,13 +81,14 @@ func TestGenesis(t *testing.T) {
 			types.NewGenesisAccount(acc),
 		},
 	}
-	bytes, err := json.MarshalIndent(genesisState, "", "\t")
+	stateBytes, err := json.MarshalIndent(genesisState, "", "\t")
 
-	app := tba.BasecoinApp
-	ctx := app.BaseApp.NewContext(false, nil) // context for DeliverTx
-	err = app.BaseApp.InitStater(ctx, bytes)
-	require.Nil(t, err)
+	vals := []wrsp.Validator{}
+	bapp.InitChain(wrsp.RequestInitChain{vals, stateBytes})
 
-	res1 := app.accountMapper.GetAccount(ctx, baseAcc.Address)
+	// a checkTx context
+	ctx := bapp.BaseApp.NewContext(true, nil)
+
+	res1 := bapp.accountMapper.GetAccount(ctx, baseAcc.Address)
 	assert.Equal(t, acc, res1)
 }

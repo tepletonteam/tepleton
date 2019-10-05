@@ -6,6 +6,8 @@ import (
 
 	"github.com/tepleton/wrsp/server"
 	cmn "github.com/tepleton/tmlibs/common"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
 	bam "github.com/tepleton/tepleton-sdk/baseapp"
 	sdk "github.com/tepleton/tepleton-sdk/types"
@@ -13,11 +15,19 @@ import (
 
 func main() {
 
+	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "main")
+
+	db, err := dbm.NewGoLevelDB("basecoind", "data")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 	// Capabilities key to access the main KVStore.
 	var capKeyMainStore = sdk.NewKVStoreKey("main")
 
 	// Create BaseApp.
-	var baseApp = bam.NewBaseApp("dummy")
+	var baseApp = bam.NewBaseApp("dummy", logger, db)
 
 	// Set mounts for BaseApp's MultiStore.
 	baseApp.MountStore(capKeyMainStore, sdk.StoreTypeIAVL)

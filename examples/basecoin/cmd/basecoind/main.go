@@ -1,6 +1,12 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
+
 	"github.com/tepleton/tepleton-sdk/baseapp"
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/app"
 )
@@ -8,6 +14,14 @@ import (
 func main() {
 	// TODO CREATE CLI
 
-	bapp := app.NewBasecoinApp("")
+	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "main")
+
+	db, err := dbm.NewGoLevelDB("basecoind", "data")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	bapp := app.NewBasecoinApp(logger, db)
 	baseapp.RunForever(bapp)
 }
