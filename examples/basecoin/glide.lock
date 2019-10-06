@@ -1,25 +1,24 @@
-hash: 80794a3459988a7eb794baf7688c71dad4f6c26653d7b707ac0ada93f21e0776
-updated: 2018-01-23T19:03:56.956668196-08:00
+hash: 74ba16fcb7dac2ceca406dcc6c6ed00ab1cd09af4ca6f3f1d35452254e149fb4
+updated: 2018-02-20T22:02:29.601415268Z
 imports:
 - name: github.com/btcsuite/btcd
-  version: 2e60448ffcc6bf78332d1fe590260095f554dd78
+  version: 50de9da05b50eb15658bb350f6ea24368a111ab7
   subpackages:
   - btcec
 - name: github.com/tepleton/tepleton-sdk
-  version: 8650fd70c92686a192585e95413915b4302156b7
+  version: 6197eb831e7ffb2f603d59f4602663bb9b9a642e
   subpackages:
   - baseapp
-  - examples/basecoin/types
   - store
   - types
   - x/auth
   - x/bank
 - name: github.com/davecgh/go-spew
-  version: 04cdfd42973bb9c8589fd6a731800cf222fde1a9
+  version: 346938d642f2ec3594ed81d874461961cd0faa76
   subpackages:
   - spew
 - name: github.com/go-kit/kit
-  version: e2b298466b32c7cd5579a9b9b07e968fc9d9452c
+  version: 4dc7be5d2d12881735283bcab7352178e190fc71
   subpackages:
   - log
   - log/level
@@ -27,9 +26,9 @@ imports:
 - name: github.com/go-logfmt/logfmt
   version: 390ab7935ee28ec6b286364bba9b4dd6410cb3d5
 - name: github.com/go-stack/stack
-  version: 817915b46b97fd7bb80e8ab6b69f01a53ac3eebf
+  version: 259ab82a6cad3992b4e21ff5cac294ccb06474bc
 - name: github.com/gogo/protobuf
-  version: 342cbe0a04158f6dcb03ca0079991a51a4248c02
+  version: 1adfc126b41513cc696b209667c8656ea7aac67c
   subpackages:
   - gogoproto
   - jsonpb
@@ -38,7 +37,7 @@ imports:
   - sortkeys
   - types
 - name: github.com/golang/protobuf
-  version: 1e59b77b52bf8e4b449a57e6f79f21226d571845
+  version: 925541529c1fa6821df4e44ce2723319eb2be768
   subpackages:
   - proto
   - ptypes
@@ -53,10 +52,8 @@ imports:
   version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
-- name: github.com/rigelrozanski/common
-  version: f691f115798593d783b9999b1263c2f4ffecc439
 - name: github.com/syndtr/goleveldb
-  version: b89cc31ef7977104127d34c1bd31ebd1a9db2199
+  version: 34011bf325bce385408353a30b101fe5e923eb6e
   subpackages:
   - leveldb
   - leveldb/cache
@@ -71,7 +68,7 @@ imports:
   - leveldb/table
   - leveldb/util
 - name: github.com/tepleton/wrsp
-  version: 4243954d8d940f9ee0646a83d48ea7a1a907529e
+  version: fe7e26eecffd1dfbed3644893ff5177ad729fe94
   subpackages:
   - server
   - types
@@ -81,28 +78,20 @@ imports:
   - edwards25519
   - extra25519
 - name: github.com/tepleton/go-crypto
-  version: 12142af1cb4e3479ea4ac98a3171debff87519c6
-  subpackages:
-  - keys
+  version: 4fc3055dbd17aa1203d0abc64b9293f378da22ec
 - name: github.com/tepleton/go-wire
-  version: c7801c1586f51bb28028cd420c599516d7ac9c36
-  subpackages:
-  - data
+  version: dec83f641903b22f039da3974607859715d0377e
 - name: github.com/tepleton/iavl
-  version: ae2ea4a62f60c72dae81ca6642944ca28cf59889
+  version: 1a59ec0c82dc940c25339dd7c834df5cb76a95cb
 - name: github.com/tepleton/tmlibs
-  version: 80029abc6e20f85079cd751e659a05508773288c
+  version: c858b3ba78316fdd9096a11409a7e7a493e7d974
   subpackages:
-  - cli
-  - cli/flags
   - common
   - db
-  - events
   - log
-  - logger
   - merkle
 - name: golang.org/x/crypto
-  version: edd5e9b0879d13ee6970a50153d85b8fec9f7686
+  version: 1875d0a70c90e57f11972aefd42276df65e895b9
   subpackages:
   - nacl/secretbox
   - openpgp/armor
@@ -111,7 +100,7 @@ imports:
   - ripemd160
   - salsa20/salsa
 - name: golang.org/x/net
-  version: 5ccada7d0a7ba9aeb5d3aca8d3501b4c2a509fec
+  version: 2fb46b16b8dda405028c50f7c7f0f9dd1fa6bfb1
   subpackages:
   - context
   - http2
@@ -121,14 +110,14 @@ imports:
   - lex/httplex
   - trace
 - name: golang.org/x/text
-  version: c01e4764d870b77f8abe5096ee19ad20d80e8075
+  version: e19ae1496984b1c655b8044a65c0300a3c878dd3
   subpackages:
   - secure/bidirule
   - transform
   - unicode/bidi
   - unicode/norm
 - name: google.golang.org/genproto
-  version: a8101f21cf983e773d0c1133ebc5424792003214
+  version: 4eb30f4778eed4c258ba66527a0d4f9ec8a36c45
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
@@ -150,4 +139,13 @@ imports:
   - status
   - tap
   - transport
-testImports: []
+testImports:
+- name: github.com/pmezard/go-difflib
+  version: 792786c7400a136282c1664665ae0a8db921c6c2
+  subpackages:
+  - difflib
+- name: github.com/stretchr/testify
+  version: 12b6f73e6084dad08a7c6e575284b177ecafbc71
+  subpackages:
+  - assert
+  - require
