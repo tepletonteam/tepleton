@@ -12,6 +12,7 @@ import (
 	"github.com/tepleton/go-crypto/keys/words"
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 	tmtypes "github.com/tepleton/tepleton/types"
+	dbm "github.com/tepleton/tmlibs/db"
 )
 
 // InitCmd will initialize all files for tepleton,
