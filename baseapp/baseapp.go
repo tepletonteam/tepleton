@@ -41,19 +41,17 @@ type BaseApp struct {
 
 	//--------------------
 	// Volatile
-	// .msCheck and .ctxCheck are set on initialization and reset on Commit.
-	// .msDeliver and .ctxDeliver are (re-)set on BeginBlock.
-	// .valUpdates accumulate in DeliverTx and reset in BeginBlock.
-	// QUESTION: should we put valUpdates in the ctxDeliver?
-
-	msCheck    sdk.CacheMultiStore // CheckTx state, a cache-wrap of `.cms`
-	msDeliver  sdk.CacheMultiStore // DeliverTx state, a cache-wrap of `.cms`
-	ctxCheck   sdk.Context         // CheckTx context
-	ctxDeliver sdk.Context         // DeliverTx context
-	valUpdates []wrsp.Validator    // cached validator changes from DeliverTx
+	// checkState is set on initialization and reset on Commit.
+	// deliverState is set in InitChain and BeginBlock and cleared on Commit.
+	// See methods setCheckState and setDeliverState.
+	// .valUpdates accumulate in DeliverTx and are reset in BeginBlock.
+	// QUESTION: should we put valUpdates in the deliverState.ctx?
+	checkState   *state           // for CheckTx
+	deliverState *state           // for DeliverTx
+	valUpdates   []wrsp.Validator // cached validator changes from DeliverTx
 }
 
-var _ wrsp.Application = &BaseApp{}
+var _ wrsp.Application = (*BaseApp)(nil)
 
 // Create and name new BaseApp
 func NewBaseApp(name string, logger log.Logger, db dbm.DB) *BaseApp {
@@ -97,11 +95,9 @@ func (app *BaseApp) SetEndBlocker(endBlocker sdk.EndBlocker) {
 	app.endBlocker = endBlocker
 }
 func (app *BaseApp) SetAnteHandler(ah sdk.AnteHandler) {
-	// deducts fee from payer, verifies signatures and nonces, sets Signers to ctx.
 	app.anteHandler = ah
 }
 
-// nolint - Get functions
 func (app *BaseApp) Router() Router { return app.router }
 
 // load latest application version
@@ -167,8 +163,7 @@ func (app *BaseApp) initFromStore(mainKey sdk.StoreKey) error {
 	*/
 
 	// initialize Check state
-	app.msCheck = app.cms.CacheMultiStore()
-	app.ctxCheck = app.NewContext(true, wrsp.Header{})
+	app.setCheckState(wrsp.Header{})
 
 	return nil
 }
@@ -176,9 +171,34 @@ func (app *BaseApp) initFromStore(mainKey sdk.StoreKey) error {
 // NewContext returns a new Context with the correct store, the given header, and nil txBytes.
 func (app *BaseApp) NewContext(isCheckTx bool, header wrsp.Header) sdk.Context {
 	if isCheckTx {
-		return sdk.NewContext(app.msCheck, header, true, nil)
+		return sdk.NewContext(app.checkState.ms, header, true, nil)
 	}
-	return sdk.NewContext(app.msDeliver, header, false, nil)
+	return sdk.NewContext(app.deliverState.ms, header, false, nil)
+}
+
+type state struct {
+	ms  sdk.CacheMultiStore
+	ctx sdk.Context
+}
+
+func (st *state) CacheMultiStore() sdk.CacheMultiStore {
+	return st.ms.CacheMultiStore()
+}
+
+func (app *BaseApp) setCheckState(header wrsp.Header) {
+	ms := app.cms.CacheMultiStore()
+	app.checkState = &state{
+		ms:  ms,
+		ctx: sdk.NewContext(ms, header, true, nil),
+	}
+}
+
+func (app *BaseApp) setDeliverState(header wrsp.Header) {
+	ms := app.cms.CacheMultiStore()
+	app.deliverState = &state{
+		ms:  ms,
+		ctx: sdk.NewContext(ms, header, false, nil),
+	}
 }
 
 //----------------------------------------
@@ -186,7 +206,6 @@ func (app *BaseApp) NewContext(isCheckTx bool, header wrsp.Header) sdk.Context {
 
 // Implements WRSP
 func (app *BaseApp) Info(req wrsp.RequestInfo) wrsp.ResponseInfo {
-
 	lastCommitID := app.cms.LastCommitID()
 
 	return wrsp.ResponseInfo{
@@ -210,14 +229,12 @@ func (app *BaseApp) InitChain(req wrsp.RequestInitChain) (res wrsp.ResponseInitC
 		return
 	}
 
-	// Initialize the deliver state
-	app.msDeliver = app.cms.CacheMultiStore()
-	app.ctxDeliver = app.NewContext(false, wrsp.Header{})
-
-	app.initChainer(app.ctxDeliver, req) // no error
+	// Initialize the deliver state and run initChain
+	app.setDeliverState(wrsp.Header{})
+	app.initChainer(app.deliverState.ctx, req) // no error
 
 	// NOTE: we don't commit, but BeginBlock for block 1
-	// starts from this state
+	// starts from this deliverState
 
 	return
 }
@@ -236,23 +253,21 @@ func (app *BaseApp) Query(req wrsp.RequestQuery) (res wrsp.ResponseQuery) {
 // Implements WRSP
 func (app *BaseApp) BeginBlock(req wrsp.RequestBeginBlock) (res wrsp.ResponseBeginBlock) {
 	// Initialize the DeliverTx state.
-	// If this is the first block, it was already
-	// initialized in InitChain. If we're testing,
-	// then we may not have run InitChain and these could be nil
-	if req.Header.Height > 1 || app.msDeliver == nil {
-		app.msDeliver = app.cms.CacheMultiStore()
-		app.ctxDeliver = app.NewContext(false, req.Header)
+	// If this is the first block, it should already
+	// be initialized in InitChain. It may also be nil
+	// if this is a test and InitChain was never called.
+	if app.deliverState == nil {
+		app.setDeliverState(req.Header)
 	}
 	app.valUpdates = nil
 	if app.beginBlocker != nil {
-		res = app.beginBlocker(app.ctxDeliver, req)
+		res = app.beginBlocker(app.deliverState.ctx, req)
 	}
 	return
 }
 
 // Implements WRSP
 func (app *BaseApp) CheckTx(txBytes []byte) (res wrsp.ResponseCheckTx) {
-
 	// Decode the Tx.
 	var result sdk.Result
 	var tx, err = app.txDecoder(txBytes)
@@ -277,7 +292,6 @@ func (app *BaseApp) CheckTx(txBytes []byte) (res wrsp.ResponseCheckTx) {
 
 // Implements WRSP
 func (app *BaseApp) DeliverTx(txBytes []byte) (res wrsp.ResponseDeliverTx) {
-
 	// Decode the Tx.
 	var result sdk.Result
 	var tx, err = app.txDecoder(txBytes)
@@ -318,7 +332,6 @@ func (app *BaseApp) Deliver(tx sdk.Tx) (result sdk.Result) {
 // txBytes may be nil in some cases, eg. in tests.
 // Also, in the future we may support "internal" transactions.
 func (app *BaseApp) runTx(isCheckTx bool, txBytes []byte, tx sdk.Tx) (result sdk.Result) {
-
 	// Handle any panics.
 	defer func() {
 		if r := recover(); r != nil {
@@ -342,32 +355,39 @@ func (app *BaseApp) runTx(isCheckTx bool, txBytes []byte, tx sdk.Tx) (result sdk
 	// Get the context
 	var ctx sdk.Context
 	if isCheckTx {
-		ctx = app.ctxCheck.WithTxBytes(txBytes)
+		ctx = app.checkState.ctx.WithTxBytes(txBytes)
 	} else {
-		ctx = app.ctxDeliver.WithTxBytes(txBytes)
+		ctx = app.deliverState.ctx.WithTxBytes(txBytes)
 	}
-
-	// TODO: override default ante handler w/ custom ante handler.
 
 	// Run the ante handler.
 	newCtx, result, abort := app.anteHandler(ctx, tx)
-	if isCheckTx || abort {
+	if abort {
 		return result
 	}
 	if !newCtx.IsZero() {
 		ctx = newCtx
 	}
 
-	// CacheWrap app.msDeliver in case it fails.
-	msCache := app.msDeliver.CacheMultiStore()
-	ctx = ctx.WithMultiStore(msCache)
+	// Get the correct cache
+	var msCache sdk.CacheMultiStore
+	if isCheckTx == true {
+		// CacheWrap app.checkState.ms in case it fails.
+		msCache = app.checkState.CacheMultiStore()
+		ctx = ctx.WithMultiStore(msCache)
+	} else {
+		// CacheWrap app.deliverState.ms in case it fails.
+		msCache = app.deliverState.CacheMultiStore()
+		ctx = ctx.WithMultiStore(msCache)
+
+	}
 
 	// Match and run route.
 	msgType := msg.Type()
 	handler := app.router.Route(msgType)
 	result = handler(ctx, msg)
 
-	// If result was successful, write to app.msDeliver or app.msCheck.
+	// If result was successful, write to app.checkState.ms or app.deliverState.ms
 	if result.IsOK() {
 		msCache.Write()
 	}
@@ -378,7 +398,7 @@ func (app *BaseApp) runTx(isCheckTx bool, txBytes []byte, tx sdk.Tx) (result sdk
 // Implements WRSP
 func (app *BaseApp) EndBlock(req wrsp.RequestEndBlock) (res wrsp.ResponseEndBlock) {
 	if app.endBlocker != nil {
-		res = app.endBlocker(app.ctxDeliver, req)
+		res = app.endBlocker(app.deliverState.ctx, req)
 	} else {
 		res.ValidatorUpdates = app.valUpdates
 	}
@@ -387,7 +407,7 @@ func (app *BaseApp) EndBlock(req wrsp.RequestEndBlock) (res wrsp.ResponseEndBloc
 
 // Implements WRSP
 func (app *BaseApp) Commit() (res wrsp.ResponseCommit) {
-	header := app.ctxDeliver.BlockHeader()
+	header := app.deliverState.ctx.BlockHeader()
 	/*
 		// Write the latest Header to the store
 			headerBytes, err := proto.Marshal(&header)
@@ -398,17 +418,19 @@ func (app *BaseApp) Commit() (res wrsp.ResponseCommit) {
 	*/
 
 	// Write the Deliver state and commit the MultiStore
-	app.msDeliver.Write()
+	app.deliverState.ms.Write()
 	commitID := app.cms.Commit()
 	app.logger.Debug("Commit synced",
 		"commit", commitID,
 	)
 
-	// Reset the Check state
+	// Reset the Check state to the latest committed
 	// NOTE: safe because Tendermint holds a lock on the mempool for Commit.
 	// Use the header from this latest block.
-	app.msCheck = app.cms.CacheMultiStore()
-	app.ctxCheck = app.NewContext(true, header)
+	app.setCheckState(header)
+
+	// Emtpy the Deliver state
+	app.deliverState = nil
 
 	return wrsp.ResponseCommit{
 		Data: commitID.Hash,
