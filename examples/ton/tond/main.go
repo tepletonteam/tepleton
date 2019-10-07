@@ -9,6 +9,7 @@ import (
 	"github.com/tepleton/tmlibs/cli"
 
 	"github.com/tepleton/tepleton-sdk/baseapp"
+	"github.com/tepleton/tepleton-sdk/version"
 )
 
 const (
@@ -35,7 +36,7 @@ func main() {
 
 	AddNodeCommands(tondCmd, node)
 	tondCmd.AddCommand(
-		VersionCmd,
+		version.VersionCmd,
 	)
 
 	// prepare and add flags
