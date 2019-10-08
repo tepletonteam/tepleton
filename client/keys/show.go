@@ -15,45 +15,32 @@
 package keys
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 
 	"github.com/spf13/cobra"
 )
 
-func updateKeyCommand() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "update <name>",
-		Short: "Change the password used to protect private key",
-		RunE:  runUpdateCmd,
-	}
-	return cmd
+var showKeysCmd = &cobra.Command{
+	Use:   "show <name>",
+	Short: "Show key info for the given name",
+	Long:  `Return public details of one local key.`,
+	RunE:  runShowCmd,
 }
 
-func runUpdateCmd(cmd *cobra.Command, args []string) error {
+func runShowCmd(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 || len(args[0]) == 0 {
 		return errors.New("You must provide a name for the key")
 	}
 	name := args[0]
 
-	oldpass, err := getPassword("Enter the current passphrase:")
-	if err != nil {
-		return err
-	}
-	newpass, err := getCheckPassword("Enter the new passphrase:", "Repeat the new passphrase:")
-	if err != nil {
-		return err
-	}
-
 	kb, err := GetKeyBase()
 	if err != nil {
 		return err
 	}
-	err = kb.Update(name, oldpass, newpass)
-	if err != nil {
-		return err
+
+	info, err := kb.Get(name)
+	if err == nil {
+		printInfo(info)
 	}
-	fmt.Println("Password successfully updated!")
-	return nil
+	return err
 }

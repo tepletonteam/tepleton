@@ -8,6 +8,7 @@ import (
 
 	"github.com/tepleton/tmlibs/cli"
 
+	"github.com/tepleton/tepleton-sdk/client/keys"
 	"github.com/tepleton/tepleton-sdk/version"
 )
 
@@ -48,12 +49,12 @@ func main() {
 	basecliCmd.AddCommand(
 		lineBreak,
 		serveCommand(),
-		KeyCommands(),
+		keys.Commands(),
 		lineBreak,
 		version.VersionCmd,
 	)
 
 	// prepare and add flags
-	executor := cli.PrepareBaseCmd(basecliCmd, "GA", os.ExpandEnv("$HOME/.basecli"))
+	executor := cli.PrepareMainCmd(basecliCmd, "BC", os.ExpandEnv("$HOME/.basecli"))
 	executor.Execute()
 }
