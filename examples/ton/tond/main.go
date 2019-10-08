@@ -7,7 +7,9 @@ import (
 
 	"github.com/spf13/cobra"
 
+	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/tmlibs/cli"
+	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/tepleton-sdk/baseapp"
 	"github.com/tepleton/tepleton-sdk/server"
@@ -46,14 +48,20 @@ func defaultOptions(args []string) (json.RawMessage, error) {
 	return json.RawMessage(opts), nil
 }
 
-func main() {
+func generateApp(rootDir string, logger log.Logger) (wrsp.Application, error) {
 	// TODO: set this to something real
 	app := new(baseapp.BaseApp)
+	return app, nil
+}
+
+func main() {
+	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).
+		With("module", "main")
 
 	tondCmd.AddCommand(
-		server.InitCmd(defaultOptions, app.Logger),
-		server.StartCmd(app, app.Logger),
-		server.UnsafeResetAllCmd(app.Logger),
+		server.InitCmd(defaultOptions, logger),
+		server.StartCmd(generateApp, logger),
+		server.UnsafeResetAllCmd(logger),
 		version.VersionCmd,
 	)
 

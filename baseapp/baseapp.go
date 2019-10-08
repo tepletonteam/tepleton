@@ -236,8 +236,6 @@ func (app *BaseApp) InitChain(req wrsp.RequestInitChain) (res wrsp.ResponseInitC
 	// NOTE: we don't commit, but BeginBlock for block 1
 	// starts from this deliverState
 
-	// TODO: d00d, tepleton sends nil, until that is fixed, we gotta
-	// read in the genesis file ourselves here
 	res = app.initChainer(ctx, req)
 	// TODO: handle error https://github.com/tepleton/tepleton-sdk/issues/468
 
