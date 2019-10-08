@@ -22,6 +22,6 @@ func SetupApp() (wrsp.Application, func(), error) {
 		os.RemoveAll(rootDir)
 	}
 
-	app, err := NewApp(logger, rootDir)
+	app, err := NewApp(rootDir, logger)
 	return app, cleanup, err
 }
