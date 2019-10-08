@@ -8,8 +8,10 @@ import (
 
 	"github.com/tepleton/tmlibs/cli"
 
+	"github.com/tepleton/tepleton-sdk/client"
 	"github.com/tepleton/tepleton-sdk/client/keys"
 	"github.com/tepleton/tepleton-sdk/version"
+	bankcmd "github.com/tepleton/tepleton-sdk/x/bank/commands"
 )
 
 // toncliCmd is the entry point for this binary
@@ -35,9 +37,9 @@ func main() {
 
 	// query/post commands (custom to binary)
 	basecliCmd.AddCommand(
-		GetCommands(getAccountCmd())...)
+		client.GetCommands(bankcmd.GetAccountCmd())...)
 	basecliCmd.AddCommand(
-		PostCommands(postSendCommand())...)
+		client.PostCommands(bankcmd.SendTxCommand())...)
 
 	// add proxy, version and key info
 	basecliCmd.AddCommand(
