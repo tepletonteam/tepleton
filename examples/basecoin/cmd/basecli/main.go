@@ -1,91 +1,59 @@
 package main
 
 import (
+	"errors"
 	"os"
 
 	"github.com/spf13/cobra"
 
 	"github.com/tepleton/tmlibs/cli"
 
-	"github.com/tepleton/tepleton-sdk/client/commands"
-	"github.com/tepleton/tepleton-sdk/client/commands/auto"
-	"github.com/tepleton/tepleton-sdk/client/commands/commits"
-	"github.com/tepleton/tepleton-sdk/client/commands/keys"
-	"github.com/tepleton/tepleton-sdk/client/commands/proxy"
-	"github.com/tepleton/tepleton-sdk/client/commands/query"
-	rpccmd "github.com/tepleton/tepleton-sdk/client/commands/rpc"
-	txcmd "github.com/tepleton/tepleton-sdk/client/commands/txs"
-	authcmd "github.com/tepleton/tepleton-sdk/modules/auth/commands"
-	basecmd "github.com/tepleton/tepleton-sdk/modules/base/commands"
-	coincmd "github.com/tepleton/tepleton-sdk/modules/coin/commands"
-	feecmd "github.com/tepleton/tepleton-sdk/modules/fee/commands"
-	ibccmd "github.com/tepleton/tepleton-sdk/modules/ibc/commands"
-	noncecmd "github.com/tepleton/tepleton-sdk/modules/nonce/commands"
-	rolecmd "github.com/tepleton/tepleton-sdk/modules/roles/commands"
+	"github.com/tepleton/tepleton-sdk/version"
 )
 
-// BaseCli - main basecoin client command
-var BaseCli = &cobra.Command{
-	Use:   "basecli",
-	Short: "Light client for Tendermint",
-	Long: `Basecli is a certifying light client for the basecoin wrsp app.
+// toncliCmd is the entry point for this binary
+var (
+	basecliCmd = &cobra.Command{
+		Use:   "basecli",
+		Short: "Basecoin light-client",
+	}
 
-It leverages the power of the tepleton consensus algorithm get full
-cryptographic proof of all queries while only syncing a fraction of the
-block headers.`,
+	lineBreak = &cobra.Command{Run: func(*cobra.Command, []string) {}}
+
+	getAccountCmd = &cobra.Command{
+		Use:   "account <address>",
+		Short: "Query account balance",
+		RunE:  todoNotImplemented,
+	}
+)
+
+func todoNotImplemented(_ *cobra.Command, _ []string) error {
+	return errors.New("TODO: Command not yet implemented")
 }
 
 func main() {
-	commands.AddBasicFlags(BaseCli)
+	// disable sorting
+	cobra.EnableCommandSorting = false
 
-	// Prepare queries
-	query.RootCmd.AddCommand(
-		// These are default parsers, but optional in your app (you can remove key)
-		query.TxQueryCmd,
-		query.KeyQueryCmd,
-		coincmd.AccountQueryCmd,
-		noncecmd.NonceQueryCmd,
-		rolecmd.RoleQueryCmd,
-		ibccmd.IBCQueryCmd,
+	// generic client commands
+	AddClientCommands(basecliCmd)
+	// query commands (custom to binary)
+	basecliCmd.AddCommand(
+		GetCommands(getAccountCmd)...)
+	// post tx commands (custom to binary)
+	basecliCmd.AddCommand(
+		PostCommands(postSendCommand())...)
+
+	// add proxy, version and key info
+	basecliCmd.AddCommand(
+		lineBreak,
+		serveCommand(),
+		KeyCommands(),
+		lineBreak,
+		version.VersionCmd,
 	)
 
-	// set up the middleware
-	txcmd.Middleware = txcmd.Wrappers{
-		feecmd.FeeWrapper{},
-		rolecmd.RoleWrapper{},
-		noncecmd.NonceWrapper{},
-		basecmd.ChainWrapper{},
-		authcmd.SigWrapper{},
-	}
-	txcmd.Middleware.Register(txcmd.RootCmd.PersistentFlags())
-
-	// you will always want this for the base send command
-	txcmd.RootCmd.AddCommand(
-		// This is the default transaction, optional in your app
-		coincmd.SendTxCmd,
-		coincmd.CreditTxCmd,
-		// this enables creating roles
-		rolecmd.CreateRoleTxCmd,
-		// these are for handling ibc
-		ibccmd.RegisterChainTxCmd,
-		ibccmd.UpdateChainTxCmd,
-		ibccmd.PostPacketTxCmd,
-	)
-
-	// Set up the various commands to use
-	BaseCli.AddCommand(
-		commands.InitCmd,
-		commands.ResetCmd,
-		keys.RootCmd,
-		commits.RootCmd,
-		rpccmd.RootCmd,
-		query.RootCmd,
-		txcmd.RootCmd,
-		proxy.RootCmd,
-		commands.VersionCmd,
-		auto.AutoCompleteCmd,
-	)
-
-	cmd := cli.PrepareMainCmd(BaseCli, "BC", os.ExpandEnv("$HOME/.basecli"))
-	cmd.Execute()
+	// prepare and add flags
+	executor := cli.PrepareBaseCmd(basecliCmd, "GA", os.ExpandEnv("$HOME/.basecli"))
+	executor.Execute()
 }
