@@ -1,30 +1,23 @@
 package client
 
-/*
-
 import (
-	"path/filepath"
-
 	"github.com/tepleton/go-crypto/keys"
-	"github.com/tepleton/go-crypto/keys/cryptostore"
-	"github.com/tepleton/go-crypto/keys/storage/filestorage"
+	"github.com/tepleton/go-crypto/keys/words"
+	dbm "github.com/tepleton/tmlibs/db"
 )
 
-// KeySubdir is the directory name under root where we store the keys
-const KeySubdir = "keys"
+// KeyDBName is the directory under root where we store the keys
+const KeyDBName = "keys"
 
 // GetKeyManager initializes a key manager based on the configuration
-func GetKeyManager(rootDir string) keys.Manager {
-	keyDir := filepath.Join(rootDir, KeySubdir)
-	// TODO: smarter loading??? with language and fallback?
-	codec := keys.MustLoadCodec("english")
-
-	// and construct the key manager
-	manager := cryptostore.New(
-		cryptostore.SecretBox,
-		filestorage.New(keyDir),
-		codec,
+func GetKeyManager(rootDir string) (keys.Keybase, error) {
+	db, err := dbm.NewGoLevelDB(KeyDBName, rootDir)
+	if err != nil {
+		return nil, err
+	}
+	keybase := keys.New(
+		db,
+		words.MustLoadCodec("english"),
 	)
-	return manager
+	return keybase, nil
 }
-*/
