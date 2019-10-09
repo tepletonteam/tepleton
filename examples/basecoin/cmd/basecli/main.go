@@ -14,7 +14,11 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/rpc"
 	"github.com/tepleton/tepleton-sdk/client/tx"
 	"github.com/tepleton/tepleton-sdk/version"
+	authcmd "github.com/tepleton/tepleton-sdk/x/auth/commands"
 	bankcmd "github.com/tepleton/tepleton-sdk/x/bank/commands"
+
+	"github.com/tepleton/tepleton-sdk/examples/basecoin/app"
+	"github.com/tepleton/tepleton-sdk/examples/basecoin/types"
 )
 
 // toncliCmd is the entry point for this binary
@@ -33,20 +37,23 @@ func main() {
 	// disable sorting
 	cobra.EnableCommandSorting = false
 
+	// get the codec
+	cdc := app.MakeCodec()
+
 	// add standard rpc, and tx commands
 	rpc.AddCommands(basecliCmd)
 	basecliCmd.AddCommand(client.LineBreak)
-	tx.AddCommands(basecliCmd)
+	tx.AddCommands(basecliCmd, cdc)
 	basecliCmd.AddCommand(client.LineBreak)
 
 	// add query/post commands (custom to binary)
 	basecliCmd.AddCommand(
 		client.GetCommands(
-			bankcmd.GetAccountCmd("main"),
+			authcmd.GetAccountCmd("main", cdc, types.GetParseAccount(cdc)),
 		)...)
 	basecliCmd.AddCommand(
 		client.PostCommands(
-			bankcmd.SendTxCommand(),
+			bankcmd.SendTxCmd(cdc),
 		)...)
 
 	// add proxy, version and key info

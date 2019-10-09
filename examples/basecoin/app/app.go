@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	wrsp "github.com/tepleton/wrsp/types"
+	crypto "github.com/tepleton/go-crypto"
 	"github.com/tepleton/go-wire"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
@@ -39,7 +40,7 @@ func NewBasecoinApp(logger log.Logger, db dbm.DB) *BasecoinApp {
 	// create your application object
 	var app = &BasecoinApp{
 		BaseApp:         bam.NewBaseApp(appName, logger, db),
-		cdc:             MakeTxCodec(),
+		cdc:             MakeCodec(),
 		capKeyMainStore: sdk.NewKVStoreKey("main"),
 		capKeyIBCStore:  sdk.NewKVStoreKey("ibc"),
 	}
@@ -70,9 +71,11 @@ func NewBasecoinApp(logger log.Logger, db dbm.DB) *BasecoinApp {
 }
 
 // custom tx codec
-func MakeTxCodec() *wire.Codec {
+func MakeCodec() *wire.Codec {
 	cdc := wire.NewCodec()
-	bank.RegisterWire(cdc) // Register bank.[SendMsg,IssueMsg] types.
+	cdc.RegisterInterface((*sdk.Msg)(nil), nil)
+	bank.RegisterWire(cdc)   // Register bank.[SendMsg,IssueMsg] types.
+	crypto.RegisterWire(cdc) // Register crypto.[PubKey,PrivKey,Signature] types.
 	return cdc
 }
 
