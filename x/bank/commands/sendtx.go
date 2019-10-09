@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/tepleton/tepleton-sdk/client"
-	"github.com/tepleton/tepleton-sdk/examples/basecoin/app"
+	"github.com/tepleton/tepleton-sdk/examples/basecoin/app" // XXX: not good
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/x/bank"
 	crypto "github.com/tepleton/go-crypto"
