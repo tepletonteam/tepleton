@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	"github.com/tepleton/tepleton-sdk/client"
 	tmwire "github.com/tepleton/tepleton/wire"
@@ -22,8 +21,10 @@ func statusCommand() *cobra.Command {
 
 func checkStatus(cmd *cobra.Command, args []string) error {
 	// get the node
-	uri := viper.GetString(client.FlagNode)
-	node := client.GetNode(uri)
+	node, err := client.GetNode()
+	if err != nil {
+		return err
+	}
 	res, err := node.Status()
 	if err != nil {
 		return err
