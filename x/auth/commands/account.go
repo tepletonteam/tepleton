@@ -11,7 +11,7 @@ import (
 	crypto "github.com/tepleton/go-crypto"
 	wire "github.com/tepleton/go-wire"
 
-	"github.com/tepleton/tepleton-sdk/client" // XXX: not good
+	"github.com/tepleton/tepleton-sdk/client"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/x/auth"
 )

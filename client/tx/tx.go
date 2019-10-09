@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/tepleton/tepleton-sdk/client" // XXX: not good
+	"github.com/tepleton/tepleton-sdk/client"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	wrsp "github.com/tepleton/wrsp/types"
 	wire "github.com/tepleton/go-wire"
