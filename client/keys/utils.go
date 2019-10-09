@@ -7,9 +7,13 @@ import (
 
 	keys "github.com/tepleton/go-crypto/keys"
 	"github.com/tepleton/tmlibs/cli"
+	dbm "github.com/tepleton/tmlibs/db"
 
 	"github.com/tepleton/tepleton-sdk/client"
 )
+
+// KeyDBName is the directory under root where we store the keys
+const KeyDBName = "keys"
 
 var (
 	// keybase is used to make GetKeyBase a singleton
@@ -20,11 +24,11 @@ var (
 func GetKeyBase() (keys.Keybase, error) {
 	if keybase == nil {
 		rootDir := viper.GetString(cli.HomeFlag)
-		kb, err := client.GetKeyBase(rootDir)
+		db, err := dbm.NewGoLevelDB(KeyDBName, rootDir)
 		if err != nil {
 			return nil, err
 		}
-		keybase = kb
+		keybase = client.GetKeyBase(db)
 	}
 	return keybase, nil
 }

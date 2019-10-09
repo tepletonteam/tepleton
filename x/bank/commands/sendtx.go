@@ -9,11 +9,11 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/tepleton/tepleton-sdk/client"
+	"github.com/tepleton/tepleton-sdk/client/keys"
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/app" // XXX: not good
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/x/bank"
 	crypto "github.com/tepleton/go-crypto"
-	"github.com/tepleton/tmlibs/cli"
 )
 
 const (
@@ -70,8 +70,7 @@ func sendTx(cmd *cobra.Command, args []string) error {
 }
 
 func buildTx() ([]byte, error) {
-	rootDir := viper.GetString(cli.HomeFlag)
-	keybase, err := client.GetKeyBase(rootDir)
+	keybase, err := keys.GetKeyBase()
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +78,7 @@ func buildTx() ([]byte, error) {
 	name := viper.GetString(client.FlagName)
 	info, err := keybase.Get(name)
 	if err != nil {
-		return nil, errors.WithMessage(err, "No key for name")
+		return nil, errors.Errorf("No key for: %s", name)
 	}
 	from := info.PubKey.Address()
 
