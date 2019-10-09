@@ -13,8 +13,8 @@ import (
 	rpcclient "github.com/tepleton/tepleton/rpc/client"
 
 	"github.com/tepleton/tepleton-sdk/client"
-	"github.com/tepleton/tepleton-sdk/examples/basecoin/app"
-	"github.com/tepleton/tepleton-sdk/examples/basecoin/types"
+	"github.com/tepleton/tepleton-sdk/examples/basecoin/app"   // XXX: not good
+	"github.com/tepleton/tepleton-sdk/examples/basecoin/types" // XXX: not good
 )
 
 // GetAccountCmd returns a query account that will display the
