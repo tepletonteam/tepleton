@@ -1,13 +1,14 @@
 package rpc
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 
-	"github.com/tepleton/tepleton-sdk/client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/tepleton/tepleton-sdk/client"
+	tmwire "github.com/tepleton/tepleton/wire"
 )
 
 const (
@@ -54,7 +55,8 @@ func getBlock(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	output, err := json.MarshalIndent(res, "  ", "")
+	output, err := tmwire.MarshalJSON(res)
+	// output, err := json.MarshalIndent(res, "  ", "")
 	if err != nil {
 		return err
 	}
