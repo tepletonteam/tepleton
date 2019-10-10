@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/tepleton/tepleton-sdk/client"
+	"github.com/tepleton/tepleton-sdk/client/builder"
 	"github.com/tepleton/tepleton-sdk/client/keys"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
@@ -48,7 +49,7 @@ func (c commander) sendTxCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	res, err := client.BroadcastTx(txBytes)
+	res, err := builder.BroadcastTx(txBytes)
 	if err != nil {
 		return err
 	}
