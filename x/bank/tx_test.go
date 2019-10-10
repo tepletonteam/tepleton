@@ -1,22 +1,45 @@
 package bank
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	crypto "github.com/tepleton/go-crypto"
-
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
+func TestNewSendMsg(t *testing.T) {}
+
+func TestSendMsgType(t *testing.T) {
+	// Construct a SendMsg
+	var msg = SendMsg{
+		Inputs: []Input{
+			{
+				Address:  sdk.Address([]byte("input")),
+				Coins:    sdk.Coins{{"atom", 10}},
+				Sequence: 1,
+			},
+		},
+		Outputs: []Output{
+			{
+				Address: sdk.Address([]byte("output")),
+				Coins:   sdk.Coins{{"atom", 10}},
+			},
+		},
+	}
+
+	// TODO some failures for bad result
+	assert.Equal(t, msg.Type(), "bank")
+}
+
 func TestInputValidation(t *testing.T) {
-	addr1 := crypto.Address([]byte{1, 2})
-	addr2 := crypto.Address([]byte{7, 8})
+	addr1 := sdk.Address([]byte{1, 2})
+	addr2 := sdk.Address([]byte{7, 8})
 	someCoins := sdk.Coins{{"atom", 123}}
 	multiCoins := sdk.Coins{{"atom", 123}, {"eth", 20}}
 
-	var emptyAddr crypto.Address
+	var emptyAddr sdk.Address
 	emptyCoins := sdk.Coins{}
 	emptyCoins2 := sdk.Coins{{"eth", 0}}
 	someEmptyCoins := sdk.Coins{{"eth", 10}, {"atom", 0}}
@@ -55,12 +78,12 @@ func TestInputValidation(t *testing.T) {
 }
 
 func TestOutputValidation(t *testing.T) {
-	addr1 := crypto.Address([]byte{1, 2})
-	addr2 := crypto.Address([]byte{7, 8})
+	addr1 := sdk.Address([]byte{1, 2})
+	addr2 := sdk.Address([]byte{7, 8})
 	someCoins := sdk.Coins{{"atom", 123}}
 	multiCoins := sdk.Coins{{"atom", 123}, {"eth", 20}}
 
-	var emptyAddr crypto.Address
+	var emptyAddr sdk.Address
 	emptyCoins := sdk.Coins{}
 	emptyCoins2 := sdk.Coins{{"eth", 0}}
 	someEmptyCoins := sdk.Coins{{"eth", 10}, {"atom", 0}}
@@ -97,9 +120,8 @@ func TestOutputValidation(t *testing.T) {
 }
 
 func TestSendMsgValidation(t *testing.T) {
-
-	addr1 := crypto.Address([]byte{1, 2})
-	addr2 := crypto.Address([]byte{7, 8})
+	addr1 := sdk.Address([]byte{1, 2})
+	addr2 := sdk.Address([]byte{7, 8})
 	atom123 := sdk.Coins{{"atom", 123}}
 	atom124 := sdk.Coins{{"atom", 124}}
 	eth123 := sdk.Coins{{"eth", 123}}
@@ -112,7 +134,7 @@ func TestSendMsgValidation(t *testing.T) {
 	output3 := NewOutput(addr2, eth123)
 	outputMulti := NewOutput(addr2, atom123eth123)
 
-	var emptyAddr crypto.Address
+	var emptyAddr sdk.Address
 
 	cases := []struct {
 		valid bool
@@ -165,10 +187,91 @@ func TestSendMsgValidation(t *testing.T) {
 	}
 }
 
+func TestSendMsgString(t *testing.T) {
+	// Construct a SendMsg
+	var msg = SendMsg{
+		Inputs: []Input{
+			{
+				Address:  sdk.Address([]byte("input")),
+				Coins:    sdk.Coins{{"atom", 10}},
+				Sequence: 1,
+			},
+		},
+		Outputs: []Output{
+			{
+				Address: sdk.Address([]byte("output")),
+				Coins:   sdk.Coins{{"atom", 10}},
+			},
+		},
+	}
+	res := msg.String()
+	// TODO some failures for bad results
+	assert.Equal(t, res, "SendMsg{[Input{696E707574,10atom}]->[Output{364637353734373037353734,10atom}]}")
+}
+
+func TestSendMsgGet(t *testing.T) {
+	var msg = SendMsg{
+		Inputs: []Input{
+			{
+				Address:  sdk.Address([]byte("input")),
+				Coins:    sdk.Coins{{"atom", 10}},
+				Sequence: 1,
+			},
+		},
+		Outputs: []Output{
+			{
+				Address: sdk.Address([]byte("output")),
+				Coins:   sdk.Coins{{"atom", 10}},
+			},
+		},
+	}
+	res := msg.Get(nil)
+	assert.Nil(t, res)
+}
+
+func TestSendMsgGetSignBytes(t *testing.T) {
+	var msg = SendMsg{
+		Inputs: []Input{
+			{
+				Address:  sdk.Address([]byte("input")),
+				Coins:    sdk.Coins{{"atom", 10}},
+				Sequence: 1,
+			},
+		},
+		Outputs: []Output{
+			{
+				Address: sdk.Address([]byte("output")),
+				Coins:   sdk.Coins{{"atom", 10}},
+			},
+		},
+	}
+	res := msg.GetSignBytes()
+	// TODO bad results
+	assert.Equal(t, string(res), `{"inputs":[{"address":"696E707574","coins":[{"denom":"atom","amount":10}],"sequence":1}],"outputs":[{"address":"6F7574707574","coins":[{"denom":"atom","amount":10}]}]}`)
+}
+
+func TestSendMsgGetSigners(t *testing.T) {
+	var msg = SendMsg{
+		Inputs: []Input{
+			{
+				Address: sdk.Address([]byte("input1")),
+			},
+			{
+				Address: sdk.Address([]byte("input2")),
+			},
+			{
+				Address: sdk.Address([]byte("input3")),
+			},
+		},
+	}
+	res := msg.GetSigners()
+	assert.Equal(t, fmt.Sprintf("%v", res), "[696E70757431 696E70757432 696E70757433]")
+}
+
 /*
-// TODO where does this test belong ?
+// what to do w/ this test?
 func TestSendMsgSigners(t *testing.T) {
-	signers := []crypto.Address{
+	signers := []sdk.Address{
 		{1, 2, 3},
 		{4, 5, 6},
 		{7, 8, 9},
@@ -184,3 +287,82 @@ func TestSendMsgSigners(t *testing.T) {
 	assert.Equal(t, signers, tx.Signers())
 }
 */
+
+// ----------------------------------------
+// IssueMsg Tests
+
+func TestNewIssueMsg(t *testing.T) {
+	// TODO
+}
+
+func TestIssueMsgType(t *testing.T) {
+	// Construct an IssueMsg
+	var msg = IssueMsg{
+		Banker: sdk.Address([]byte("input")),
+		Outputs: []Output{
+			{
+				Address: sdk.Address([]byte("loan-from-bank")),
+				Coins:   sdk.Coins{{"atom", 10}},
+			},
+		},
+	}
+
+	// TODO some failures for bad result
+	assert.Equal(t, msg.Type(), "bank")
+}
+
+func TestIssueMsgValidation(t *testing.T) {
+	// TODO
+}
+
+func TestIssueMsgString(t *testing.T) {
+	// Construct a IssueMsg
+	var msg = IssueMsg{
+		Banker: sdk.Address([]byte("input")),
+		Outputs: []Output{
+			{
+				Address: sdk.Address([]byte("loan-from-bank")),
+				Coins:   sdk.Coins{{"atom", 10}},
+			},
+		},
+	}
+	res := msg.String()
+	assert.Equal(t, res, "IssueMsg{696E707574#[Output{36433646363136453244363637323646364432443632363136453642,10atom}]}")
+}
+
+func TestIssueMsgGet(t *testing.T) {
+	var msg = IssueMsg{
+		Banker: sdk.Address([]byte("input")),
+		Outputs: []Output{
+			{
+				Address: sdk.Address([]byte("loan-from-bank")),
+				Coins:   sdk.Coins{{"atom", 10}},
+			},
+		},
+	}
+	res := msg.Get(nil)
+	assert.Nil(t, res)
+}
+
+func TestIssueMsgGetSignBytes(t *testing.T) {
+	var msg = IssueMsg{
+		Banker: sdk.Address([]byte("input")),
+		Outputs: []Output{
+			{
+				Address: sdk.Address([]byte("loan-from-bank")),
+				Coins:   sdk.Coins{{"atom", 10}},
+			},
+		},
+	}
+	res := msg.GetSignBytes()
+	// TODO bad results
+	assert.Equal(t, string(res), `{"banker":"696E707574","outputs":[{"address":"6C6F616E2D66726F6D2D62616E6B","coins":[{"denom":"atom","amount":10}]}]}`)
+}
+
+func TestIssueMsgGetSigners(t *testing.T) {
+	var msg = IssueMsg{
+		Banker: sdk.Address([]byte("onlyone")),
+	}
+	res := msg.GetSigners()
+	assert.Equal(t, fmt.Sprintf("%v", res), "[6F6E6C796F6E65]")
+}

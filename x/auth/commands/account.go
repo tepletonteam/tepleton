@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	crypto "github.com/tepleton/go-crypto"
 	wire "github.com/tepleton/go-wire"
 
 	"github.com/tepleton/tepleton-sdk/client"
@@ -61,7 +60,7 @@ func (c commander) getAccountCmd(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	key := crypto.Address(bz)
+	key := sdk.Address(bz)
 
 	res, err := client.Query(key, c.storeName)
 
