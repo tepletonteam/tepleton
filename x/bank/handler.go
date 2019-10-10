@@ -39,7 +39,6 @@ func handleSendMsg(ctx sdk.Context, ck CoinKeeper, msg SendMsg) sdk.Result {
 		}
 	}
 
-	// TODO: add some tags so we can search it!
 	return sdk.Result{} // TODO
 }
 

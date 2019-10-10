@@ -8,7 +8,7 @@ import (
 
 // Router provides handlers for each transaction type.
 type Router interface {
-	AddRoute(r string, h sdk.Handler) (rtr Router)
+	AddRoute(r string, h sdk.Handler)
 	Route(path string) (h sdk.Handler)
 }
 
@@ -34,13 +34,11 @@ func NewRouter() *router {
 var isAlpha = regexp.MustCompile(`^[a-zA-Z]+$`).MatchString
 
 // AddRoute - TODO add description
-func (rtr *router) AddRoute(r string, h sdk.Handler) Router {
+func (rtr *router) AddRoute(r string, h sdk.Handler) {
 	if !isAlpha(r) {
 		panic("route expressions can only contain alphanumeric characters")
 	}
 	rtr.routes = append(rtr.routes, route{r, h})
-
-	return rtr
 }
 
 // Route - TODO add description

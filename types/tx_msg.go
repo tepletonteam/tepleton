@@ -52,8 +52,8 @@ var _ Tx = (*StdTx)(nil)
 // StdTx is a standard way to wrap a Msg with Signatures.
 // NOTE: the first signature is the FeePayer (Signatures must not be nil).
 type StdTx struct {
-	Msg        `json:"msg"`
-	Signatures []StdSignature `json:"signatures"`
+	Msg
+	Signatures []StdSignature
 }
 
 func NewStdTx(msg Msg, sigs []StdSignature) StdTx {

@@ -53,27 +53,18 @@ func TestSendMsg(t *testing.T) {
 		Signature: sig,
 	}})
 
-	// just marshal/unmarshal!
-	cdc := MakeCodec()
-	txBytes, err := cdc.MarshalBinary(tx)
-	require.NoError(t, err)
-
 	// Run a Check
-	cres := bapp.CheckTx(txBytes)
-	assert.Equal(t, sdk.CodeUnrecognizedAddress,
-		sdk.CodeType(cres.Code), cres.Log)
+	res := bapp.Check(tx)
+	assert.Equal(t, sdk.CodeUnrecognizedAddress, res.Code, res.Log)
 
 	// Simulate a Block
 	bapp.BeginBlock(wrsp.RequestBeginBlock{})
-	dres := bapp.DeliverTx(txBytes)
-	assert.Equal(t, sdk.CodeUnrecognizedAddress,
-		sdk.CodeType(dres.Code), dres.Log)
+	res = bapp.Deliver(tx)
+	assert.Equal(t, sdk.CodeUnrecognizedAddress, res.Code, res.Log)
 }
 
 func TestGenesis(t *testing.T) {
-	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "sdk/app")
-	db := dbm.NewMemDB()
-	bapp := NewBasecoinApp(logger, db)
+	bapp := newBasecoinApp()
 
 	// Construct some genesis bytes to reflect basecoin/types/AppAccount
 	pk := crypto.GenPrivKeyEd25519().PubKey()
@@ -95,19 +86,12 @@ func TestGenesis(t *testing.T) {
 
 	vals := []wrsp.Validator{}
 	bapp.InitChain(wrsp.RequestInitChain{vals, stateBytes})
-	bapp.Commit()
 
 	// A checkTx context
 	ctx := bapp.BaseApp.NewContext(true, wrsp.Header{})
+
 	res1 := bapp.accountMapper.GetAccount(ctx, baseAcc.Address)
 	assert.Equal(t, acc, res1)
-
-	// reload app and ensure the account is still there
-	bapp = NewBasecoinApp(logger, db)
-	ctx = bapp.BaseApp.NewContext(true, wrsp.Header{})
-	res1 = bapp.accountMapper.GetAccount(ctx, baseAcc.Address)
-	assert.Equal(t, acc, res1)
-
 }
 
 func TestSendMsgWithAccounts(t *testing.T) {
@@ -143,7 +127,6 @@ func TestSendMsgWithAccounts(t *testing.T) {
 	// Initialize the chain
 	vals := []wrsp.Validator{}
 	bapp.InitChain(wrsp.RequestInitChain{vals, stateBytes})
-	bapp.Commit()
 
 	// A checkTx context (true)
 	ctxCheck := bapp.BaseApp.NewContext(true, wrsp.Header{})

@@ -68,9 +68,6 @@ type CommitMultiStore interface {
 	// Panics on a nil key.
 	GetCommitStore(key StoreKey) CommitStore
 
-	// Panics on a nil key.
-	GetCommitKVStore(key StoreKey) CommitKVStore
-
 	// Load the latest persisted version.  Called once after all
 	// calls to Mount*Store() are complete.
 	LoadLatestVersion() error
@@ -130,12 +127,6 @@ type CacheKVStore interface {
 
 	// Writes operations to underlying KVStore
 	Write()
-}
-
-// Stores of MultiStore must implement CommitStore.
-type CommitKVStore interface {
-	Committer
-	KVStore
 }
 
 //----------------------------------------

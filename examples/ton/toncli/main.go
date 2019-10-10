@@ -7,8 +7,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/tepleton/tmlibs/cli"
-
-	"github.com/tepleton/tepleton-sdk/version"
 )
 
 const (
@@ -68,7 +66,7 @@ func main() {
 		serveCommand(),
 		KeyCommands(),
 		lineBreak,
-		version.VersionCmd,
+		VersionCmd,
 	)
 
 	// prepare and add flags

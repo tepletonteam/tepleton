@@ -1,10 +1,14 @@
 PACKAGES=$(shell go list ./... | grep -v '/vendor/')
 BUILD_FLAGS = -ldflags "-X github.com/tepleton/tepleton-sdk/examples/basecoin/version.GitCommit=`git rev-parse --short HEAD`"
 
-all: build test
+all: get_vendor_deps build test 
 
 build:
 	go build $(BUILD_FLAGS) -o build/basecoin ./cmd/...
+
+get_vendor_deps:
+	@rm -rf vendor/
+	@glide install
 
 test:
 	@go test $(PACKAGES)
@@ -12,4 +16,4 @@ test:
 benchmark:
 	@go test -bench=. $(PACKAGES)
 
-.PHONY: all build test benchmark
+.PHONY: build get_vendor_deps test benchmark 
