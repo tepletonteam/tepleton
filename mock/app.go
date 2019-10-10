@@ -88,6 +88,7 @@ func InitChainer(key sdk.StoreKey) func(sdk.Context, wrsp.RequestInitChain) wrsp
 		stateJSON := req.AppStateBytes
 
 		genesisState := new(GenesisJSON)
+		fmt.Println("STASTE JSON", string(stateJSON))
 		err := json.Unmarshal(stateJSON, genesisState)
 		if err != nil {
 			panic(err) // TODO https://github.com/tepleton/tepleton-sdk/issues/468

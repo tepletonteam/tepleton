@@ -8,10 +8,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	wire "github.com/tepleton/go-wire"
-
 	"github.com/tepleton/tepleton-sdk/client"
 	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
 )
 

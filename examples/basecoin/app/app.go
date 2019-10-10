@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 
 	wrsp "github.com/tepleton/wrsp/types"
-	crypto "github.com/tepleton/go-crypto"
-	"github.com/tepleton/go-wire"
+	oldwire "github.com/tepleton/go-wire"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
 
 	bam "github.com/tepleton/tepleton-sdk/baseapp"
 	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/bank"
 
@@ -74,11 +74,33 @@ func NewBasecoinApp(logger log.Logger, db dbm.DB) *BasecoinApp {
 
 // custom tx codec
 func MakeCodec() *wire.Codec {
+
+	// XXX: Using old wire for now :)
+	const (
+		msgTypeSend  = 0x1
+		msgTypeIssue = 0x2
+	)
+	var _ = oldwire.RegisterInterface(
+		struct{ sdk.Msg }{},
+		oldwire.ConcreteType{bank.SendMsg{}, msgTypeSend},
+		oldwire.ConcreteType{bank.IssueMsg{}, msgTypeIssue},
+	)
+
+	const (
+		accTypeApp = 0x1
+	)
+	var _ = oldwire.RegisterInterface(
+		struct{ sdk.Account }{},
+		oldwire.ConcreteType{&types.AppAccount{}, accTypeApp},
+	)
+
 	cdc := wire.NewCodec()
-	cdc.RegisterInterface((*sdk.Msg)(nil), nil)
-	bank.RegisterWire(cdc)   // Register bank.[SendMsg,IssueMsg] types.
-	crypto.RegisterWire(cdc) // Register crypto.[PubKey,PrivKey,Signature] types.
+	// TODO: use new go-wire
+	// cdc.RegisterInterface((*sdk.Msg)(nil), nil)
+	// bank.RegisterWire(cdc)   // Register bank.[SendMsg,IssueMsg] types.
+	// crypto.RegisterWire(cdc) // Register crypto.[PubKey,PrivKey,Signature] types.
 	return cdc
+
 }
 
 // custom logic for transaction decoding

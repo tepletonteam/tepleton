@@ -2,8 +2,8 @@ package types
 
 import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
-	wire "github.com/tepleton/go-wire"
 )
 
 var _ sdk.Account = (*AppAccount)(nil)
