@@ -58,27 +58,27 @@
   version = "1.2.1"
 
 [[constraint]]
-  branch = "develop"
+  branch = "master"
   name = "github.com/tepleton/wrsp"
 
 [[constraint]]
-  branch = "develop"
+  branch = "master"
   name = "github.com/tepleton/go-crypto"
 
 [[constraint]]
-  branch = "develop"
+  branch = "master"
   name = "github.com/tepleton/go-wire"
 
 [[constraint]]
-  branch = "develop"
+  branch = "master"
   name = "github.com/tepleton/iavl"
 
-[[constraint]]
-  branch = "breaking/wire-sdk2"
+[[override]]
+  branch = "master"
   name = "github.com/tepleton/tepleton"
 
 [[constraint]]
-  branch = "develop"
+  branch = "master"
   name = "github.com/tepleton/tmlibs"
 
 [prune]
