@@ -69,6 +69,10 @@
   branch = "master"
   name = "github.com/tepleton/go-wire"
 
+[[override]]
+  branch = "develop"
+  name = "github.com/tepleton/go-amino"
+
 [[constraint]]
   branch = "master"
   name = "github.com/tepleton/iavl"
