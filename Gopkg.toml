@@ -41,9 +41,9 @@
   name = "github.com/pkg/errors"
   version = "0.8.0"
 
-[[constraint]]
-  branch = "master"
-  name = "github.com/rigelrozanski/common"
+# [[constraint]]
+#   branch = "master"
+#   name = "github.com/rigelrozanski/common"
 
 [[constraint]]
   name = "github.com/spf13/cobra"
@@ -58,14 +58,14 @@
   version = "1.2.1"
 
 [[constraint]]
-  branch = "master"
+  branch = "develop"
   name = "github.com/tepleton/wrsp"
 
 [[constraint]]
   branch = "master"
   name = "github.com/tepleton/go-crypto"
 
-[[constraint]]
+[[override]]
   branch = "master"
   name = "github.com/tepleton/go-wire"
 
@@ -73,12 +73,12 @@
   branch = "master"
   name = "github.com/tepleton/iavl"
 
-[[override]]
-  branch = "master"
+[[constraint]]
+  branch = "develop"
   name = "github.com/tepleton/tepleton"
 
-[[constraint]]
-  branch = "master"
+[[override]]
+  branch = "develop"
   name = "github.com/tepleton/tmlibs"
 
 [prune]
