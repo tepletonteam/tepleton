@@ -13,7 +13,6 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/lcd"
 	"github.com/tepleton/tepleton-sdk/client/rpc"
 	"github.com/tepleton/tepleton-sdk/client/tx"
-	coolcmd "github.com/tepleton/tepleton-sdk/examples/basecoin/x/cool/commands"
 	"github.com/tepleton/tepleton-sdk/version"
 	authcmd "github.com/tepleton/tepleton-sdk/x/auth/commands"
 	bankcmd "github.com/tepleton/tepleton-sdk/x/bank/commands"
@@ -55,14 +54,6 @@ func main() {
 	basecliCmd.AddCommand(
 		client.PostCommands(
 			bankcmd.SendTxCmd(cdc),
-		)...)
-	basecliCmd.AddCommand(
-		client.PostCommands(
-			coolcmd.WhatCoolTxCmd(cdc),
-		)...)
-	basecliCmd.AddCommand(
-		client.PostCommands(
-			coolcmd.SetWhatCoolTxCmd(cdc),
 		)...)
 
 	// add proxy, version and key info

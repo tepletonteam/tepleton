@@ -5,7 +5,6 @@ import (
 	cmn "github.com/tepleton/tmlibs/common"
 )
 
-// Address in go-crypto style
 type Address = cmn.HexBytes
 
 // Account is a standard account using a sequence number for replay protection
