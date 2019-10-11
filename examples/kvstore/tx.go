@@ -4,6 +4,7 @@ import (
 	"bytes"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
+	crypto "github.com/tepleton/go-crypto"
 )
 
 // An sdk.Tx which is its own sdk.Msg.
@@ -43,7 +44,7 @@ func (tx kvstoreTx) ValidateBasic() sdk.Error {
 	return nil
 }
 
-func (tx kvstoreTx) GetSigners() []sdk.Address {
+func (tx kvstoreTx) GetSigners() []crypto.Address {
 	return nil
 }
 
@@ -51,7 +52,7 @@ func (tx kvstoreTx) GetSignatures() []sdk.StdSignature {
 	return nil
 }
 
-func (tx kvstoreTx) GetFeePayer() sdk.Address {
+func (tx kvstoreTx) GetFeePayer() crypto.Address {
 	return nil
 }
 

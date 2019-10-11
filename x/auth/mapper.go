@@ -1,18 +1,14 @@
 package auth
 
 import (
-	"bytes"
 	"fmt"
 	"reflect"
 
-	oldwire "github.com/tepleton/go-wire"
+	crypto "github.com/tepleton/go-crypto"
+	wire "github.com/tepleton/go-wire"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	wire "github.com/tepleton/tepleton-sdk/wire"
 )
-
-var _ sdk.AccountMapper = (*accountMapper)(nil)
-var _ sdk.AccountMapper = (*sealedAccountMapper)(nil)
 
 // Implements sdk.AccountMapper.
 // This AccountMapper encodes/decodes accounts using the
@@ -70,14 +66,14 @@ func (am accountMapper) Seal() sealedAccountMapper {
 }
 
 // Implements sdk.AccountMapper.
-func (am accountMapper) NewAccountWithAddress(ctx sdk.Context, addr sdk.Address) sdk.Account {
+func (am accountMapper) NewAccountWithAddress(ctx sdk.Context, addr crypto.Address) sdk.Account {
 	acc := am.clonePrototype()
 	acc.SetAddress(addr)
 	return acc
 }
 
 // Implements sdk.AccountMapper.
-func (am accountMapper) GetAccount(ctx sdk.Context, addr sdk.Address) sdk.Account {
+func (am accountMapper) GetAccount(ctx sdk.Context, addr crypto.Address) sdk.Account {
 	store := ctx.KVStore(am.key)
 	bz := store.Get(addr)
 	if bz == nil {
@@ -111,7 +107,6 @@ func (sam sealedAccountMapper) WireCodec() *wire.Codec {
 //----------------------------------------
 // misc.
 
-// NOTE: currently unused
 func (am accountMapper) clonePrototypePtr() interface{} {
 	protoRt := reflect.TypeOf(am.proto)
 	if protoRt.Kind() == reflect.Ptr {
@@ -160,27 +155,14 @@ func (am accountMapper) encodeAccount(acc sdk.Account) []byte {
 }
 
 func (am accountMapper) decodeAccount(bz []byte) sdk.Account {
-	// ... old go-wire ...
-	r, n, err := bytes.NewBuffer(bz), new(int), new(error)
-	accI := oldwire.ReadBinary(struct{ sdk.Account }{}, r, len(bz), n, err)
-	if *err != nil {
-		panic(*err)
-
+	accPtr := am.clonePrototypePtr()
+	err := am.cdc.UnmarshalBinary(bz, accPtr)
+	if err != nil {
+		panic(err)
 	}
-
-	acc := accI.(struct{ sdk.Account }).Account
-	return acc
-
-	/*
-		accPtr := am.clonePrototypePtr()
-			err := am.cdc.UnmarshalBinary(bz, accPtr)
-			if err != nil {
-				panic(err)
-			}
-			if reflect.ValueOf(am.proto).Kind() == reflect.Ptr {
-				return reflect.ValueOf(accPtr).Interface().(sdk.Account)
-			} else {
-				return reflect.ValueOf(accPtr).Elem().Interface().(sdk.Account)
-			}
-	*/
+	if reflect.ValueOf(am.proto).Kind() == reflect.Ptr {
+		return reflect.ValueOf(accPtr).Interface().(sdk.Account)
+	} else {
+		return reflect.ValueOf(accPtr).Elem().Interface().(sdk.Account)
+	}
 }

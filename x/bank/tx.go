@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	crypto "github.com/tepleton/go-crypto"
+
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
@@ -12,8 +14,6 @@ type SendMsg struct {
 	Inputs  []Input  `json:"inputs"`
 	Outputs []Output `json:"outputs"`
 }
-
-var _ sdk.Msg = SendMsg{}
 
 // NewSendMsg - construct arbitrary multi-in, multi-out send msg.
 func NewSendMsg(in []Input, out []Output) SendMsg {
@@ -73,8 +73,8 @@ func (msg SendMsg) GetSignBytes() []byte {
 }
 
 // Implements Msg.
-func (msg SendMsg) GetSigners() []sdk.Address {
-	addrs := make([]sdk.Address, len(msg.Inputs))
+func (msg SendMsg) GetSigners() []crypto.Address {
+	addrs := make([]crypto.Address, len(msg.Inputs))
 	for i, in := range msg.Inputs {
 		addrs[i] = in.Address
 	}
@@ -86,17 +86,17 @@ func (msg SendMsg) GetSigners() []sdk.Address {
 
 // IssueMsg - high level transaction of the coin module
 type IssueMsg struct {
-	Banker  sdk.Address `json:"banker"`
-	Outputs []Output    `json:"outputs"`
+	Banker  crypto.Address `json:"banker"`
+	Outputs []Output       `json:"outputs"`
 }
 
 // NewIssueMsg - construct arbitrary multi-in, multi-out send msg.
-func NewIssueMsg(banker sdk.Address, out []Output) IssueMsg {
+func NewIssueMsg(banker crypto.Address, out []Output) IssueMsg {
 	return IssueMsg{Banker: banker, Outputs: out}
 }
 
 // Implements Msg.
-func (msg IssueMsg) Type() string { return "bank" } // TODO: "bank/issue"
+func (msg IssueMsg) Type() string { return "bank" } // TODO: "bank/send"
 
 // Implements Msg.
 func (msg IssueMsg) ValidateBasic() sdk.Error {
@@ -131,23 +131,28 @@ func (msg IssueMsg) GetSignBytes() []byte {
 }
 
 // Implements Msg.
-func (msg IssueMsg) GetSigners() []sdk.Address {
-	return []sdk.Address{msg.Banker}
+func (msg IssueMsg) GetSigners() []crypto.Address {
+	return []crypto.Address{msg.Banker}
 }
 
 //----------------------------------------
 // Input
 
-// Transaction Output
 type Input struct {
-	Address sdk.Address `json:"address"`
-	Coins   sdk.Coins   `json:"coins"`
+	Address  crypto.Address `json:"address"`
+	Coins    sdk.Coins      `json:"coins"`
+	Sequence int64          `json:"sequence"`
+
+	signature crypto.Signature
 }
 
 // ValidateBasic - validate transaction input
 func (in Input) ValidateBasic() sdk.Error {
 	if len(in.Address) == 0 {
 		return ErrInvalidAddress(in.Address.String())
+	}
+	if in.Sequence < 0 {
+		return ErrInvalidSequence("negative sequence")
 	}
 	if !in.Coins.IsValid() {
 		return ErrInvalidCoins(in.Coins.String())
@@ -163,7 +168,7 @@ func (in Input) String() string {
 }
 
 // NewInput - create a transaction input, used with SendMsg
-func NewInput(addr sdk.Address, coins sdk.Coins) Input {
+func NewInput(addr crypto.Address, coins sdk.Coins) Input {
 	input := Input{
 		Address: addr,
 		Coins:   coins,
@@ -171,13 +176,19 @@ func NewInput(addr sdk.Address, coins sdk.Coins) Input {
 	return input
 }
 
+// NewInputWithSequence - create a transaction input, used with SendMsg
+func NewInputWithSequence(addr crypto.Address, coins sdk.Coins, seq int64) Input {
+	input := NewInput(addr, coins)
+	input.Sequence = seq
+	return input
+}
+
 //----------------------------------------
 // Output
 
-// Transaction Output
 type Output struct {
-	Address sdk.Address `json:"address"`
-	Coins   sdk.Coins   `json:"coins"`
+	Address crypto.Address `json:"address"`
+	Coins   sdk.Coins      `json:"coins"`
 }
 
 // ValidateBasic - validate transaction output
@@ -199,7 +210,7 @@ func (out Output) String() string {
 }
 
 // NewOutput - create a transaction output, used with SendMsg
-func NewOutput(addr sdk.Address, coins sdk.Coins) Output {
+func NewOutput(addr crypto.Address, coins sdk.Coins) Output {
 	output := Output{
 		Address: addr,
 		Coins:   coins,

@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	crypto "github.com/tepleton/go-crypto"
 	"github.com/tepleton/go-crypto/keys"
 	"github.com/tepleton/go-crypto/keys/words"
 	cmn "github.com/tepleton/tmlibs/common"
@@ -16,8 +17,6 @@ import (
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 	cfg "github.com/tepleton/tepleton/config"
 	tmtypes "github.com/tepleton/tepleton/types"
-
-	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
 // InitCmd will initialize all files for tepleton,
@@ -46,7 +45,7 @@ type GenOptions func(args []string) (json.RawMessage, error)
 // along with the secret phrase to recover the private key.
 // You can give coins to this address and return the recovery
 // phrase to the user to access them.
-func GenerateCoinKey() (sdk.Address, string, error) {
+func GenerateCoinKey() (crypto.Address, string, error) {
 	// construct an in-memory key store
 	codec, err := words.LoadCodec("english")
 	if err != nil {

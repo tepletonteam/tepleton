@@ -1,14 +1,15 @@
 package keys
 
 import (
-	"github.com/tepleton/tepleton-sdk/wire"
+	crypto "github.com/tepleton/go-crypto"
+	wire "github.com/tepleton/go-wire"
 )
 
 var cdc *wire.Codec
 
 func init() {
 	cdc = wire.NewCodec()
-	wire.RegisterCrypto(cdc)
+	crypto.RegisterWire(cdc)
 }
 
 func MarshalJSON(o interface{}) ([]byte, error) {

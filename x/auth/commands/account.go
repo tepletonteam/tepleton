@@ -8,9 +8,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"github.com/tepleton/tepleton-sdk/client/builder"
+	crypto "github.com/tepleton/go-crypto"
+	wire "github.com/tepleton/go-wire"
+
+	"github.com/tepleton/tepleton-sdk/client"
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
 )
 
@@ -22,10 +24,7 @@ func GetAccountCmdDefault(storeName string, cdc *wire.Codec) *cobra.Command {
 func getParseAccount(cdc *wire.Codec) sdk.ParseAccount {
 	return func(accBytes []byte) (sdk.Account, error) {
 		acct := new(auth.BaseAccount)
-		err := cdc.UnmarshalBinary(accBytes, &acct)
-		if err != nil {
-			panic(err)
-		}
+		err := cdc.UnmarshalBinary(accBytes, acct)
 		return acct, err
 	}
 }
@@ -62,9 +61,9 @@ func (c commander) getAccountCmd(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	key := sdk.Address(bz)
+	key := crypto.Address(bz)
 
-	res, err := builder.Query(key, c.storeName)
+	res, err := client.Query(key, c.storeName)
 
 	// parse out the value
 	account, err := c.parser(res)

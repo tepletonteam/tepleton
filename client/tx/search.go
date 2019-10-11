@@ -8,10 +8,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	ctypes "github.com/tepleton/tepleton/rpc/core/types"
-
 	"github.com/tepleton/tepleton-sdk/client"
-	"github.com/tepleton/tepleton-sdk/wire"
+	wire "github.com/tepleton/go-wire"
+	ctypes "github.com/tepleton/tepleton/rpc/core/types"
 )
 
 const (

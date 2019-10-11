@@ -9,12 +9,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	wrsp "github.com/tepleton/wrsp/types"
-	ctypes "github.com/tepleton/tepleton/rpc/core/types"
-
 	"github.com/tepleton/tepleton-sdk/client"
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/wire"
+	wrsp "github.com/tepleton/wrsp/types"
+	wire "github.com/tepleton/go-wire"
+	ctypes "github.com/tepleton/tepleton/rpc/core/types"
 )
 
 // Get the default command for a tx query

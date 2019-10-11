@@ -3,12 +3,10 @@ package auth
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
-	crypto "github.com/tepleton/go-crypto"
-
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	wire "github.com/tepleton/tepleton-sdk/wire"
+	"github.com/stretchr/testify/assert"
+	crypto "github.com/tepleton/go-crypto"
+	wire "github.com/tepleton/go-wire"
 )
 
 func TestBaseAccount(t *testing.T) {
@@ -22,13 +20,13 @@ func TestBaseAccount(t *testing.T) {
 
 	// need a codec for marshaling
 	codec := wire.NewCodec()
-	wire.RegisterCrypto(codec)
+	crypto.RegisterWire(codec)
 
 	err := acc.SetPubKey(pub)
 	assert.Nil(t, err)
 	assert.Equal(t, pub, acc.GetPubKey())
 
-	assert.EqualValues(t, addr, acc.GetAddress())
+	assert.Equal(t, addr, acc.GetAddress())
 
 	err = acc.SetCoins(someCoins)
 	assert.Nil(t, err)

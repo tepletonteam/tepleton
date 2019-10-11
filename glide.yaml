@@ -17,11 +17,11 @@ import:
   - server
   - types
 - package: github.com/tepleton/go-crypto
-  version: v0.5.0
+  version: develop
 - package: github.com/tepleton/go-wire
-  version: v0.7.3
+  version: develop
 - package: github.com/tepleton/iavl
-  version: v0.6.1
+  version: develop
 - package: github.com/tepleton/tmlibs
   version: develop
   subpackages:
@@ -30,7 +30,7 @@ import:
   - log
   - merkle
 - package: github.com/tepleton/tepleton
-  version: develop
+  version: breaking/wire-sdk2
   subpackages:
   - cmd/tepleton/commands
   - config

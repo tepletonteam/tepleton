@@ -4,19 +4,25 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/tepleton/tepleton-sdk/client/builder"
+	crypto "github.com/tepleton/go-crypto"
+	wire "github.com/tepleton/go-wire"
+
+	"github.com/tepleton/tepleton-sdk/client"
+	"github.com/tepleton/tepleton-sdk/client/keys"
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/wire"
 
 	"github.com/tepleton/tepleton-sdk/x/bank"
 )
 
 const (
-	flagTo     = "to"
-	flagAmount = "amount"
+	flagTo       = "to"
+	flagAmount   = "amount"
+	flagFee      = "fee"
+	flagSequence = "seq"
 )
 
 // SendTxCommand will create a send tx and sign it with the given key
@@ -29,6 +35,8 @@ func SendTxCmd(cdc *wire.Codec) *cobra.Command {
 	}
 	cmd.Flags().String(flagTo, "", "Address to send coins")
 	cmd.Flags().String(flagAmount, "", "Amount of coins to send")
+	cmd.Flags().String(flagFee, "", "Fee to pay along with transaction")
+	cmd.Flags().Int64(flagSequence, 0, "Sequence number to sign the tx")
 	return cmd
 }
 
@@ -37,21 +45,12 @@ type commander struct {
 }
 
 func (c commander) sendTxCmd(cmd *cobra.Command, args []string) error {
-
-	// get the from address
-	from, err := builder.GetFromAddress()
+	txBytes, err := c.buildTx()
 	if err != nil {
 		return err
 	}
 
-	// build send msg
-	msg, err := buildMsg(from)
-	if err != nil {
-		return err
-	}
-
-	// build and sign the transaction, then broadcast to Tendermint
-	res, err := builder.SignBuildBroadcast(msg, c.cdc)
+	res, err := client.BroadcastTx(txBytes)
 	if err != nil {
 		return err
 	}
@@ -60,7 +59,53 @@ func (c commander) sendTxCmd(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func buildMsg(from sdk.Address) (sdk.Msg, error) {
+func (c commander) buildTx() ([]byte, error) {
+	keybase, err := keys.GetKeyBase()
+	if err != nil {
+		return nil, err
+	}
+
+	name := viper.GetString(client.FlagName)
+	info, err := keybase.Get(name)
+	if err != nil {
+		return nil, errors.Errorf("No key for: %s", name)
+	}
+	from := info.PubKey.Address()
+
+	msg, err := buildMsg(from)
+	if err != nil {
+		return nil, err
+	}
+
+	// sign and build
+	bz := msg.GetSignBytes()
+	buf := client.BufferStdin()
+	prompt := fmt.Sprintf("Password to sign with '%s':", name)
+	passphrase, err := client.GetPassword(prompt, buf)
+	if err != nil {
+		return nil, err
+	}
+	sig, pubkey, err := keybase.Sign(name, passphrase, bz)
+	if err != nil {
+		return nil, err
+	}
+	sigs := []sdk.StdSignature{{
+		PubKey:    pubkey,
+		Signature: sig,
+		Sequence:  viper.GetInt64(flagSequence),
+	}}
+
+	// marshal bytes
+	tx := sdk.NewStdTx(msg, sigs)
+
+	txBytes, err := c.cdc.MarshalBinary(tx)
+	if err != nil {
+		return nil, err
+	}
+	return txBytes, nil
+}
+
+func buildMsg(from crypto.Address) (sdk.Msg, error) {
 
 	// parse coins
 	amount := viper.GetString(flagAmount)
@@ -75,7 +120,7 @@ func buildMsg(from sdk.Address) (sdk.Msg, error) {
 	if err != nil {
 		return nil, err
 	}
-	to := sdk.Address(bz)
+	to := crypto.Address(bz)
 
 	input := bank.NewInput(from, coins)
 	output := bank.NewOutput(to, coins)

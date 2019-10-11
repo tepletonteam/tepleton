@@ -29,18 +29,18 @@ dist:
 ### Tools & dependencies
 
 check_tools:
-	cd tools && $(MAKE) check_tools
+	cd tools && $(MAKE) check
 
 update_tools:
-	cd tools && $(MAKE) update_tools
+	cd tools && $(MAKE) glide_update
 
 get_tools:
-	cd tools && $(MAKE) get_tools
+	cd tools && $(MAKE)
 
 get_vendor_deps:
 	@rm -rf vendor/
-	@echo "--> Running dep ensure"
-	@dep ensure -v
+	@echo "--> Running glide install"
+	@glide install
 
 draw_deps:
 	@# requires brew install graphviz or apt-get install graphviz

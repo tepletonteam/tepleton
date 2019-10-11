@@ -1,6 +1,8 @@
 package types
 
-import "encoding/json"
+import (
+	crypto "github.com/tepleton/go-crypto"
+)
 
 // Transactions messages must fulfill the Msg
 type Msg interface {
@@ -22,10 +24,8 @@ type Msg interface {
 	// Signers returns the addrs of signers that must sign.
 	// CONTRACT: All signatures must be present to be valid.
 	// CONTRACT: Returns addrs in some deterministic order.
-	GetSigners() []Address
+	GetSigners() []crypto.Address
 }
-
-//__________________________________________________________
 
 // Transactions objects must fulfill the Tx
 type Tx interface {
@@ -35,7 +35,7 @@ type Tx interface {
 
 	// The address that pays the base fee for this message.  The fee is
 	// deducted before the Msg is processed.
-	GetFeePayer() Address
+	GetFeePayer() crypto.Address
 
 	// Signatures returns the signature of signers who signed the Msg.
 	// CONTRACT: Length returned is same as length of
@@ -65,32 +65,8 @@ func NewStdTx(msg Msg, sigs []StdSignature) StdTx {
 
 //nolint
 func (tx StdTx) GetMsg() Msg                   { return tx.Msg }
-func (tx StdTx) GetFeePayer() Address          { return tx.Signatures[0].PubKey.Address() } // XXX but PubKey is optional!
+func (tx StdTx) GetFeePayer() crypto.Address   { return tx.Signatures[0].PubKey.Address() } // XXX but PubKey is optional!
 func (tx StdTx) GetSignatures() []StdSignature { return tx.Signatures }
-
-// StdSignDoc is replay-prevention structure.
-// It includes the result of msg.GetSignBytes(),
-// as well as the ChainID (prevent cross chain replay)
-// and the Sequence numbers for each signature (prevent
-// inchain replay and enforce tx ordering per account).
-type StdSignDoc struct {
-	ChainID   string  `json:"chain_id"`
-	Sequences []int64 `json:"sequences"`
-	MsgBytes  []byte  `json:"msg_bytes"`
-	AltBytes  []byte  `json:"alt_bytes"` // TODO: do we really want this ?
-}
-
-func StdSignBytes(chainID string, sequences []int64, msg Msg) []byte {
-	bz, err := json.Marshal(StdSignDoc{
-		ChainID:   chainID,
-		Sequences: sequences,
-		MsgBytes:  msg.GetSignBytes(),
-	})
-	if err != nil {
-		panic(err)
-	}
-	return bz
-}
 
 //-------------------------------------
 

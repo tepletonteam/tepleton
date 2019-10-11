@@ -3,6 +3,8 @@ package types
 import (
 	"fmt"
 	"runtime"
+
+	"github.com/tepleton/go-crypto"
 )
 
 // WRSP Response Code
@@ -22,11 +24,12 @@ const (
 	CodeOK                  CodeType = 0
 	CodeInternal            CodeType = 1
 	CodeTxParse             CodeType = 2
-	CodeInvalidSequence     CodeType = 3
+	CodeBadNonce            CodeType = 3
 	CodeUnauthorized        CodeType = 4
 	CodeInsufficientFunds   CodeType = 5
 	CodeUnknownRequest      CodeType = 6
 	CodeUnrecognizedAddress CodeType = 7
+	CodeInvalidSequence     CodeType = 8
 
 	CodeGenesisParse CodeType = 0xdead // TODO: remove ?
 )
@@ -40,8 +43,8 @@ func CodeToDefaultMsg(code CodeType) string {
 		return "Tx parse error"
 	case CodeGenesisParse:
 		return "Genesis parse error"
-	case CodeInvalidSequence:
-		return "Invalid sequence"
+	case CodeBadNonce:
+		return "Bad nonce"
 	case CodeUnauthorized:
 		return "Unauthorized"
 	case CodeInsufficientFunds:
@@ -50,6 +53,8 @@ func CodeToDefaultMsg(code CodeType) string {
 		return "Unknown request"
 	case CodeUnrecognizedAddress:
 		return "Unrecognized address"
+	case CodeInvalidSequence:
+		return "Invalid sequence"
 	default:
 		return fmt.Sprintf("Unknown code %d", code)
 	}
@@ -69,8 +74,8 @@ func ErrTxParse(msg string) Error {
 func ErrGenesisParse(msg string) Error {
 	return newError(CodeGenesisParse, msg)
 }
-func ErrInvalidSequence(msg string) Error {
-	return newError(CodeInvalidSequence, msg)
+func ErrBadNonce(msg string) Error {
+	return newError(CodeBadNonce, msg)
 }
 func ErrUnauthorized(msg string) Error {
 	return newError(CodeUnauthorized, msg)
@@ -81,8 +86,11 @@ func ErrInsufficientFunds(msg string) Error {
 func ErrUnknownRequest(msg string) Error {
 	return newError(CodeUnknownRequest, msg)
 }
-func ErrUnrecognizedAddress(addr Address) Error {
+func ErrUnrecognizedAddress(addr crypto.Address) Error {
 	return newError(CodeUnrecognizedAddress, addr.String())
+}
+func ErrInvalidSequence(msg string) Error {
+	return newError(CodeInvalidSequence, msg)
 }
 
 //----------------------------------------

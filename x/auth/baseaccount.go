@@ -3,10 +3,9 @@ package auth
 import (
 	"errors"
 
-	"github.com/tepleton/go-crypto"
-
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/wire"
+	"github.com/tepleton/go-crypto"
+	"github.com/tepleton/go-wire"
 )
 
 //-----------------------------------------------------------
@@ -18,13 +17,13 @@ var _ sdk.Account = (*BaseAccount)(nil)
 // Extend this by embedding this in your AppAccount.
 // See the examples/basecoin/types/account.go for an example.
 type BaseAccount struct {
-	Address  sdk.Address   `json:"address"`
-	Coins    sdk.Coins     `json:"coins"`
-	PubKey   crypto.PubKey `json:"public_key"`
-	Sequence int64         `json:"sequence"`
+	Address  crypto.Address `json:"address"`
+	Coins    sdk.Coins      `json:"coins"`
+	PubKey   crypto.PubKey  `json:"public_key"`
+	Sequence int64          `json:"sequence"`
 }
 
-func NewBaseAccountWithAddress(addr sdk.Address) BaseAccount {
+func NewBaseAccountWithAddress(addr crypto.Address) BaseAccount {
 	return BaseAccount{
 		Address: addr,
 	}
@@ -41,12 +40,12 @@ func (acc *BaseAccount) Set(key interface{}, value interface{}) error {
 }
 
 // Implements sdk.Account.
-func (acc BaseAccount) GetAddress() sdk.Address {
+func (acc BaseAccount) GetAddress() crypto.Address {
 	return acc.Address
 }
 
 // Implements sdk.Account.
-func (acc *BaseAccount) SetAddress(addr sdk.Address) error {
+func (acc *BaseAccount) SetAddress(addr crypto.Address) error {
 	if len(acc.Address) != 0 {
 		return errors.New("cannot override BaseAccount address")
 	}
@@ -61,7 +60,7 @@ func (acc BaseAccount) GetPubKey() crypto.PubKey {
 
 // Implements sdk.Account.
 func (acc *BaseAccount) SetPubKey(pubKey crypto.PubKey) error {
-	if !acc.PubKey.Empty() {
+	if acc.PubKey != nil {
 		return errors.New("cannot override BaseAccount pubkey")
 	}
 	acc.PubKey = pubKey
@@ -95,5 +94,5 @@ func (acc *BaseAccount) SetSequence(seq int64) error {
 
 func RegisterWireBaseAccount(cdc *wire.Codec) {
 	// Register crypto.[PubKey,PrivKey,Signature] types.
-	wire.RegisterCrypto(cdc)
+	crypto.RegisterWire(cdc)
 }

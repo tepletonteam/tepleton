@@ -5,9 +5,9 @@ import (
 	"strconv"
 
 	"github.com/spf13/cobra"
-	wire "github.com/tepleton/go-wire"
 
 	"github.com/tepleton/tepleton-sdk/client"
+	tmwire "github.com/tepleton/tepleton/wire"
 )
 
 func validatorCommand() *cobra.Command {
@@ -47,7 +47,7 @@ func getValidators(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	output, err := wire.MarshalJSON(res)
+	output, err := tmwire.MarshalJSON(res)
 	// output, err := json.MarshalIndent(res, "  ", "")
 	if err != nil {
 		return err
