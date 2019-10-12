@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/spf13/viper"
@@ -9,14 +8,16 @@ import (
 	"github.com/tepleton/tepleton-sdk/client"
 	"github.com/tepleton/tepleton-sdk/client/keys"
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	// wire "github.com/tepleton/go-amino"
+	wire "github.com/tepleton/tepleton-sdk/wire"
 )
 
-func buildTx(msg sdk.Msg, name string) ([]byte, error) {
+func buildTx(cdc *wire.Codec, msg sdk.Msg) ([]byte, error) {
 	keybase, err := keys.GetKeyBase()
 	if err != nil {
 		return nil, err
 	}
+
+	name := viper.GetString(client.FlagName)
 
 	bz := msg.GetSignBytes()
 	buf := client.BufferStdin()
@@ -37,19 +38,20 @@ func buildTx(msg sdk.Msg, name string) ([]byte, error) {
 
 	tx := sdk.NewStdTx(msg, sigs)
 
-	txBytes, err := json.Marshal(tx)
+	txBytes, err := cdc.MarshalBinary(tx)
 	if err != nil {
 		return nil, err
 	}
 	return txBytes, nil
 }
 
-func getAddress(name string) []byte {
+func getAddress() []byte {
 	keybase, err := keys.GetKeyBase()
 	if err != nil {
 		panic(err)
 	}
 
+	name := viper.GetString(client.FlagName)
 	info, err := keybase.Get(name)
 	if err != nil {
 		panic(err)

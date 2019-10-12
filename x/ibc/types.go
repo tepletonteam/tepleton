@@ -1,12 +1,16 @@
 package ibc
 
 import (
-	"encoding/json"
-
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	//wire "github.com/tepleton/go-amino"
+
+	wire "github.com/tepleton/tepleton-sdk/wire"
 )
 
+// ------------------------------
+// IBCPacket
+
+// IBCPacket defines a piece of data that can be send between two separate
+// blockchains.
 type IBCPacket struct {
 	SrcAddr   sdk.Address
 	DestAddr  sdk.Address
@@ -15,17 +19,16 @@ type IBCPacket struct {
 	DestChain string
 }
 
-/*
-func newCodec() *wire.Codec {
-	return wire.NewCodec()
-}
-*/
+// ----------------------------------
+// IBCTransferMsg
+
+// IBCTransferMsg defines how another module can send an IBCPacket.
 type IBCTransferMsg struct {
 	IBCPacket
 }
 
 func (msg IBCTransferMsg) Type() string {
-	return "ibc"
+	return "ibctransfer"
 }
 
 func (msg IBCTransferMsg) Get(key interface{}) interface{} {
@@ -33,18 +36,12 @@ func (msg IBCTransferMsg) Get(key interface{}) interface{} {
 }
 
 func (msg IBCTransferMsg) GetSignBytes() []byte {
-	/*	cdc := newCodec()
-		bz, err := cdc.MarshalBinary(msg.IBCPacket)
-		if err != nil {
-			panic(err)
-		}
-		return bz*/
-	res, err := json.Marshal(msg)
+	cdc := newCodec()
+	bz, err := cdc.MarshalBinary(msg.IBCPacket)
 	if err != nil {
 		panic(err)
 	}
-
-	return res
+	return bz
 }
 
 func (msg IBCTransferMsg) ValidateBasic() sdk.Error {
@@ -56,6 +53,11 @@ func (msg IBCTransferMsg) GetSigners() []sdk.Address {
 	return []sdk.Address{msg.SrcAddr}
 }
 
+// ----------------------------------
+// IBCReceiveMsg
+
+// IBCReceiveMsg defines the message that a relayer uses to post an IBCPacket
+// to the destination chain.
 type IBCReceiveMsg struct {
 	IBCPacket
 	Relayer  sdk.Address
@@ -63,7 +65,7 @@ type IBCReceiveMsg struct {
 }
 
 func (msg IBCReceiveMsg) Type() string {
-	return "ibc"
+	return "ibcreceive"
 }
 
 func (msg IBCReceiveMsg) Get(key interface{}) interface{} {
@@ -71,18 +73,12 @@ func (msg IBCReceiveMsg) Get(key interface{}) interface{} {
 }
 
 func (msg IBCReceiveMsg) GetSignBytes() []byte {
-	/*cdc := newCodec()
+	cdc := newCodec()
 	bz, err := cdc.MarshalBinary(msg.IBCPacket)
 	if err != nil {
 		panic(err)
 	}
-	return bz*/
-	res, err := json.Marshal(msg)
-	if err != nil {
-		panic(err)
-	}
-
-	return res
+	return bz
 }
 
 func (msg IBCReceiveMsg) ValidateBasic() sdk.Error {
@@ -92,4 +88,11 @@ func (msg IBCReceiveMsg) ValidateBasic() sdk.Error {
 // x/bank/tx.go SendMsg.GetSigners()
 func (msg IBCReceiveMsg) GetSigners() []sdk.Address {
 	return []sdk.Address{msg.Relayer}
+}
+
+// -------------------------
+// Helpers
+
+func newCodec() *wire.Codec {
+	return wire.NewCodec()
 }

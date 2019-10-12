@@ -11,45 +11,36 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/builder"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	//	wire "github.com/tepleton/go-amino"
+	wire "github.com/tepleton/tepleton-sdk/wire"
 
 	"github.com/tepleton/tepleton-sdk/x/ibc"
 )
 
-func IBCTransferCmd() *cobra.Command {
-	cmdr := sendCommander{}
+func IBCTransferCmd(cdc *wire.Codec) *cobra.Command {
+	cmdr := sendCommander{cdc}
 
 	cmd := &cobra.Command{
-		Use:  "transfer",
+		Use:  "send",
 		RunE: cmdr.runIBCTransfer,
 	}
 	cmd.Flags().String(flagTo, "", "Address to send coins")
 	cmd.Flags().String(flagAmount, "", "Amount of coins to send")
 	cmd.Flags().String(flagChain, "", "Destination chain to send coins")
-	viper.BindPFlag(flagTo, cmd.Flags().Lookup(flagTo))
-	viper.BindPFlag(flagAmount, cmd.Flags().Lookup(flagAmount))
-	viper.BindPFlag(flagChain, cmd.Flags().Lookup(flagChain))
-	cmd.MarkFlagRequired(flagTo)
-	cmd.MarkFlagRequired(flagAmount)
-	cmd.MarkFlagRequired(flagChain)
-
 	return cmd
 }
 
 type sendCommander struct {
-	//	cdc *wire.Codec
+	cdc *wire.Codec
 }
 
 func (c sendCommander) runIBCTransfer(cmd *cobra.Command, args []string) error {
-	keyname := viper.GetString(client.FlagName)
-
-	address := getAddress(keyname)
+	address := getAddress()
 	msg, err := buildMsg(address)
 	if err != nil {
 		return err
 	}
 
-	txBytes, err := buildTx(msg, keyname)
+	txBytes, err := buildTx(c.cdc, msg)
 	if err != nil {
 		return err
 	}
