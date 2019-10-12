@@ -17,6 +17,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/version"
 	authcmd "github.com/tepleton/tepleton-sdk/x/auth/commands"
 	bankcmd "github.com/tepleton/tepleton-sdk/x/bank/commands"
+	ibccmd "github.com/tepleton/tepleton-sdk/x/ibc/commands"
 
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/app"
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/types"
@@ -64,6 +65,11 @@ func main() {
 		client.PostCommands(
 			coolcmd.SetTrendTxCmd(cdc),
 		)...)
+	basecliCmd.AddCommand(
+		client.PostCommands(
+			ibccmd.IBCTransferCmd(cdc),
+		)...)
+	)
 
 	// add proxy, version and key info
 	basecliCmd.AddCommand(
