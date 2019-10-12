@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/spf13/viper"
@@ -8,10 +9,10 @@ import (
 	"github.com/tepleton/tepleton-sdk/client"
 	"github.com/tepleton/tepleton-sdk/client/keys"
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	wire "github.com/tepleton/go-amino"
+	// wire "github.com/tepleton/go-amino"
 )
 
-func buildTx(cdc *wire.Codec, msg sdk.Msg, name string) ([]byte, error) {
+func buildTx(msg sdk.Msg, name string) ([]byte, error) {
 	keybase, err := keys.GetKeyBase()
 	if err != nil {
 		return nil, err
@@ -36,7 +37,7 @@ func buildTx(cdc *wire.Codec, msg sdk.Msg, name string) ([]byte, error) {
 
 	tx := sdk.NewStdTx(msg, sigs)
 
-	txBytes, err := cdc.MarshalBinary(tx)
+	txBytes, err := json.Marshal(tx)
 	if err != nil {
 		return nil, err
 	}
