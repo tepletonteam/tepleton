@@ -1,11 +1,15 @@
 package bank
 
 import (
-	"github.com/tepleton/go-wire"
+	"github.com/tepleton/tepleton-sdk/wire"
 )
 
+// Register concrete types on wire codec
 func RegisterWire(cdc *wire.Codec) {
-	// TODO include option to always include prefix bytes.
-	cdc.RegisterConcrete(SendMsg{}, "tepleton-sdk/SendMsg", nil)
-	cdc.RegisterConcrete(IssueMsg{}, "tepleton-sdk/IssueMsg", nil)
+	// TODO: bring this back ...
+	/*
+		// TODO include option to always include prefix bytes.
+		cdc.RegisterConcrete(SendMsg{}, "tepleton-sdk/SendMsg", nil)
+		cdc.RegisterConcrete(IssueMsg{}, "tepleton-sdk/IssueMsg", nil)
+	*/
 }

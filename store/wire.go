@@ -1,7 +1,7 @@
 package store
 
 import (
-	"github.com/tepleton/go-wire"
+	"github.com/tepleton/tepleton-sdk/wire"
 )
 
 var cdc = wire.NewCodec()

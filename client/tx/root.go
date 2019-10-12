@@ -2,7 +2,8 @@ package tx
 
 import (
 	"github.com/spf13/cobra"
-	wire "github.com/tepleton/go-wire"
+
+	"github.com/tepleton/tepleton-sdk/wire"
 )
 
 // type used to pass around the provided cdc

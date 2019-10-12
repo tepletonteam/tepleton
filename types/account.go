@@ -2,13 +2,17 @@ package types
 
 import (
 	crypto "github.com/tepleton/go-crypto"
+	cmn "github.com/tepleton/tmlibs/common"
 )
+
+// Address in go-crypto style
+type Address = cmn.HexBytes
 
 // Account is a standard account using a sequence number for replay protection
 // and a pubkey for authentication.
 type Account interface {
-	GetAddress() crypto.Address
-	SetAddress(crypto.Address) error // errors if already set.
+	GetAddress() Address
+	SetAddress(Address) error // errors if already set.
 
 	GetPubKey() crypto.PubKey // can return nil.
 	SetPubKey(crypto.PubKey) error
@@ -26,8 +30,8 @@ type Account interface {
 // AccountMapper stores and retrieves accounts from stores
 // retrieved from the context.
 type AccountMapper interface {
-	NewAccountWithAddress(ctx Context, addr crypto.Address) Account
-	GetAccount(ctx Context, addr crypto.Address) Account
+	NewAccountWithAddress(ctx Context, addr Address) Account
+	GetAccount(ctx Context, addr Address) Account
 	SetAccount(ctx Context, acc Account)
 }
 
