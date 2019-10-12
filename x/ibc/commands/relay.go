@@ -10,7 +10,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/client"
 	"github.com/tepleton/tepleton-sdk/client/builder"
 
-	wire "github.com/tepleton/tepleton-sdk/wire"
+	wire "github.com/tepleton/go-amino"
 
 	"github.com/tepleton/tepleton-sdk/x/ibc"
 )
@@ -22,9 +22,7 @@ func IBCRelayCmd(cdc *wire.Codec) *cobra.Command {
 		Use: "relay",
 		Run: cmdr.runIBCRelay,
 	}
-	cmd.Flags().String(flagTo, "", "Address to send coins")
-	cmd.Flags().String(flagAmount, "", "Amount of coins to send")
-	cmd.Flags().Int64(flagSequence, 0, "Sequence number to sign the tx")
+	cmd.Flags().String(client.FlagName, "", "Name of the key to sign")
 	return cmd
 }
 
@@ -64,13 +62,16 @@ func (c relayCommander) refine(bz []byte, sequence int64) []byte {
 	if err := c.cdc.UnmarshalBinary(bz, &packet); err != nil {
 		panic(err)
 	}
-	address := getAddress()
+
+	name := viper.GetString(client.FlagName)
+
+	address := getAddress(name)
 	msg := ibc.IBCReceiveMsg{
 		IBCPacket: packet,
 		Relayer:   address,
 		Sequence:  sequence,
 	}
-	res, err := buildTx(c.cdc, msg)
+	res, err := buildTx(c.cdc, msg, name)
 	if err != nil {
 		panic(err)
 	}

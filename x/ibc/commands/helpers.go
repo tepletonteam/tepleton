@@ -8,16 +8,14 @@ import (
 	"github.com/tepleton/tepleton-sdk/client"
 	"github.com/tepleton/tepleton-sdk/client/keys"
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	wire "github.com/tepleton/tepleton-sdk/wire"
+	wire "github.com/tepleton/go-amino"
 )
 
-func buildTx(cdc *wire.Codec, msg sdk.Msg) ([]byte, error) {
+func buildTx(cdc *wire.Codec, msg sdk.Msg, name string) ([]byte, error) {
 	keybase, err := keys.GetKeyBase()
 	if err != nil {
 		return nil, err
 	}
-
-	name := viper.GetString(client.FlagName)
 
 	bz := msg.GetSignBytes()
 	buf := client.BufferStdin()
@@ -45,13 +43,12 @@ func buildTx(cdc *wire.Codec, msg sdk.Msg) ([]byte, error) {
 	return txBytes, nil
 }
 
-func getAddress() []byte {
+func getAddress(name string) []byte {
 	keybase, err := keys.GetKeyBase()
 	if err != nil {
 		panic(err)
 	}
 
-	name := viper.GetString(client.FlagName)
 	info, err := keybase.Get(name)
 	if err != nil {
 		panic(err)
