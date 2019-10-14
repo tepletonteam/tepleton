@@ -3,31 +3,28 @@ package lcd
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
-	"time"
 
-	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-
-	"github.com/tepleton/tepleton-sdk/baseapp"
-	"github.com/tepleton/tepleton-sdk/client"
-	keys "github.com/tepleton/tepleton-sdk/client/keys"
-	"github.com/tepleton/tepleton-sdk/examples/basecoin/app"
-	"github.com/tepleton/tepleton-sdk/mock"
-	"github.com/tepleton/tepleton-sdk/server"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	wrsp "github.com/tepleton/wrsp/types"
 	cryptoKeys "github.com/tepleton/go-crypto/keys"
 	"github.com/tepleton/tepleton/p2p"
 	ctypes "github.com/tepleton/tepleton/rpc/core/types"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
+
+	"github.com/tepleton/tepleton-sdk/baseapp"
+	"github.com/tepleton/tepleton-sdk/client"
+	keys "github.com/tepleton/tepleton-sdk/client/keys"
+	"github.com/tepleton/tepleton-sdk/examples/basecoin/app"
+	"github.com/tepleton/tepleton-sdk/server"
 )
 
 func TestKeys(t *testing.T) {
@@ -128,9 +125,10 @@ func TestVersion(t *testing.T) {
 }
 
 func TestNodeStatus(t *testing.T) {
-	startServer(t)
-	// TODO need to kill server after
+	ch := server.StartServer(t)
+	defer close(ch)
 	prepareClient(t)
+
 	cdc := app.MakeCodec()
 	r := initRouter(cdc)
 
@@ -147,7 +145,7 @@ func TestNodeStatus(t *testing.T) {
 	err = decoder.Decode(&m)
 	require.Nil(t, err, "Couldn't parse node info")
 
-	assert.NotEqual(t, p2p.NodeInfo{}, m)
+	assert.NotEqual(t, p2p.NodeInfo{}, m, "res: %v", res)
 
 	// syncing
 	req, err = http.NewRequest("GET", "/syncing", nil)
@@ -161,9 +159,10 @@ func TestNodeStatus(t *testing.T) {
 }
 
 func TestBlock(t *testing.T) {
-	startServer(t)
-	// TODO need to kill server after
+	ch := server.StartServer(t)
+	defer close(ch)
 	prepareClient(t)
+
 	cdc := app.MakeCodec()
 	r := initRouter(cdc)
 
@@ -199,8 +198,9 @@ func TestBlock(t *testing.T) {
 }
 
 func TestValidators(t *testing.T) {
-	startServer(t)
-	// TODO need to kill server after
+	ch := server.StartServer(t)
+	defer close(ch)
+
 	prepareClient(t)
 	cdc := app.MakeCodec()
 	r := initRouter(cdc)
@@ -263,43 +263,6 @@ func setupViper() func() {
 	viper.Set("home", rootDir)
 	return func() {
 		os.RemoveAll(rootDir)
-	}
-}
-
-func startServer(t *testing.T) {
-	defer setupViper()()
-	// init server
-	initCmd := server.InitCmd(mock.GenInitOptions, log.NewNopLogger())
-	err := initCmd.RunE(nil, nil)
-	require.NoError(t, err)
-
-	// start server
-	viper.Set("with-tepleton", true)
-	startCmd := server.StartCmd(mock.NewApp, log.NewNopLogger())
-	timeout := time.Duration(3) * time.Second
-
-	err = runOrTimeout(startCmd, timeout)
-	require.NoError(t, err)
-}
-
-// copied from server/start_test.go
-func runOrTimeout(cmd *cobra.Command, timeout time.Duration) error {
-	done := make(chan error)
-	go func(out chan<- error) {
-		// this should NOT exit
-		err := cmd.RunE(nil, nil)
-		if err != nil {
-			out <- err
-		}
-		out <- fmt.Errorf("start died for unknown reasons")
-	}(done)
-	timer := time.NewTimer(timeout)
-
-	select {
-	case err := <-done:
-		return err
-	case <-timer.C:
-		return nil
 	}
 }
 
