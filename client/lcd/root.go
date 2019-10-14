@@ -13,6 +13,8 @@ import (
 	tx "github.com/tepleton/tepleton-sdk/client/tx"
 	version "github.com/tepleton/tepleton-sdk/version"
 	"github.com/tepleton/tepleton-sdk/wire"
+	auth "github.com/tepleton/tepleton-sdk/x/auth/rest"
+	bank "github.com/tepleton/tepleton-sdk/x/bank/rest"
 )
 
 const (
@@ -52,5 +54,7 @@ func initRouter(cdc *wire.Codec) http.Handler {
 	keys.RegisterRoutes(r)
 	rpc.RegisterRoutes(r)
 	tx.RegisterRoutes(r, cdc)
+	auth.RegisterRoutes(r, cdc, "main")
+	bank.RegisterRoutes(r, cdc)
 	return r
 }
