@@ -6,13 +6,13 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	wire "github.com/tepleton/go-wire"
 
 	client "github.com/tepleton/tepleton-sdk/client"
 	keys "github.com/tepleton/tepleton-sdk/client/keys"
 	rpc "github.com/tepleton/tepleton-sdk/client/rpc"
 	tx "github.com/tepleton/tepleton-sdk/client/tx"
 	version "github.com/tepleton/tepleton-sdk/version"
+	"github.com/tepleton/tepleton-sdk/wire"
 )
 
 const (

@@ -11,16 +11,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-
-	"github.com/tepleton/tepleton-sdk/client"
-	keybase "github.com/tepleton/tepleton-sdk/client/keys"
-	sdk "github.com/tepleton/tepleton-sdk/types"
 	wrsp "github.com/tepleton/wrsp/types"
 	keys "github.com/tepleton/go-crypto/keys"
-	wire "github.com/tepleton/go-wire"
 	ctypes "github.com/tepleton/tepleton/rpc/core/types"
 
 	"github.com/tepleton/tepleton-sdk/client"
+	keybase "github.com/tepleton/tepleton-sdk/client/keys"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 )
