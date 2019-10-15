@@ -13,13 +13,14 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/lcd"
 	"github.com/tepleton/tepleton-sdk/client/rpc"
 	"github.com/tepleton/tepleton-sdk/client/tx"
-	coolcmd "github.com/tepleton/tepleton-sdk/examples/basecoin/x/cool/commands"
+
 	"github.com/tepleton/tepleton-sdk/version"
 	authcmd "github.com/tepleton/tepleton-sdk/x/auth/commands"
 	bankcmd "github.com/tepleton/tepleton-sdk/x/bank/commands"
 
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/app"
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/types"
+	coolcmd "github.com/tepleton/tepleton-sdk/examples/basecoin/x/cool/commands"
 )
 
 // toncliCmd is the entry point for this binary
