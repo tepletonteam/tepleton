@@ -2,27 +2,33 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 
 	"github.com/spf13/cobra"
 
+	"github.com/tepleton/go-crypto/keys"
+	"github.com/tepleton/go-crypto/keys/words"
 	cmn "github.com/tepleton/tmlibs/common"
+	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
 
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 	cfg "github.com/tepleton/tepleton/config"
 	tmtypes "github.com/tepleton/tepleton/types"
+
+	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
 // InitCmd will initialize all files for tepleton,
-// along with proper app_state.
+// along with proper app_options.
 // The application can pass in a function to generate
-// proper state. And may want to use GenerateCoinKey
+// proper options. And may want to use GenerateCoinKey
 // to create default account(s).
-func InitCmd(gen GenAppState, logger log.Logger) *cobra.Command {
+func InitCmd(gen GenOptions, logger log.Logger) *cobra.Command {
 	cmd := initCmd{
-		genAppState: gen,
-		logger:      logger,
+		gen:    gen,
+		logger: logger,
 	}
 	return &cobra.Command{
 		Use:   "init",
@@ -31,14 +37,39 @@ func InitCmd(gen GenAppState, logger log.Logger) *cobra.Command {
 	}
 }
 
-// GenAppState can parse command-line and flag to
-// generate default app_state for the genesis file.
+// GenOptions can parse command-line and flag to
+// generate default app_options for the genesis file.
 // This is application-specific
-type GenAppState func(args []string) (json.RawMessage, error)
+type GenOptions func(args []string) (json.RawMessage, error)
+
+// GenerateCoinKey returns the address of a public key,
+// along with the secret phrase to recover the private key.
+// You can give coins to this address and return the recovery
+// phrase to the user to access them.
+func GenerateCoinKey() (sdk.Address, string, error) {
+	// construct an in-memory key store
+	codec, err := words.LoadCodec("english")
+	if err != nil {
+		return nil, "", err
+	}
+	keybase := keys.New(
+		dbm.NewMemDB(),
+		codec,
+	)
+
+	// generate a private key, with recovery phrase
+	info, secret, err := keybase.Create("name", "pass", keys.AlgoEd25519)
+	if err != nil {
+		return nil, "", err
+	}
+
+	addr := info.PubKey.Address()
+	return addr, secret, nil
+}
 
 type initCmd struct {
-	genAppState GenAppState
-	logger      log.Logger
+	gen    GenOptions
+	logger log.Logger
 }
 
 func (c initCmd) run(cmd *cobra.Command, args []string) error {
@@ -54,19 +85,19 @@ func (c initCmd) run(cmd *cobra.Command, args []string) error {
 	}
 
 	// no app_options, leave like tepleton
-	if c.genAppState == nil {
+	if c.gen == nil {
 		return nil
 	}
 
-	// Now, we want to add the custom app_state
-	appState, err := c.genAppState(args)
+	// Now, we want to add the custom app_options
+	options, err := c.gen(args)
 	if err != nil {
 		return err
 	}
 
 	// And add them to the genesis file
 	genFile := config.GenesisFile()
-	return addGenesisState(genFile, appState)
+	return addGenesisOptions(genFile, options)
 }
 
 // This was copied from tepleton/cmd/tepleton/commands/init.go
@@ -110,7 +141,7 @@ func (c initCmd) initTendermintFiles(config *cfg.Config) error {
 // so we can add one line.
 type GenesisDoc map[string]json.RawMessage
 
-func addGenesisState(filename string, appState json.RawMessage) error {
+func addGenesisOptions(filename string, options json.RawMessage) error {
 	bz, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
@@ -122,11 +153,31 @@ func addGenesisState(filename string, appState json.RawMessage) error {
 		return err
 	}
 
-	doc["app_state"] = appState
+	doc["app_state"] = options
 	out, err := json.MarshalIndent(doc, "", "  ")
 	if err != nil {
 		return err
 	}
 
 	return ioutil.WriteFile(filename, out, 0600)
+}
+
+// GetGenesisJSON returns a new tepleton genesis with Basecoin app_options
+// that grant a large amount of "mycoin" to a single address
+// TODO: A better UX for generating genesis files
+func GetGenesisJSON(pubkey, chainID, denom, addr string, options string) string {
+	return fmt.Sprintf(`{
+    "accounts": [{
+      "address": "%s",
+      "coins": [
+        {
+          "denom": "%s",
+          "amount": 9007199254740992
+        }
+      ]
+    }],
+    "plugin_options": [
+      "coin/issuer", {"app": "sigs", "addr": "%s"}%s
+    ]
+}`, addr, denom, addr, options)
 }

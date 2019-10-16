@@ -1,7 +1,6 @@
 package tx
 
 import (
-	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 
 	"github.com/tepleton/tepleton-sdk/wire"
@@ -19,11 +18,4 @@ func AddCommands(cmd *cobra.Command, cdc *wire.Codec) {
 		SearchTxCmd(cmdr),
 		QueryTxCmd(cmdr),
 	)
-}
-
-func RegisterRoutes(r *mux.Router, cdc *wire.Codec) {
-	// r.HandleFunc("/txs", SearchTxRequestHandler(cdc)).Methods("GET")
-	r.HandleFunc("/txs/{hash}", QueryTxRequestHandler(cdc)).Methods("GET")
-	// r.HandleFunc("/txs/sign", SignTxRequstHandler).Methods("POST")
-	// r.HandleFunc("/txs/broadcast", BroadcastTxRequestHandler).Methods("POST")
 }

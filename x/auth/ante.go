@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/spf13/viper"
 )
 
 // NewAnteHandler returns an AnteHandler that checks
@@ -47,12 +46,6 @@ func NewAnteHandler(accountMapper sdk.AccountMapper) sdk.AnteHandler {
 			sequences[i] = sigs[i].Sequence
 		}
 		fee := stdTx.Fee
-		chainID := ctx.ChainID()
-		// XXX: major hack; need to get ChainID
-		// into the app right away (#565)
-		if chainID == "" {
-			chainID = viper.GetString("chain-id")
-		}
 		signBytes := sdk.StdSignBytes(ctx.ChainID(), sequences, fee, msg)
 
 		// Check sig and nonce and collect signer accounts.
@@ -104,7 +97,7 @@ func processSig(
 	// Get the account.
 	acc = am.GetAccount(ctx, addr)
 	if acc == nil {
-		return nil, sdk.ErrUnrecognizedAddress(addr.String()).Result()
+		return nil, sdk.ErrUnknownAddress(addr.String()).Result()
 	}
 
 	// Check and increment sequence number.
@@ -132,7 +125,6 @@ func processSig(
 			return nil, sdk.ErrInternal("setting PubKey on signer's account").Result()
 		}
 	}
-
 	// Check sig.
 	if !pubKey.VerifyBytes(signBytes, sig.Signature) {
 		return nil, sdk.ErrUnauthorized("signature verification failed").Result()

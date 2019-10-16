@@ -82,7 +82,7 @@
   name = "github.com/tepleton/tepleton"
 
 [[override]]
-  branch = "rigel/cli-refactor"
+  branch = "develop"
   name = "github.com/tepleton/tmlibs"
 
 [prune]

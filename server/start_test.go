@@ -1,10 +1,12 @@
 package server
 
 import (
+	"fmt"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 
@@ -13,7 +15,7 @@ import (
 )
 
 func TestStartStandAlone(t *testing.T) {
-	defer setupViper(t)()
+	defer setupViper()()
 
 	logger := log.NewNopLogger()
 	initCmd := InitCmd(mock.GenInitOptions, logger)
@@ -24,14 +26,14 @@ func TestStartStandAlone(t *testing.T) {
 	viper.Set(flagWithTendermint, false)
 	viper.Set(flagAddress, "localhost:11122")
 	startCmd := StartCmd(mock.NewApp, logger)
-	startCmd.Flags().Set(flagAddress, FreeTCPAddr(t)) // set to a new free address
 	timeout := time.Duration(3) * time.Second
 
-	RunOrTimeout(startCmd, timeout, t)
+	err = runOrTimeout(startCmd, timeout)
+	require.NoError(t, err)
 }
 
 func TestStartWithTendermint(t *testing.T) {
-	defer setupViper(t)()
+	defer setupViper()()
 
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).
 		With("module", "mock-cmd")
@@ -43,11 +45,28 @@ func TestStartWithTendermint(t *testing.T) {
 	// set up app and start up
 	viper.Set(flagWithTendermint, true)
 	startCmd := StartCmd(mock.NewApp, logger)
-	startCmd.Flags().Set(flagAddress, FreeTCPAddr(t)) // set to a new free address
 	timeout := time.Duration(3) * time.Second
 
-	//a, _ := startCmd.Flags().GetString(flagAddress)
-	//panic(a)
+	err = runOrTimeout(startCmd, timeout)
+	require.NoError(t, err)
+}
 
-	RunOrTimeout(startCmd, timeout, t)
+func runOrTimeout(cmd *cobra.Command, timeout time.Duration) error {
+	done := make(chan error)
+	go func(out chan<- error) {
+		// this should NOT exit
+		err := cmd.RunE(nil, nil)
+		if err != nil {
+			out <- err
+		}
+		out <- fmt.Errorf("start died for unknown reasons")
+	}(done)
+	timer := time.NewTimer(timeout)
+
+	select {
+	case err := <-done:
+		return err
+	case <-timer.C:
+		return nil
+	}
 }

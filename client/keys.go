@@ -6,8 +6,7 @@ import (
 	dbm "github.com/tepleton/tmlibs/db"
 )
 
-// GetKeyBase initializes a keybase based on the given db.
-// The KeyBase manages all activity requiring access to a key.
+// GetKeyBase initializes a keybase based on the configuration
 func GetKeyBase(db dbm.DB) keys.Keybase {
 	keybase := keys.New(
 		db,

@@ -59,7 +59,6 @@ func generateApp(rootDir string, logger log.Logger) (wrsp.Application, error) {
 }
 
 func main() {
-	// TODO: set logger through CLI
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).
 		With("module", "main")
 

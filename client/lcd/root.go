@@ -1,82 +1,36 @@
 package lcd
 
 import (
-	"net/http"
-	"os"
+	"errors"
 
-	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"github.com/tepleton/tmlibs/log"
 
-	tmserver "github.com/tepleton/tepleton/rpc/lib/server"
-	cmn "github.com/tepleton/tmlibs/common"
-
-	client "github.com/tepleton/tepleton-sdk/client"
-	keys "github.com/tepleton/tepleton-sdk/client/keys"
-	rpc "github.com/tepleton/tepleton-sdk/client/rpc"
-	tx "github.com/tepleton/tepleton-sdk/client/tx"
-	version "github.com/tepleton/tepleton-sdk/version"
-	"github.com/tepleton/tepleton-sdk/wire"
-	auth "github.com/tepleton/tepleton-sdk/x/auth/rest"
-	bank "github.com/tepleton/tepleton-sdk/x/bank/rest"
+	"github.com/tepleton/tepleton-sdk/client"
 )
 
 const (
-	flagListenAddr = "laddr"
-	flagCORS       = "cors"
+	flagBind = "bind"
+	flagCORS = "cors"
 )
+
+// XXX: remove this when not needed
+func todoNotImplemented(_ *cobra.Command, _ []string) error {
+	return errors.New("TODO: Command not yet implemented")
+}
 
 // ServeCommand will generate a long-running rest server
 // (aka Light Client Daemon) that exposes functionality similar
 // to the cli, but over rest
-func ServeCommand(cdc *wire.Codec) *cobra.Command {
+func ServeCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "rest-server",
+		Use:   "serve",
 		Short: "Start LCD (light-client daemon), a local REST server",
-		RunE:  startRESTServerFn(cdc),
+		RunE:  todoNotImplemented,
 	}
-	cmd.Flags().StringP(flagListenAddr, "a", "tcp://localhost:1317", "Address for server to listen on")
+	// TODO: handle unix sockets also?
+	cmd.Flags().StringP(flagBind, "b", "localhost:1317", "Interface and port that server binds to")
 	cmd.Flags().String(flagCORS, "", "Set to domains that can make CORS requests (* for all)")
 	cmd.Flags().StringP(client.FlagChainID, "c", "", "ID of chain we connect to")
 	cmd.Flags().StringP(client.FlagNode, "n", "tcp://localhost:46657", "Node to connect to")
 	return cmd
-}
-
-func startRESTServerFn(cdc *wire.Codec) func(cmd *cobra.Command, args []string) error {
-	return func(cmd *cobra.Command, args []string) error {
-		listenAddr := viper.GetString(flagListenAddr)
-		handler := createHandler(cdc)
-		logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).
-			With("module", "rest-server")
-		listener, err := tmserver.StartHTTPServer(listenAddr, handler, logger)
-		if err != nil {
-			return err
-		}
-
-		// Wait forever and cleanup
-		cmn.TrapSignal(func() {
-			err := listener.Close()
-			logger.Error("Error closing listener", "err", err)
-		})
-		return nil
-	}
-}
-
-func createHandler(cdc *wire.Codec) http.Handler {
-	r := mux.NewRouter()
-	r.HandleFunc("/version", version.VersionRequestHandler).Methods("GET")
-
-	kb, err := keys.GetKeyBase() //XXX
-	if err != nil {
-		panic(err)
-	}
-
-	// TODO make more functional? aka r = keys.RegisterRoutes(r)
-	keys.RegisterRoutes(r)
-	rpc.RegisterRoutes(r)
-	tx.RegisterRoutes(r, cdc)
-	auth.RegisterRoutes(r, cdc, "main")
-	bank.RegisterRoutes(r, cdc, kb)
-	return r
 }
