@@ -13,7 +13,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/lcd"
 	"github.com/tepleton/tepleton-sdk/client/rpc"
 	"github.com/tepleton/tepleton-sdk/client/tx"
-	coolcmd "github.com/tepleton/tepleton-sdk/examples/basecoin/x/cool/commands"
+
 	"github.com/tepleton/tepleton-sdk/version"
 	authcmd "github.com/tepleton/tepleton-sdk/x/auth/commands"
 	bankcmd "github.com/tepleton/tepleton-sdk/x/bank/commands"
@@ -21,6 +21,7 @@ import (
 
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/app"
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/types"
+	coolcmd "github.com/tepleton/tepleton-sdk/examples/basecoin/x/cool/commands"
 )
 
 // toncliCmd is the entry point for this binary
@@ -41,6 +42,10 @@ func main() {
 
 	// get the codec
 	cdc := app.MakeCodec()
+
+	// TODO: setup keybase, viper object, etc. to be passed into
+	// the below functions and eliminate global vars, like we do
+	// with the cdc
 
 	// add standard rpc, and tx commands
 	rpc.AddCommands(basecliCmd)
@@ -77,7 +82,7 @@ func main() {
 	// add proxy, version and key info
 	basecliCmd.AddCommand(
 		client.LineBreak,
-		lcd.ServeCommand(),
+		lcd.ServeCommand(cdc),
 		keys.Commands(),
 		client.LineBreak,
 		version.VersionCmd,
