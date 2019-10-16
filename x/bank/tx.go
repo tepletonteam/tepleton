@@ -49,7 +49,7 @@ func (msg SendMsg) ValidateBasic() sdk.Error {
 	}
 	// make sure inputs and outputs match
 	if !totalIn.IsEqual(totalOut) {
-		return sdk.ErrInvalidCoins(totalIn.String()).Trace("inputs and outputs don't match")
+		return ErrInvalidCoins(totalIn.String()).Trace("inputs and outputs don't match")
 	}
 	return nil
 }
@@ -147,13 +147,13 @@ type Input struct {
 // ValidateBasic - validate transaction input
 func (in Input) ValidateBasic() sdk.Error {
 	if len(in.Address) == 0 {
-		return sdk.ErrInvalidAddress(in.Address.String())
+		return ErrInvalidAddress(in.Address.String())
 	}
 	if !in.Coins.IsValid() {
-		return sdk.ErrInvalidCoins(in.Coins.String())
+		return ErrInvalidCoins(in.Coins.String())
 	}
 	if !in.Coins.IsPositive() {
-		return sdk.ErrInvalidCoins(in.Coins.String())
+		return ErrInvalidCoins(in.Coins.String())
 	}
 	return nil
 }
@@ -183,13 +183,13 @@ type Output struct {
 // ValidateBasic - validate transaction output
 func (out Output) ValidateBasic() sdk.Error {
 	if len(out.Address) == 0 {
-		return sdk.ErrInvalidAddress(out.Address.String())
+		return ErrInvalidAddress(out.Address.String())
 	}
 	if !out.Coins.IsValid() {
-		return sdk.ErrInvalidCoins(out.Coins.String())
+		return ErrInvalidCoins(out.Coins.String())
 	}
 	if !out.Coins.IsPositive() {
-		return sdk.ErrInvalidCoins(out.Coins.String())
+		return ErrInvalidCoins(out.Coins.String())
 	}
 	return nil
 }

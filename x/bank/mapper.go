@@ -20,13 +20,13 @@ func NewCoinKeeper(am sdk.AccountMapper) CoinKeeper {
 func (ck CoinKeeper) SubtractCoins(ctx sdk.Context, addr sdk.Address, amt sdk.Coins) (sdk.Coins, sdk.Error) {
 	acc := ck.am.GetAccount(ctx, addr)
 	if acc == nil {
-		return amt, sdk.ErrUnknownAddress(addr.String())
+		return amt, sdk.ErrUnrecognizedAddress(addr)
 	}
 
 	coins := acc.GetCoins()
 	newCoins := coins.Minus(amt)
 	if !newCoins.IsNotNegative() {
-		return amt, sdk.ErrInsufficientCoins(fmt.Sprintf("%s < %s", coins, amt))
+		return amt, ErrInsufficientCoins(fmt.Sprintf("%s < %s", coins, amt))
 	}
 
 	acc.SetCoins(newCoins)

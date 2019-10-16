@@ -14,6 +14,7 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/bank"
+	"github.com/tepleton/tepleton-sdk/x/ibc"
 
 	wrsp "github.com/tepleton/wrsp/types"
 	crypto "github.com/tepleton/go-crypto"
@@ -29,10 +30,6 @@ var (
 	addr1 = priv1.PubKey().Address()
 	addr2 = crypto.GenPrivKeyEd25519().PubKey().Address()
 	coins = sdk.Coins{{"foocoin", 10}}
-	fee   = sdk.StdFee{
-		sdk.Coins{{"foocoin", 0}},
-		0,
-	}
 
 	sendMsg = bank.SendMsg{
 		Inputs:  []bank.Input{bank.NewInput(addr1, coins)},
@@ -86,8 +83,8 @@ func TestMsgs(t *testing.T) {
 
 	sequences := []int64{0}
 	for i, m := range msgs {
-		sig := priv1.Sign(sdk.StdSignBytes(chainID, sequences, fee, m.msg))
-		tx := sdk.NewStdTx(m.msg, fee, []sdk.StdSignature{{
+		sig := priv1.Sign(sdk.StdSignBytes(chainID, sequences, m.msg))
+		tx := sdk.NewStdTx(m.msg, []sdk.StdSignature{{
 			PubKey:    priv1.PubKey(),
 			Signature: sig,
 		}})
@@ -99,13 +96,13 @@ func TestMsgs(t *testing.T) {
 
 		// Run a Check
 		cres := bapp.CheckTx(txBytes)
-		assert.Equal(t, sdk.CodeUnknownAddress,
+		assert.Equal(t, sdk.CodeUnrecognizedAddress,
 			sdk.CodeType(cres.Code), "i: %v, log: %v", i, cres.Log)
 
 		// Simulate a Block
 		bapp.BeginBlock(wrsp.RequestBeginBlock{})
 		dres := bapp.DeliverTx(txBytes)
-		assert.Equal(t, sdk.CodeUnknownAddress,
+		assert.Equal(t, sdk.CodeUnrecognizedAddress,
 			sdk.CodeType(dres.Code), "i: %v, log: %v", i, dres.Log)
 	}
 }
@@ -184,8 +181,8 @@ func TestSendMsgWithAccounts(t *testing.T) {
 
 	// Sign the tx
 	sequences := []int64{0}
-	sig := priv1.Sign(sdk.StdSignBytes(chainID, sequences, fee, sendMsg))
-	tx := sdk.NewStdTx(sendMsg, fee, []sdk.StdSignature{{
+	sig := priv1.Sign(sdk.StdSignBytes(chainID, sequences, sendMsg))
+	tx := sdk.NewStdTx(sendMsg, []sdk.StdSignature{{
 		PubKey:    priv1.PubKey(),
 		Signature: sig,
 	}})
@@ -217,7 +214,7 @@ func TestSendMsgWithAccounts(t *testing.T) {
 
 	// resigning the tx with the bumped sequence should work
 	sequences = []int64{1}
-	sig = priv1.Sign(sdk.StdSignBytes(chainID, sequences, fee, tx.Msg))
+	sig = priv1.Sign(sdk.StdSignBytes(chainID, sequences, tx.Msg))
 	tx.Signatures[0].Signature = sig
 	res = bapp.Deliver(tx)
 	assert.Equal(t, sdk.CodeOK, res.Code, res.Log)
@@ -271,12 +268,64 @@ func TestQuizMsg(t *testing.T) {
 
 }
 
+func TestHandler(t *testing.T) {
+	bapp := newBasecoinApp()
+
+	chainid := "ibcchain"
+
+	vals := []wrsp.Validator{}
+	baseAcc := auth.BaseAccount{
+		Address: addr1,
+		Coins:   coins,
+	}
+	acc1 := &types.AppAccount{baseAcc, "foobart"}
+	genesisState := types.GenesisState{
+		Accounts: []*types.GenesisAccount{
+			types.NewGenesisAccount(acc1),
+		},
+	}
+	stateBytes, err := json.MarshalIndent(genesisState, "", "\t")
+	require.Nil(t, err)
+	bapp.InitChain(wrsp.RequestInitChain{vals, stateBytes})
+	bapp.Commit()
+
+	// A checkTx context (true)
+	ctxCheck := bapp.BaseApp.NewContext(true, wrsp.Header{})
+	res1 := bapp.accountMapper.GetAccount(ctxCheck, addr1)
+	assert.Equal(t, acc1, res1)
+
+	packet := ibc.IBCPacket{
+		SrcAddr:   addr1,
+		DestAddr:  addr1,
+		Coins:     coins,
+		SrcChain:  chainid,
+		DestChain: chainid,
+	}
+
+	transferMsg := ibc.IBCTransferMsg{
+		IBCPacket: packet,
+	}
+
+	receiveMsg := ibc.IBCReceiveMsg{
+		IBCPacket: packet,
+		Relayer:   addr1,
+		Sequence:  0,
+	}
+
+	SignCheckDeliver(t, bapp, transferMsg, 0, true)
+	CheckBalance(t, bapp, "")
+	SignCheckDeliver(t, bapp, transferMsg, 1, false)
+	SignCheckDeliver(t, bapp, receiveMsg, 2, true)
+	CheckBalance(t, bapp, "10foocoin")
+	SignCheckDeliver(t, bapp, receiveMsg, 3, false)
+}
+
 func SignCheckDeliver(t *testing.T, bapp *BasecoinApp, msg sdk.Msg, seq int64, expPass bool) {
 
 	// Sign the tx
-	tx := sdk.NewStdTx(msg, fee, []sdk.StdSignature{{
+	tx := sdk.NewStdTx(msg, []sdk.StdSignature{{
 		PubKey:    priv1.PubKey(),
-		Signature: priv1.Sign(sdk.StdSignBytes(chainID, []int64{seq}, fee, msg)),
+		Signature: priv1.Sign(sdk.StdSignBytes(chainID, []int64{seq}, msg)),
 		Sequence:  seq,
 	}})
 

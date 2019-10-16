@@ -1,15 +1,11 @@
 package auth
 
 import (
-	"bytes"
 	"fmt"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
-// NewAnteHandler returns an AnteHandler that checks
-// and increments sequence numbers, checks signatures,
-// and deducts fees from the first signer.
 func NewAnteHandler(accountMapper sdk.AccountMapper) sdk.AnteHandler {
 	return func(
 		ctx sdk.Context, tx sdk.Tx,
@@ -26,12 +22,6 @@ func NewAnteHandler(accountMapper sdk.AccountMapper) sdk.AnteHandler {
 		// TODO: can tx just implement message?
 		msg := tx.GetMsg()
 
-		// TODO: will this always be a stdtx? should that be used in the function signature?
-		stdTx, ok := tx.(sdk.StdTx)
-		if !ok {
-			return ctx, sdk.ErrInternal("tx must be sdk.StdTx").Result(), true
-		}
-
 		// Assert that number of signatures is correct.
 		var signerAddrs = msg.GetSigners()
 		if len(sigs) != len(signerAddrs) {
@@ -40,64 +30,51 @@ func NewAnteHandler(accountMapper sdk.AccountMapper) sdk.AnteHandler {
 				true
 		}
 
-		// Get the sign bytes (requires all sequence numbers and the fee)
+		// Collect accounts to set in the context
+		var signerAccs = make([]sdk.Account, len(signerAddrs))
+
+		// Get the sign bytes by collecting all sequence numbers
 		sequences := make([]int64, len(signerAddrs))
 		for i := 0; i < len(signerAddrs); i++ {
 			sequences[i] = sigs[i].Sequence
 		}
-		fee := stdTx.Fee
-		signBytes := sdk.StdSignBytes(ctx.ChainID(), sequences, fee, msg)
+		signBytes := sdk.StdSignBytes(ctx.ChainID(), sequences, msg)
 
-		// Check sig and nonce and collect signer accounts.
-		var signerAccs = make([]sdk.Account, len(signerAddrs))
-		for i := 0; i < len(sigs); i++ {
+		// Check fee payer sig and nonce, and deduct fee.
+		// This is done first because it only
+		// requires fetching 1 account.
+		payerAddr, payerSig := signerAddrs[0], sigs[0]
+		payerAcc, res := processSig(ctx, accountMapper, payerAddr, payerSig, signBytes)
+		if !res.IsOK() {
+			return ctx, res, true
+		}
+		signerAccs[0] = payerAcc
+		// TODO: Charge fee from payerAcc.
+		// TODO: accountMapper.SetAccount(ctx, payerAddr)
+
+		// Check sig and nonce for the rest.
+		for i := 1; i < len(sigs); i++ {
 			signerAddr, sig := signerAddrs[i], sigs[i]
-
-			// check signature, return account with incremented nonce
-			signerAcc, res := processSig(
-				ctx, accountMapper,
-				signerAddr, sig, signBytes,
-			)
+			signerAcc, res := processSig(ctx, accountMapper, signerAddr, sig, signBytes)
 			if !res.IsOK() {
 				return ctx, res, true
 			}
-
-			// first sig pays the fees
-			if i == 0 {
-				// TODO: min fee
-				if !fee.Amount.IsZero() {
-					signerAcc, res = deductFees(signerAcc, fee)
-					if !res.IsOK() {
-						return ctx, res, true
-					}
-				}
-			}
-
-			// Save the account.
-			accountMapper.SetAccount(ctx, signerAcc)
 			signerAccs[i] = signerAcc
 		}
 
-		// cache the signer accounts in the context
 		ctx = WithSigners(ctx, signerAccs)
-
-		// TODO: tx tags (?)
-
 		return ctx, sdk.Result{}, false // continue...
 	}
 }
 
 // verify the signature and increment the sequence.
-// if the account doesn't have a pubkey, set it.
-func processSig(
-	ctx sdk.Context, am sdk.AccountMapper,
-	addr sdk.Address, sig sdk.StdSignature, signBytes []byte) (
-	acc sdk.Account, res sdk.Result) {
+// if the account doesn't have a pubkey, set it as well.
+func processSig(ctx sdk.Context, am sdk.AccountMapper, addr sdk.Address, sig sdk.StdSignature, signBytes []byte) (acc sdk.Account, res sdk.Result) {
 
-	// Get the account.
+	// Get the account
 	acc = am.GetAccount(ctx, addr)
 	if acc == nil {
-		return nil, sdk.ErrUnknownAddress(addr.String()).Result()
+		return nil, sdk.ErrUnrecognizedAddress(addr).Result()
 	}
 
 	// Check and increment sequence number.
@@ -108,43 +85,24 @@ func processSig(
 	}
 	acc.SetSequence(seq + 1)
 
-	// If pubkey is not known for account,
-	// set it from the StdSignature.
+	// Check and possibly set pubkey.
 	pubKey := acc.GetPubKey()
 	if pubKey.Empty() {
 		pubKey = sig.PubKey
-		if pubKey.Empty() {
-			return nil, sdk.ErrInvalidPubKey("PubKey not found").Result()
-		}
-		if !bytes.Equal(pubKey.Address(), addr) {
-			return nil, sdk.ErrInvalidPubKey(
-				fmt.Sprintf("PubKey does not match Signer address %v", addr)).Result()
-		}
 		err := acc.SetPubKey(pubKey)
 		if err != nil {
-			return nil, sdk.ErrInternal("setting PubKey on signer's account").Result()
+			return nil, sdk.ErrInternal("setting PubKey on signer").Result()
 		}
 	}
+	// TODO: should we enforce pubKey == sig.PubKey ?
+	// If not, ppl can send useless PubKeys after first tx
+
 	// Check sig.
-	if !pubKey.VerifyBytes(signBytes, sig.Signature) {
+	if !sig.PubKey.VerifyBytes(signBytes, sig.Signature) {
 		return nil, sdk.ErrUnauthorized("signature verification failed").Result()
 	}
 
+	// Save the account.
+	am.SetAccount(ctx, acc)
 	return
-}
-
-// Deduct the fee from the account.
-// We could use the CoinKeeper (in addition to the AccountMapper,
-// because the CoinKeeper doesn't give us accounts), but it seems easier to do this.
-func deductFees(acc sdk.Account, fee sdk.StdFee) (sdk.Account, sdk.Result) {
-	coins := acc.GetCoins()
-	feeAmount := fee.Amount
-
-	newCoins := coins.Minus(feeAmount)
-	if !newCoins.IsNotNegative() {
-		errMsg := fmt.Sprintf("%s < %s", coins, feeAmount)
-		return nil, sdk.ErrInsufficientFunds(errMsg).Result()
-	}
-	acc.SetCoins(newCoins)
-	return acc, sdk.Result{}
 }

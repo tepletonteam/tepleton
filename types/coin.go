@@ -139,14 +139,8 @@ func (coins Coins) IsGTE(coinsB Coins) bool {
 }
 
 // IsZero returns true if there are no coins
-// or all coins are zero.
 func (coins Coins) IsZero() bool {
-	for _, coin := range coins {
-		if !coin.IsZero() {
-			return false
-		}
-	}
-	return true
+	return len(coins) == 0
 }
 
 // IsEqual returns true if the two sets of Coins have the same value

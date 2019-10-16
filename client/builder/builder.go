@@ -90,15 +90,6 @@ func GetFromAddress() (from sdk.Address, err error) {
 // sign and build the transaction from the msg
 func SignAndBuild(msg sdk.Msg, cdc *wire.Codec) ([]byte, error) {
 
-	// build the Sign Messsage from the Standard Message
-	chainID := viper.GetString(client.FlagChainID)
-	sequence := int64(viper.GetInt(client.FlagSequence))
-	signMsg := sdk.StdSignMsg{
-		ChainID:   chainID,
-		Sequences: []int64{sequence},
-		Msg:       msg,
-	}
-
 	keybase, err := keys.GetKeyBase()
 	if err != nil {
 		return nil, err
@@ -106,7 +97,7 @@ func SignAndBuild(msg sdk.Msg, cdc *wire.Codec) ([]byte, error) {
 	name := viper.GetString(client.FlagName)
 
 	// sign and build
-	bz := signMsg.Bytes()
+	bz := msg.GetSignBytes()
 	buf := client.BufferStdin()
 	prompt := fmt.Sprintf("Password to sign with '%s':", name)
 	passphrase, err := client.GetPassword(prompt, buf)
@@ -124,7 +115,7 @@ func SignAndBuild(msg sdk.Msg, cdc *wire.Codec) ([]byte, error) {
 	}}
 
 	// marshal bytes
-	tx := sdk.NewStdTx(signMsg.Msg, signMsg.Fee, sigs)
+	tx := sdk.NewStdTx(msg, sigs)
 
 	return cdc.MarshalBinary(tx)
 }
