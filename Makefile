@@ -71,10 +71,8 @@ test_unit:
 	@go test $(PACKAGES)
 
 test_cover:
-	@rm -rf examples/basecoin/vendor
-	@rm -rf client/lcd/keys.db ~/.tepleton_test
+	@rm -rf examples/basecoin/vendor/
 	@bash tests/test_cover.sh
-	@rm -rf client/lcd/keys.db ~/.tepleton_test
 
 benchmark:
 	@go test -bench=. $(PACKAGES)
