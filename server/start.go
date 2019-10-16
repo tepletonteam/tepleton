@@ -29,7 +29,7 @@ type appCreator func(string, log.Logger) (wrsp.Application, error)
 // stand-alone, or in-process with tepleton
 func StartCmd(app appCreator, logger log.Logger) *cobra.Command {
 	start := startCmd{
-		appCreator: appCreator,
+		appCreator: app,
 		logger:     logger,
 	}
 	cmd := &cobra.Command{
