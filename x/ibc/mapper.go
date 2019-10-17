@@ -14,8 +14,10 @@ type IBCMapper struct {
 
 // XXX: The IBCMapper should not take a CoinKeeper. Rather have the CoinKeeper
 // take an IBCMapper.
-func NewIBCMapper(cdc *wire.Codec, key sdk.StoreKey) IBCMapper {
+func NewIBCMapper(key sdk.StoreKey) IBCMapper {
 	// XXX: How are these codecs supposed to work?
+	cdc := wire.NewCodec()
+
 	return IBCMapper{
 		key: key,
 		cdc: cdc,
@@ -57,34 +59,25 @@ func (ibcm IBCMapper) ReceiveIBCPacket(ctx sdk.Context, packet IBCPacket) sdk.Er
 // --------------------------
 // Functions for accessing the underlying KVStore.
 
-func marshalBinaryPanic(cdc *wire.Codec, value interface{}) []byte {
-	res, err := cdc.MarshalBinary(value)
-	if err != nil {
-		panic(err)
-	}
-	return res
-}
-
-func unmarshalBinaryPanic(cdc *wire.Codec, bz []byte, ptr interface{}) {
-	err := cdc.UnmarshalBinary(bz, ptr)
-	if err != nil {
-		panic(err)
-	}
-}
-
 func (ibcm IBCMapper) GetIngressSequence(ctx sdk.Context, srcChain string) int64 {
 	store := ctx.KVStore(ibcm.key)
 	key := IngressSequenceKey(srcChain)
 
 	bz := store.Get(key)
 	if bz == nil {
-		zero := marshalBinaryPanic(ibcm.cdc, int64(0))
+		zero, err := ibcm.cdc.MarshalBinary(int64(0))
+		if err != nil {
+			panic(err)
+		}
 		store.Set(key, zero)
 		return 0
 	}
 
 	var res int64
-	unmarshalBinaryPanic(ibcm.cdc, bz, &res)
+	err := ibcm.cdc.UnmarshalBinary(bz, &res)
+	if err != nil {
+		panic(err)
+	}
 	return res
 }
 
@@ -92,7 +85,10 @@ func (ibcm IBCMapper) SetIngressSequence(ctx sdk.Context, srcChain string, seque
 	store := ctx.KVStore(ibcm.key)
 	key := IngressSequenceKey(srcChain)
 
-	bz := marshalBinaryPanic(ibcm.cdc, sequence)
+	bz, err := ibcm.cdc.MarshalBinary(sequence)
+	if err != nil {
+		panic(err)
+	}
 	store.Set(key, bz)
 }
 
@@ -100,12 +96,17 @@ func (ibcm IBCMapper) SetIngressSequence(ctx sdk.Context, srcChain string, seque
 func (ibcm IBCMapper) getEgressLength(store sdk.KVStore, destChain string) int64 {
 	bz := store.Get(EgressLengthKey(destChain))
 	if bz == nil {
-		zero := marshalBinaryPanic(ibcm.cdc, int64(0))
+		zero, err := ibcm.cdc.MarshalBinary(int64(0))
+		if err != nil {
+			panic(err)
+		}
 		store.Set(EgressLengthKey(destChain), zero)
 		return 0
 	}
 	var res int64
-	unmarshalBinaryPanic(ibcm.cdc, bz, &res)
+	if err := ibcm.cdc.UnmarshalBinary(bz, &res); err != nil {
+		panic(err)
+	}
 	return res
 }
 
