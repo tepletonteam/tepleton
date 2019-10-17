@@ -74,7 +74,7 @@ func makeCodec() *wire.Codec {
 }
 
 func TestIBC(t *testing.T) {
-	cdc := makeCodec()
+	var _ = makeCodec()
 
 	key := sdk.NewKVStoreKey("ibc")
 	ctx := defaultContext(key)
@@ -92,7 +92,7 @@ func TestIBC(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, mycoins, coins)
 
-	ibcm := NewIBCMapper(cdc, key)
+	ibcm := NewIBCMapper(key)
 	h := NewHandler(ibcm, ck)
 	packet := IBCPacket{
 		SrcAddr:   src,
