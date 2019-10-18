@@ -13,20 +13,23 @@ import (
 
 	"github.com/tepleton/tepleton-sdk/store"
 	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/bank"
 )
 
-func setupMultiStore() (sdk.MultiStore, *sdk.KVStoreKey) {
+func setupMultiStore() (sdk.MultiStore, *sdk.KVStoreKey, *sdk.KVStoreKey) {
 	db := dbm.NewMemDB()
+	authKey := sdk.NewKVStoreKey("authkey")
 	capKey := sdk.NewKVStoreKey("capkey")
 	ms := store.NewCommitMultiStore(db)
 	ms.MountStoreWithDB(capKey, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(authKey, sdk.StoreTypeIAVL, db)
 	ms.LoadLatestVersion()
-	return ms, capKey
+	return ms, authKey, capKey
 }
 
 func TestKeeperGetSet(t *testing.T) {
-	ms, capKey := setupMultiStore()
+	ms, _, capKey := setupMultiStore()
 
 	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil)
 	stakeKeeper := NewKeeper(capKey, bank.NewCoinKeeper(nil))
@@ -51,27 +54,30 @@ func TestKeeperGetSet(t *testing.T) {
 }
 
 func TestBonding(t *testing.T) {
-	ms, capKey := setupMultiStore()
+	ms, authKey, capKey := setupMultiStore()
 
 	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil)
-	stakeKeeper := NewKeeper(capKey, bank.NewCoinKeeper(nil))
+
+	accountMapper := auth.NewAccountMapper(authKey, &auth.BaseAccount{})
+	coinKeeper := bank.NewCoinKeeper(accountMapper)
+	stakeKeeper := NewKeeper(capKey, coinKeeper)
 	addr := sdk.Address([]byte("some-address"))
 	privKey := crypto.GenPrivKeyEd25519()
 	pubKey := privKey.PubKey()
 
-	_, _, err := stakeKeeper.Unbond(ctx, addr)
+	_, _, err := stakeKeeper.unbondWithoutCoins(ctx, addr)
 	assert.Equal(t, err, ErrInvalidUnbond())
 
-	_, err = stakeKeeper.Bond(ctx, addr, pubKey, 10)
+	_, err = stakeKeeper.bondWithoutCoins(ctx, addr, pubKey, sdk.Coin{"steak", 10})
 	assert.Nil(t, err)
 
-	power, err := stakeKeeper.Bond(ctx, addr, pubKey, 10)
+	power, err := stakeKeeper.bondWithoutCoins(ctx, addr, pubKey, sdk.Coin{"steak", 10})
 	assert.Equal(t, int64(20), power)
 
-	pk, _, err := stakeKeeper.Unbond(ctx, addr)
+	pk, _, err := stakeKeeper.unbondWithoutCoins(ctx, addr)
 	assert.Nil(t, err)
 	assert.Equal(t, pubKey, pk)
 
-	_, _, err = stakeKeeper.Unbond(ctx, addr)
+	_, _, err = stakeKeeper.unbondWithoutCoins(ctx, addr)
 	assert.Equal(t, err, ErrInvalidUnbond())
 }

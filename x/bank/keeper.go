@@ -18,6 +18,12 @@ func NewCoinKeeper(am sdk.AccountMapper) CoinKeeper {
 	return CoinKeeper{am: am}
 }
 
+// GetCoins returns the coins at the addr.
+func (ck CoinKeeper) GetCoins(ctx sdk.Context, addr sdk.Address, amt sdk.Coins) sdk.Coins {
+	acc := ck.am.GetAccount(ctx, addr)
+	return acc.GetCoins()
+}
+
 // SubtractCoins subtracts amt from the coins at the addr.
 func (ck CoinKeeper) SubtractCoins(ctx sdk.Context, addr sdk.Address, amt sdk.Coins) (sdk.Coins, sdk.Error) {
 	acc := ck.am.GetAccount(ctx, addr)
@@ -61,6 +67,25 @@ func (ck CoinKeeper) SendCoins(ctx sdk.Context, fromAddr sdk.Address, toAddr sdk
 	_, err = ck.AddCoins(ctx, toAddr, amt)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// InputOutputCoins handles a list of inputs and outputs
+func (ck CoinKeeper) InputOutputCoins(ctx sdk.Context, inputs []Input, outputs []Output) sdk.Error {
+	for _, in := range inputs {
+		_, err := ck.SubtractCoins(ctx, in.Address, in.Coins)
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, out := range outputs {
+		_, err := ck.AddCoins(ctx, out.Address, out.Coins)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
