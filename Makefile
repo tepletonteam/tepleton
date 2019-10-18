@@ -1,6 +1,5 @@
 PACKAGES=$(shell go list ./... | grep -v '/vendor/')
-COMMIT_HASH := $(shell git rev-parse --short HEAD)
-BUILD_FLAGS = -ldflags "-X github.com/tepleton/tepleton-sdk/version.GitCommit=${COMMIT_HASH}"
+BUILD_FLAGS = -ldflags "-X github.com/tepleton/tepleton-sdk/version.GitCommit=`git rev-parse --short HEAD`"
 
 all: check_tools get_vendor_deps build test
 
@@ -18,14 +17,9 @@ ton:
 	go build $(BUILD_FLAGS) -o build/toncli ./examples/ton/toncli
 
 build:
-	@rm -rf $(shell pwd)/examples/basecoin/vendor/
-ifeq ($(OS),Windows_NT)
-	go build $(BUILD_FLAGS) -o build/basecoind.exe ./examples/basecoin/cmd/basecoind
-	go build $(BUILD_FLAGS) -o build/basecli.exe ./examples/basecoin/cmd/basecli
-else
+	@rm -rf examples/basecoin/vendor/
 	go build $(BUILD_FLAGS) -o build/basecoind ./examples/basecoin/cmd/basecoind
 	go build $(BUILD_FLAGS) -o build/basecli ./examples/basecoin/cmd/basecli
-endif
 
 dist:
 	@bash publish/dist.sh
