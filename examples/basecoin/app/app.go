@@ -19,6 +19,7 @@ import (
 
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/types"
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/x/cool"
+	"github.com/tepleton/tepleton-sdk/examples/basecoin/x/sketchy"
 )
 
 const (
@@ -57,14 +58,15 @@ func NewBasecoinApp(logger log.Logger, db dbm.DB) *BasecoinApp {
 
 	// add handlers
 	coinKeeper := bank.NewCoinKeeper(app.accountMapper)
-	coolKeeper := cool.NewKeeper(app.capKeyMainStore, coinKeeper)
+	coolMapper := cool.NewMapper(app.capKeyMainStore)
 	ibcMapper := ibc.NewIBCMapper(app.cdc, app.capKeyIBCStore)
-	stakeKeeper := staking.NewKeeper(app.capKeyStakingStore, coinKeeper)
+	stakingMapper := staking.NewMapper(app.capKeyStakingStore)
 	app.Router().
 		AddRoute("bank", bank.NewHandler(coinKeeper)).
-		AddRoute("cool", cool.NewHandler(coolKeeper)).
+		AddRoute("cool", cool.NewHandler(coinKeeper, coolMapper)).
+		AddRoute("sketchy", sketchy.NewHandler()).
 		AddRoute("ibc", ibc.NewHandler(ibcMapper, coinKeeper)).
-		AddRoute("staking", staking.NewHandler(stakeKeeper))
+		AddRoute("staking", staking.NewHandler(stakingMapper, coinKeeper))
 
 	// initialize BaseApp
 	app.SetTxDecoder(app.txDecoder)

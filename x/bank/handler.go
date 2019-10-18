@@ -6,7 +6,7 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
-// NewHandler returns a handler for "bank" type messages.
+// Handle all "bank" type messages.
 func NewHandler(ck CoinKeeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		switch msg := msg.(type) {
@@ -25,9 +25,18 @@ func NewHandler(ck CoinKeeper) sdk.Handler {
 func handleSendMsg(ctx sdk.Context, ck CoinKeeper, msg SendMsg) sdk.Result {
 	// NOTE: totalIn == totalOut should already have been checked
 
-	err := ck.InputOutputCoins(ctx, msg.Inputs, msg.Outputs)
-	if err != nil {
-		return err.Result()
+	for _, in := range msg.Inputs {
+		_, err := ck.SubtractCoins(ctx, in.Address, in.Coins)
+		if err != nil {
+			return err.Result()
+		}
+	}
+
+	for _, out := range msg.Outputs {
+		_, err := ck.AddCoins(ctx, out.Address, out.Coins)
+		if err != nil {
+			return err.Result()
+		}
 	}
 
 	// TODO: add some tags so we can search it!
