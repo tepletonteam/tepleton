@@ -36,8 +36,16 @@ func QuizTxCmd(cdc *wire.Codec) *cobra.Command {
 			// get account name
 			name := viper.GetString(client.FlagName)
 
+			// get password
+			buf := client.BufferStdin()
+			prompt := fmt.Sprintf("Password to sign with '%s':", name)
+			passphrase, err := client.GetPassword(prompt, buf)
+			if err != nil {
+				return err
+			}
+
 			// build and sign the transaction, then broadcast to Tendermint
-			res, err := builder.SignBuildBroadcast(name, msg, cdc)
+			res, err := builder.SignBuildBroadcast(name, passphrase, msg, cdc)
 			if err != nil {
 				return err
 			}
@@ -67,11 +75,19 @@ func SetTrendTxCmd(cdc *wire.Codec) *cobra.Command {
 			// get account name
 			name := viper.GetString(client.FlagName)
 
+			// get password
+			buf := client.BufferStdin()
+			prompt := fmt.Sprintf("Password to sign with '%s':", name)
+			passphrase, err := client.GetPassword(prompt, buf)
+			if err != nil {
+				return err
+			}
+
 			// create the message
 			msg := cool.NewSetTrendMsg(from, args[0])
 
 			// build and sign the transaction, then broadcast to Tendermint
-			res, err := builder.SignBuildBroadcast(name, msg, cdc)
+			res, err := builder.SignBuildBroadcast(name, passphrase, msg, cdc)
 			if err != nil {
 				return err
 			}
