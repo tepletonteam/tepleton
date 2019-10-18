@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -51,7 +50,7 @@ func defaultOptions(args []string) (json.RawMessage, error) {
 }
 
 func generateApp(rootDir string, logger log.Logger) (wrsp.Application, error) {
-	db, err := dbm.NewGoLevelDB("basecoin", filepath.Join(rootDir, "data"))
+	db, err := dbm.NewGoLevelDB("basecoin", rootDir)
 	if err != nil {
 		return nil, err
 	}
