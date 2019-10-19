@@ -324,16 +324,13 @@ func startTMAndLCD() (*nm.Node, net.Listener, error) {
 	}
 
 	coins := sdk.Coins{{coinDenom, coinAmount}}
-	appState := map[string]interface{}{
-		"accounts": []*btypes.GenesisAccount{
+	appState := btypes.GenesisState{
+		Accounts: []*btypes.GenesisAccount{
 			{
 				Name:    "tester",
 				Address: pubKey.Address(),
 				Coins:   coins,
 			},
-		},
-		"cool": map[string]string{
-			"trend": "ice-cold",
 		},
 	}
 	stateBytes, err := json.Marshal(appState)
