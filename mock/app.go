@@ -3,6 +3,7 @@ package mock
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 
 	wrsp "github.com/tepleton/wrsp/types"
 	dbm "github.com/tepleton/tmlibs/db"
@@ -17,7 +18,7 @@ import (
 // Make sure rootDir is empty before running the test,
 // in order to guarantee consistent results
 func NewApp(rootDir string, logger log.Logger) (wrsp.Application, error) {
-	db, err := dbm.NewGoLevelDB("mock", rootDir)
+	db, err := dbm.NewGoLevelDB("mock", filepath.Join(rootDir, "data"))
 	if err != nil {
 		return nil, err
 	}
