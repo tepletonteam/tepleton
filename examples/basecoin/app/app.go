@@ -19,6 +19,7 @@ import (
 
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/types"
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/x/cool"
+	"github.com/tepleton/tepleton-sdk/examples/basecoin/x/sketchy"
 )
 
 const (
@@ -32,7 +33,6 @@ type BasecoinApp struct {
 
 	// keys to access the substores
 	capKeyMainStore    *sdk.KVStoreKey
-	capKeyAccountStore *sdk.KVStoreKey
 	capKeyIBCStore     *sdk.KVStoreKey
 	capKeyStakingStore *sdk.KVStoreKey
 
@@ -40,13 +40,12 @@ type BasecoinApp struct {
 	accountMapper sdk.AccountMapper
 }
 
-func NewBasecoinApp(logger log.Logger, dbMain, dbAcc, dbIBC, dbStaking dbm.DB) *BasecoinApp {
+func NewBasecoinApp(logger log.Logger, db dbm.DB) *BasecoinApp {
 	// create your application object
 	var app = &BasecoinApp{
-		BaseApp:            bam.NewBaseApp(appName, logger, dbMain),
+		BaseApp:            bam.NewBaseApp(appName, logger, db),
 		cdc:                MakeCodec(),
 		capKeyMainStore:    sdk.NewKVStoreKey("main"),
-		capKeyAccountStore: sdk.NewKVStoreKey("acc"),
 		capKeyIBCStore:     sdk.NewKVStoreKey("ibc"),
 		capKeyStakingStore: sdk.NewKVStoreKey("staking"),
 	}
@@ -63,20 +62,16 @@ func NewBasecoinApp(logger log.Logger, dbMain, dbAcc, dbIBC, dbStaking dbm.DB) *
 	ibcMapper := ibc.NewIBCMapper(app.cdc, app.capKeyIBCStore)
 	stakeKeeper := staking.NewKeeper(app.capKeyStakingStore, coinKeeper)
 	app.Router().
-		AddRoute("bank", bank.NewHandler(coinKeeper)).
-		AddRoute("cool", cool.NewHandler(coolKeeper)).
-		AddRoute("ibc", ibc.NewHandler(ibcMapper, coinKeeper)).
-		AddRoute("staking", staking.NewHandler(stakeKeeper))
+		AddRoute("bank", bank.NewHandler(coinKeeper), nil).
+		AddRoute("cool", cool.NewHandler(coolKeeper), coolKeeper.InitGenesis).
+		AddRoute("sketchy", sketchy.NewHandler(), nil).
+		AddRoute("ibc", ibc.NewHandler(ibcMapper, coinKeeper), nil).
+		AddRoute("staking", staking.NewHandler(stakeKeeper), nil)
 
 	// initialize BaseApp
 	app.SetTxDecoder(app.txDecoder)
 	app.SetInitChainer(app.initChainer)
-	app.MountStore(app.capKeyMainStore, sdk.StoreTypeIAVL, dbMain)
-	app.MountStore(app.capKeyAccountStore, sdk.StoreTypeIAVL, dbAcc)
-	app.MountStore(app.capKeyIBCStore, sdk.StoreTypeIAVL, dbIBC)
-	app.MountStore(app.capKeyStakingStore, sdk.StoreTypeIAVL, dbStaking)
-	// NOTE: Broken until #532 lands
-	//app.MountStoresIAVL(app.capKeyMainStore, app.capKeyIBCStore, app.capKeyStakingStore)
+	app.MountStoresIAVL(app.capKeyMainStore, app.capKeyIBCStore, app.capKeyStakingStore)
 	app.SetAnteHandler(auth.NewAnteHandler(app.accountMapper))
 	err := app.LoadLatestVersion(app.capKeyMainStore)
 	if err != nil {

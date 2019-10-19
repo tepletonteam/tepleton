@@ -1,6 +1,7 @@
 package baseapp
 
 import (
+	"encoding/json"
 	"fmt"
 	"runtime/debug"
 
@@ -54,7 +55,6 @@ type BaseApp struct {
 var _ wrsp.Application = (*BaseApp)(nil)
 
 // Create and name new BaseApp
-// NOTE: The db is used to store the version number for now.
 func NewBaseApp(name string, logger log.Logger, db dbm.DB) *BaseApp {
 	return &BaseApp{
 		Logger: logger,
@@ -71,16 +71,15 @@ func (app *BaseApp) Name() string {
 }
 
 // Mount a store to the provided key in the BaseApp multistore
-// Broken until #532 is implemented.
 func (app *BaseApp) MountStoresIAVL(keys ...*sdk.KVStoreKey) {
 	for _, key := range keys {
-		app.MountStore(key, sdk.StoreTypeIAVL, app.db)
+		app.MountStore(key, sdk.StoreTypeIAVL)
 	}
 }
 
 // Mount a store to the provided key in the BaseApp multistore
-func (app *BaseApp) MountStore(key sdk.StoreKey, typ sdk.StoreType, db dbm.DB) {
-	app.cms.MountStoreWithDB(key, typ, db)
+func (app *BaseApp) MountStore(key sdk.StoreKey, typ sdk.StoreType) {
+	app.cms.MountStoreWithDB(key, typ, app.db)
 }
 
 // nolint - Set functions
@@ -234,6 +233,19 @@ func (app *BaseApp) InitChain(req wrsp.RequestInitChain) (res wrsp.ResponseInitC
 	// Initialize the deliver state and run initChain
 	app.setDeliverState(wrsp.Header{})
 	app.initChainer(app.deliverState.ctx, req) // no error
+
+	// Initialize module genesis state
+	genesisState := new(map[string]json.RawMessage)
+	err := json.Unmarshal(req.AppStateBytes, genesisState)
+	if err != nil {
+		// TODO Return something intelligent
+		panic(err)
+	}
+	err = app.Router().InitGenesis(app.deliverState.ctx, *genesisState)
+	if err != nil {
+		// TODO Return something intelligent
+		panic(err)
+	}
 
 	// NOTE: we don't commit, but BeginBlock for block 1
 	// starts from this deliverState

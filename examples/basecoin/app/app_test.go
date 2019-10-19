@@ -68,11 +68,8 @@ var (
 
 func newBasecoinApp() *BasecoinApp {
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "sdk/app")
-	dbMain := dbm.NewMemDB()
-	dbAcc := dbm.NewMemDB()
-	dbIBC := dbm.NewMemDB()
-	dbStaking := dbm.NewMemDB()
-	return NewBasecoinApp(logger, dbMain, dbAcc, dbIBC, dbStaking)
+	db := dbm.NewMemDB()
+	return NewBasecoinApp(logger, db)
 }
 
 //_______________________________________________________________________
@@ -115,7 +112,9 @@ func TestMsgs(t *testing.T) {
 }
 
 func TestGenesis(t *testing.T) {
-	bapp := newBasecoinApp()
+	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "sdk/app")
+	db := dbm.NewMemDB()
+	bapp := NewBasecoinApp(logger, db)
 
 	// Construct some genesis bytes to reflect basecoin/types/AppAccount
 	pk := crypto.GenPrivKeyEd25519().PubKey()
@@ -128,9 +127,12 @@ func TestGenesis(t *testing.T) {
 	}
 	acc := &types.AppAccount{baseAcc, "foobart"}
 
-	genesisState := types.GenesisState{
-		Accounts: []*types.GenesisAccount{
+	genesisState := map[string]interface{}{
+		"accounts": []*types.GenesisAccount{
 			types.NewGenesisAccount(acc),
+		},
+		"cool": map[string]string{
+			"trend": "ice-cold",
 		},
 	}
 	stateBytes, err := json.MarshalIndent(genesisState, "", "\t")
@@ -166,9 +168,12 @@ func TestSendMsgWithAccounts(t *testing.T) {
 	acc1 := &types.AppAccount{baseAcc, "foobart"}
 
 	// Construct genesis state
-	genesisState := types.GenesisState{
-		Accounts: []*types.GenesisAccount{
+	genesisState := map[string]interface{}{
+		"accounts": []*types.GenesisAccount{
 			types.NewGenesisAccount(acc1),
+		},
+		"cool": map[string]string{
+			"trend": "ice-cold",
 		},
 	}
 	stateBytes, err := json.MarshalIndent(genesisState, "", "\t")
@@ -238,9 +243,12 @@ func TestQuizMsg(t *testing.T) {
 	acc1 := &types.AppAccount{baseAcc, "foobart"}
 
 	// Construct genesis state
-	genesisState := types.GenesisState{
-		Accounts: []*types.GenesisAccount{
+	genesisState := map[string]interface{}{
+		"accounts": []*types.GenesisAccount{
 			types.NewGenesisAccount(acc1),
+		},
+		"cool": map[string]string{
+			"trend": "ice-cold",
 		},
 	}
 	stateBytes, err := json.MarshalIndent(genesisState, "", "\t")
@@ -285,9 +293,12 @@ func TestHandler(t *testing.T) {
 		Coins:   coins,
 	}
 	acc1 := &types.AppAccount{baseAcc, "foobart"}
-	genesisState := types.GenesisState{
-		Accounts: []*types.GenesisAccount{
+	genesisState := map[string]interface{}{
+		"accounts": []*types.GenesisAccount{
 			types.NewGenesisAccount(acc1),
+		},
+		"cool": map[string]string{
+			"trend": "ice-cold",
 		},
 	}
 	stateBytes, err := json.MarshalIndent(genesisState, "", "\t")
