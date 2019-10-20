@@ -7,10 +7,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	wrsp "github.com/tepleton/wrsp/types"
 	crypto "github.com/tepleton/go-crypto"
 	dbm "github.com/tepleton/tmlibs/db"
 
-	"github.com/tepleton/tepleton-sdk/store"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
@@ -21,16 +21,18 @@ func subspace(prefix []byte) (start, end []byte) {
 	return prefix, end
 }
 
-func initTestStore(t *testing.T) sdk.KVStore {
-	// Capabilities key to access the main KVStore.
-	//db, err := dbm.NewGoLevelDB("stake", "data")
+func createTestInput(t *testing.T, isCheckTx bool) (store sdk.KVStore, ctx sdk.Context, key sdk.StoreKey) {
 	db := dbm.NewMemDB()
-	stakeStoreKey := sdk.NewKVStoreKey("stake")
+	key = sdk.NewKVStoreKey("stake")
+
 	ms := store.NewCommitMultiStore(db)
-	ms.MountStoreWithDB(stakeStoreKey, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(key, sdk.StoreTypeIAVL, db)
 	err := ms.LoadLatestVersion()
 	require.Nil(t, err)
-	return ms.GetKVStore(stakeStoreKey)
+
+	ctx = sdk.NewContext(ms, wrsp.Header{ChainID: "foochainid"}, isCheckTx, nil)
+	store = ms.GetKVStore(key)
+	return
 }
 
 func newAddrs(n int) (addrs []crypto.Address) {

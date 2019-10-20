@@ -1,7 +1,7 @@
 package stake
 
 import (
-	"github.com/tepleton/go-wire"
+	"github.com/tepleton/tepleton-sdk/wire"
 )
 
 // XXX complete

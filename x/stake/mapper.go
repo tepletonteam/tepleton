@@ -2,17 +2,13 @@ package stake
 
 import (
 	crypto "github.com/tepleton/go-crypto"
-	wire "github.com/tepleton/go-wire"
 
-	"github.com/tepleton/tepleton-sdk/types"
+	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/wire"
 )
 
-// nolint
+//nolint
 var (
-
-	// internal wire codec
-	cdc *wire.Codec
-
 	// Keys for store prefixes
 	CandidatesPubKeysKey = []byte{0x01} // key for all candidates' pubkeys
 	ParamKey             = []byte{0x02} // key for global parameters relating to staking
@@ -26,20 +22,13 @@ var (
 	DelegatorBondsKeyPrefix   = []byte{0x08} // prefix for each key to a delegator's bond
 )
 
-func init() {
-	cdc = wire.NewCodec()
-	cdc.RegisterInterface((*types.Rational)(nil), nil) // XXX make like crypto.RegisterWire()
-	cdc.RegisterConcrete(types.Rat{}, "rat", nil)
-	crypto.RegisterWire(cdc)
-}
-
 // GetCandidateKey - get the key for the candidate with pubKey
 func GetCandidateKey(pubKey crypto.PubKey) []byte {
 	return append(CandidateKeyPrefix, pubKey.Bytes()...)
 }
 
 // GetValidatorKey - get the key for the validator used in the power-store
-func GetValidatorKey(pubKey crypto.PubKey, power types.Rational) []byte {
+func GetValidatorKey(pubKey crypto.PubKey, power sdk.Rational) []byte {
 	b, _ := cdc.MarshalJSON(power)                                     // TODO need to handle error here?
 	return append(ValidatorKeyPrefix, append(b, pubKey.Bytes()...)...) // TODO does this need prefix if its in its own store
 }
@@ -72,10 +61,28 @@ func GetDelegatorBondsKey(delegator crypto.Address) []byte {
 	return append(DelegatorBondsKeyPrefix, res...)
 }
 
-//---------------------------------------------------------------------
+//___________________________________________________________________________
 
-func loadCandidate(store types.KVStore, pubKey crypto.PubKey) *Candidate {
-	b := store.Get(GetCandidateKey(pubKey))
+// mapper of the staking store
+type Mapper struct {
+	store sdk.KVStore
+	cdc   *wire.Codec
+}
+
+func NewMapper(ctx sdk.Context, key sdk.StoreKey) Mapper {
+	cdc := wire.NewCodec()
+	cdc.RegisterInterface((*sdk.Rational)(nil), nil) // XXX make like crypto.RegisterWire()
+	cdc.RegisterConcrete(sdk.Rat{}, "rat", nil)
+	crypto.RegisterWire(cdc)
+
+	return StakeMapper{
+		store: ctx.KVStore(m.key),
+		cdc:   cdc,
+	}
+}
+
+func (m Mapper) loadCandidate(pubKey crypto.PubKey) *Candidate {
+	b := m.store.Get(GetCandidateKey(pubKey))
 	if b == nil {
 		return nil
 	}
@@ -87,31 +94,31 @@ func loadCandidate(store types.KVStore, pubKey crypto.PubKey) *Candidate {
 	return candidate
 }
 
-func saveCandidate(store types.KVStore, candidate *Candidate) {
+func (m Mapper) saveCandidate(candidate *Candidate) {
 
 	// XXX should only remove validator if we know candidate is a validator
-	removeValidator(store, candidate.PubKey)
+	removeValidator(m.store, candidate.PubKey)
 	validator := &Validator{candidate.PubKey, candidate.VotingPower}
-	updateValidator(store, validator)
+	updateValidator(m.store, validator)
 
 	b, err := cdc.MarshalJSON(*candidate)
 	if err != nil {
 		panic(err)
 	}
-	store.Set(GetCandidateKey(candidate.PubKey), b)
+	m.store.Set(GetCandidateKey(candidate.PubKey), b)
 }
 
-func removeCandidate(store types.KVStore, pubKey crypto.PubKey) {
+func (m Mapper) removeCandidate(pubKey crypto.PubKey) {
 
 	// XXX should only remove validator if we know candidate is a validator
-	removeValidator(store, pubKey)
-	store.Delete(GetCandidateKey(pubKey))
+	removeValidator(m.store, pubKey)
+	m.store.Delete(GetCandidateKey(pubKey))
 }
 
-//---------------------------------------------------------------------
+//___________________________________________________________________________
 
-//func loadValidator(store types.KVStore, pubKey crypto.PubKey, votingPower types.Rational) *Validator {
-//b := store.Get(GetValidatorKey(pubKey, votingPower))
+//func loadValidator(m.store sdk.KVStore, pubKey crypto.PubKey, votingPower sdk.Rational) *Validator {
+//b := m.store.Get(GetValidatorKey(pubKey, votingPower))
 //if b == nil {
 //return nil
 //}
@@ -125,7 +132,7 @@ func removeCandidate(store types.KVStore, pubKey crypto.PubKey) {
 
 // updateValidator - update a validator and create accumulate any changes
 // in the changed validator substore
-func updateValidator(store types.KVStore, validator *Validator) {
+func (m Mapper) updateValidator(validator *Validator) {
 
 	b, err := cdc.MarshalJSON(*validator)
 	if err != nil {
@@ -133,34 +140,34 @@ func updateValidator(store types.KVStore, validator *Validator) {
 	}
 
 	// add to the validators to update list if necessary
-	store.Set(GetValidatorUpdatesKey(validator.PubKey), b)
+	m.store.Set(GetValidatorUpdatesKey(validator.PubKey), b)
 
 	// update the list ordered by voting power
-	store.Set(GetValidatorKey(validator.PubKey, validator.VotingPower), b)
+	m.store.Set(GetValidatorKey(validator.PubKey, validator.VotingPower), b)
 }
 
-func removeValidator(store types.KVStore, pubKey crypto.PubKey) {
+func (m Mapper) removeValidator(pubKey crypto.PubKey) {
 
 	//add validator with zero power to the validator updates
-	b, err := cdc.MarshalJSON(Validator{pubKey, types.ZeroRat})
+	b, err := cdc.MarshalJSON(Validator{pubKey, sdk.ZeroRat})
 	if err != nil {
 		panic(err)
 	}
-	store.Set(GetValidatorUpdatesKey(pubKey), b)
+	m.store.Set(GetValidatorUpdatesKey(pubKey), b)
 
 	// now actually delete from the validator set
-	candidate := loadCandidate(store, pubKey)
+	candidate := loadCandidate(m.store, pubKey)
 	if candidate != nil {
-		store.Delete(GetValidatorKey(pubKey, candidate.VotingPower))
+		m.store.Delete(GetValidatorKey(pubKey, candidate.VotingPower))
 	}
 }
 
 // get the most recent updated validator set from the Candidates. These bonds
 // are already sorted by VotingPower from the UpdateVotingPower function which
 // is the only function which is to modify the VotingPower
-func getValidators(store types.KVStore, maxVal int) (validators []Validator) {
+func (m Mapper) getValidators(maxVal int) (validators []Validator) {
 
-	iterator := store.Iterator(subspace(ValidatorKeyPrefix)) //smallest to largest
+	iterator := m.store.Iterator(subspace(ValidatorKeyPrefix)) //smallest to largest
 
 	validators = make([]Validator, maxVal)
 	for i := 0; ; i++ {
@@ -181,12 +188,12 @@ func getValidators(store types.KVStore, maxVal int) (validators []Validator) {
 	return
 }
 
-//---------------------------------------------------------------------
+//_________________________________________________________________________
 
 // get the most updated validators
-func getValidatorUpdates(store types.KVStore) (updates []Validator) {
+func (m Mapper) getValidatorUpdates() (updates []Validator) {
 
-	iterator := store.Iterator(subspace(ValidatorUpdatesKeyPrefix)) //smallest to largest
+	iterator := m.store.Iterator(subspace(ValidatorUpdatesKeyPrefix)) //smallest to largest
 
 	for ; iterator.Valid(); iterator.Next() {
 		valBytes := iterator.Value()
@@ -203,10 +210,10 @@ func getValidatorUpdates(store types.KVStore) (updates []Validator) {
 }
 
 // remove all validator update entries
-func clearValidatorUpdates(store types.KVStore, maxVal int) {
-	iterator := store.Iterator(subspace(ValidatorUpdatesKeyPrefix))
+func (m Mapper) clearValidatorUpdates(maxVal int) {
+	iterator := m.store.Iterator(subspace(ValidatorUpdatesKeyPrefix))
 	for ; iterator.Valid(); iterator.Next() {
-		store.Delete(iterator.Key()) // XXX write test for this, may need to be in a second loop
+		m.store.Delete(iterator.Key()) // XXX write test for this, may need to be in a second loop
 	}
 	iterator.Close()
 }
@@ -214,11 +221,11 @@ func clearValidatorUpdates(store types.KVStore, maxVal int) {
 //---------------------------------------------------------------------
 
 // loadCandidates - get the active list of all candidates TODO replace with  multistore
-func loadCandidates(store types.KVStore) (candidates Candidates) {
+func (m Mapper) loadCandidates() (candidates Candidates) {
 
-	iterator := store.Iterator(subspace(CandidateKeyPrefix))
-	//iterator := store.Iterator(CandidateKeyPrefix, []byte(nil))
-	//iterator := store.Iterator([]byte{}, []byte(nil))
+	iterator := m.store.Iterator(subspace(CandidateKeyPrefix))
+	//iterator := m.store.Iterator(CandidateKeyPrefix, []byte(nil))
+	//iterator := m.store.Iterator([]byte{}, []byte(nil))
 
 	for ; iterator.Valid(); iterator.Next() {
 		candidateBytes := iterator.Value()
@@ -233,13 +240,12 @@ func loadCandidates(store types.KVStore) (candidates Candidates) {
 	return candidates
 }
 
-//---------------------------------------------------------------------
+//_____________________________________________________________________
 
 // load the pubkeys of all candidates a delegator is delegated too
-func loadDelegatorCandidates(store types.KVStore,
-	delegator crypto.Address) (candidates []crypto.PubKey) {
+func (m Mapper) loadDelegatorCandidates(delegator crypto.Address) (candidates []crypto.PubKey) {
 
-	candidateBytes := store.Get(GetDelegatorBondsKey(delegator))
+	candidateBytes := m.store.Get(GetDelegatorBondsKey(delegator))
 	if candidateBytes == nil {
 		return nil
 	}
@@ -251,12 +257,12 @@ func loadDelegatorCandidates(store types.KVStore,
 	return
 }
 
-//---------------------------------------------------------------------
+//_____________________________________________________________________
 
-func loadDelegatorBond(store types.KVStore,
-	delegator crypto.Address, candidate crypto.PubKey) *DelegatorBond {
+func (m Mapper) loadDelegatorBond(delegator crypto.Address,
+	candidate crypto.PubKey) *DelegatorBond {
 
-	delegatorBytes := store.Get(GetDelegatorBondKey(delegator, candidate))
+	delegatorBytes := m.store.Get(GetDelegatorBondKey(delegator, candidate))
 	if delegatorBytes == nil {
 		return nil
 	}
@@ -269,17 +275,18 @@ func loadDelegatorBond(store types.KVStore,
 	return bond
 }
 
-func saveDelegatorBond(store types.KVStore, delegator crypto.Address, bond *DelegatorBond) {
+func (m Mapper) saveDelegatorBond(delegator crypto.Address,
+	bond *DelegatorBond) {
 
 	// if a new bond add to the list of bonds
-	if loadDelegatorBond(store, delegator, bond.PubKey) == nil {
-		pks := loadDelegatorCandidates(store, delegator)
+	if loadDelegatorBond(m.store, delegator, bond.PubKey) == nil {
+		pks := loadDelegatorCandidates(m.store, delegator)
 		pks = append(pks, (*bond).PubKey)
 		b, err := cdc.MarshalJSON(pks)
 		if err != nil {
 			panic(err)
 		}
-		store.Set(GetDelegatorBondsKey(delegator), b)
+		m.store.Set(GetDelegatorBondsKey(delegator), b)
 	}
 
 	// now actually save the bond
@@ -287,14 +294,14 @@ func saveDelegatorBond(store types.KVStore, delegator crypto.Address, bond *Dele
 	if err != nil {
 		panic(err)
 	}
-	store.Set(GetDelegatorBondKey(delegator, bond.PubKey), b)
+	m.store.Set(GetDelegatorBondKey(delegator, bond.PubKey), b)
 	//updateDelegatorBonds(store, delegator)
 }
 
-func removeDelegatorBond(store types.KVStore, delegator crypto.Address, candidate crypto.PubKey) {
+func (m Mapper) removeDelegatorBond(delegator crypto.Address, candidate crypto.PubKey) {
 	// TODO use list queries on multistore to remove iterations here!
 	// first remove from the list of bonds
-	pks := loadDelegatorCandidates(store, delegator)
+	pks := loadDelegatorCandidates(m.store, delegator)
 	for i, pk := range pks {
 		if candidate.Equals(pk) {
 			pks = append(pks[:i], pks[i+1:]...)
@@ -304,18 +311,18 @@ func removeDelegatorBond(store types.KVStore, delegator crypto.Address, candidat
 	if err != nil {
 		panic(err)
 	}
-	store.Set(GetDelegatorBondsKey(delegator), b)
+	m.store.Set(GetDelegatorBondsKey(delegator), b)
 
 	// now remove the actual bond
-	store.Delete(GetDelegatorBondKey(delegator, candidate))
+	m.store.Delete(GetDelegatorBondKey(delegator, candidate))
 	//updateDelegatorBonds(store, delegator)
 }
 
 //_______________________________________________________________________
 
 // load/save the global staking params
-func loadParams(store types.KVStore) (params Params) {
-	b := store.Get(ParamKey)
+func (m Mapper) loadParams() (params Params) {
+	b := m.store.Get(ParamKey)
 	if b == nil {
 		return defaultParams()
 	}
@@ -324,22 +331,21 @@ func loadParams(store types.KVStore) (params Params) {
 	if err != nil {
 		panic(err) // This error should never occur big problem if does
 	}
-
 	return
 }
-func saveParams(store types.KVStore, params Params) {
+func (m Mapper) saveParams(params Params) {
 	b, err := cdc.MarshalJSON(params)
 	if err != nil {
 		panic(err)
 	}
-	store.Set(ParamKey, b)
+	m.store.Set(ParamKey, b)
 }
 
 //_______________________________________________________________________
 
 // load/save the global staking state
-func loadGlobalState(store types.KVStore) (gs *GlobalState) {
-	b := store.Get(GlobalStateKey)
+func (m Mapper) loadGlobalState() (gs *GlobalState) {
+	b := m.store.Get(GlobalStateKey)
 	if b == nil {
 		return initialGlobalState()
 	}
@@ -350,10 +356,11 @@ func loadGlobalState(store types.KVStore) (gs *GlobalState) {
 	}
 	return
 }
-func saveGlobalState(store types.KVStore, gs *GlobalState) {
+
+func (m Mapper) saveGlobalState(gs *GlobalState) {
 	b, err := cdc.MarshalJSON(*gs)
 	if err != nil {
 		panic(err)
 	}
-	store.Set(GlobalStateKey, b)
+	m.store.Set(GlobalStateKey, b)
 }
