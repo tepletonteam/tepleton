@@ -1,4 +1,4 @@
-package bank
+package stake
 
 import (
 	"github.com/tepleton/go-wire"
