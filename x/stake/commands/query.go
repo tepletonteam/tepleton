@@ -12,6 +12,7 @@ import (
 	crypto "github.com/tepleton/go-crypto"
 
 	"github.com/tepleton/tepleton-sdk/client/builder"
+	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire" // XXX fix
 	"github.com/tepleton/tepleton-sdk/x/stake"
 )
@@ -79,7 +80,7 @@ func GetCmdQueryCandidate(cdc *wire.Codec, storeName string) *cobra.Command {
 		Short: "Query a validator-candidate account",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			addr, err := GetAddress(viper.GetString(FlagValidatorAddr))
+			addr, err := sdk.GetAddress(viper.GetString(FlagValidatorAddr))
 			if err != nil {
 				return err
 			}
@@ -119,7 +120,7 @@ func GetCmdQueryDelegatorBond(cdc *wire.Codec, storeName string) *cobra.Command 
 		Short: "Query a delegators bond based on address and candidate pubkey",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			addr, err := GetAddress(viper.GetString(FlagValidatorAddr))
+			addr, err := sdk.GetAddress(viper.GetString(FlagValidatorAddr))
 			if err != nil {
 				return err
 			}
