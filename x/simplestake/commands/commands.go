@@ -13,7 +13,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/builder"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
-	simplestake "github.com/tepleton/tepleton-sdk/x/simplestake"
+	"github.com/tepleton/tepleton-sdk/x/simplestake"
 )
 
 const (

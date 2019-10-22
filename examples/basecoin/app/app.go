@@ -15,7 +15,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/bank"
 	"github.com/tepleton/tepleton-sdk/x/ibc"
-	simplestake "github.com/tepleton/tepleton-sdk/x/simplestake"
+	"github.com/tepleton/tepleton-sdk/x/simplestake"
 
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/types"
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/x/cool"
