@@ -30,7 +30,7 @@ func main() {
 	var baseApp = bam.NewBaseApp("kvstore", logger, db)
 
 	// Set mounts for BaseApp's MultiStore.
-	baseApp.MountStoresIAVL(capKeyMainStore)
+	baseApp.MountStore(capKeyMainStore, sdk.StoreTypeIAVL)
 
 	// Set Tx decoder
 	baseApp.SetTxDecoder(decodeTx)

@@ -2,9 +2,8 @@ package main
 
 import (
 	"errors"
-	"os"
-
 	"github.com/spf13/cobra"
+	"os"
 
 	"github.com/tepleton/tmlibs/cli"
 
@@ -14,11 +13,12 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/rpc"
 	"github.com/tepleton/tepleton-sdk/client/tx"
 
+	coolcmd "github.com/tepleton/tepleton-sdk/examples/basecoin/x/cool/commands"
 	"github.com/tepleton/tepleton-sdk/version"
 	authcmd "github.com/tepleton/tepleton-sdk/x/auth/commands"
 	bankcmd "github.com/tepleton/tepleton-sdk/x/bank/commands"
 	ibccmd "github.com/tepleton/tepleton-sdk/x/ibc/commands"
-	simplestakingcmd "github.com/tepleton/tepleton-sdk/x/simplestake/commands"
+	stakingcmd "github.com/tepleton/tepleton-sdk/x/staking/commands"
 
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/app"
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/types"
@@ -64,16 +64,24 @@ func main() {
 		)...)
 	basecliCmd.AddCommand(
 		client.PostCommands(
+			coolcmd.QuizTxCmd(cdc),
+		)...)
+	basecliCmd.AddCommand(
+		client.PostCommands(
+			coolcmd.SetTrendTxCmd(cdc),
+		)...)
+	basecliCmd.AddCommand(
+		client.PostCommands(
 			ibccmd.IBCTransferCmd(cdc),
 		)...)
 	basecliCmd.AddCommand(
 		client.PostCommands(
 			ibccmd.IBCRelayCmd(cdc),
-			simplestakingcmd.BondTxCmd(cdc),
+			stakingcmd.BondTxCmd(cdc),
 		)...)
 	basecliCmd.AddCommand(
 		client.PostCommands(
-			simplestakingcmd.UnbondTxCmd(cdc),
+			stakingcmd.UnbondTxCmd(cdc),
 		)...)
 
 	// add proxy, version and key info
