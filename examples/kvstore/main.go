@@ -3,12 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
-
-	"github.com/spf13/viper"
 
 	"github.com/tepleton/wrsp/server"
-	"github.com/tepleton/tmlibs/cli"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
@@ -21,8 +17,7 @@ func main() {
 
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "main")
 
-	rootDir := viper.GetString(cli.HomeFlag)
-	db, err := dbm.NewGoLevelDB("basecoind", filepath.Join(rootDir, "data"))
+	db, err := dbm.NewGoLevelDB("basecoind", "data")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
