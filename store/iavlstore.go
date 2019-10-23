@@ -122,23 +122,7 @@ func (st *iavlStore) Iterator(start, end []byte) Iterator {
 func (st *iavlStore) Subspace(prefix []byte) Iterator {
 	end := make([]byte, len(prefix))
 	copy(end, prefix)
-	finished := false
-	i := 1
-
-	for !finished {
-		if end[len(end)-i] != byte(255) {
-			end[len(end)-i]++
-			finished = true
-		} else {
-			end[len(end)-i]++
-			i++
-			if i > len(end) {
-				end = nil
-				finished = true
-			}
-		}
-	}
-	fmt.Printf("%v \n", end)
+	end[len(end)-1]++
 	return st.Iterator(prefix, end)
 }
 
@@ -242,7 +226,6 @@ func newIAVLIterator(tree *iavl.Tree, start, end []byte, ascending bool) *iavlIt
 		quitCh:    make(chan struct{}),
 		initCh:    make(chan struct{}),
 	}
-	fmt.Printf("%v   %v \n", iter.start, iter.end)
 	go iter.iterateRoutine()
 	go iter.initRoutine()
 	return iter
