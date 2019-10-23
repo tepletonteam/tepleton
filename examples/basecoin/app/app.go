@@ -15,7 +15,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/bank"
 	"github.com/tepleton/tepleton-sdk/x/ibc"
-	"github.com/tepleton/tepleton-sdk/x/simplestake"
+	"github.com/tepleton/tepleton-sdk/x/staking"
 
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/types"
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/x/cool"
@@ -47,7 +47,7 @@ func NewBasecoinApp(logger log.Logger, db dbm.DB) *BasecoinApp {
 		cdc:                MakeCodec(),
 		capKeyMainStore:    sdk.NewKVStoreKey("main"),
 		capKeyIBCStore:     sdk.NewKVStoreKey("ibc"),
-		capKeyStakingStore: sdk.NewKVStoreKey("stake"),
+		capKeyStakingStore: sdk.NewKVStoreKey("staking"),
 	}
 
 	// define the accountMapper
@@ -60,13 +60,13 @@ func NewBasecoinApp(logger log.Logger, db dbm.DB) *BasecoinApp {
 	coinKeeper := bank.NewCoinKeeper(app.accountMapper)
 	coolKeeper := cool.NewKeeper(app.capKeyMainStore, coinKeeper)
 	ibcMapper := ibc.NewIBCMapper(app.cdc, app.capKeyIBCStore)
-	stakeKeeper := simplestake.NewKeeper(app.capKeyStakingStore, coinKeeper)
+	stakeKeeper := staking.NewKeeper(app.capKeyStakingStore, coinKeeper)
 	app.Router().
 		AddRoute("bank", bank.NewHandler(coinKeeper), nil).
 		AddRoute("cool", cool.NewHandler(coolKeeper), coolKeeper.InitGenesis).
 		AddRoute("sketchy", sketchy.NewHandler(), nil).
 		AddRoute("ibc", ibc.NewHandler(ibcMapper, coinKeeper), nil).
-		AddRoute("simplestake", simplestake.NewHandler(stakeKeeper), nil)
+		AddRoute("staking", staking.NewHandler(stakeKeeper), nil)
 
 	// initialize BaseApp
 	app.SetTxDecoder(app.txDecoder)
@@ -100,8 +100,8 @@ func MakeCodec() *wire.Codec {
 		oldwire.ConcreteType{cool.SetTrendMsg{}, msgTypeSetTrend},
 		oldwire.ConcreteType{ibc.IBCTransferMsg{}, msgTypeIBCTransferMsg},
 		oldwire.ConcreteType{ibc.IBCReceiveMsg{}, msgTypeIBCReceiveMsg},
-		oldwire.ConcreteType{simplestake.BondMsg{}, msgTypeBondMsg},
-		oldwire.ConcreteType{simplestake.UnbondMsg{}, msgTypeUnbondMsg},
+		oldwire.ConcreteType{staking.BondMsg{}, msgTypeBondMsg},
+		oldwire.ConcreteType{staking.UnbondMsg{}, msgTypeUnbondMsg},
 	)
 
 	const accTypeApp = 0x1
