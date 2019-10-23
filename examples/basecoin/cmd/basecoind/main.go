@@ -51,11 +51,23 @@ func defaultOptions(args []string) (json.RawMessage, error) {
 }
 
 func generateApp(rootDir string, logger log.Logger) (wrsp.Application, error) {
-	db, err := dbm.NewGoLevelDB("basecoin", filepath.Join(rootDir, "data"))
+	dbMain, err := dbm.NewGoLevelDB("basecoin", filepath.Join(rootDir, "data"))
 	if err != nil {
 		return nil, err
 	}
-	bapp := app.NewBasecoinApp(logger, db)
+	dbAcc, err := dbm.NewGoLevelDB("basecoin-acc", filepath.Join(rootDir, "data"))
+	if err != nil {
+		return nil, err
+	}
+	dbIBC, err := dbm.NewGoLevelDB("basecoin-ibc", filepath.Join(rootDir, "data"))
+	if err != nil {
+		return nil, err
+	}
+	dbStaking, err := dbm.NewGoLevelDB("basecoin-staking", filepath.Join(rootDir, "data"))
+	if err != nil {
+		return nil, err
+	}
+	bapp := app.NewBasecoinApp(logger, dbMain, dbAcc, dbIBC, dbStaking)
 	return bapp, nil
 }
 
@@ -69,7 +81,6 @@ func main() {
 		server.StartCmd(generateApp, logger),
 		server.UnsafeResetAllCmd(logger),
 		server.ShowNodeIdCmd(logger),
-		server.ShowValidatorCmd(logger),
 		version.VersionCmd,
 	)
 

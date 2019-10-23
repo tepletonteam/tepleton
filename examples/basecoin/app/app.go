@@ -15,11 +15,10 @@ import (
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/bank"
 	"github.com/tepleton/tepleton-sdk/x/ibc"
-	"github.com/tepleton/tepleton-sdk/x/simplestake"
+	"github.com/tepleton/tepleton-sdk/x/staking"
 
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/types"
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/x/cool"
-	"github.com/tepleton/tepleton-sdk/examples/basecoin/x/sketchy"
 )
 
 const (
@@ -33,6 +32,7 @@ type BasecoinApp struct {
 
 	// keys to access the substores
 	capKeyMainStore    *sdk.KVStoreKey
+	capKeyAccountStore *sdk.KVStoreKey
 	capKeyIBCStore     *sdk.KVStoreKey
 	capKeyStakingStore *sdk.KVStoreKey
 
@@ -40,14 +40,15 @@ type BasecoinApp struct {
 	accountMapper sdk.AccountMapper
 }
 
-func NewBasecoinApp(logger log.Logger, db dbm.DB) *BasecoinApp {
+func NewBasecoinApp(logger log.Logger, dbMain, dbAcc, dbIBC, dbStaking dbm.DB) *BasecoinApp {
 	// create your application object
 	var app = &BasecoinApp{
-		BaseApp:            bam.NewBaseApp(appName, logger, db),
+		BaseApp:            bam.NewBaseApp(appName, logger, dbMain),
 		cdc:                MakeCodec(),
 		capKeyMainStore:    sdk.NewKVStoreKey("main"),
+		capKeyAccountStore: sdk.NewKVStoreKey("acc"),
 		capKeyIBCStore:     sdk.NewKVStoreKey("ibc"),
-		capKeyStakingStore: sdk.NewKVStoreKey("stake"),
+		capKeyStakingStore: sdk.NewKVStoreKey("staking"),
 	}
 
 	// define the accountMapper
@@ -60,18 +61,22 @@ func NewBasecoinApp(logger log.Logger, db dbm.DB) *BasecoinApp {
 	coinKeeper := bank.NewCoinKeeper(app.accountMapper)
 	coolKeeper := cool.NewKeeper(app.capKeyMainStore, coinKeeper)
 	ibcMapper := ibc.NewIBCMapper(app.cdc, app.capKeyIBCStore)
-	stakeKeeper := simplestake.NewKeeper(app.capKeyStakingStore, coinKeeper)
+	stakeKeeper := staking.NewKeeper(app.capKeyStakingStore, coinKeeper)
 	app.Router().
-		AddRoute("bank", bank.NewHandler(coinKeeper), nil).
-		AddRoute("cool", cool.NewHandler(coolKeeper), coolKeeper.InitGenesis).
-		AddRoute("sketchy", sketchy.NewHandler(), nil).
-		AddRoute("ibc", ibc.NewHandler(ibcMapper, coinKeeper), nil).
-		AddRoute("simplestake", simplestake.NewHandler(stakeKeeper), nil)
+		AddRoute("bank", bank.NewHandler(coinKeeper)).
+		AddRoute("cool", cool.NewHandler(coolKeeper)).
+		AddRoute("ibc", ibc.NewHandler(ibcMapper, coinKeeper)).
+		AddRoute("staking", staking.NewHandler(stakeKeeper))
 
 	// initialize BaseApp
 	app.SetTxDecoder(app.txDecoder)
 	app.SetInitChainer(app.initChainer)
-	app.MountStoresIAVL(app.capKeyMainStore, app.capKeyIBCStore, app.capKeyStakingStore)
+	app.MountStoreWithDB(app.capKeyMainStore, sdk.StoreTypeIAVL, dbMain)
+	app.MountStoreWithDB(app.capKeyAccountStore, sdk.StoreTypeIAVL, dbAcc)
+	app.MountStoreWithDB(app.capKeyIBCStore, sdk.StoreTypeIAVL, dbIBC)
+	app.MountStoreWithDB(app.capKeyStakingStore, sdk.StoreTypeIAVL, dbStaking)
+	// NOTE: Broken until #532 lands
+	//app.MountStoresIAVL(app.capKeyMainStore, app.capKeyIBCStore, app.capKeyStakingStore)
 	app.SetAnteHandler(auth.NewAnteHandler(app.accountMapper))
 	err := app.LoadLatestVersion(app.capKeyMainStore)
 	if err != nil {
@@ -100,8 +105,8 @@ func MakeCodec() *wire.Codec {
 		oldwire.ConcreteType{cool.SetTrendMsg{}, msgTypeSetTrend},
 		oldwire.ConcreteType{ibc.IBCTransferMsg{}, msgTypeIBCTransferMsg},
 		oldwire.ConcreteType{ibc.IBCReceiveMsg{}, msgTypeIBCReceiveMsg},
-		oldwire.ConcreteType{simplestake.BondMsg{}, msgTypeBondMsg},
-		oldwire.ConcreteType{simplestake.UnbondMsg{}, msgTypeUnbondMsg},
+		oldwire.ConcreteType{staking.BondMsg{}, msgTypeBondMsg},
+		oldwire.ConcreteType{staking.UnbondMsg{}, msgTypeUnbondMsg},
 	)
 
 	const accTypeApp = 0x1

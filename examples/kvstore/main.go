@@ -30,13 +30,13 @@ func main() {
 	var baseApp = bam.NewBaseApp("kvstore", logger, db)
 
 	// Set mounts for BaseApp's MultiStore.
-	baseApp.MountStore(capKeyMainStore, sdk.StoreTypeIAVL)
+	baseApp.MountStoresIAVL(capKeyMainStore)
 
 	// Set Tx decoder
 	baseApp.SetTxDecoder(decodeTx)
 
 	// Set a handler Route.
-	baseApp.Router().AddRoute("kvstore", KVStoreHandler(capKeyMainStore), nil)
+	baseApp.Router().AddRoute("kvstore", KVStoreHandler(capKeyMainStore))
 
 	// Load latest version.
 	if err := baseApp.LoadLatestVersion(capKeyMainStore); err != nil {

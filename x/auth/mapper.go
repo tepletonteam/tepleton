@@ -165,6 +165,7 @@ func (am accountMapper) decodeAccount(bz []byte) sdk.Account {
 	accI := oldwire.ReadBinary(struct{ sdk.Account }{}, r, len(bz), n, err)
 	if *err != nil {
 		panic(*err)
+
 	}
 
 	acc := accI.(struct{ sdk.Account }).Account
