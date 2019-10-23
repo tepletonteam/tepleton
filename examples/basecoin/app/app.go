@@ -15,10 +15,9 @@ import (
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/bank"
 	"github.com/tepleton/tepleton-sdk/x/ibc"
-	"github.com/tepleton/tepleton-sdk/x/staking"
+	"github.com/tepleton/tepleton-sdk/x/simplestake"
 
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/types"
-	"github.com/tepleton/tepleton-sdk/examples/basecoin/x/cool"
 )
 
 const (
@@ -48,7 +47,7 @@ func NewBasecoinApp(logger log.Logger, dbs map[string]dbm.DB) *BasecoinApp {
 		capKeyMainStore:    sdk.NewKVStoreKey("main"),
 		capKeyAccountStore: sdk.NewKVStoreKey("acc"),
 		capKeyIBCStore:     sdk.NewKVStoreKey("ibc"),
-		capKeyStakingStore: sdk.NewKVStoreKey("staking"),
+		capKeyStakingStore: sdk.NewKVStoreKey("stake"),
 	}
 
 	// define the accountMapper
@@ -59,14 +58,12 @@ func NewBasecoinApp(logger log.Logger, dbs map[string]dbm.DB) *BasecoinApp {
 
 	// add handlers
 	coinKeeper := bank.NewCoinKeeper(app.accountMapper)
-	coolKeeper := cool.NewKeeper(app.capKeyMainStore, coinKeeper)
 	ibcMapper := ibc.NewIBCMapper(app.cdc, app.capKeyIBCStore)
-	stakeKeeper := staking.NewKeeper(app.capKeyStakingStore, coinKeeper)
+	stakeKeeper := simplestake.NewKeeper(app.capKeyStakingStore, coinKeeper)
 	app.Router().
-		AddRoute("bank", bank.NewHandler(coinKeeper)).
-		AddRoute("cool", cool.NewHandler(coolKeeper)).
-		AddRoute("ibc", ibc.NewHandler(ibcMapper, coinKeeper)).
-		AddRoute("staking", staking.NewHandler(stakeKeeper))
+		AddRoute("bank", bank.NewHandler(coinKeeper), nil).
+		AddRoute("ibc", ibc.NewHandler(ibcMapper, coinKeeper), nil).
+		AddRoute("simplestake", simplestake.NewHandler(stakeKeeper), nil)
 
 	// initialize BaseApp
 	app.SetTxDecoder(app.txDecoder)
@@ -101,12 +98,10 @@ func MakeCodec() *wire.Codec {
 		struct{ sdk.Msg }{},
 		oldwire.ConcreteType{bank.SendMsg{}, msgTypeSend},
 		oldwire.ConcreteType{bank.IssueMsg{}, msgTypeIssue},
-		oldwire.ConcreteType{cool.QuizMsg{}, msgTypeQuiz},
-		oldwire.ConcreteType{cool.SetTrendMsg{}, msgTypeSetTrend},
 		oldwire.ConcreteType{ibc.IBCTransferMsg{}, msgTypeIBCTransferMsg},
 		oldwire.ConcreteType{ibc.IBCReceiveMsg{}, msgTypeIBCReceiveMsg},
-		oldwire.ConcreteType{staking.BondMsg{}, msgTypeBondMsg},
-		oldwire.ConcreteType{staking.UnbondMsg{}, msgTypeUnbondMsg},
+		oldwire.ConcreteType{simplestake.BondMsg{}, msgTypeBondMsg},
+		oldwire.ConcreteType{simplestake.UnbondMsg{}, msgTypeUnbondMsg},
 	)
 
 	const accTypeApp = 0x1

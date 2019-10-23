@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/types"
-	"github.com/tepleton/tepleton-sdk/examples/basecoin/x/cool"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/bank"
@@ -39,31 +38,6 @@ var (
 		Inputs:  []bank.Input{bank.NewInput(addr1, coins)},
 		Outputs: []bank.Output{bank.NewOutput(addr2, coins)},
 	}
-
-	quizMsg1 = cool.QuizMsg{
-		Sender:     addr1,
-		CoolAnswer: "icecold",
-	}
-
-	quizMsg2 = cool.QuizMsg{
-		Sender:     addr1,
-		CoolAnswer: "badvibesonly",
-	}
-
-	setTrendMsg1 = cool.SetTrendMsg{
-		Sender: addr1,
-		Cool:   "icecold",
-	}
-
-	setTrendMsg2 = cool.SetTrendMsg{
-		Sender: addr1,
-		Cool:   "badvibesonly",
-	}
-
-	setTrendMsg3 = cool.SetTrendMsg{
-		Sender: addr1,
-		Cool:   "warmandkind",
-	}
 )
 
 func loggerAndDBs() (log.Logger, map[string]dbm.DB) {
@@ -91,8 +65,6 @@ func TestMsgs(t *testing.T) {
 		msg sdk.Msg
 	}{
 		{sendMsg},
-		{quizMsg1},
-		{setTrendMsg1},
 	}
 
 	sequences := []int64{0}
@@ -136,8 +108,8 @@ func TestGenesis(t *testing.T) {
 	}
 	acc := &types.AppAccount{baseAcc, "foobart"}
 
-	genesisState := types.GenesisState{
-		Accounts: []*types.GenesisAccount{
+	genesisState := map[string]interface{}{
+		"accounts": []*types.GenesisAccount{
 			types.NewGenesisAccount(acc),
 		},
 	}
@@ -173,8 +145,8 @@ func TestSendMsgWithAccounts(t *testing.T) {
 	acc1 := &types.AppAccount{baseAcc, "foobart"}
 
 	// Construct genesis state
-	genesisState := types.GenesisState{
-		Accounts: []*types.GenesisAccount{
+	genesisState := map[string]interface{}{
+		"accounts": []*types.GenesisAccount{
 			types.NewGenesisAccount(acc1),
 		},
 	}
@@ -245,8 +217,8 @@ func TestQuizMsg(t *testing.T) {
 	acc1 := &types.AppAccount{baseAcc, "foobart"}
 
 	// Construct genesis state
-	genesisState := types.GenesisState{
-		Accounts: []*types.GenesisAccount{
+	genesisState := map[string]interface{}{
+		"accounts": []*types.GenesisAccount{
 			types.NewGenesisAccount(acc1),
 		},
 	}
@@ -263,21 +235,6 @@ func TestQuizMsg(t *testing.T) {
 	res1 := bapp.accountMapper.GetAccount(ctxCheck, addr1)
 	assert.Equal(t, acc1, res1)
 
-	// Set the trend, submit a really cool quiz and check for reward
-	SignCheckDeliver(t, bapp, setTrendMsg1, 0, true)
-	SignCheckDeliver(t, bapp, quizMsg1, 1, true)
-	CheckBalance(t, bapp, "69icecold")
-	SignCheckDeliver(t, bapp, quizMsg2, 2, false) // result without reward
-	CheckBalance(t, bapp, "69icecold")
-	SignCheckDeliver(t, bapp, quizMsg1, 3, true)
-	CheckBalance(t, bapp, "138icecold")
-	SignCheckDeliver(t, bapp, setTrendMsg2, 4, true) // reset the trend
-	SignCheckDeliver(t, bapp, quizMsg1, 5, false)    // the same answer will nolonger do!
-	CheckBalance(t, bapp, "138icecold")
-	SignCheckDeliver(t, bapp, quizMsg2, 6, true) // earlier answer now relavent again
-	CheckBalance(t, bapp, "69badvibesonly,138icecold")
-	SignCheckDeliver(t, bapp, setTrendMsg3, 7, false) // expect to fail to set the trend to something which is not cool
-
 }
 
 func TestHandler(t *testing.T) {
@@ -292,8 +249,8 @@ func TestHandler(t *testing.T) {
 		Coins:   coins,
 	}
 	acc1 := &types.AppAccount{baseAcc, "foobart"}
-	genesisState := types.GenesisState{
-		Accounts: []*types.GenesisAccount{
+	genesisState := map[string]interface{}{
+		"accounts": []*types.GenesisAccount{
 			types.NewGenesisAccount(acc1),
 		},
 	}
