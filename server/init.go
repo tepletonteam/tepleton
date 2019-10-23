@@ -2,17 +2,31 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	cmn "github.com/tepleton/tmlibs/common"
 	"github.com/tepleton/tmlibs/log"
 
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 	cfg "github.com/tepleton/tepleton/config"
+	"github.com/tepleton/tepleton/p2p"
 	tmtypes "github.com/tepleton/tepleton/types"
 )
+
+const (
+	flagTestnet = "testnet"
+)
+
+type testnetInformation struct {
+	Secret    string                   `json:"secret"`
+	Account   string                   `json:"account"`
+	Validator tmtypes.GenesisValidator `json:"validator"`
+	NodeID    p2p.ID                   `json:"node_id"`
+}
 
 // InitCmd will initialize all files for tepleton,
 // along with proper app_state.
@@ -24,17 +38,20 @@ func InitCmd(gen GenAppState, logger log.Logger) *cobra.Command {
 		genAppState: gen,
 		logger:      logger,
 	}
-	return &cobra.Command{
+	cobraCmd := cobra.Command{
 		Use:   "init",
 		Short: "Initialize genesis files",
 		RunE:  cmd.run,
 	}
+	cobraCmd.Flags().Bool(flagTestnet, false, "Output testnet information in JSON")
+	return &cobraCmd
 }
 
 // GenAppState can parse command-line and flag to
 // generate default app_state for the genesis file.
+// Also must return generated seed and address
 // This is application-specific
-type GenAppState func(args []string) (json.RawMessage, error)
+type GenAppState func(args []string) (json.RawMessage, string, cmn.HexBytes, error)
 
 type initCmd struct {
 	genAppState GenAppState
@@ -42,13 +59,20 @@ type initCmd struct {
 }
 
 func (c initCmd) run(cmd *cobra.Command, args []string) error {
+	// Store testnet information as we go
+	var testnetInfo testnetInformation
+
+	if viper.GetBool(flagTestnet) {
+		c.logger = log.NewFilter(c.logger, log.AllowError())
+	}
+
 	// Run the basic tepleton initialization,
 	// set up a default genesis with no app_options
 	config, err := tcmd.ParseConfig()
 	if err != nil {
 		return err
 	}
-	err = c.initTendermintFiles(config)
+	err = c.initTendermintFiles(config, &testnetInfo)
 	if err != nil {
 		return err
 	}
@@ -59,19 +83,38 @@ func (c initCmd) run(cmd *cobra.Command, args []string) error {
 	}
 
 	// Now, we want to add the custom app_state
-	appState, err := c.genAppState(args)
+	appState, secret, address, err := c.genAppState(args)
 	if err != nil {
 		return err
 	}
 
+	testnetInfo.Secret = secret
+	testnetInfo.Account = address.String()
+
 	// And add them to the genesis file
 	genFile := config.GenesisFile()
-	return addGenesisState(genFile, appState)
+	if err := addGenesisState(genFile, appState); err != nil {
+		return err
+	}
+
+	if viper.GetBool(flagTestnet) {
+		nodeKey, err := p2p.LoadOrGenNodeKey(config.NodeKeyFile())
+		if err != nil {
+			return err
+		}
+		testnetInfo.NodeID = nodeKey.ID()
+		out, err := json.MarshalIndent(testnetInfo, "", "  ")
+		if err != nil {
+			return err
+		}
+		fmt.Println(string(out))
+	}
+	return nil
 }
 
 // This was copied from tepleton/cmd/tepleton/commands/init.go
 // so we could pass in the config and the logger.
-func (c initCmd) initTendermintFiles(config *cfg.Config) error {
+func (c initCmd) initTendermintFiles(config *cfg.Config, info *testnetInformation) error {
 	// private validator
 	privValFile := config.PrivValidatorFile()
 	var privValidator *tmtypes.PrivValidatorFS
@@ -102,6 +145,18 @@ func (c initCmd) initTendermintFiles(config *cfg.Config) error {
 		}
 		c.logger.Info("Generated genesis file", "path", genFile)
 	}
+
+	// reload the config file and find our validator info
+	loadedDoc, err := tmtypes.GenesisDocFromFile(genFile)
+	if err != nil {
+		return err
+	}
+	for _, validator := range loadedDoc.Validators {
+		if validator.PubKey == privValidator.GetPubKey() {
+			info.Validator = validator
+		}
+	}
+
 	return nil
 }
 

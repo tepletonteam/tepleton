@@ -122,24 +122,7 @@ func (st *iavlStore) Iterator(start, end []byte) Iterator {
 func (st *iavlStore) Subspace(prefix []byte) Iterator {
 	end := make([]byte, len(prefix))
 	copy(end, prefix)
-	finished := false
-	i := 1
-
-	for !finished {
-		fmt.Printf("%v %v \n", len(end), i)
-		fmt.Printf("%v \n", end)
-		if end[len(end)-i] != byte(255) {
-			end[len(end)-i]++
-			finished = true
-		} else {
-			end[len(end)-i]++
-			i++
-			if i > len(end) {
-				end = []byte{}
-				finished = true
-			}
-		}
-	}
+	end[len(end)-1]++
 	return st.Iterator(prefix, end)
 }
 
