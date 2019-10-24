@@ -10,7 +10,6 @@ import (
 
 	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/tmlibs/cli"
-	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
 
@@ -29,11 +28,14 @@ var (
 
 // defaultOptions sets up the app_options for the
 // default genesis file
-func defaultOptions(args []string) (json.RawMessage, string, cmn.HexBytes, error) {
+func defaultOptions(args []string) (json.RawMessage, error) {
 	addr, secret, err := server.GenerateCoinKey()
 	if err != nil {
-		return nil, "", nil, err
+		return nil, err
 	}
+	fmt.Println("Secret phrase to access coins:")
+	fmt.Println(secret)
+
 	opts := fmt.Sprintf(`{
       "accounts": [{
         "address": "%s",
@@ -45,33 +47,15 @@ func defaultOptions(args []string) (json.RawMessage, string, cmn.HexBytes, error
         ]
       }]
     }`, addr)
-	return json.RawMessage(opts), secret, addr, nil
+	return json.RawMessage(opts), nil
 }
 
 func generateApp(rootDir string, logger log.Logger) (wrsp.Application, error) {
-	dbMain, err := dbm.NewGoLevelDB("basecoin", filepath.Join(rootDir, "data"))
+	db, err := dbm.NewGoLevelDB("basecoin", filepath.Join(rootDir, "data"))
 	if err != nil {
 		return nil, err
 	}
-	dbAcc, err := dbm.NewGoLevelDB("basecoin-acc", filepath.Join(rootDir, "data"))
-	if err != nil {
-		return nil, err
-	}
-	dbIBC, err := dbm.NewGoLevelDB("basecoin-ibc", filepath.Join(rootDir, "data"))
-	if err != nil {
-		return nil, err
-	}
-	dbStaking, err := dbm.NewGoLevelDB("basecoin-staking", filepath.Join(rootDir, "data"))
-	if err != nil {
-		return nil, err
-	}
-	dbs := map[string]dbm.DB{
-		"main":    dbMain,
-		"acc":     dbAcc,
-		"ibc":     dbIBC,
-		"staking": dbStaking,
-	}
-	bapp := app.NewBasecoinApp(logger, dbs)
+	bapp := app.NewBasecoinApp(logger, db)
 	return bapp, nil
 }
 

@@ -9,7 +9,6 @@ import (
 
 	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/tmlibs/cli"
-	cmn "github.com/tepleton/tmlibs/common"
 	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/tepleton-sdk/baseapp"
@@ -27,10 +26,10 @@ var (
 
 // defaultOptions sets up the app_options for the
 // default genesis file
-func defaultOptions(args []string) (json.RawMessage, string, cmn.HexBytes, error) {
+func defaultOptions(args []string) (json.RawMessage, error) {
 	addr, secret, err := server.GenerateCoinKey()
 	if err != nil {
-		return nil, "", nil, err
+		return nil, err
 	}
 	fmt.Println("Secret phrase to access coins:")
 	fmt.Println(secret)
@@ -46,7 +45,7 @@ func defaultOptions(args []string) (json.RawMessage, string, cmn.HexBytes, error
         ]
       }]
     }`, addr)
-	return json.RawMessage(opts), secret, addr, nil
+	return json.RawMessage(opts), nil
 }
 
 func generateApp(rootDir string, logger log.Logger) (wrsp.Application, error) {
