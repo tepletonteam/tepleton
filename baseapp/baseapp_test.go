@@ -35,15 +35,12 @@ func TestMountStores(t *testing.T) {
 
 	// make some cap keys
 	capKey1 := sdk.NewKVStoreKey("key1")
-	db1 := dbm.NewMemDB()
 	capKey2 := sdk.NewKVStoreKey("key2")
-	db2 := dbm.NewMemDB()
 
 	// no stores are mounted
 	assert.Panics(t, func() { app.LoadLatestVersion(capKey1) })
 
-	app.MountStoreWithDB(capKey1, sdk.StoreTypeIAVL, db1)
-	app.MountStoreWithDB(capKey2, sdk.StoreTypeIAVL, db2)
+	app.MountStoresIAVL(capKey1, capKey2)
 
 	// stores are mounted
 	err := app.LoadLatestVersion(capKey1)
@@ -129,6 +126,7 @@ func TestTxDecoder(t *testing.T) {
 
 // Test that Info returns the latest committed state.
 func TestInfo(t *testing.T) {
+
 	app := newBaseApp(t.Name())
 
 	// ----- test an empty response -------
@@ -147,19 +145,17 @@ func TestInfo(t *testing.T) {
 }
 
 func TestInitChainer(t *testing.T) {
-	name := t.Name()
-	db := dbm.NewMemDB()
 	logger := defaultLogger()
+	db := dbm.NewMemDB()
+	name := t.Name()
 	app := NewBaseApp(name, logger, db)
+
 	// make cap keys and mount the stores
 	// NOTE/TODO: mounting multiple stores is broken
 	// see https://github.com/tepleton/tepleton-sdk/issues/532
 	capKey := sdk.NewKVStoreKey("main")
-	db1 := dbm.NewMemDB()
-	capKey2 := sdk.NewKVStoreKey("key2")
-	db2 := dbm.NewMemDB()
-	app.MountStoreWithDB(capKey, sdk.StoreTypeIAVL, db1)
-	app.MountStoreWithDB(capKey2, sdk.StoreTypeIAVL, db2)
+	// capKey2 := sdk.NewKVStoreKey("key2")
+	app.MountStoresIAVL(capKey)          // , capKey2)
 	err := app.LoadLatestVersion(capKey) // needed to make stores non-nil
 	assert.Nil(t, err)
 
@@ -191,8 +187,9 @@ func TestInitChainer(t *testing.T) {
 
 	// reload app
 	app = NewBaseApp(name, logger, db)
-	app.MountStoreWithDB(capKey, sdk.StoreTypeIAVL, db1)
-	app.MountStoreWithDB(capKey2, sdk.StoreTypeIAVL, db2)
+	capKey = sdk.NewKVStoreKey("main")
+	// capKey2 = sdk.NewKVStoreKey("key2") // TODO
+	app.MountStoresIAVL(capKey)         //, capKey2)
 	err = app.LoadLatestVersion(capKey) // needed to make stores non-nil
 	assert.Nil(t, err)
 	app.SetInitChainer(initChainer)
@@ -249,7 +246,7 @@ func TestDeliverTx(t *testing.T) {
 
 		counter += 1
 		return sdk.Result{}
-	})
+	}, nil)
 
 	tx := testUpdatePowerTx{} // doesn't matter
 	header := wrsp.Header{AppHash: []byte("apphash")}
@@ -284,7 +281,7 @@ func TestQuery(t *testing.T) {
 		store := ctx.KVStore(capKey)
 		store.Set(key, value)
 		return sdk.Result{}
-	})
+	}, nil)
 
 	query := wrsp.RequestQuery{
 		Path: "/main/key",
@@ -349,7 +346,7 @@ func TestValidatorChange(t *testing.T) {
 	app.Router().AddRoute(msgType, func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		// TODO
 		return sdk.Result{}
-	})
+	}, nil)
 
 	// Load latest state, which should be empty.
 	err := app.LoadLatestVersion(capKey)
