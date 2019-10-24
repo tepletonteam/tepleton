@@ -119,19 +119,16 @@ func (st *iavlStore) Iterator(start, end []byte) Iterator {
 	return newIAVLIterator(st.tree.Tree(), start, end, true)
 }
 
-// Implements KVStore.
+func (st *iavlStore) Subspace(prefix []byte) Iterator {
+	end := make([]byte, len(prefix))
+	copy(end, prefix)
+	end[len(end)-1]++
+	return st.Iterator(prefix, end)
+}
+
+// Implements IterKVStore.
 func (st *iavlStore) ReverseIterator(start, end []byte) Iterator {
 	return newIAVLIterator(st.tree.Tree(), start, end, false)
-}
-
-// Implements KVStore.
-func (st *iavlStore) Subspace(prefix []byte) Iterator {
-	return st.Iterator(prefix, sdk.PrefixEndBytes(prefix))
-}
-
-// Implements KVStore.
-func (st *iavlStore) ReverseSubspace(prefix []byte) Iterator {
-	return st.ReverseIterator(prefix, sdk.PrefixEndBytes(prefix))
 }
 
 // Query implements WRSP interface, allows queries
@@ -342,9 +339,6 @@ func (iter *iavlIterator) assertIsValid() {
 //----------------------------------------
 
 func cp(bz []byte) (ret []byte) {
-	if bz == nil {
-		return nil
-	}
 	ret = make([]byte, len(bz))
 	copy(ret, bz)
 	return ret

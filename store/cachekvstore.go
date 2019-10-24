@@ -5,7 +5,6 @@ import (
 	"sort"
 	"sync"
 
-	sdk "github.com/tepleton/tepleton-sdk/types"
 	cmn "github.com/tepleton/tmlibs/common"
 )
 
@@ -133,16 +132,6 @@ func (ci *cacheKVStore) Iterator(start, end []byte) Iterator {
 // Implements KVStore.
 func (ci *cacheKVStore) ReverseIterator(start, end []byte) Iterator {
 	return ci.iterator(start, end, false)
-}
-
-// Implements KVStore.
-func (ci *cacheKVStore) Subspace(prefix []byte) Iterator {
-	return ci.iterator(prefix, sdk.PrefixEndBytes(prefix), true)
-}
-
-// Implements KVStore.
-func (ci *cacheKVStore) ReverseSubspace(prefix []byte) Iterator {
-	return ci.iterator(prefix, sdk.PrefixEndBytes(prefix), false)
 }
 
 func (ci *cacheKVStore) iterator(start, end []byte, ascending bool) Iterator {
