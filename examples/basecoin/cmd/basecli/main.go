@@ -14,7 +14,6 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/rpc"
 	"github.com/tepleton/tepleton-sdk/client/tx"
 
-	coolcmd "github.com/tepleton/tepleton-sdk/examples/basecoin/x/cool/commands"
 	"github.com/tepleton/tepleton-sdk/version"
 	authcmd "github.com/tepleton/tepleton-sdk/x/auth/commands"
 	bankcmd "github.com/tepleton/tepleton-sdk/x/bank/commands"
@@ -62,14 +61,6 @@ func main() {
 	basecliCmd.AddCommand(
 		client.PostCommands(
 			bankcmd.SendTxCmd(cdc),
-		)...)
-	basecliCmd.AddCommand(
-		client.PostCommands(
-			coolcmd.QuizTxCmd(cdc),
-		)...)
-	basecliCmd.AddCommand(
-		client.PostCommands(
-			coolcmd.SetTrendTxCmd(cdc),
 		)...)
 	basecliCmd.AddCommand(
 		client.PostCommands(
