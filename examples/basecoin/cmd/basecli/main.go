@@ -2,9 +2,8 @@ package main
 
 import (
 	"errors"
-	"os"
-
 	"github.com/spf13/cobra"
+	"os"
 
 	"github.com/tepleton/tmlibs/cli"
 
@@ -19,7 +18,7 @@ import (
 	authcmd "github.com/tepleton/tepleton-sdk/x/auth/commands"
 	bankcmd "github.com/tepleton/tepleton-sdk/x/bank/commands"
 	ibccmd "github.com/tepleton/tepleton-sdk/x/ibc/commands"
-	simplestakingcmd "github.com/tepleton/tepleton-sdk/x/simplestake/commands"
+	stakingcmd "github.com/tepleton/tepleton-sdk/x/staking/commands"
 
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/app"
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/types"
@@ -78,11 +77,11 @@ func main() {
 	basecliCmd.AddCommand(
 		client.PostCommands(
 			ibccmd.IBCRelayCmd(cdc),
-			simplestakingcmd.BondTxCmd(cdc),
+			stakingcmd.BondTxCmd(cdc),
 		)...)
 	basecliCmd.AddCommand(
 		client.PostCommands(
-			simplestakingcmd.UnbondTxCmd(cdc),
+			stakingcmd.UnbondTxCmd(cdc),
 		)...)
 
 	// add proxy, version and key info
