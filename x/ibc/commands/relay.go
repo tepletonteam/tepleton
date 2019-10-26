@@ -9,7 +9,6 @@ import (
 
 	"github.com/tepleton/tmlibs/log"
 
-	"github.com/tepleton/tepleton-sdk/client"
 	"github.com/tepleton/tepleton-sdk/client/core"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
