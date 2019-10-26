@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -206,7 +205,7 @@ func randomCandidate(r *rand.Rand) Candidate {
 }
 
 // generate a random staking state
-func randomSetup(r *rand.Rand) (Pool, Candidate) {
+func randomSetup(r *rand.Rand, numCandidates int) (Pool, Candidates) {
 	pool := Pool{
 		TotalSupply:       0,
 		BondedShares:      sdk.ZeroRat,
@@ -217,75 +216,72 @@ func randomSetup(r *rand.Rand) (Pool, Candidate) {
 		Inflation:         sdk.NewRat(7, 100),
 	}
 
-	candidate := randomCandidate(r)
-	if candidate.Status == Bonded {
-		pool.BondedShares = pool.BondedShares.Add(candidate.Assets)
-		pool.BondedPool += candidate.Assets.Evaluate()
-	} else {
-		pool.UnbondedShares = pool.UnbondedShares.Add(candidate.Assets)
-		pool.UnbondedPool += candidate.Assets.Evaluate()
+	candidates := make([]Candidate, numCandidates)
+	for i := 0; i < numCandidates; i++ {
+		candidate := randomCandidate(r)
+		if candidate.Status == Bonded {
+			pool.BondedShares = pool.BondedShares.Add(candidate.Assets)
+			pool.BondedPool += candidate.Assets.Evaluate()
+		} else if candidate.Status == Unbonded {
+			pool.UnbondedShares = pool.UnbondedShares.Add(candidate.Assets)
+			pool.UnbondedPool += candidate.Assets.Evaluate()
+		}
+		candidates[i] = candidate
 	}
-	return pool, candidate
+	return pool, candidates
 }
 
 func randomTokens(r *rand.Rand) int64 {
 	return int64(r.Int31n(10000))
 }
 
-// operation that transforms staking state
-type Operation func(p Pool, c Candidate) (Pool, Candidate, int64, string)
+// any operation that transforms staking state
+type Operation func(r *rand.Rand, p Pool, c Candidate) (Pool, Candidate, int64, string)
+
+// operation: bond or unbond a candidate depending on current status
+func BondOrUnbond(r *rand.Rand, p Pool, cand Candidate) (Pool, Candidate, int64, string) {
+	var msg string
+	if cand.Status == Bonded {
+		msg = fmt.Sprintf("Unbonded previously bonded candidate %s (assets: %v, liabilities: %v, delegatorShareExRate: %v)",
+			cand.Address, cand.Assets, cand.Liabilities, cand.delegatorShareExRate())
+		p, cand = p.bondedToUnbondedPool(cand)
+	} else if cand.Status == Unbonded {
+		msg = fmt.Sprintf("Bonded previously unbonded candidate %s (assets: %v, liabilities: %v, delegatorShareExRate: %v)",
+			cand.Address, cand.Assets, cand.Liabilities, cand.delegatorShareExRate())
+		p, cand = p.unbondedToBondedPool(cand)
+	}
+	return p, cand, 0, msg
+}
+
+// operation: add a random number of tokens to a candidate
+func AddTokens(r *rand.Rand, p Pool, cand Candidate) (Pool, Candidate, int64, string) {
+	tokens := int64(r.Int31n(1000))
+	msg := fmt.Sprintf("candidate %s (status: %d, assets: %v, liabilities: %v, delegatorShareExRate: %v)",
+		cand.Address, cand.Status, cand.Assets, cand.Liabilities, cand.delegatorShareExRate())
+	p, cand, _ = p.candidateAddTokens(cand, tokens)
+	msg = fmt.Sprintf("Added %d tokens to %s", tokens, msg)
+	return p, cand, -1 * tokens, msg // tokens are removed so for accounting must be negative
+}
+
+// operation: remove a random number of shares from a candidate
+func RemoveShares(r *rand.Rand, p Pool, cand Candidate) (Pool, Candidate, int64, string) {
+	shares := sdk.NewRat(int64(r.Int31n(1000)))
+	if shares.GT(cand.Liabilities) {
+		shares = cand.Liabilities.Quo(sdk.NewRat(2))
+	}
+	msg := fmt.Sprintf("candidate %s (status: %d, assets: %v, liabilities: %v, delegatorShareExRate: %v)",
+		cand.Address, cand.Status, cand.Assets, cand.Liabilities, cand.delegatorShareExRate())
+	p, cand, tokens := p.candidateRemoveShares(cand, shares)
+	msg = fmt.Sprintf("Removed %d shares from %s", shares.Evaluate(), msg)
+	return p, cand, tokens, msg
+}
 
 // pick a random staking operation
 func randomOperation(r *rand.Rand) Operation {
 	operations := []Operation{
-
-		// bond/unbond
-		func(p Pool, cand Candidate) (Pool, Candidate, int64, string) {
-
-			var msg string
-			if cand.Status == Bonded {
-				msg = fmt.Sprintf("Unbonded previously bonded candidate %s (assets: %d, liabilities: %d, delegatorShareExRate: %v)",
-					cand.Address, cand.Assets.Evaluate(), cand.Liabilities.Evaluate(), cand.delegatorShareExRate())
-				p, cand = p.bondedToUnbondedPool(cand)
-			} else {
-				msg = fmt.Sprintf("Bonded previously unbonded candidate %s (assets: %d, liabilities: %d, delegatorShareExRate: %v)",
-					cand.Address, cand.Assets.Evaluate(), cand.Liabilities.Evaluate(), cand.delegatorShareExRate())
-				p, cand = p.unbondedToBondedPool(cand)
-			}
-			return p, cand, 0, msg
-		},
-
-		// add some tokens to a candidate
-		func(p Pool, cand Candidate) (Pool, Candidate, int64, string) {
-
-			tokens := int64(r.Int31n(1000))
-
-			msg := fmt.Sprintf("candidate %s (assets: %d, liabilities: %d, delegatorShareExRate: %v)",
-				cand.Address, cand.Assets.Evaluate(), cand.Liabilities.Evaluate(), cand.delegatorShareExRate())
-
-			p, cand, _ = p.candidateAddTokens(cand, tokens)
-
-			msg = fmt.Sprintf("Added %d tokens to %s", tokens, msg)
-			return p, cand, -1 * tokens, msg // tokens are removed so for accounting must be negative
-		},
-
-		// remove some shares from a candidate
-		func(p Pool, cand Candidate) (Pool, Candidate, int64, string) {
-
-			shares := sdk.NewRat(int64(r.Int31n(1000)))
-
-			if shares.GT(cand.Liabilities) {
-				shares = cand.Liabilities.Quo(sdk.NewRat(2))
-			}
-
-			msg := fmt.Sprintf("candidate %s (assets: %d, liabilities: %d, delegatorShareExRate: %v)",
-				cand.Address, cand.Assets.Evaluate(), cand.Liabilities.Evaluate(), cand.delegatorShareExRate())
-			p, cand, tokens := p.candidateRemoveShares(cand, shares)
-
-			msg = fmt.Sprintf("Removed %d shares from %s", shares.Evaluate(), msg)
-
-			return p, cand, tokens, msg
-		},
+		BondOrUnbond,
+		AddTokens,
+		RemoveShares,
 	}
 	r.Shuffle(len(operations), func(i, j int) {
 		operations[i], operations[j] = operations[j], operations[i]
@@ -295,24 +291,24 @@ func randomOperation(r *rand.Rand) Operation {
 
 // ensure invariants that should always be true are true
 func assertInvariants(t *testing.T, msg string,
-	pOrig Pool, cOrig Candidate, pMod Pool, cMod Candidate, tokens int64) {
+	pOrig Pool, cOrig Candidates, pMod Pool, cMods Candidates, tokens int64) {
 
 	// total tokens conserved
 	require.Equal(t,
 		pOrig.UnbondedPool+pOrig.BondedPool,
 		pMod.UnbondedPool+pMod.BondedPool+tokens,
-		"msg: %v\n, pOrig.UnbondedPool: %v, pOrig.BondedPool: %v, pMod.UnbondedPool: %v, pMod.BondedPool: %v, tokens: %v\n",
+		"Tokens not conserved - msg: %v\n, pOrig.UnbondedPool: %v, pOrig.BondedPool: %v, pMod.UnbondedPool: %v, pMod.BondedPool: %v, tokens: %v\n",
 		msg,
 		pOrig.UnbondedPool, pOrig.BondedPool,
 		pMod.UnbondedPool, pMod.BondedPool, tokens)
 
 	// nonnegative shares
 	require.False(t, pMod.BondedShares.LT(sdk.ZeroRat),
-		"msg: %v\n, pOrig: %v\n, pMod: %v\n, cOrig: %v\n, cMod %v, tokens: %v\n",
-		msg, pOrig, pMod, cOrig, cMod, tokens)
+		"Negative bonded shares - msg: %v\n, pOrig: %v\n, pMod: %v\n, tokens: %v\n",
+		msg, pOrig, pMod, tokens)
 	require.False(t, pMod.UnbondedShares.LT(sdk.ZeroRat),
-		"msg: %v\n, pOrig: %v\n, pMod: %v\n, cOrig: %v\n, cMod %v, tokens: %v\n",
-		msg, pOrig, pMod, cOrig, cMod, tokens)
+		"Negative unbonded shares - msg: %v\n, pOrig: %v\n, pMod: %v\n, tokens: %v\n",
+		msg, pOrig, pMod, tokens)
 
 	// nonnegative ex rates
 	require.False(t, pMod.bondedShareExRate().LT(sdk.ZeroRat),
@@ -323,38 +319,63 @@ func assertInvariants(t *testing.T, msg string,
 		"Applying operation \"%s\" resulted in negative unbondedShareExRate: %d",
 		msg, pMod.unbondedShareExRate().Evaluate())
 
-	// nonnegative ex rate
-	require.False(t, cMod.delegatorShareExRate().LT(sdk.ZeroRat),
-		"Applying operation \"%s\" resulted in negative candidate.delegatorShareExRate(): %v (candidate.PubKey: %s)",
-		msg,
-		cMod.delegatorShareExRate(),
-		cMod.PubKey,
-	)
+	// bonded/unbonded pool correct
+	bondedPool := sdk.ZeroRat
+	unbondedPool := sdk.ZeroRat
 
-	// nonnegative assets / liabilities
-	require.False(t, cMod.Assets.LT(sdk.ZeroRat),
-		"Applying operation \"%s\" resulted in negative candidate.Assets: %d (candidate.Liabilities: %d, candidate.PubKey: %s)",
-		msg,
-		cMod.Assets.Evaluate(),
-		cMod.Liabilities.Evaluate(),
-		cMod.PubKey,
-	)
+	for _, cMod := range cMods {
 
-	require.False(t, cMod.Liabilities.LT(sdk.ZeroRat),
-		"Applying operation \"%s\" resulted in negative candidate.Liabilities: %d (candidate.Assets: %d, candidate.PubKey: %s)",
-		msg,
-		cMod.Liabilities.Evaluate(),
-		cMod.Assets.Evaluate(),
-		cMod.PubKey,
-	)
+		if cMod.Status == Bonded {
+			bondedPool = bondedPool.Add(cMod.Assets)
+		} else {
+			unbondedPool = unbondedPool.Add(cMod.Assets)
+		}
+
+		// nonnegative ex rate
+		require.False(t, cMod.delegatorShareExRate().LT(sdk.ZeroRat),
+			"Applying operation \"%s\" resulted in negative candidate.delegatorShareExRate(): %v (candidate.Address: %s)",
+			msg,
+			cMod.delegatorShareExRate(),
+			cMod.Address,
+		)
+
+		// nonnegative assets / liabilities
+		require.False(t, cMod.Assets.LT(sdk.ZeroRat),
+			"Applying operation \"%s\" resulted in negative candidate.Assets: %v (candidate.Liabilities: %v, candidate.delegatorShareExRate: %v, candidate.Address: %s)",
+			msg,
+			cMod.Assets,
+			cMod.Liabilities,
+			cMod.delegatorShareExRate(),
+			cMod.Address,
+		)
+
+		require.False(t, cMod.Liabilities.LT(sdk.ZeroRat),
+			"Applying operation \"%s\" resulted in negative candidate.Liabilities: %v (candidate.Assets: %v, candidate.delegatorShareExRate: %v, candidate.Address: %s)",
+			msg,
+			cMod.Liabilities,
+			cMod.Assets,
+			cMod.delegatorShareExRate(),
+			cMod.Address,
+		)
+	}
+
+	//require.Equal(t, pMod.BondedPool, bondedPool.Evaluate(), "Applying operation \"%s\" resulted in unequal bondedPool", msg)
+	//require.Equal(t, pMod.UnbondedPool, unbondedPool.Evaluate(), "Applying operation \"%s\" resulted in unequal unbondedPool", msg)
 }
 
-// run random operations in a random order on a random state, assert invariants hold
-func TestIntegrationInvariants(t *testing.T) {
+// run random operations in a random order on a random single-candidate state, assert invariants hold
+func TestSingleCandidateIntegrationInvariants(t *testing.T) {
+	r := rand.New(rand.NewSource(41))
+
+	var pool Pool
+	var candidateMod Candidate
+	var tokens int64
+	var candidates Candidates
+	var msg string
+
 	for i := 0; i < 10; i++ {
 
-		r1 := rand.New(rand.NewSource(time.Now().UnixNano()))
-		pool, candidates := randomSetup(r1)
+		pool, candidates = randomSetup(r, 1)
 		initialPool, initialCandidates := pool, candidates
 
 		assertInvariants(t, "no operation",
@@ -363,12 +384,52 @@ func TestIntegrationInvariants(t *testing.T) {
 
 		for j := 0; j < 100; j++ {
 
-			r2 := rand.New(rand.NewSource(time.Now().UnixNano()))
-			pool, candidates, tokens, msg := randomOperation(r2)(pool, candidates)
+			pool, candidateMod, tokens, msg = randomOperation(r)(r, pool, candidates[0])
+			candidates[0] = candidateMod
 
 			assertInvariants(t, msg,
 				initialPool, initialCandidates,
 				pool, candidates, tokens)
+
+			initialPool = pool
+			initialCandidates = candidates
+
+		}
+	}
+}
+
+// run random operations in a random order on a random multi-candidate state, assert invariants hold
+func TestMultiCandidateIntegrationInvariants(t *testing.T) {
+	r := rand.New(rand.NewSource(42))
+
+	var pool Pool
+	var candidateMod Candidate
+	var tokens int64
+	var candidates Candidates
+	var msg string
+
+	for i := 0; i < 10; i++ {
+
+		pool, candidates = randomSetup(r, 100)
+		initialPool, initialCandidates := pool, candidates
+
+		assertInvariants(t, "no operation",
+			initialPool, initialCandidates,
+			pool, candidates, 0)
+
+		for j := 0; j < 100; j++ {
+
+			index := int(r.Int31n(int32(len(candidates))))
+			pool, candidateMod, tokens, msg = randomOperation(r)(r, pool, candidates[index])
+			candidates[index] = candidateMod
+
+			assertInvariants(t, msg,
+				initialPool, initialCandidates,
+				pool, candidates, tokens)
+
+			initialPool = pool
+			initialCandidates = candidates
+
 		}
 	}
 }
