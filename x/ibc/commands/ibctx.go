@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/tepleton/tepleton-sdk/client"
-	"github.com/tepleton/tepleton-sdk/client/core"
+	"github.com/tepleton/tepleton-sdk/client/context"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	wire "github.com/tepleton/tepleton-sdk/wire"
@@ -39,7 +39,7 @@ type sendCommander struct {
 }
 
 func (c sendCommander) sendIBCTransfer(cmd *cobra.Command, args []string) error {
-	ctx := core.NewCoreContextFromViper()
+	ctx := context.NewCoreContextFromViper()
 
 	// get the from address
 	from, err := ctx.GetFromAddress()

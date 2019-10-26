@@ -12,7 +12,7 @@ import (
 	ctypes "github.com/tepleton/tepleton/rpc/core/types"
 
 	"github.com/tepleton/tepleton-sdk/client"
-	"github.com/tepleton/tepleton-sdk/client/core"
+	"github.com/tepleton/tepleton-sdk/client/context"
 	"github.com/tepleton/tepleton-sdk/wire"
 )
 
@@ -44,7 +44,7 @@ func (c commander) searchTx(tags []string) ([]byte, error) {
 	query := strings.Join(tags, " AND ")
 
 	// get the node
-	node, err := core.NewCoreContextFromViper().GetNode()
+	node, err := context.NewCoreContextFromViper().GetNode()
 	if err != nil {
 		return nil, err
 	}

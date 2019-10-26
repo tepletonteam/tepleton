@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/tepleton/go-crypto/keys"
 
-	"github.com/tepleton/tepleton-sdk/client/core"
+	"github.com/tepleton/tepleton-sdk/client/context"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/bank/commands"
@@ -70,7 +70,7 @@ func TransferRequestHandler(cdc *wire.Codec, kb keys.Keybase) func(http.Response
 
 		// sign
 		// XXX: OMG
-		ctx := core.NewCoreContextFromViper()
+		ctx := context.NewCoreContextFromViper()
 		ctx.Sequence = m.Sequence
 		txBytes, err := ctx.SignAndBuild(m.LocalAccountName, m.Password, msg, c.Cdc)
 		if err != nil {
