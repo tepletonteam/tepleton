@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/tepleton/tepleton-sdk/client"
-	"github.com/tepleton/tepleton-sdk/client/builder"
+	"github.com/tepleton/tepleton-sdk/client/core"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	wire "github.com/tepleton/tepleton-sdk/wire"
@@ -40,7 +40,7 @@ type sendCommander struct {
 
 func (c sendCommander) sendIBCTransfer(cmd *cobra.Command, args []string) error {
 	// get the from address
-	from, err := builder.GetFromAddress()
+	from, err := core.GetFromAddress()
 	if err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func (c sendCommander) sendIBCTransfer(cmd *cobra.Command, args []string) error 
 	// get password
 	name := viper.GetString(client.FlagName)
 
-	res, err := builder.SignBuildBroadcast(name, msg, c.cdc)
+	res, err := core.SignBuildBroadcast(name, msg, c.cdc)
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func buildMsg(from sdk.Address) (sdk.Msg, error) {
 	}
 	to := sdk.Address(bz)
 
-	packet := ibc.NewIBCPacket(from, to, coins, client.FlagChainID,
+	packet := ibc.NewIBCPacket(from, to, coins, viper.GetString(client.FlagChainID),
 		viper.GetString(flagChain))
 
 	msg := ibc.IBCTransferMsg{

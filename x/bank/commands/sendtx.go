@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/tepleton/tepleton-sdk/client"
-	"github.com/tepleton/tepleton-sdk/client/builder"
+	"github.com/tepleton/tepleton-sdk/client/core"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/bank"
@@ -39,7 +39,7 @@ type Commander struct {
 
 func (c Commander) sendTxCmd(cmd *cobra.Command, args []string) error {
 	// get the from address
-	from, err := builder.GetFromAddress()
+	from, err := core.GetFromAddress()
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func (c Commander) sendTxCmd(cmd *cobra.Command, args []string) error {
 	msg := BuildMsg(from, to, coins)
 
 	// build and sign the transaction, then broadcast to Tendermint
-	res, err := builder.SignBuildBroadcast(name, msg, c.Cdc)
+	res, err := core.SignBuildBroadcast(name, msg, c.Cdc)
 	if err != nil {
 		return err
 	}
