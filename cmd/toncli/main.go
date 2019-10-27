@@ -17,9 +17,9 @@ const (
 	flagFee    = "fee"
 )
 
-// toncliCmd is the entry point for this binary
+// rootCmd is the entry point for this binary
 var (
-	toncliCmd = &cobra.Command{
+	rootCmd = &cobra.Command{
 		Use:   "toncli",
 		Short: "Gaia light-client",
 	}
@@ -54,16 +54,16 @@ func main() {
 	cobra.EnableCommandSorting = false
 
 	// generic client commands
-	AddClientCommands(toncliCmd)
+	AddClientCommands(rootCmd)
 	// query commands (custom to binary)
-	toncliCmd.AddCommand(
+	rootCmd.AddCommand(
 		GetCommands(getAccountCmd)...)
 	// post tx commands (custom to binary)
-	toncliCmd.AddCommand(
+	rootCmd.AddCommand(
 		PostCommands(postSendCommand())...)
 
 	// add proxy, version and key info
-	toncliCmd.AddCommand(
+	rootCmd.AddCommand(
 		lineBreak,
 		serveCommand(),
 		KeyCommands(),
@@ -72,6 +72,6 @@ func main() {
 	)
 
 	// prepare and add flags
-	executor := cli.PrepareBaseCmd(toncliCmd, "GA", os.ExpandEnv("$HOME/.toncli"))
+	executor := cli.PrepareBaseCmd(rootCmd, "GA", os.ExpandEnv("$HOME/.toncli"))
 	executor.Execute()
 }
