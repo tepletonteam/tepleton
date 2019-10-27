@@ -38,11 +38,3 @@ type Result struct {
 func (res Result) IsOK() bool {
 	return res.Code.IsOK()
 }
-
-// ToQuery allows us to return sdk.Error.Result() in query responses
-func (res Result) ToQuery() wrsp.ResponseQuery {
-	return wrsp.ResponseQuery{
-		Code: uint32(res.Code),
-		Log:  res.Log,
-	}
-}

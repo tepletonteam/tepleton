@@ -7,9 +7,13 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	wrsp "github.com/tepleton/wrsp/types"
+	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
+	cfg "github.com/tepleton/tepleton/config"
 	"github.com/tepleton/tmlibs/cli"
+	tmflags "github.com/tepleton/tmlibs/cli/flags"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
@@ -21,9 +25,31 @@ import (
 
 // basecoindCmd is the entry point for this binary
 var (
+	context      = server.NewContext(nil, nil)
 	basecoindCmd = &cobra.Command{
 		Use:   "tond",
 		Short: "Gaia Daemon (server)",
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			if cmd.Name() == version.VersionCmd.Name() {
+				return nil
+			}
+			config, err := tcmd.ParseConfig()
+			if err != nil {
+				return err
+			}
+			logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
+			logger, err = tmflags.ParseLogLevel(config.LogLevel, logger, cfg.DefaultLogLevel())
+			if err != nil {
+				return err
+			}
+			if viper.GetBool(cli.TraceFlag) {
+				logger = log.NewTracingLogger(logger)
+			}
+			logger = logger.With("module", "main")
+			context.Config = config
+			context.Logger = logger
+			return nil
+		},
 	}
 )
 
@@ -76,16 +102,12 @@ func generateApp(rootDir string, logger log.Logger) (wrsp.Application, error) {
 }
 
 func main() {
-	// TODO: set logger through CLI
-	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).
-		With("module", "main")
-
 	basecoindCmd.AddCommand(
-		server.InitCmd(defaultOptions, logger),
-		server.StartCmd(generateApp, logger),
-		server.UnsafeResetAllCmd(logger),
-		server.ShowNodeIdCmd(logger),
-		server.ShowValidatorCmd(logger),
+		server.InitCmd(defaultOptions, context),
+		server.StartCmd(generateApp, context),
+		server.UnsafeResetAllCmd(context),
+		server.ShowNodeIdCmd(context),
+		server.ShowValidatorCmd(context),
 		version.VersionCmd,
 	)
 
