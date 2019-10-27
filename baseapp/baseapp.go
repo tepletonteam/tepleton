@@ -261,7 +261,7 @@ func (app *BaseApp) Query(req wrsp.RequestQuery) (res wrsp.ResponseQuery) {
 	queryable, ok := app.cms.(sdk.Queryable)
 	if !ok {
 		msg := "application doesn't support queries"
-		return sdk.ErrUnknownRequest(msg).QueryResult()
+		return sdk.ErrUnknownRequest(msg).Result().ToQuery()
 	}
 	return queryable.Query(req)
 }

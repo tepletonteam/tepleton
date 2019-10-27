@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/tepleton/tepleton-sdk/client/context"
+	"github.com/tepleton/tepleton-sdk/client/builder"
 )
 
 type BroadcastTxBody struct {
@@ -22,7 +22,7 @@ func BroadcastTxRequestHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := context.NewCoreContextFromViper().BroadcastTx([]byte(m.TxBytes))
+	res, err := builder.BroadcastTx([]byte(m.TxBytes))
 	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte(err.Error()))

@@ -1,8 +1,7 @@
 package server
 
 import (
-	"io/ioutil"
-	"os"
+	//	"os"
 	"testing"
 	"time"
 
@@ -10,41 +9,34 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/tepleton/tepleton-sdk/mock"
-	"github.com/tepleton/wrsp/server"
 	"github.com/tepleton/tmlibs/log"
 )
 
 func TestStartStandAlone(t *testing.T) {
-	home, err := ioutil.TempDir("", "mock-sdk-cmd")
-	defer func() {
-		os.RemoveAll(home)
-	}()
+	defer setupViper(t)()
 
 	logger := log.NewNopLogger()
 	initCmd := InitCmd(mock.GenInitOptions, logger)
-	err = initCmd.RunE(nil, nil)
+	err := initCmd.RunE(nil, nil)
 	require.NoError(t, err)
 
-	app, err := mock.NewApp(home, logger)
-	require.Nil(t, err)
-	svr, err := server.NewServer(FreeTCPAddr(t), "socket", app)
-	require.Nil(t, err, "Error creating listener")
-	svr.SetLogger(logger.With("module", "wrsp-server"))
-	svr.Start()
+	// set up app and start up
+	viper.Set(flagWithTendermint, false)
+	viper.Set(flagAddress, "localhost:11122")
+	startCmd := StartCmd(mock.NewApp, logger)
+	startCmd.Flags().Set(flagAddress, FreeTCPAddr(t)) // set to a new free address
+	timeout := time.Duration(3) * time.Second
 
-	timer := time.NewTimer(time.Duration(5) * time.Second)
-	select {
-	case <-timer.C:
-		svr.Stop()
-	}
-
+	RunOrTimeout(startCmd, timeout, t)
 }
 
+/*
 func TestStartWithTendermint(t *testing.T) {
 	defer setupViper(t)()
 
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).
 		With("module", "mock-cmd")
+		// logger := log.NewNopLogger()
 	initCmd := InitCmd(mock.GenInitOptions, logger)
 	err := initCmd.RunE(nil, nil)
 	require.NoError(t, err)
@@ -53,7 +45,11 @@ func TestStartWithTendermint(t *testing.T) {
 	viper.Set(flagWithTendermint, true)
 	startCmd := StartCmd(mock.NewApp, logger)
 	startCmd.Flags().Set(flagAddress, FreeTCPAddr(t)) // set to a new free address
-	timeout := time.Duration(5) * time.Second
+	timeout := time.Duration(3) * time.Second
 
-	close(RunOrTimeout(startCmd, timeout, t))
+	//a, _ := startCmd.Flags().GetString(flagAddress)
+	//panic(a)
+
+	RunOrTimeout(startCmd, timeout, t)
 }
+*/

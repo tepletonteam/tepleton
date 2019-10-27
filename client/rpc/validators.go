@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/tepleton/tepleton-sdk/client"
-	"github.com/tepleton/tepleton-sdk/client/context"
 )
 
 func validatorCommand() *cobra.Command {
@@ -27,7 +26,7 @@ func validatorCommand() *cobra.Command {
 
 func GetValidators(height *int64) ([]byte, error) {
 	// get the node
-	node, err := context.NewCoreContextFromViper().GetNode()
+	node, err := client.GetNode()
 	if err != nil {
 		return nil, err
 	}
