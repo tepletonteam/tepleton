@@ -15,9 +15,9 @@ import (
 	"github.com/tepleton/tepleton-sdk/server"
 )
 
-// rootCmd is the entry point for this binary
+// basecoindCmd is the entry point for this binary
 var (
-	context = server.NewDefaultContext()
+	context = server.NewContext(nil, nil)
 	rootCmd = &cobra.Command{
 		Use:               "basecoind",
 		Short:             "Basecoin Daemon (server)",
