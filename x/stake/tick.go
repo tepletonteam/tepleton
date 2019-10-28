@@ -2,6 +2,7 @@ package stake
 
 import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
+	wrsp "github.com/tepleton/wrsp/types"
 )
 
 const (
@@ -12,7 +13,7 @@ const (
 var hrsPerYrRat = sdk.NewRat(hrsPerYr) // as defined by a julian year of 365.25 days
 
 // Tick - called at the end of every block
-func (k Keeper) Tick(ctx sdk.Context) (change []Validator) {
+func (k Keeper) Tick(ctx sdk.Context) (change []wrsp.Validator) {
 	p := k.GetPool(ctx)
 
 	// Process Validator Provisions
@@ -26,6 +27,7 @@ func (k Keeper) Tick(ctx sdk.Context) (change []Validator) {
 	k.setPool(ctx, p)
 
 	change = k.getAccUpdateValidators(ctx)
+
 	return
 }
 
