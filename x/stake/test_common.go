@@ -11,7 +11,6 @@ import (
 	oldwire "github.com/tepleton/go-wire"
 	dbm "github.com/tepleton/tmlibs/db"
 
-	"github.com/tepleton/tepleton-sdk/examples/basecoin/types"
 	"github.com/tepleton/tepleton-sdk/store"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
@@ -108,7 +107,7 @@ func makeTestCodec() *wire.Codec {
 	const accTypeApp = 0x1
 	var _ = oldwire.RegisterInterface(
 		struct{ sdk.Account }{},
-		oldwire.ConcreteType{&types.AppAccount{}, accTypeApp},
+		oldwire.ConcreteType{&auth.BaseAccount{}, accTypeApp},
 	)
 	cdc := wire.NewCodec()
 
