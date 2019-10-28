@@ -17,7 +17,7 @@ import (
 
 // rootCmd is the entry point for this binary
 var (
-	context = server.NewContext(nil, nil)
+	context = server.NewDefaultContext()
 	rootCmd = &cobra.Command{
 		Use:               "tond",
 		Short:             "Gaia Daemon (server)",
