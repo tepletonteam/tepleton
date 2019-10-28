@@ -119,20 +119,33 @@ func (c Candidate) validator() Validator {
 
 // Validator is one of the top Candidates
 type Validator struct {
-	Address     sdk.Address `json:"address"`
-	PubKey      sdk.PubKey  `json:"PubKey"`
-	VotingPower sdk.Rat     `json:"voting_power"`
+	Address     sdk.Address   `json:"address"`
+	PubKey      crypto.PubKey `json:"PubKey"`
+	VotingPower sdk.Rat       `json:"voting_power"`
 }
 
-// WRSPValidator - Get the validator from a bond value
-func (v Validator) WRSPValidator() wrsp.Validator {
-	pkBytes, err := wire.MarshalBinary(v.PubKey)
+// wrsp validator from stake validator type
+func (v Validator) wrspValidator(cdc *wire.Codec) wrsp.Validator {
+	pkBytes, err := cdc.MarshalBinary(v.PubKey)
 	if err != nil {
 		panic(err)
 	}
 	return wrsp.Validator{
 		PubKey: pkBytes,
 		Power:  v.VotingPower.Evaluate(),
+	}
+}
+
+// wrsp validator from stake validator type
+// with zero power used for validator updates
+func (v Validator) wrspValidatorZero(cdc *wire.Codec) wrsp.Validator {
+	pkBytes, err := cdc.MarshalBinary(v.PubKey)
+	if err != nil {
+		panic(err)
+	}
+	return wrsp.Validator{
+		PubKey: pkBytes,
+		Power:  0,
 	}
 }
 
