@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	crypto "github.com/tepleton/go-crypto"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -28,7 +27,7 @@ var (
 
 // This function tests GetCandidate, GetCandidates, setCandidate, removeCandidate
 func TestCandidate(t *testing.T) {
-	ctx, _, keeper := createTestInput(t, false, 0)
+	ctx, _, keeper := createTestInput(t, nil, false, 0)
 
 	//construct the candidates
 	var candidates [3]Candidate
@@ -98,7 +97,7 @@ func TestCandidate(t *testing.T) {
 
 // tests GetDelegatorBond, GetDelegatorBonds, SetDelegatorBond, removeDelegatorBond
 func TestBond(t *testing.T) {
-	ctx, _, keeper := createTestInput(t, false, 0)
+	ctx, _, keeper := createTestInput(t, nil, false, 0)
 
 	//construct the candidates
 	amts := []int64{9, 8, 7}
@@ -197,7 +196,7 @@ func TestBond(t *testing.T) {
 // TODO integrate in testing for equal validators, whichever one was a validator
 // first remains the validator https://github.com/tepleton/tepleton-sdk/issues/582
 func TestGetValidators(t *testing.T) {
-	ctx, _, keeper := createTestInput(t, false, 0)
+	ctx, _, keeper := createTestInput(t, nil, false, 0)
 
 	// initialize some candidates into the state
 	amts := []int64{0, 100, 1, 400, 200}
@@ -270,7 +269,7 @@ func TestGetValidators(t *testing.T) {
 
 // clear the tracked changes to the validator set
 func TestClearAccUpdateValidators(t *testing.T) {
-	ctx, _, keeper := createTestInput(t, false, 0)
+	ctx, _, keeper := createTestInput(t, nil, false, 0)
 
 	amts := []int64{100, 400, 200}
 	candidates := make([]Candidate, len(amts))
@@ -295,7 +294,7 @@ func TestClearAccUpdateValidators(t *testing.T) {
 
 // test the mechanism which keeps track of a validator set change
 func TestGetAccUpdateValidators(t *testing.T) {
-	ctx, _, keeper := createTestInput(t, false, 0)
+	ctx, _, keeper := createTestInput(t, nil, false, 0)
 	params := defaultParams()
 	params.MaxValidators = 4
 	keeper.setParams(ctx, params)
@@ -316,15 +315,6 @@ func TestGetAccUpdateValidators(t *testing.T) {
 		}
 	}
 
-	// to compare pubkeys between wrsp pubkey and crypto.PubKey
-	wirePK := func(pk crypto.PubKey) []byte {
-		pkBytes, err := keeper.cdc.MarshalBinary(pk)
-		if err != nil {
-			panic(err)
-		}
-		return pkBytes
-	}
-
 	// test from nothing to something
 	//  candidate set: {} -> {c1, c3}
 	//  validator set: {} -> {c1, c3}
@@ -342,8 +332,8 @@ func TestGetAccUpdateValidators(t *testing.T) {
 	require.Equal(t, 2, len(acc))
 	candidates := keeper.GetCandidates(ctx, 5)
 	require.Equal(t, 2, len(candidates))
-	assert.Equal(t, candidates[0].validator().wrspValidator(keeper.cdc), acc[0])
-	assert.Equal(t, candidates[1].validator().wrspValidator(keeper.cdc), acc[1])
+	assert.Equal(t, candidates[0].validator(), acc[0])
+	assert.Equal(t, candidates[1].validator(), acc[1])
 	assert.Equal(t, candidates[0].validator(), vals[1])
 	assert.Equal(t, candidates[1].validator(), vals[0])
 
@@ -375,7 +365,7 @@ func TestGetAccUpdateValidators(t *testing.T) {
 	assert.True(t, candidates[0].Assets.Equal(sdk.NewRat(600)))
 	acc = keeper.getAccUpdateValidators(ctx)
 	require.Equal(t, 1, len(acc))
-	assert.Equal(t, candidates[0].validator().wrspValidator(keeper.cdc), acc[0])
+	assert.Equal(t, candidates[0].validator(), acc[0])
 
 	// test multiple value change
 	//  candidate set: {c1, c3} -> {c1', c3'}
@@ -393,8 +383,8 @@ func TestGetAccUpdateValidators(t *testing.T) {
 	require.Equal(t, 2, len(acc))
 	candidates = keeper.GetCandidates(ctx, 5)
 	require.Equal(t, 2, len(candidates))
-	require.Equal(t, candidates[0].validator().wrspValidator(keeper.cdc), acc[0])
-	require.Equal(t, candidates[1].validator().wrspValidator(keeper.cdc), acc[1])
+	require.Equal(t, candidates[0].validator(), acc[0])
+	require.Equal(t, candidates[1].validator(), acc[1])
 
 	// test validtor added at the beginning
 	//  candidate set: {c1, c3} -> {c0, c1, c3}
@@ -408,7 +398,7 @@ func TestGetAccUpdateValidators(t *testing.T) {
 	require.Equal(t, 1, len(acc))
 	candidates = keeper.GetCandidates(ctx, 5)
 	require.Equal(t, 3, len(candidates))
-	assert.Equal(t, candidates[0].validator().wrspValidator(keeper.cdc), acc[0])
+	assert.Equal(t, candidates[0].validator(), acc[0])
 
 	// test validator added at the middle
 	//  candidate set: {c0, c1, c3} -> {c0, c1, c2, c3]
@@ -422,7 +412,7 @@ func TestGetAccUpdateValidators(t *testing.T) {
 	require.Equal(t, 1, len(acc))
 	candidates = keeper.GetCandidates(ctx, 5)
 	require.Equal(t, 4, len(candidates))
-	assert.Equal(t, candidates[2].validator().wrspValidator(keeper.cdc), acc[0])
+	assert.Equal(t, candidates[2].validator(), acc[0])
 
 	// test candidate added at the end but not inserted in the valset
 	//  candidate set: {c0, c1, c2, c3} -> {c0, c1, c2, c3, c4}
@@ -479,9 +469,9 @@ func TestGetAccUpdateValidators(t *testing.T) {
 	acc = keeper.getAccUpdateValidators(ctx)
 	require.Equal(t, 2, len(acc), "%v", acc)
 
-	assert.Equal(t, wirePK(candidatesIn[0].PubKey), acc[0].PubKey)
-	assert.Equal(t, int64(0), acc[0].Power)
-	assert.Equal(t, vals[0].wrspValidator(keeper.cdc), acc[1])
+	assert.Equal(t, candidatesIn[0].Address, acc[0].Address)
+	assert.Equal(t, int64(0), acc[0].VotingPower.Evaluate())
+	assert.Equal(t, vals[0], acc[1])
 
 	// test from something to nothing
 	//  candidate set: {c0, c1, c2, c3, c4} -> {}
@@ -504,19 +494,19 @@ func TestGetAccUpdateValidators(t *testing.T) {
 	require.Equal(t, 0, len(candidates))
 	acc = keeper.getAccUpdateValidators(ctx)
 	require.Equal(t, 4, len(acc))
-	assert.Equal(t, wirePK(candidatesIn[1].PubKey), acc[0].PubKey)
-	assert.Equal(t, wirePK(candidatesIn[2].PubKey), acc[1].PubKey)
-	assert.Equal(t, wirePK(candidatesIn[3].PubKey), acc[2].PubKey)
-	assert.Equal(t, wirePK(candidatesIn[4].PubKey), acc[3].PubKey)
-	assert.Equal(t, int64(0), acc[0].Power)
-	assert.Equal(t, int64(0), acc[1].Power)
-	assert.Equal(t, int64(0), acc[2].Power)
-	assert.Equal(t, int64(0), acc[3].Power)
+	assert.Equal(t, candidatesIn[1].Address, acc[0].Address)
+	assert.Equal(t, candidatesIn[2].Address, acc[1].Address)
+	assert.Equal(t, candidatesIn[3].Address, acc[2].Address)
+	assert.Equal(t, candidatesIn[4].Address, acc[3].Address)
+	assert.Equal(t, int64(0), acc[0].VotingPower.Evaluate())
+	assert.Equal(t, int64(0), acc[1].VotingPower.Evaluate())
+	assert.Equal(t, int64(0), acc[2].VotingPower.Evaluate())
+	assert.Equal(t, int64(0), acc[3].VotingPower.Evaluate())
 }
 
 // test if is a validator from the last update
 func TestIsRecentValidator(t *testing.T) {
-	ctx, _, keeper := createTestInput(t, false, 0)
+	ctx, _, keeper := createTestInput(t, nil, false, 0)
 
 	amts := []int64{9, 8, 7, 10, 6}
 	var candidatesIn [5]Candidate
@@ -556,7 +546,7 @@ func TestIsRecentValidator(t *testing.T) {
 }
 
 func TestParams(t *testing.T) {
-	ctx, _, keeper := createTestInput(t, false, 0)
+	ctx, _, keeper := createTestInput(t, nil, false, 0)
 	expParams := defaultParams()
 
 	//check that the empty keeper loads the default
@@ -571,7 +561,7 @@ func TestParams(t *testing.T) {
 }
 
 func TestPool(t *testing.T) {
-	ctx, _, keeper := createTestInput(t, false, 0)
+	ctx, _, keeper := createTestInput(t, nil, false, 0)
 	expPool := initialPool()
 
 	//check that the empty keeper loads the default
@@ -586,7 +576,7 @@ func TestPool(t *testing.T) {
 }
 
 func TestInitGenesis(t *testing.T) {
-	ctx, _, keeper := createTestInput(t, false, 0)
+	ctx, _, keeper := createTestInput(t, nil, false, 0)
 	jsonStr := `{
   "params": {
     "inflation_rate_change": {"num": 13, "denom": 100},

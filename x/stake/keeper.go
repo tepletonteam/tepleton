@@ -7,7 +7,6 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/bank"
-	wrsp "github.com/tepleton/wrsp/types"
 )
 
 // keeper of the staking store
@@ -96,7 +95,7 @@ func (k Keeper) setCandidate(ctx sdk.Context, candidate Candidate) {
 	store.Set(GetCandidateKey(candidate.Address), bz)
 
 	// mashal the new validator record
-	validator := candidate.validator()
+	validator := Validator{address, candidate.Assets}
 	bz, err = k.cdc.MarshalBinary(validator)
 	if err != nil {
 		panic(err)
@@ -124,10 +123,6 @@ func (k Keeper) setCandidate(ctx sdk.Context, candidate Candidate) {
 		setAcc = true
 	}
 	if setAcc {
-		bz, err = k.cdc.MarshalBinary(validator.wrspValidator(k.cdc))
-		if err != nil {
-			panic(err)
-		}
 		store.Set(GetAccUpdateValidatorKey(validator.Address), bz)
 	}
 	return
@@ -136,7 +131,7 @@ func (k Keeper) setCandidate(ctx sdk.Context, candidate Candidate) {
 func (k Keeper) removeCandidate(ctx sdk.Context, address sdk.Address) {
 
 	// first retreive the old candidate record
-	candidate, found := k.GetCandidate(ctx, address)
+	oldCandidate, found := k.GetCandidate(ctx, address)
 	if !found {
 		return
 	}
@@ -144,14 +139,14 @@ func (k Keeper) removeCandidate(ctx sdk.Context, address sdk.Address) {
 	// delete the old candidate record
 	store := ctx.KVStore(k.storeKey)
 	store.Delete(GetCandidateKey(address))
-	store.Delete(GetValidatorKey(address, candidate.Assets, k.cdc))
+	store.Delete(GetValidatorKey(address, oldCandidate.Assets, k.cdc))
 
 	// delete from recent and power weighted validator groups if the validator
 	// exists and add validator with zero power to the validator updates
 	if store.Get(GetRecentValidatorKey(address)) == nil {
 		return
 	}
-	bz, err := k.cdc.MarshalBinary(candidate.validator().wrspValidatorZero(k.cdc))
+	bz, err := k.cdc.MarshalBinary(Validator{address, sdk.ZeroRat})
 	if err != nil {
 		panic(err)
 	}
@@ -172,36 +167,34 @@ func (k Keeper) GetValidators(ctx sdk.Context) (validators []Validator) {
 	iterator := store.Iterator(subspace(RecentValidatorsKey))
 	for ; iterator.Valid(); iterator.Next() {
 		addr := AddrFromKey(iterator.Key())
-
-		// iterator.Value is the validator object
-		store.Set(GetToKickOutValidatorKey(addr), iterator.Value())
+		store.Set(GetToKickOutValidatorKey(addr), []byte{})
 		store.Delete(iterator.Key())
 	}
 	iterator.Close()
 
 	// add the actual validator power sorted store
-	maxValidators := k.GetParams(ctx).MaxValidators
+	maxVal := k.GetParams(ctx).MaxValidators
 	iterator = store.ReverseIterator(subspace(ValidatorsKey)) // largest to smallest
-	validators = make([]Validator, maxValidators)
+	validators = make([]Validator, maxVal)
 	i := 0
 	for ; ; i++ {
-		if !iterator.Valid() || i > int(maxValidators-1) {
+		if !iterator.Valid() || i > int(maxVal-1) {
 			iterator.Close()
 			break
 		}
 		bz := iterator.Value()
-		var validator Validator
-		err := k.cdc.UnmarshalBinary(bz, &validator)
+		var val Validator
+		err := k.cdc.UnmarshalBinary(bz, &val)
 		if err != nil {
 			panic(err)
 		}
-		validators[i] = validator
+		validators[i] = val
 
 		// remove from ToKickOut group
-		store.Delete(GetToKickOutValidatorKey(validator.Address))
+		store.Delete(GetToKickOutValidatorKey(val.Address))
 
 		// also add to the recent validators group
-		store.Set(GetRecentValidatorKey(validator.Address), bz)
+		store.Set(GetRecentValidatorKey(val.Address), bz) // XXX should store nothing
 
 		iterator.Next()
 	}
@@ -209,23 +202,13 @@ func (k Keeper) GetValidators(ctx sdk.Context) (validators []Validator) {
 	// add any kicked out validators to the acc change
 	iterator = store.Iterator(subspace(ToKickOutValidatorsKey))
 	for ; iterator.Valid(); iterator.Next() {
-		key := iterator.Key()
-		addr := AddrFromKey(key)
-
-		// get the zero wrsp validator from the ToKickOut iterator value
-		bz := iterator.Value()
-		var validator Validator
-		err := k.cdc.UnmarshalBinary(bz, &validator)
+		addr := AddrFromKey(iterator.Key())
+		bz, err := k.cdc.MarshalBinary(Validator{addr, sdk.ZeroRat})
 		if err != nil {
 			panic(err)
 		}
-		bz, err = k.cdc.MarshalBinary(validator.wrspValidatorZero(k.cdc))
-		if err != nil {
-			panic(err)
-		}
-
 		store.Set(GetAccUpdateValidatorKey(addr), bz)
-		store.Delete(key)
+		store.Delete(iterator.Key())
 	}
 	iterator.Close()
 
@@ -272,13 +255,13 @@ func (k Keeper) IsRecentValidator(ctx sdk.Context, address sdk.Address) bool {
 // Accumulated updates to the validator set
 
 // get the most recently updated validators
-func (k Keeper) getAccUpdateValidators(ctx sdk.Context) (updates []wrsp.Validator) {
+func (k Keeper) getAccUpdateValidators(ctx sdk.Context) (updates []Validator) {
 	store := ctx.KVStore(k.storeKey)
 
 	iterator := store.Iterator(subspace(AccUpdateValidatorsKey)) //smallest to largest
 	for ; iterator.Valid(); iterator.Next() {
 		valBytes := iterator.Value()
-		var val wrsp.Validator
+		var val Validator
 		err := k.cdc.UnmarshalBinary(valBytes, &val)
 		if err != nil {
 			panic(err)
@@ -292,9 +275,12 @@ func (k Keeper) getAccUpdateValidators(ctx sdk.Context) (updates []wrsp.Validato
 // remove all validator update entries
 func (k Keeper) clearAccUpdateValidators(ctx sdk.Context) {
 	store := ctx.KVStore(k.storeKey)
+	k.deleteSubSpace(store, AccUpdateValidatorsKey)
+}
 
-	// delete subspace
-	iterator := store.Iterator(subspace(AccUpdateValidatorsKey))
+// TODO move to common functionality somewhere
+func (k Keeper) deleteSubSpace(store sdk.KVStore, key []byte) {
+	iterator := store.Iterator(subspace(key))
 	for ; iterator.Valid(); iterator.Next() {
 		store.Delete(iterator.Key())
 	}
