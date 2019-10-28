@@ -21,16 +21,16 @@ const (
 	flagAddress        = "address"
 )
 
-// AppCreator lets us lazily initialize app, using home dir
+// appGenerator lets us lazily initialize app, using home dir
 // and other flags (?) to start
-type AppCreator func(string, log.Logger) (wrsp.Application, error)
+type appCreator func(string, log.Logger) (wrsp.Application, error)
 
 // StartCmd runs the service passed in, either
 // stand-alone, or in-process with tepleton
-func StartCmd(app AppCreator, ctx *Context) *cobra.Command {
+func StartCmd(app appCreator, logger log.Logger) *cobra.Command {
 	start := startCmd{
 		appCreator: app,
-		context:    ctx,
+		logger:     logger,
 	}
 	cmd := &cobra.Command{
 		Use:   "start",
@@ -48,16 +48,16 @@ func StartCmd(app AppCreator, ctx *Context) *cobra.Command {
 }
 
 type startCmd struct {
-	appCreator AppCreator
-	context    *Context
+	appCreator appCreator
+	logger     log.Logger
 }
 
 func (s startCmd) run(cmd *cobra.Command, args []string) error {
 	if !viper.GetBool(flagWithTendermint) {
-		s.context.Logger.Info("Starting WRSP without Tendermint")
+		s.logger.Info("Starting WRSP without Tendermint")
 		return s.startStandAlone()
 	}
-	s.context.Logger.Info("Starting WRSP with Tendermint")
+	s.logger.Info("Starting WRSP with Tendermint")
 	return s.startInProcess()
 }
 
@@ -65,7 +65,7 @@ func (s startCmd) startStandAlone() error {
 	// Generate the app in the proper dir
 	addr := viper.GetString(flagAddress)
 	home := viper.GetString("home")
-	app, err := s.appCreator(home, s.context.Logger)
+	app, err := s.appCreator(home, s.logger)
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,7 @@ func (s startCmd) startStandAlone() error {
 	if err != nil {
 		return errors.Errorf("Error creating listener: %v\n", err)
 	}
-	svr.SetLogger(s.context.Logger.With("module", "wrsp-server"))
+	svr.SetLogger(s.logger.With("module", "wrsp-server"))
 	svr.Start()
 
 	// Wait forever
@@ -86,9 +86,13 @@ func (s startCmd) startStandAlone() error {
 }
 
 func (s startCmd) startInProcess() error {
-	cfg := s.context.Config
+	cfg, err := tcmd.ParseConfig()
+	if err != nil {
+		return err
+	}
+
 	home := cfg.RootDir
-	app, err := s.appCreator(home, s.context.Logger)
+	app, err := s.appCreator(home, s.logger)
 	if err != nil {
 		return err
 	}
@@ -99,7 +103,7 @@ func (s startCmd) startInProcess() error {
 		proxy.NewLocalClientCreator(app),
 		node.DefaultGenesisDocProviderFunc(cfg),
 		node.DefaultDBProvider,
-		s.context.Logger.With("module", "node"))
+		s.logger.With("module", "node"))
 	if err != nil {
 		return err
 	}

@@ -15,7 +15,6 @@ import (
 	ctypes "github.com/tepleton/tepleton/rpc/core/types"
 
 	"github.com/tepleton/tepleton-sdk/client"
-	"github.com/tepleton/tepleton-sdk/client/context"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 )
@@ -40,7 +39,7 @@ func (c commander) queryTx(hashHexStr string, trustNode bool) ([]byte, error) {
 	}
 
 	// get the node
-	node, err := context.NewCoreContextFromViper().GetNode()
+	node, err := client.GetNode()
 	if err != nil {
 		return nil, err
 	}

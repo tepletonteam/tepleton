@@ -20,7 +20,6 @@ import (
 	"github.com/tepleton/tepleton-sdk/wire"
 	auth "github.com/tepleton/tepleton-sdk/x/auth/rest"
 	bank "github.com/tepleton/tepleton-sdk/x/bank/rest"
-	ibc "github.com/tepleton/tepleton-sdk/x/ibc/rest"
 )
 
 const (
@@ -79,6 +78,5 @@ func createHandler(cdc *wire.Codec) http.Handler {
 	tx.RegisterRoutes(r, cdc)
 	auth.RegisterRoutes(r, cdc, "main")
 	bank.RegisterRoutes(r, cdc, kb)
-	ibc.RegisterRoutes(r, cdc, kb)
 	return r
 }

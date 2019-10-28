@@ -257,10 +257,7 @@ func (coins Coins) Swap(i, j int)      { coins[i], coins[j] = coins[j], coins[i]
 var _ sort.Interface = Coins{}
 
 // Sort is a helper function to sort the set of coins inplace
-func (coins Coins) Sort() Coins {
-	sort.Sort(coins)
-	return coins
-}
+func (coins Coins) Sort() { sort.Sort(coins) }
 
 //----------------------------------------
 // Parsing

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -13,51 +15,66 @@ import (
 
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/app"
 	"github.com/tepleton/tepleton-sdk/server"
+	"github.com/tepleton/tepleton-sdk/version"
 )
 
-// rootCmd is the entry point for this binary
+// basecoindCmd is the entry point for this binary
 var (
-	context = server.NewDefaultContext()
-	rootCmd = &cobra.Command{
-		Use:               "basecoind",
-		Short:             "Basecoin Daemon (server)",
-		PersistentPreRunE: server.PersistentPreRunEFn(context),
+	basecoindCmd = &cobra.Command{
+		Use:   "tond",
+		Short: "Gaia Daemon (server)",
 	}
 )
+
+// defaultOptions sets up the app_options for the
+// default genesis file
+func defaultOptions(args []string) (json.RawMessage, error) {
+	addr, secret, err := server.GenerateCoinKey()
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println("Secret phrase to access coins:")
+	fmt.Println(secret)
+
+	opts := fmt.Sprintf(`{
+      "accounts": [{
+        "address": "%s",
+        "coins": [
+          {
+            "denom": "mycoin",
+            "amount": 9007199254740992
+          }
+        ]
+      }]
+    }`, addr)
+	return json.RawMessage(opts), nil
+}
 
 func generateApp(rootDir string, logger log.Logger) (wrsp.Application, error) {
-	dataDir := filepath.Join(rootDir, "data")
-	dbMain, err := dbm.NewGoLevelDB("basecoin", dataDir)
+	db, err := dbm.NewGoLevelDB("basecoin", filepath.Join(rootDir, "data"))
 	if err != nil {
 		return nil, err
 	}
-	dbAcc, err := dbm.NewGoLevelDB("basecoin-acc", dataDir)
-	if err != nil {
-		return nil, err
-	}
-	dbIBC, err := dbm.NewGoLevelDB("basecoin-ibc", dataDir)
-	if err != nil {
-		return nil, err
-	}
-	dbStaking, err := dbm.NewGoLevelDB("basecoin-staking", dataDir)
-	if err != nil {
-		return nil, err
-	}
-	dbs := map[string]dbm.DB{
-		"main":    dbMain,
-		"acc":     dbAcc,
-		"ibc":     dbIBC,
-		"staking": dbStaking,
-	}
-	bapp := app.NewBasecoinApp(logger, dbs)
+	bapp := app.NewBasecoinApp(logger, db)
 	return bapp, nil
 }
 
 func main() {
-	server.AddCommands(rootCmd, server.DefaultGenAppState, generateApp, context)
+	// TODO: set logger through CLI
+	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).
+		With("module", "main")
+
+	basecoindCmd.AddCommand(
+		server.InitCmd(defaultOptions, logger),
+		server.StartCmd(generateApp, logger),
+		server.UnsafeResetAllCmd(logger),
+		server.ShowNodeIdCmd(logger),
+		server.ShowValidatorCmd(logger),
+		version.VersionCmd,
+	)
 
 	// prepare and add flags
 	rootDir := os.ExpandEnv("$HOME/.basecoind")
-	executor := cli.PrepareBaseCmd(rootCmd, "BC", rootDir)
+	executor := cli.PrepareBaseCmd(basecoindCmd, "BC", rootDir)
 	executor.Execute()
 }

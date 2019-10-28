@@ -7,9 +7,11 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/spf13/viper"
 	"github.com/tepleton/go-crypto/keys"
 
-	"github.com/tepleton/tepleton-sdk/client/context"
+	"github.com/tepleton/tepleton-sdk/client"
+	"github.com/tepleton/tepleton-sdk/client/builder"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/bank/commands"
@@ -28,7 +30,6 @@ type sendBody struct {
 // SendRequestHandler - http request handler to send coins to a address
 func SendRequestHandler(cdc *wire.Codec, kb keys.Keybase) func(http.ResponseWriter, *http.Request) {
 	c := commands.Commander{cdc}
-	ctx := context.NewCoreContextFromViper()
 	return func(w http.ResponseWriter, r *http.Request) {
 		// collect data
 		vars := mux.Vars(r)
@@ -72,8 +73,9 @@ func SendRequestHandler(cdc *wire.Codec, kb keys.Keybase) func(http.ResponseWrit
 		}
 
 		// sign
-		ctx = ctx.WithSequence(m.Sequence)
-		txBytes, err := ctx.SignAndBuild(m.LocalAccountName, m.Password, msg, c.Cdc)
+		// XXX: OMG
+		viper.Set(client.FlagSequence, m.Sequence)
+		txBytes, err := builder.SignAndBuild(m.LocalAccountName, m.Password, msg, c.Cdc)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Write([]byte(err.Error()))
@@ -81,7 +83,7 @@ func SendRequestHandler(cdc *wire.Codec, kb keys.Keybase) func(http.ResponseWrit
 		}
 
 		// send
-		res, err := ctx.BroadcastTx(txBytes)
+		res, err := builder.BroadcastTx(txBytes)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))

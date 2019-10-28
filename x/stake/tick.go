@@ -2,38 +2,42 @@ package stake
 
 import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
+	wrsp "github.com/tepleton/wrsp/types"
 )
 
 const (
-	hrsPerYr  = 8766 // as defined by a julian year of 365.25 days
-	precision = 1000000000
+	hrsPerYear = 8766 // as defined by a julian year of 365.25 days
+	precision  = 1000000000
 )
 
-var hrsPerYrRat = sdk.NewRat(hrsPerYr) // as defined by a julian year of 365.25 days
+var hrsPerYrRat = sdk.NewRat(hrsPerYear) // as defined by a julian year of 365.25 days
 
 // Tick - called at the end of every block
-func (k Keeper) Tick(ctx sdk.Context) (change []Validator) {
+func (k Keeper) Tick(ctx sdk.Context) (change []*wrsp.Validator, err error) {
+
+	// retrieve params
 	p := k.GetPool(ctx)
+	height := ctx.BlockHeight()
 
 	// Process Validator Provisions
-	blockTime := ctx.BlockHeader().Time // XXX assuming in seconds, confirm
-	if p.InflationLastTime+blockTime >= 3600 {
-		p.InflationLastTime = blockTime
-		p = k.processProvisions(ctx)
+	// XXX right now just process every 5 blocks, in new SDK make hourly
+	if p.InflationLastTime+5 <= height {
+		p.InflationLastTime = height
+		k.processProvisions(ctx)
 	}
 
-	// save the params
-	k.setPool(ctx, p)
+	newVals := k.GetValidators(ctx)
 
-	change = k.getAccUpdateValidators(ctx)
-	return
+	// XXX determine change from old validators, set to change
+	_ = newVals
+	return change, nil
 }
 
 // process provisions for an hour period
-func (k Keeper) processProvisions(ctx sdk.Context) Pool {
+func (k Keeper) processProvisions(ctx sdk.Context) {
 
 	pool := k.GetPool(ctx)
-	pool.Inflation = k.nextInflation(ctx)
+	pool.Inflation = k.nextInflation(ctx).Round(precision)
 
 	// Because the validators hold a relative bonded share (`GlobalStakeShare`), when
 	// more bonded tokens are added proportionally to all validators the only term
@@ -42,7 +46,9 @@ func (k Keeper) processProvisions(ctx sdk.Context) Pool {
 	provisions := pool.Inflation.Mul(sdk.NewRat(pool.TotalSupply)).Quo(hrsPerYrRat).Evaluate()
 	pool.BondedPool += provisions
 	pool.TotalSupply += provisions
-	return pool
+
+	// save the params
+	k.setPool(ctx, pool)
 }
 
 // get the next inflation rate for the hour
@@ -69,5 +75,5 @@ func (k Keeper) nextInflation(ctx sdk.Context) (inflation sdk.Rat) {
 		inflation = params.InflationMin
 	}
 
-	return inflation.Round(precision)
+	return
 }
