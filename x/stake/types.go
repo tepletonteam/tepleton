@@ -2,6 +2,8 @@ package stake
 
 import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/wire"
+	wrsp "github.com/tepleton/wrsp/types"
 	crypto "github.com/tepleton/go-crypto"
 )
 
@@ -105,6 +107,7 @@ func (c Candidate) delegatorShareExRate() sdk.Rat {
 func (c Candidate) validator() Validator {
 	return Validator{
 		Address:     c.Address,
+		PubKey:      c.PubKey,
 		VotingPower: c.Assets,
 	}
 }
@@ -116,23 +119,22 @@ func (c Candidate) validator() Validator {
 
 // Validator is one of the top Candidates
 type Validator struct {
-	Address     sdk.Address `json:"address"`      // Address of validator
-	VotingPower sdk.Rat     `json:"voting_power"` // Voting power if considered a validator
+	Address     sdk.Address `json:"address"`
+	PubKey      sdk.PubKey  `json:"PubKey"`
+	VotingPower sdk.Rat     `json:"voting_power"`
 }
 
 // WRSPValidator - Get the validator from a bond value
-/* TODO
-func (v Validator) WRSPValidator() (*wrsp.Validator, error) {
+func (v Validator) WRSPValidator() wrsp.Validator {
 	pkBytes, err := wire.MarshalBinary(v.PubKey)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	return &wrsp.Validator{
+	return wrsp.Validator{
 		PubKey: pkBytes,
 		Power:  v.VotingPower.Evaluate(),
-	}, nil
+	}
 }
-*/
 
 //_________________________________________________________________________
 
