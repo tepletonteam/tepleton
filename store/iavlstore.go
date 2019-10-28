@@ -144,7 +144,7 @@ func (st *iavlStore) ReverseSubspaceIterator(prefix []byte) Iterator {
 func (st *iavlStore) Query(req wrsp.RequestQuery) (res wrsp.ResponseQuery) {
 	if len(req.Data) == 0 {
 		msg := "Query cannot be zero length"
-		return sdk.ErrTxDecode(msg).Result().ToQuery()
+		return sdk.ErrTxDecode(msg).QueryResult()
 	}
 
 	tree := st.tree
@@ -178,7 +178,7 @@ func (st *iavlStore) Query(req wrsp.RequestQuery) (res wrsp.ResponseQuery) {
 
 	default:
 		msg := fmt.Sprintf("Unexpected Query path: %v", req.Path)
-		return sdk.ErrUnknownRequest(msg).Result().ToQuery()
+		return sdk.ErrUnknownRequest(msg).QueryResult()
 	}
 	return
 }

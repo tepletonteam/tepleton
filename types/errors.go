@@ -3,6 +3,8 @@ package types
 import (
 	"fmt"
 	"runtime"
+
+	wrsp "github.com/tepleton/wrsp/types"
 )
 
 // WRSP Response Code
@@ -121,6 +123,7 @@ type Error interface {
 	TraceCause(cause error, msg string) Error
 	Cause() error
 	Result() Result
+	QueryResult() wrsp.ResponseQuery
 }
 
 func NewError(code CodeType, msg string) Error {
@@ -217,6 +220,14 @@ func (err *sdkError) Cause() error {
 func (err *sdkError) Result() Result {
 	return Result{
 		Code: err.WRSPCode(),
+		Log:  err.WRSPLog(),
+	}
+}
+
+// QueryResult allows us to return sdk.Error.QueryResult() in query responses
+func (err *sdkError) QueryResult() wrsp.ResponseQuery {
+	return wrsp.ResponseQuery{
+		Code: uint32(err.WRSPCode()),
 		Log:  err.WRSPLog(),
 	}
 }
