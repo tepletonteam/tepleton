@@ -249,7 +249,7 @@ func TestDeliverTx(t *testing.T) {
 
 		counter += 1
 		return sdk.Result{}
-	}, nil)
+	})
 
 	tx := testUpdatePowerTx{} // doesn't matter
 	header := wrsp.Header{AppHash: []byte("apphash")}
@@ -284,7 +284,7 @@ func TestQuery(t *testing.T) {
 		store := ctx.KVStore(capKey)
 		store.Set(key, value)
 		return sdk.Result{}
-	}, nil)
+	})
 
 	query := wrsp.RequestQuery{
 		Path: "/main/key",
@@ -349,7 +349,7 @@ func TestValidatorChange(t *testing.T) {
 	app.Router().AddRoute(msgType, func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		// TODO
 		return sdk.Result{}
-	}, nil)
+	})
 
 	// Load latest state, which should be empty.
 	err := app.LoadLatestVersion(capKey)
@@ -432,7 +432,7 @@ func makePubKey(secret string) crypto.PubKey {
 
 func makePrivKey(secret string) crypto.PrivKey {
 	privKey := crypto.GenPrivKeyEd25519FromSecret([]byte(secret))
-	return privKey.Wrap()
+	return privKey
 }
 
 func secret(index int) string {

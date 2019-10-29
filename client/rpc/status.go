@@ -1,15 +1,14 @@
 package rpc
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/spf13/cobra"
-	wire "github.com/tepleton/go-wire"
 
 	"github.com/tepleton/tepleton-sdk/client"
+	"github.com/tepleton/tepleton-sdk/client/context"
 	ctypes "github.com/tepleton/tepleton/rpc/core/types"
 )
 
@@ -25,7 +24,7 @@ func statusCommand() *cobra.Command {
 
 func getNodeStatus() (*ctypes.ResultStatus, error) {
 	// get the node
-	node, err := client.GetNode()
+	node, err := context.NewCoreContextFromViper().GetNode()
 	if err != nil {
 		return &ctypes.ResultStatus{}, err
 	}
@@ -40,8 +39,8 @@ func printNodeStatus(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	output, err := wire.MarshalJSON(status)
-	// output, err := json.MarshalIndent(res, "  ", "")
+	output, err := cdc.MarshalJSON(status)
+	// output, err := cdc.MarshalJSONIndent(res, "  ", "")
 	if err != nil {
 		return err
 	}
@@ -61,7 +60,7 @@ func NodeInfoRequestHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	nodeInfo := status.NodeInfo
-	output, err := json.MarshalIndent(nodeInfo, "", "  ")
+	output, err := cdc.MarshalJSON(nodeInfo)
 	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte(err.Error()))

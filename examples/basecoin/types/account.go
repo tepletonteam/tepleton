@@ -12,7 +12,7 @@ var _ sdk.Account = (*AppAccount)(nil)
 // extending auth.BaseAccount with custom fields.
 //
 // This is compatible with the stock auth.AccountStore, since
-// auth.AccountStore uses the flexible go-wire library.
+// auth.AccountStore uses the flexible go-amino library.
 type AppAccount struct {
 	auth.BaseAccount
 	Name string `json:"name"`
@@ -55,7 +55,7 @@ func NewGenesisAccount(aa *AppAccount) *GenesisAccount {
 	return &GenesisAccount{
 		Name:    aa.Name,
 		Address: aa.Address,
-		Coins:   aa.Coins,
+		Coins:   aa.Coins.Sort(),
 	}
 }
 
@@ -63,7 +63,7 @@ func NewGenesisAccount(aa *AppAccount) *GenesisAccount {
 func (ga *GenesisAccount) ToAppAccount() (acc *AppAccount, err error) {
 	baseAcc := auth.BaseAccount{
 		Address: ga.Address,
-		Coins:   ga.Coins,
+		Coins:   ga.Coins.Sort(),
 	}
 	return &AppAccount{
 		BaseAccount: baseAcc,

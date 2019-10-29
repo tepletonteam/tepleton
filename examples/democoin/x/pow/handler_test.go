@@ -8,14 +8,17 @@ import (
 	wrsp "github.com/tepleton/wrsp/types"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
+	wire "github.com/tepleton/tepleton-sdk/wire"
 	auth "github.com/tepleton/tepleton-sdk/x/auth"
 	bank "github.com/tepleton/tepleton-sdk/x/bank"
 )
 
 func TestPowHandler(t *testing.T) {
 	ms, capKey := setupMultiStore()
+	cdc := wire.NewCodec()
+	auth.RegisterBaseAccount(cdc)
 
-	am := auth.NewAccountMapper(capKey, &auth.BaseAccount{})
+	am := auth.NewAccountMapper(cdc, capKey, &auth.BaseAccount{})
 	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil)
 	config := NewPowConfig("pow", int64(1))
 	ck := bank.NewCoinKeeper(am)

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 
 	wrsp "github.com/tepleton/wrsp/types"
-	oldwire "github.com/tepleton/go-wire"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
@@ -19,6 +18,7 @@ import (
 
 	"github.com/tepleton/tepleton-sdk/examples/democoin/types"
 	"github.com/tepleton/tepleton-sdk/examples/democoin/x/cool"
+	"github.com/tepleton/tepleton-sdk/examples/democoin/x/pow"
 	"github.com/tepleton/tepleton-sdk/examples/democoin/x/sketchy"
 )
 
@@ -34,6 +34,7 @@ type DemocoinApp struct {
 	// keys to access the substores
 	capKeyMainStore    *sdk.KVStoreKey
 	capKeyAccountStore *sdk.KVStoreKey
+	capKeyPowStore     *sdk.KVStoreKey
 	capKeyIBCStore     *sdk.KVStoreKey
 	capKeyStakingStore *sdk.KVStoreKey
 
@@ -42,39 +43,48 @@ type DemocoinApp struct {
 }
 
 func NewDemocoinApp(logger log.Logger, dbs map[string]dbm.DB) *DemocoinApp {
-	// create your application object
+
+	// Create app-level codec for txs and accounts.
+	var cdc = MakeCodec()
+
+	// Create your application object.
 	var app = &DemocoinApp{
 		BaseApp:            bam.NewBaseApp(appName, logger, dbs["main"]),
-		cdc:                MakeCodec(),
+		cdc:                cdc,
 		capKeyMainStore:    sdk.NewKVStoreKey("main"),
 		capKeyAccountStore: sdk.NewKVStoreKey("acc"),
+		capKeyPowStore:     sdk.NewKVStoreKey("pow"),
 		capKeyIBCStore:     sdk.NewKVStoreKey("ibc"),
 		capKeyStakingStore: sdk.NewKVStoreKey("stake"),
 	}
 
-	// define the accountMapper
-	app.accountMapper = auth.NewAccountMapperSealed(
+	// Define the accountMapper.
+	app.accountMapper = auth.NewAccountMapper(
+		cdc,
 		app.capKeyMainStore, // target store
 		&types.AppAccount{}, // prototype
-	)
+	).Seal()
 
-	// add handlers
+	// Add handlers.
 	coinKeeper := bank.NewCoinKeeper(app.accountMapper)
 	coolKeeper := cool.NewKeeper(app.capKeyMainStore, coinKeeper)
+	powKeeper := pow.NewKeeper(app.capKeyPowStore, pow.NewPowConfig("pow", int64(1)), coinKeeper)
 	ibcMapper := ibc.NewIBCMapper(app.cdc, app.capKeyIBCStore)
 	stakeKeeper := simplestake.NewKeeper(app.capKeyStakingStore, coinKeeper)
 	app.Router().
-		AddRoute("bank", bank.NewHandler(coinKeeper), nil).
-		AddRoute("cool", cool.NewHandler(coolKeeper), coolKeeper.InitGenesis).
-		AddRoute("sketchy", sketchy.NewHandler(), nil).
-		AddRoute("ibc", ibc.NewHandler(ibcMapper, coinKeeper), nil).
-		AddRoute("simplestake", simplestake.NewHandler(stakeKeeper), nil)
+		AddRoute("bank", bank.NewHandler(coinKeeper)).
+		AddRoute("cool", cool.NewHandler(coolKeeper)).
+		AddRoute("pow", powKeeper.Handler).
+		AddRoute("sketchy", sketchy.NewHandler()).
+		AddRoute("ibc", ibc.NewHandler(ibcMapper, coinKeeper)).
+		AddRoute("simplestake", simplestake.NewHandler(stakeKeeper))
 
-	// initialize BaseApp
+	// Initialize BaseApp.
 	app.SetTxDecoder(app.txDecoder)
-	app.SetInitChainer(app.initChainer)
+	app.SetInitChainer(app.initChainerFn(coolKeeper, powKeeper))
 	app.MountStoreWithDB(app.capKeyMainStore, sdk.StoreTypeIAVL, dbs["main"])
 	app.MountStoreWithDB(app.capKeyAccountStore, sdk.StoreTypeIAVL, dbs["acc"])
+	app.MountStoreWithDB(app.capKeyPowStore, sdk.StoreTypeIAVL, dbs["pow"])
 	app.MountStoreWithDB(app.capKeyIBCStore, sdk.StoreTypeIAVL, dbs["ibc"])
 	app.MountStoreWithDB(app.capKeyStakingStore, sdk.StoreTypeIAVL, dbs["staking"])
 	// NOTE: Broken until #532 lands
@@ -89,39 +99,28 @@ func NewDemocoinApp(logger log.Logger, dbs map[string]dbm.DB) *DemocoinApp {
 }
 
 // custom tx codec
-// TODO: use new go-wire
 func MakeCodec() *wire.Codec {
-	const msgTypeSend = 0x1
-	const msgTypeIssue = 0x2
-	const msgTypeQuiz = 0x3
-	const msgTypeSetTrend = 0x4
-	const msgTypeIBCTransferMsg = 0x5
-	const msgTypeIBCReceiveMsg = 0x6
-	const msgTypeBondMsg = 0x7
-	const msgTypeUnbondMsg = 0x8
-	var _ = oldwire.RegisterInterface(
-		struct{ sdk.Msg }{},
-		oldwire.ConcreteType{bank.SendMsg{}, msgTypeSend},
-		oldwire.ConcreteType{bank.IssueMsg{}, msgTypeIssue},
-		oldwire.ConcreteType{cool.QuizMsg{}, msgTypeQuiz},
-		oldwire.ConcreteType{cool.SetTrendMsg{}, msgTypeSetTrend},
-		oldwire.ConcreteType{ibc.IBCTransferMsg{}, msgTypeIBCTransferMsg},
-		oldwire.ConcreteType{ibc.IBCReceiveMsg{}, msgTypeIBCReceiveMsg},
-		oldwire.ConcreteType{simplestake.BondMsg{}, msgTypeBondMsg},
-		oldwire.ConcreteType{simplestake.UnbondMsg{}, msgTypeUnbondMsg},
-	)
+	var cdc = wire.NewCodec()
 
-	const accTypeApp = 0x1
-	var _ = oldwire.RegisterInterface(
-		struct{ sdk.Account }{},
-		oldwire.ConcreteType{&types.AppAccount{}, accTypeApp},
-	)
-	cdc := wire.NewCodec()
+	// Register Msgs
+	cdc.RegisterInterface((*sdk.Msg)(nil), nil)
+	cdc.RegisterConcrete(bank.SendMsg{}, "democoin/Send", nil)
+	cdc.RegisterConcrete(bank.IssueMsg{}, "democoin/Issue", nil)
+	cdc.RegisterConcrete(cool.QuizMsg{}, "democoin/Quiz", nil)
+	cdc.RegisterConcrete(cool.SetTrendMsg{}, "democoin/SetTrend", nil)
+	cdc.RegisterConcrete(pow.MineMsg{}, "democoin/Mine", nil)
+	cdc.RegisterConcrete(ibc.IBCTransferMsg{}, "democoin/IBCTransferMsg", nil)
+	cdc.RegisterConcrete(ibc.IBCReceiveMsg{}, "democoin/IBCReceiveMsg", nil)
+	cdc.RegisterConcrete(simplestake.BondMsg{}, "democoin/BondMsg", nil)
+	cdc.RegisterConcrete(simplestake.UnbondMsg{}, "democoin/UnbondMsg", nil)
 
-	// cdc.RegisterInterface((*sdk.Msg)(nil), nil)
-	// bank.RegisterWire(cdc)   // Register bank.[SendMsg,IssueMsg] types.
-	// crypto.RegisterWire(cdc) // Register crypto.[PubKey,PrivKey,Signature] types.
-	// ibc.RegisterWire(cdc) // Register ibc.[IBCTransferMsg, IBCReceiveMsg] types.
+	// Register AppAccount
+	cdc.RegisterInterface((*sdk.Account)(nil), nil)
+	cdc.RegisterConcrete(&types.AppAccount{}, "democoin/Account", nil)
+
+	// Register crypto.
+	wire.RegisterCrypto(cdc)
+
 	return cdc
 }
 
@@ -143,23 +142,39 @@ func (app *DemocoinApp) txDecoder(txBytes []byte) (sdk.Tx, sdk.Error) {
 }
 
 // custom logic for democoin initialization
-func (app *DemocoinApp) initChainer(ctx sdk.Context, req wrsp.RequestInitChain) wrsp.ResponseInitChain {
-	stateJSON := req.AppStateBytes
+func (app *DemocoinApp) initChainerFn(coolKeeper cool.Keeper, powKeeper pow.Keeper) sdk.InitChainer {
+	return func(ctx sdk.Context, req wrsp.RequestInitChain) wrsp.ResponseInitChain {
+		stateJSON := req.AppStateBytes
 
-	genesisState := new(types.GenesisState)
-	err := json.Unmarshal(stateJSON, genesisState)
-	if err != nil {
-		panic(err) // TODO https://github.com/tepleton/tepleton-sdk/issues/468
-		// return sdk.ErrGenesisParse("").TraceCause(err, "")
-	}
+		genesisState := new(types.GenesisState)
+		err := json.Unmarshal(stateJSON, genesisState)
+		if err != nil {
+			panic(err) // TODO https://github.com/tepleton/tepleton-sdk/issues/468
+			// return sdk.ErrGenesisParse("").TraceCause(err, "")
+		}
 
-	for _, gacc := range genesisState.Accounts {
-		acc, err := gacc.ToAppAccount()
+		for _, gacc := range genesisState.Accounts {
+			acc, err := gacc.ToAppAccount()
+			if err != nil {
+				panic(err) // TODO https://github.com/tepleton/tepleton-sdk/issues/468
+				//	return sdk.ErrGenesisParse("").TraceCause(err, "")
+			}
+			app.accountMapper.SetAccount(ctx, acc)
+		}
+
+		// Application specific genesis handling
+		err = coolKeeper.InitGenesis(ctx, genesisState.CoolGenesis)
 		if err != nil {
 			panic(err) // TODO https://github.com/tepleton/tepleton-sdk/issues/468
 			//	return sdk.ErrGenesisParse("").TraceCause(err, "")
 		}
-		app.accountMapper.SetAccount(ctx, acc)
+
+		err = powKeeper.InitGenesis(ctx, genesisState.PowGenesis)
+		if err != nil {
+			panic(err) // TODO https://github.com/tepleton/tepleton-sdk/issues/468
+			//	return sdk.ErrGenesisParse("").TraceCause(err, "")
+		}
+
+		return wrsp.ResponseInitChain{}
 	}
-	return wrsp.ResponseInitChain{}
 }

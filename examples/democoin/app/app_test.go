@@ -11,6 +11,7 @@ import (
 
 	"github.com/tepleton/tepleton-sdk/examples/democoin/types"
 	"github.com/tepleton/tepleton-sdk/examples/democoin/x/cool"
+	"github.com/tepleton/tepleton-sdk/examples/democoin/x/pow"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/bank"
@@ -71,6 +72,7 @@ func loggerAndDBs() (log.Logger, map[string]dbm.DB) {
 	dbs := map[string]dbm.DB{
 		"main":    dbm.NewMemDB(),
 		"acc":     dbm.NewMemDB(),
+		"pow":     dbm.NewMemDB(),
 		"ibc":     dbm.NewMemDB(),
 		"staking": dbm.NewMemDB(),
 	}
@@ -104,8 +106,7 @@ func TestMsgs(t *testing.T) {
 		}})
 
 		// just marshal/unmarshal!
-		cdc := MakeCodec()
-		txBytes, err := cdc.MarshalBinary(tx)
+		txBytes, err := bapp.cdc.MarshalBinary(tx)
 		require.NoError(t, err, "i: %v", i)
 
 		// Run a Check
@@ -238,15 +239,65 @@ func TestSendMsgWithAccounts(t *testing.T) {
 	assert.Equal(t, sdk.CodeOK, res.Code, res.Log)
 }
 
+func TestMineMsg(t *testing.T) {
+	bapp := newDemocoinApp()
+
+	// Construct genesis state
+	// Construct some genesis bytes to reflect democoin/types/AppAccount
+	baseAcc := auth.BaseAccount{
+		Address: addr1,
+		Coins:   nil,
+	}
+	acc1 := &types.AppAccount{baseAcc, "foobart"}
+
+	// Construct genesis state
+	genesisState := map[string]interface{}{
+		"accounts": []*types.GenesisAccount{
+			types.NewGenesisAccount(acc1),
+		},
+		"cool": map[string]string{
+			"trend": "ice-cold",
+		},
+		"pow": map[string]uint64{
+			"difficulty": 1,
+			"count":      0,
+		},
+	}
+	stateBytes, err := json.MarshalIndent(genesisState, "", "\t")
+	require.Nil(t, err)
+
+	// Initialize the chain (nil)
+	vals := []wrsp.Validator{}
+	bapp.InitChain(wrsp.RequestInitChain{vals, stateBytes})
+	bapp.Commit()
+
+	// A checkTx context (true)
+	ctxCheck := bapp.BaseApp.NewContext(true, wrsp.Header{})
+	res1 := bapp.accountMapper.GetAccount(ctxCheck, addr1)
+	assert.Equal(t, acc1, res1)
+
+	// Mine and check for reward
+	mineMsg1 := pow.GenerateMineMsg(addr1, 1, 2)
+	SignCheckDeliver(t, bapp, mineMsg1, 0, true)
+	CheckBalance(t, bapp, "1pow")
+	// Mine again and check for reward
+	mineMsg2 := pow.GenerateMineMsg(addr1, 2, 3)
+	SignCheckDeliver(t, bapp, mineMsg2, 1, true)
+	CheckBalance(t, bapp, "2pow")
+	// Mine again - should be invalid
+	SignCheckDeliver(t, bapp, mineMsg2, 1, false)
+	CheckBalance(t, bapp, "2pow")
+
+}
+
 func TestQuizMsg(t *testing.T) {
 	bapp := newDemocoinApp()
 
 	// Construct genesis state
 	// Construct some genesis bytes to reflect democoin/types/AppAccount
-	coins := sdk.Coins{}
 	baseAcc := auth.BaseAccount{
 		Address: addr1,
-		Coins:   coins,
+		Coins:   nil,
 	}
 	acc1 := &types.AppAccount{baseAcc, "foobart"}
 

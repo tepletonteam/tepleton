@@ -110,7 +110,7 @@ func (coins Coins) IsValid() bool {
 // Plus combines two sets of coins
 // CONTRACT: Plus will never return Coins where one Coin has a 0 amount.
 func (coins Coins) Plus(coinsB Coins) Coins {
-	sum := []Coin{}
+	sum := ([]Coin)(nil)
 	indexA, indexB := 0, 0
 	lenA, lenB := len(coins), len(coinsB)
 	for {
@@ -257,7 +257,10 @@ func (coins Coins) Swap(i, j int)      { coins[i], coins[j] = coins[j], coins[i]
 var _ sort.Interface = Coins{}
 
 // Sort is a helper function to sort the set of coins inplace
-func (coins Coins) Sort() { sort.Sort(coins) }
+func (coins Coins) Sort() Coins {
+	sort.Sort(coins)
+	return coins
+}
 
 //----------------------------------------
 // Parsing

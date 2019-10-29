@@ -1,7 +1,6 @@
 package rpc
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/tepleton/tepleton-sdk/client"
+	"github.com/tepleton/tepleton-sdk/client/context"
 )
 
 const (
@@ -31,7 +31,8 @@ func blockCommand() *cobra.Command {
 
 func getBlock(height *int64) ([]byte, error) {
 	// get the node
-	node, err := client.GetNode()
+	ctx := context.NewCoreContextFromViper()
+	node, err := ctx.GetNode()
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +48,7 @@ func getBlock(height *int64) ([]byte, error) {
 
 	// TODO move maarshalling into cmd/rest functions
 	// output, err := tmwire.MarshalJSON(res)
-	output, err := json.MarshalIndent(res, "", "  ")
+	output, err := cdc.MarshalJSON(res)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +56,7 @@ func getBlock(height *int64) ([]byte, error) {
 }
 
 func GetChainHeight() (int64, error) {
-	node, err := client.GetNode()
+	node, err := context.NewCoreContextFromViper().GetNode()
 	if err != nil {
 		return -1, err
 	}
