@@ -5,9 +5,10 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/tepleton/go-wire/data"
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 	"github.com/tepleton/tepleton/p2p"
-	pvm "github.com/tepleton/tepleton/types/priv_validator"
+	"github.com/tepleton/tepleton/types"
 )
 
 // ShowNodeIDCmd - ported from Tendermint, dump node ID to stdout
@@ -52,8 +53,8 @@ type showValidator struct {
 
 func (s showValidator) run(cmd *cobra.Command, args []string) error {
 	cfg := s.context.Config
-	privValidator := pvm.LoadOrGenFilePV(cfg.PrivValidatorFile())
-	pubKeyJSONBytes, err := cdc.MarshalJSON(privValidator.PubKey)
+	privValidator := types.LoadOrGenPrivValidatorFS(cfg.PrivValidatorFile())
+	pubKeyJSONBytes, err := data.ToJSON(privValidator.PubKey)
 	if err != nil {
 		return err
 	}

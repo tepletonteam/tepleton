@@ -13,7 +13,6 @@ import (
 
 	"github.com/tepleton/tepleton-sdk/store"
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/bank"
 )
@@ -56,12 +55,10 @@ func TestKeeperGetSet(t *testing.T) {
 
 func TestBonding(t *testing.T) {
 	ms, authKey, capKey := setupMultiStore()
-	cdc := wire.NewCodec()
-	auth.RegisterBaseAccount(cdc)
 
 	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil)
 
-	accountMapper := auth.NewAccountMapper(cdc, authKey, &auth.BaseAccount{})
+	accountMapper := auth.NewAccountMapper(authKey, &auth.BaseAccount{})
 	coinKeeper := bank.NewCoinKeeper(accountMapper)
 	stakeKeeper := NewKeeper(capKey, coinKeeper)
 	addr := sdk.Address([]byte("some-address"))

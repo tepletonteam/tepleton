@@ -15,7 +15,7 @@ func keyPubAddr() (crypto.PrivKey, crypto.PubKey, sdk.Address) {
 	key := crypto.GenPrivKeyEd25519()
 	pub := key.PubKey()
 	addr := pub.Address()
-	return key, pub, addr
+	return key.Wrap(), pub, addr
 }
 
 func TestBaseAccountAddressPubKey(t *testing.T) {
@@ -25,7 +25,7 @@ func TestBaseAccountAddressPubKey(t *testing.T) {
 
 	// check the address (set) and pubkey (not set)
 	assert.EqualValues(t, addr1, acc.GetAddress())
-	assert.EqualValues(t, nil, acc.GetPubKey())
+	assert.EqualValues(t, crypto.PubKey{}, acc.GetPubKey())
 
 	// can't override address
 	err := acc.SetAddress(addr2)

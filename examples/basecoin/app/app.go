@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	wrsp "github.com/tepleton/wrsp/types"
+	oldwire "github.com/tepleton/go-wire"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
@@ -39,28 +40,23 @@ type BasecoinApp struct {
 }
 
 func NewBasecoinApp(logger log.Logger, dbs map[string]dbm.DB) *BasecoinApp {
-
-	// Create app-level codec for txs and accounts.
-	var cdc = MakeCodec()
-
-	// Create your application object.
+	// create your application object
 	var app = &BasecoinApp{
 		BaseApp:            bam.NewBaseApp(appName, logger, dbs["main"]),
-		cdc:                cdc,
+		cdc:                MakeCodec(),
 		capKeyMainStore:    sdk.NewKVStoreKey("main"),
 		capKeyAccountStore: sdk.NewKVStoreKey("acc"),
 		capKeyIBCStore:     sdk.NewKVStoreKey("ibc"),
 		capKeyStakingStore: sdk.NewKVStoreKey("stake"),
 	}
 
-	// Define the accountMapper.
-	app.accountMapper = auth.NewAccountMapper(
-		cdc,
+	// define the accountMapper
+	app.accountMapper = auth.NewAccountMapperSealed(
 		app.capKeyMainStore, // target store
 		&types.AppAccount{}, // prototype
-	).Seal()
+	)
 
-	// Add handlers.
+	// add handlers
 	coinKeeper := bank.NewCoinKeeper(app.accountMapper)
 	ibcMapper := ibc.NewIBCMapper(app.cdc, app.capKeyIBCStore)
 	stakeKeeper := simplestake.NewKeeper(app.capKeyStakingStore, coinKeeper)
@@ -69,7 +65,7 @@ func NewBasecoinApp(logger log.Logger, dbs map[string]dbm.DB) *BasecoinApp {
 		AddRoute("ibc", ibc.NewHandler(ibcMapper, coinKeeper)).
 		AddRoute("simplestake", simplestake.NewHandler(stakeKeeper))
 
-	// Initialize BaseApp.
+	// initialize BaseApp
 	app.SetTxDecoder(app.txDecoder)
 	app.SetInitChainer(app.initChainer)
 	app.MountStoreWithDB(app.capKeyMainStore, sdk.StoreTypeIAVL, dbs["main"])
@@ -87,30 +83,42 @@ func NewBasecoinApp(logger log.Logger, dbs map[string]dbm.DB) *BasecoinApp {
 	return app
 }
 
-// Custom tx codec
+// custom tx codec
+// TODO: use new go-wire
 func MakeCodec() *wire.Codec {
-	var cdc = wire.NewCodec()
+	const msgTypeSend = 0x1
+	const msgTypeIssue = 0x2
+	const msgTypeQuiz = 0x3
+	const msgTypeSetTrend = 0x4
+	const msgTypeIBCTransferMsg = 0x5
+	const msgTypeIBCReceiveMsg = 0x6
+	const msgTypeBondMsg = 0x7
+	const msgTypeUnbondMsg = 0x8
+	var _ = oldwire.RegisterInterface(
+		struct{ sdk.Msg }{},
+		oldwire.ConcreteType{bank.SendMsg{}, msgTypeSend},
+		oldwire.ConcreteType{bank.IssueMsg{}, msgTypeIssue},
+		oldwire.ConcreteType{ibc.IBCTransferMsg{}, msgTypeIBCTransferMsg},
+		oldwire.ConcreteType{ibc.IBCReceiveMsg{}, msgTypeIBCReceiveMsg},
+		oldwire.ConcreteType{simplestake.BondMsg{}, msgTypeBondMsg},
+		oldwire.ConcreteType{simplestake.UnbondMsg{}, msgTypeUnbondMsg},
+	)
 
-	// Register Msgs
-	cdc.RegisterInterface((*sdk.Msg)(nil), nil)
-	cdc.RegisterConcrete(bank.SendMsg{}, "basecoin/Send", nil)
-	cdc.RegisterConcrete(bank.IssueMsg{}, "basecoin/Issue", nil)
-	cdc.RegisterConcrete(ibc.IBCTransferMsg{}, "basecoin/IBCTransferMsg", nil)
-	cdc.RegisterConcrete(ibc.IBCReceiveMsg{}, "basecoin/IBCReceiveMsg", nil)
-	cdc.RegisterConcrete(simplestake.BondMsg{}, "basecoin/BondMsg", nil)
-	cdc.RegisterConcrete(simplestake.UnbondMsg{}, "basecoin/UnbondMsg", nil)
+	const accTypeApp = 0x1
+	var _ = oldwire.RegisterInterface(
+		struct{ sdk.Account }{},
+		oldwire.ConcreteType{&types.AppAccount{}, accTypeApp},
+	)
+	cdc := wire.NewCodec()
 
-	// Register AppAccount
-	cdc.RegisterInterface((*sdk.Account)(nil), nil)
-	cdc.RegisterConcrete(&types.AppAccount{}, "basecoin/Account", nil)
-
-	// Register crypto.
-	wire.RegisterCrypto(cdc)
-
+	// cdc.RegisterInterface((*sdk.Msg)(nil), nil)
+	// bank.RegisterWire(cdc)   // Register bank.[SendMsg,IssueMsg] types.
+	// crypto.RegisterWire(cdc) // Register crypto.[PubKey,PrivKey,Signature] types.
+	// ibc.RegisterWire(cdc) // Register ibc.[IBCTransferMsg, IBCReceiveMsg] types.
 	return cdc
 }
 
-// Custom logic for transaction decoding
+// custom logic for transaction decoding
 func (app *BasecoinApp) txDecoder(txBytes []byte) (sdk.Tx, sdk.Error) {
 	var tx = sdk.StdTx{}
 
@@ -119,7 +127,7 @@ func (app *BasecoinApp) txDecoder(txBytes []byte) (sdk.Tx, sdk.Error) {
 	}
 
 	// StdTx.Msg is an interface. The concrete types
-	// are registered by MakeTxCodec in bank.RegisterAmino.
+	// are registered by MakeTxCodec in bank.RegisterWire.
 	err := app.cdc.UnmarshalBinary(txBytes, &tx)
 	if err != nil {
 		return nil, sdk.ErrTxDecode("").TraceCause(err, "")
@@ -127,7 +135,7 @@ func (app *BasecoinApp) txDecoder(txBytes []byte) (sdk.Tx, sdk.Error) {
 	return tx, nil
 }
 
-// Custom logic for basecoin initialization
+// custom logic for basecoin initialization
 func (app *BasecoinApp) initChainer(ctx sdk.Context, req wrsp.RequestInitChain) wrsp.ResponseInitChain {
 	stateJSON := req.AppStateBytes
 

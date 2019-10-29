@@ -250,6 +250,6 @@ func GetPubKey(pubKeyStr string) (pk crypto.PubKey, err error) {
 	}
 	var pkEd crypto.PubKeyEd25519
 	copy(pkEd[:], pkBytes[:])
-	pk = pkEd
+	pk = pkEd.Wrap()
 	return
 }

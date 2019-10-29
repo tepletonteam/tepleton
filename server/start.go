@@ -11,7 +11,7 @@ import (
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 	"github.com/tepleton/tepleton/node"
 	"github.com/tepleton/tepleton/proxy"
-	pvm "github.com/tepleton/tepleton/types/priv_validator"
+	"github.com/tepleton/tepleton/types"
 	cmn "github.com/tepleton/tmlibs/common"
 	"github.com/tepleton/tmlibs/log"
 )
@@ -95,7 +95,7 @@ func (s startCmd) startInProcess() error {
 
 	// Create & start tepleton node
 	n, err := node.NewNode(cfg,
-		pvm.LoadOrGenFilePV(cfg.PrivValidatorFile()),
+		types.LoadOrGenPrivValidatorFS(cfg.PrivValidatorFile()),
 		proxy.NewLocalClientCreator(app),
 		node.DefaultGenesisDocProviderFunc(cfg),
 		node.DefaultDBProvider,

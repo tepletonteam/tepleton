@@ -21,7 +21,6 @@ type Keeper struct {
 
 func NewKeeper(key sdk.StoreKey, coinKeeper bank.CoinKeeper) Keeper {
 	cdc := wire.NewCodec()
-	wire.RegisterCrypto(cdc)
 	return Keeper{
 		key: key,
 		cdc: cdc,
@@ -84,7 +83,7 @@ func (k Keeper) Bond(ctx sdk.Context, addr sdk.Address, pubKey crypto.PubKey, st
 func (k Keeper) Unbond(ctx sdk.Context, addr sdk.Address) (crypto.PubKey, int64, sdk.Error) {
 	bi := k.getBondInfo(ctx, addr)
 	if bi.isEmpty() {
-		return nil, 0, ErrInvalidUnbond()
+		return crypto.PubKey{}, 0, ErrInvalidUnbond()
 	}
 	k.deleteBondInfo(ctx, addr)
 
@@ -122,7 +121,7 @@ func (k Keeper) bondWithoutCoins(ctx sdk.Context, addr sdk.Address, pubKey crypt
 func (k Keeper) unbondWithoutCoins(ctx sdk.Context, addr sdk.Address) (crypto.PubKey, int64, sdk.Error) {
 	bi := k.getBondInfo(ctx, addr)
 	if bi.isEmpty() {
-		return nil, 0, ErrInvalidUnbond()
+		return crypto.PubKey{}, 0, ErrInvalidUnbond()
 	}
 	k.deleteBondInfo(ctx, addr)
 

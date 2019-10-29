@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/spf13/cobra"
 
 	"github.com/tepleton/go-crypto/keys"
@@ -14,7 +13,6 @@ import (
 	cfg "github.com/tepleton/tepleton/config"
 	"github.com/tepleton/tepleton/p2p"
 	tmtypes "github.com/tepleton/tepleton/types"
-	pvm "github.com/tepleton/tepleton/types/priv_validator"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
 )
@@ -98,7 +96,7 @@ func (c initCmd) run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	testnetInfo.NodeID = nodeKey.ID()
-	out, err := wire.MarshalJSONIndent(cdc, testnetInfo)
+	out, err := json.MarshalIndent(testnetInfo, "", "  ")
 	if err != nil {
 		return err
 	}
@@ -111,12 +109,12 @@ func (c initCmd) run(cmd *cobra.Command, args []string) error {
 func (c initCmd) initTendermintFiles(config *cfg.Config, info *testnetInformation) error {
 	// private validator
 	privValFile := config.PrivValidatorFile()
-	var privValidator *pvm.FilePV
+	var privValidator *tmtypes.PrivValidatorFS
 	if cmn.FileExists(privValFile) {
-		privValidator = pvm.LoadFilePV(privValFile)
+		privValidator = tmtypes.LoadPrivValidatorFS(privValFile)
 		c.context.Logger.Info("Found private validator", "path", privValFile)
 	} else {
-		privValidator = pvm.GenFilePV(privValFile)
+		privValidator = tmtypes.GenPrivValidatorFS(privValFile)
 		privValidator.Save()
 		c.context.Logger.Info("Generated private validator", "path", privValFile)
 	}
@@ -195,13 +193,13 @@ func addGenesisState(filename string, appState json.RawMessage) error {
 	}
 
 	var doc GenesisDoc
-	err = cdc.UnmarshalJSON(bz, &doc)
+	err = json.Unmarshal(bz, &doc)
 	if err != nil {
 		return err
 	}
 
 	doc["app_state"] = appState
-	out, err := wire.MarshalJSONIndent(cdc, doc)
+	out, err := json.MarshalIndent(doc, "", "  ")
 	if err != nil {
 		return err
 	}

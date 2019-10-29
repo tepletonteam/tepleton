@@ -12,7 +12,7 @@ var _ sdk.Account = (*AppAccount)(nil)
 // extending auth.BaseAccount with custom fields.
 //
 // This is compatible with the stock auth.AccountStore, since
-// auth.AccountStore uses the flexible go-amino library.
+// auth.AccountStore uses the flexible go-wire library.
 type AppAccount struct {
 	auth.BaseAccount
 	Name string `json:"name"`
@@ -29,7 +29,7 @@ func GetAccountDecoder(cdc *wire.Codec) sdk.AccountDecoder {
 			return nil, sdk.ErrTxDecode("accBytes are empty")
 		}
 		acct := new(AppAccount)
-		err = cdc.UnmarshalBinaryBare(accBytes, &acct)
+		err = cdc.UnmarshalBinary(accBytes, &acct)
 		if err != nil {
 			panic(err)
 		}
