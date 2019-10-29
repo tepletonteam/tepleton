@@ -13,6 +13,7 @@ import (
 	cfg "github.com/tepleton/tepleton/config"
 	"github.com/tepleton/tepleton/p2p"
 	tmtypes "github.com/tepleton/tepleton/types"
+	pvm "github.com/tepleton/tepleton/types/priv_validator"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
 )
@@ -109,12 +110,12 @@ func (c initCmd) run(cmd *cobra.Command, args []string) error {
 func (c initCmd) initTendermintFiles(config *cfg.Config, info *testnetInformation) error {
 	// private validator
 	privValFile := config.PrivValidatorFile()
-	var privValidator *tmtypes.PrivValidatorFS
+	var privValidator *pvm.FilePV
 	if cmn.FileExists(privValFile) {
-		privValidator = tmtypes.LoadPrivValidatorFS(privValFile)
+		privValidator = pvm.LoadFilePV(privValFile)
 		c.context.Logger.Info("Found private validator", "path", privValFile)
 	} else {
-		privValidator = tmtypes.GenPrivValidatorFS(privValFile)
+		privValidator = pvm.GenFilePV(privValFile)
 		privValidator.Save()
 		c.context.Logger.Info("Generated private validator", "path", privValFile)
 	}

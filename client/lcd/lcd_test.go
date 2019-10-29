@@ -25,6 +25,7 @@ import (
 	ctypes "github.com/tepleton/tepleton/rpc/core/types"
 	tmrpc "github.com/tepleton/tepleton/rpc/lib/server"
 	tmtypes "github.com/tepleton/tepleton/types"
+	pvm "github.com/tepleton/tepleton/types/priv_validator"
 	"github.com/tepleton/tmlibs/cli"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
@@ -341,7 +342,7 @@ func startTMAndLCD() (*nm.Node, net.Listener, error) {
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
 	logger = log.NewFilter(logger, log.AllowError())
 	privValidatorFile := config.PrivValidatorFile()
-	privVal := tmtypes.LoadOrGenPrivValidatorFS(privValidatorFile)
+	privVal := pvm.LoadOrGenFilePV(privValidatorFile)
 	dbs := map[string]dbm.DB{
 		"main":    dbm.NewMemDB(),
 		"acc":     dbm.NewMemDB(),
@@ -370,7 +371,7 @@ func startTMAndLCD() (*nm.Node, net.Listener, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	genDoc.AppStateJSON = stateBytes
+	genDoc.AppState = stateBytes
 
 	cdc := wire.NewCodec()
 

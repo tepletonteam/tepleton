@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/spf13/cobra"
-	wire "github.com/tepleton/go-wire"
 
 	"github.com/tepleton/tepleton-sdk/client"
 	"github.com/tepleton/tepleton-sdk/client/context"
@@ -41,8 +40,8 @@ func printNodeStatus(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	output, err := wire.MarshalJSON(status)
-	// output, err := json.MarshalIndent(res, "  ", "")
+	output, err := cdc.MarshalJSON(status)
+	// output, err := cdc.MarshalJSONIndent(res, "  ", "")
 	if err != nil {
 		return err
 	}
