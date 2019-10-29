@@ -11,7 +11,7 @@ import (
 	crypto "github.com/tepleton/go-crypto"
 
 	"github.com/tepleton/tepleton-sdk/client"
-	"github.com/tepleton/tepleton-sdk/client/context"
+	"github.com/tepleton/tepleton-sdk/client/builder"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/stake"
@@ -92,8 +92,8 @@ func GetCmdDeclareCandidacy(cdc *wire.Codec) *cobra.Command {
 			msg := stake.NewMsgDeclareCandidacy(candidateAddr, pk, amount, description)
 
 			// build and sign the transaction, then broadcast to Tendermint
-			ctx := context.NewCoreContextFromViper()
-			res, err := ctx.SignBuildBroadcast(ctx.FromAddressName, msg, cdc)
+			name := viper.GetString(client.FlagName)
+			res, err := builder.SignBuildBroadcast(name, msg, cdc)
 			if err != nil {
 				return err
 			}
@@ -129,8 +129,8 @@ func GetCmdEditCandidacy(cdc *wire.Codec) *cobra.Command {
 			msg := stake.NewMsgEditCandidacy(candidateAddr, description)
 
 			// build and sign the transaction, then broadcast to Tendermint
-			ctx := context.NewCoreContextFromViper()
-			res, err := ctx.SignBuildBroadcast(ctx.FromAddressName, msg, cdc)
+			name := viper.GetString(client.FlagName)
+			res, err := builder.SignBuildBroadcast(name, msg, cdc)
 			if err != nil {
 				return err
 			}
@@ -165,8 +165,8 @@ func GetCmdDelegate(cdc *wire.Codec) *cobra.Command {
 			msg := stake.NewMsgDelegate(delegatorAddr, candidateAddr, amount)
 
 			// build and sign the transaction, then broadcast to Tendermint
-			ctx := context.NewCoreContextFromViper()
-			res, err := ctx.SignBuildBroadcast(ctx.FromAddressName, msg, cdc)
+			name := viper.GetString(client.FlagName)
+			res, err := builder.SignBuildBroadcast(name, msg, cdc)
 			if err != nil {
 				return err
 			}
@@ -212,8 +212,8 @@ func GetCmdUnbond(cdc *wire.Codec) *cobra.Command {
 			msg := stake.NewMsgUnbond(delegatorAddr, candidateAddr, sharesStr)
 
 			// build and sign the transaction, then broadcast to Tendermint
-			ctx := context.NewCoreContextFromViper()
-			res, err := ctx.SignBuildBroadcast(ctx.FromAddressName, msg, cdc)
+			name := viper.GetString(client.FlagName)
+			res, err := builder.SignBuildBroadcast(name, msg, cdc)
 			if err != nil {
 				return err
 			}

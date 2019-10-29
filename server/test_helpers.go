@@ -12,7 +12,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
-	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 	"github.com/tepleton/tmlibs/cli"
 	"github.com/tepleton/tmlibs/log"
 )
@@ -45,18 +44,14 @@ func setupViper(t *testing.T) func() {
 func StartServer(t *testing.T) chan error {
 	defer setupViper(t)()
 
-	cfg, err := tcmd.ParseConfig()
-	require.Nil(t, err)
-
 	// init server
-	ctx := NewContext(cfg, log.NewNopLogger())
-	initCmd := InitCmd(mock.GenInitOptions, ctx)
-	err = initCmd.RunE(nil, nil)
+	initCmd := InitCmd(mock.GenInitOptions, log.NewNopLogger())
+	err := initCmd.RunE(nil, nil)
 	require.NoError(t, err)
 
 	// start server
 	viper.Set(flagWithTendermint, true)
-	startCmd := StartCmd(mock.NewApp, ctx)
+	startCmd := StartCmd(mock.NewApp, log.NewNopLogger())
 	startCmd.Flags().Set(flagAddress, FreeTCPAddr(t)) // set to a new free address
 	startCmd.Flags().Set("rpc.laddr", FreeTCPAddr(t)) // set to a new free address
 	timeout := time.Duration(3) * time.Second

@@ -205,18 +205,18 @@ func (rs *rootMultiStore) Query(req wrsp.RequestQuery) wrsp.ResponseQuery {
 	path := req.Path
 	storeName, subpath, err := parsePath(path)
 	if err != nil {
-		return err.QueryResult()
+		return err.Result().ToQuery()
 	}
 
 	store := rs.getStoreByName(storeName)
 	if store == nil {
 		msg := fmt.Sprintf("no such store: %s", storeName)
-		return sdk.ErrUnknownRequest(msg).QueryResult()
+		return sdk.ErrUnknownRequest(msg).Result().ToQuery()
 	}
 	queryable, ok := store.(Queryable)
 	if !ok {
 		msg := fmt.Sprintf("store %s doesn't support queries", storeName)
-		return sdk.ErrUnknownRequest(msg).QueryResult()
+		return sdk.ErrUnknownRequest(msg).Result().ToQuery()
 	}
 
 	// trim the path and make the query

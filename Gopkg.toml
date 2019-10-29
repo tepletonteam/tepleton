@@ -70,11 +70,11 @@
   name = "github.com/tepleton/iavl"
 
 [[constraint]]
-  version = "~0.18.0-rc1"
+  version = "~0.17.1"
   name = "github.com/tepleton/tepleton"
 
-[[override]]
-  version = "~0.8.1"
+[[constraint]]
+  version = "~0.7.1"
   name = "github.com/tepleton/tmlibs"
 
 [prune]

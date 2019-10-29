@@ -55,7 +55,7 @@ func NewGenesisAccount(aa *AppAccount) *GenesisAccount {
 	return &GenesisAccount{
 		Name:    aa.Name,
 		Address: aa.Address,
-		Coins:   aa.Coins.Sort(),
+		Coins:   aa.Coins,
 	}
 }
 
@@ -63,7 +63,7 @@ func NewGenesisAccount(aa *AppAccount) *GenesisAccount {
 func (ga *GenesisAccount) ToAppAccount() (acc *AppAccount, err error) {
 	baseAcc := auth.BaseAccount{
 		Address: ga.Address,
-		Coins:   ga.Coins.Sort(),
+		Coins:   ga.Coins,
 	}
 	return &AppAccount{
 		BaseAccount: baseAcc,
