@@ -8,10 +8,8 @@ import (
 
 	wrsp "github.com/tepleton/wrsp/types"
 	crypto "github.com/tepleton/go-crypto"
-	oldwire "github.com/tepleton/go-wire"
 	dbm "github.com/tepleton/tmlibs/db"
 
-	"github.com/tepleton/tepleton-sdk/examples/basecoin/types"
 	"github.com/tepleton/tepleton-sdk/store"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
@@ -52,6 +50,31 @@ var (
 	emptyPubkey crypto.PubKey
 )
 
+// default params for testing
+func defaultParams() Params {
+	return Params{
+		InflationRateChange: sdk.NewRat(13, 100),
+		InflationMax:        sdk.NewRat(20, 100),
+		InflationMin:        sdk.NewRat(7, 100),
+		GoalBonded:          sdk.NewRat(67, 100),
+		MaxValidators:       100,
+		BondDenom:           "fermion",
+	}
+}
+
+// initial pool for testing
+func initialPool() Pool {
+	return Pool{
+		TotalSupply:       0,
+		BondedShares:      sdk.ZeroRat,
+		UnbondedShares:    sdk.ZeroRat,
+		BondedPool:        0,
+		UnbondedPool:      0,
+		InflationLastTime: 0,
+		Inflation:         sdk.NewRat(7, 100),
+	}
+}
+
 // XXX reference the common declaration of this function
 func subspace(prefix []byte) (start, end []byte) {
 	end = make([]byte, len(prefix))
@@ -60,36 +83,21 @@ func subspace(prefix []byte) (start, end []byte) {
 	return prefix, end
 }
 
-// custom tx codec
-// TODO: use new go-wire
-func makeTestCodec() *wire.Codec {
+func MakeCodec() *wire.Codec {
+	var cdc = wire.NewCodec()
 
-	const msgTypeSend = 0x1
-	const msgTypeIssue = 0x2
-	const msgTypeDeclareCandidacy = 0x3
-	const msgTypeEditCandidacy = 0x4
-	const msgTypeDelegate = 0x5
-	const msgTypeUnbond = 0x6
-	var _ = oldwire.RegisterInterface(
-		struct{ sdk.Msg }{},
-		oldwire.ConcreteType{bank.SendMsg{}, msgTypeSend},
-		oldwire.ConcreteType{bank.IssueMsg{}, msgTypeIssue},
-		oldwire.ConcreteType{MsgDeclareCandidacy{}, msgTypeDeclareCandidacy},
-		oldwire.ConcreteType{MsgEditCandidacy{}, msgTypeEditCandidacy},
-		oldwire.ConcreteType{MsgDelegate{}, msgTypeDelegate},
-		oldwire.ConcreteType{MsgUnbond{}, msgTypeUnbond},
-	)
+	// Register Msgs
+	cdc.RegisterInterface((*sdk.Msg)(nil), nil)
+	cdc.RegisterConcrete(bank.SendMsg{}, "test/stake/Send", nil)
+	cdc.RegisterConcrete(bank.IssueMsg{}, "test/stake/Issue", nil)
+	cdc.RegisterConcrete(MsgDeclareCandidacy{}, "test/stake/DeclareCandidacy", nil)
+	cdc.RegisterConcrete(MsgEditCandidacy{}, "test/stake/EditCandidacy", nil)
+	cdc.RegisterConcrete(MsgUnbond{}, "test/stake/Unbond", nil)
 
-	const accTypeApp = 0x1
-	var _ = oldwire.RegisterInterface(
-		struct{ sdk.Account }{},
-		oldwire.ConcreteType{&types.AppAccount{}, accTypeApp},
-	)
-	cdc := wire.NewCodec()
+	// Register AppAccount
+	cdc.RegisterInterface((*sdk.Account)(nil), nil)
+	cdc.RegisterConcrete(&auth.BaseAccount{}, "test/stake/Account", nil)
 
-	// cdc.RegisterInterface((*sdk.Msg)(nil), nil)
-	// bank.RegisterWire(cdc)   // Register bank.[SendMsg,IssueMsg] types.
-	// crypto.RegisterWire(cdc) // Register crypto.[PubKey,PrivKey,Signature] types.
 	return cdc
 }
 
@@ -105,7 +113,7 @@ func paramsNoInflation() Params {
 }
 
 // hogpodge of all sorts of input required for testing
-func createTestInput(t *testing.T, sender sdk.Address, isCheckTx bool, initCoins int64) (sdk.Context, sdk.AccountMapper, Keeper) {
+func createTestInput(t *testing.T, isCheckTx bool, initCoins int64) (sdk.Context, sdk.AccountMapper, Keeper) {
 	db := dbm.NewMemDB()
 	keyStake := sdk.NewKVStoreKey("stake")
 	keyMain := keyStake //sdk.NewKVStoreKey("main") //TODO fix multistore
@@ -123,13 +131,14 @@ func createTestInput(t *testing.T, sender sdk.Address, isCheckTx bool, initCoins
 	)
 	ck := bank.NewCoinKeeper(accountMapper)
 	keeper := NewKeeper(ctx, cdc, keyStake, ck)
-
-	//params := paramsNoInflation()
-	params := keeper.GetParams(ctx)
+	keeper.setPool(ctx, initialPool())
+	keeper.setParams(ctx, defaultParams())
 
 	// fill all the addresses with some coins
 	for _, addr := range addrs {
-		ck.AddCoins(ctx, addr, sdk.Coins{{params.BondDenom, initCoins}})
+		ck.AddCoins(ctx, addr, sdk.Coins{
+			{keeper.GetParams(ctx).BondDenom, initCoins},
+		})
 	}
 
 	return ctx, accountMapper, keeper
