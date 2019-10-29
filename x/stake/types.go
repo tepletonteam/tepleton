@@ -2,8 +2,6 @@ package stake
 
 import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/wire"
-	wrsp "github.com/tepleton/wrsp/types"
 	crypto "github.com/tepleton/go-crypto"
 )
 
@@ -106,9 +104,8 @@ func (c Candidate) delegatorShareExRate() sdk.Rat {
 // Should only be called when the Candidate qualifies as a validator.
 func (c Candidate) validator() Validator {
 	return Validator{
-		Address: c.Address,
-		PubKey:  c.PubKey,
-		Power:   c.Assets,
+		Address:     c.Address,
+		VotingPower: c.Assets,
 	}
 }
 
@@ -119,35 +116,23 @@ func (c Candidate) validator() Validator {
 
 // Validator is one of the top Candidates
 type Validator struct {
-	Address sdk.Address   `json:"address"`
-	PubKey  crypto.PubKey `json:"pub_key"`
-	Power   sdk.Rat       `json:"voting_power"`
+	Address     sdk.Address `json:"address"`      // Address of validator
+	VotingPower sdk.Rat     `json:"voting_power"` // Voting power if considered a validator
 }
 
-// wrsp validator from stake validator type
-func (v Validator) wrspValidator(cdc *wire.Codec) wrsp.Validator {
-	pkBytes, err := cdc.MarshalBinary(v.PubKey)
+// WRSPValidator - Get the validator from a bond value
+/* TODO
+func (v Validator) WRSPValidator() (*wrsp.Validator, error) {
+	pkBytes, err := wire.MarshalBinary(v.PubKey)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return wrsp.Validator{
+	return &wrsp.Validator{
 		PubKey: pkBytes,
-		Power:  v.Power.Evaluate(),
-	}
+		Power:  v.VotingPower.Evaluate(),
+	}, nil
 }
-
-// wrsp validator from stake validator type
-// with zero power used for validator updates
-func (v Validator) wrspValidatorZero(cdc *wire.Codec) wrsp.Validator {
-	pkBytes, err := cdc.MarshalBinary(v.PubKey)
-	if err != nil {
-		panic(err)
-	}
-	return wrsp.Validator{
-		PubKey: pkBytes,
-		Power:  0,
-	}
-}
+*/
 
 //_________________________________________________________________________
 
