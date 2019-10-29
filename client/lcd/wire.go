@@ -1,4 +1,4 @@
-package rpc
+package lcd
 
 import (
 	amino "github.com/tepleton/go-amino"
