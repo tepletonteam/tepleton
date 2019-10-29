@@ -77,7 +77,7 @@ func (co commander) bondTxCmd(cmd *cobra.Command, args []string) error {
 	var pubKeyEd crypto.PubKeyEd25519
 	copy(pubKeyEd[:], rawPubKey)
 
-	msg := simplestake.NewBondMsg(from, stake, pubKeyEd)
+	msg := simplestake.NewBondMsg(from, stake, pubKeyEd.Wrap())
 
 	return co.sendMsg(msg)
 }

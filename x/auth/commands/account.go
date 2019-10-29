@@ -11,6 +11,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/context"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
+	"github.com/tepleton/tepleton-sdk/x/auth"
 )
 
 // GetAccountCmd for the auth.BaseAccount type
@@ -19,9 +20,9 @@ func GetAccountCmdDefault(storeName string, cdc *wire.Codec) *cobra.Command {
 }
 
 func GetAccountDecoder(cdc *wire.Codec) sdk.AccountDecoder {
-	return func(accBytes []byte) (acct sdk.Account, err error) {
-		// acct := new(auth.BaseAccount)
-		err = cdc.UnmarshalBinaryBare(accBytes, &acct)
+	return func(accBytes []byte) (sdk.Account, error) {
+		acct := new(auth.BaseAccount)
+		err := cdc.UnmarshalBinary(accBytes, &acct)
 		if err != nil {
 			panic(err)
 		}

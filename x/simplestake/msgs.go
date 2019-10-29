@@ -34,7 +34,7 @@ func (msg BondMsg) ValidateBasic() sdk.Error {
 		return ErrEmptyStake()
 	}
 
-	if msg.PubKey == nil {
+	if msg.PubKey.Empty() {
 		return sdk.ErrInvalidPubKey("BondMsg.PubKey must not be empty")
 	}
 

@@ -183,7 +183,7 @@
   branch = "master"
   name = "github.com/rcrowley/go-metrics"
   packages = ["."]
-  revision = "d932a24a8ccb8fcadc993e5c6c58f93dac168294"
+  revision = "8732c616f52954686704c8645fe1a9d59e9df7c1"
 
 [[projects]]
   name = "github.com/spf13/afero"
@@ -261,8 +261,8 @@
     "server",
     "types"
   ]
-  revision = "c62aed95f2ce399ec815b0cafe478af002cdc4e6"
-  version = "v0.10.3-dev"
+  revision = "46686763ba8ea595ede16530ed4a40fb38f49f94"
+  version = "v0.10.2"
 
 [[projects]]
   branch = "master"
@@ -275,12 +275,6 @@
   revision = "d8387025d2b9d158cf4efb07e7ebf814bcce2057"
 
 [[projects]]
-  name = "github.com/tepleton/go-amino"
-  packages = ["."]
-  revision = "42246108ff925a457fb709475070a03dfd3e2b5c"
-  version = "0.9.6"
-
-[[projects]]
   name = "github.com/tepleton/go-crypto"
   packages = [
     ".",
@@ -289,13 +283,17 @@
     "keys/words",
     "keys/words/wordlist"
   ]
-  revision = "5d5f580f49ca66c13400938c64334186068c8b7c"
-  version = "v0.6.1"
+  revision = "c3e19f3ea26f5c3357e0bcbb799b0761ef923755"
+  version = "v0.5.0"
 
 [[projects]]
   name = "github.com/tepleton/go-wire"
-  packages = ["."]
+  packages = [
+    ".",
+    "data"
+  ]
   revision = "fa721242b042ecd4c6ed1a934ee740db4f74e45c"
+  source = "github.com/tepleton/go-amino"
   version = "v0.7.3"
 
 [[projects]]
@@ -305,7 +303,6 @@
   version = "v0.7.0"
 
 [[projects]]
-  branch = "bucky/aminoify"
   name = "github.com/tepleton/tepleton"
   packages = [
     "blockchain",
@@ -341,9 +338,11 @@
     "state/txindex/null",
     "types",
     "types/priv_validator",
-    "version"
+    "version",
+    "wire"
   ]
-  revision = "466c3ab1c79c1e9856aeea80c9e11c31219d11f0"
+  revision = "a1dd329d72e78d4770e602359bad5b7b1e8b72a3"
+  version = "v0.18.0-rc1"
 
 [[projects]]
   name = "github.com/tepleton/tmlibs"
@@ -391,13 +390,13 @@
     "lex/httplex",
     "trace"
   ]
-  revision = "61147c48b25b599e5b561d2e9c4f3e1ef489ca41"
+  revision = "b3c676e531a6dc479fa1b35ac961c13f5e2b4d2e"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "3b87a42e500a6dc65dae1a55d0b641295971163e"
+  revision = "1d206c9fa8975fb4cf00df1dc8bf3283dc24ba0e"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -424,7 +423,7 @@
   branch = "master"
   name = "google.golang.org/genproto"
   packages = ["googleapis/rpc/status"]
-  revision = "ce84044298496ef4b54b4a0a0909ba593cc60e30"
+  revision = "35de2414665fc36f56b72d982c5af480d86de5ab"
 
 [[projects]]
   name = "google.golang.org/grpc"
@@ -448,7 +447,6 @@
     "transport"
   ]
   revision = "5b3c4e850e90a4cf6a20ebd46c8b32a0a3afcb9e"
-  source = "github.com/grpc/grpc-go"
   version = "v1.7.5"
 
 [[projects]]
@@ -460,6 +458,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d81bbe5d23b9bc1e1829c207a57857c40957c4c0dac6c70f5af04e0930cbd652"
+  inputs-digest = "67298e1f8058b85f082dbd32123f2779b11bda282616e595141dba41a8675c39"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -1,11 +1,13 @@
 package rpc
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/spf13/cobra"
+	wire "github.com/tepleton/go-wire"
 
 	"github.com/tepleton/tepleton-sdk/client"
 	"github.com/tepleton/tepleton-sdk/client/context"
@@ -39,8 +41,8 @@ func printNodeStatus(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	output, err := cdc.MarshalJSON(status)
-	// output, err := cdc.MarshalJSONIndent(res, "  ", "")
+	output, err := wire.MarshalJSON(status)
+	// output, err := json.MarshalIndent(res, "  ", "")
 	if err != nil {
 		return err
 	}
@@ -60,7 +62,7 @@ func NodeInfoRequestHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	nodeInfo := status.NodeInfo
-	output, err := cdc.MarshalJSON(nodeInfo)
+	output, err := json.MarshalIndent(nodeInfo, "", "  ")
 	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte(err.Error()))

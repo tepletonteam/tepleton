@@ -3,13 +3,11 @@ package auth
 import (
 	"testing"
 
+	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	wrsp "github.com/tepleton/wrsp/types"
 	crypto "github.com/tepleton/go-crypto"
-
-	sdk "github.com/tepleton/tepleton-sdk/types"
-	wire "github.com/tepleton/tepleton-sdk/wire"
 )
 
 func newTestMsg(addrs ...sdk.Address) *sdk.TestMsg {
@@ -33,7 +31,7 @@ func newCoins() sdk.Coins {
 func privAndAddr() (crypto.PrivKey, sdk.Address) {
 	priv := crypto.GenPrivKeyEd25519()
 	addr := priv.PubKey().Address()
-	return priv, addr
+	return priv.Wrap(), addr
 }
 
 // run the tx through the anteHandler and ensure its valid
@@ -69,9 +67,7 @@ func newTestTxWithSignBytes(msg sdk.Msg, privs []crypto.PrivKey, seqs []int64, f
 func TestAnteHandlerSigErrors(t *testing.T) {
 	// setup
 	ms, capKey := setupMultiStore()
-	cdc := wire.NewCodec()
-	RegisterBaseAccount(cdc)
-	mapper := NewAccountMapper(cdc, capKey, &BaseAccount{})
+	mapper := NewAccountMapper(capKey, &BaseAccount{})
 	anteHandler := NewAnteHandler(mapper)
 	ctx := sdk.NewContext(ms, wrsp.Header{ChainID: "mychainid"}, false, nil)
 
@@ -110,9 +106,7 @@ func TestAnteHandlerSigErrors(t *testing.T) {
 func TestAnteHandlerSequences(t *testing.T) {
 	// setup
 	ms, capKey := setupMultiStore()
-	cdc := wire.NewCodec()
-	RegisterBaseAccount(cdc)
-	mapper := NewAccountMapper(cdc, capKey, &BaseAccount{})
+	mapper := NewAccountMapper(capKey, &BaseAccount{})
 	anteHandler := NewAnteHandler(mapper)
 	ctx := sdk.NewContext(ms, wrsp.Header{ChainID: "mychainid"}, false, nil)
 
@@ -176,9 +170,7 @@ func TestAnteHandlerSequences(t *testing.T) {
 func TestAnteHandlerFees(t *testing.T) {
 	// setup
 	ms, capKey := setupMultiStore()
-	cdc := wire.NewCodec()
-	RegisterBaseAccount(cdc)
-	mapper := NewAccountMapper(cdc, capKey, &BaseAccount{})
+	mapper := NewAccountMapper(capKey, &BaseAccount{})
 	anteHandler := NewAnteHandler(mapper)
 	ctx := sdk.NewContext(ms, wrsp.Header{ChainID: "mychainid"}, false, nil)
 
@@ -213,9 +205,7 @@ func TestAnteHandlerFees(t *testing.T) {
 func TestAnteHandlerBadSignBytes(t *testing.T) {
 	// setup
 	ms, capKey := setupMultiStore()
-	cdc := wire.NewCodec()
-	RegisterBaseAccount(cdc)
-	mapper := NewAccountMapper(cdc, capKey, &BaseAccount{})
+	mapper := NewAccountMapper(capKey, &BaseAccount{})
 	anteHandler := NewAnteHandler(mapper)
 	ctx := sdk.NewContext(ms, wrsp.Header{ChainID: "mychainid"}, false, nil)
 
@@ -288,9 +278,7 @@ func TestAnteHandlerBadSignBytes(t *testing.T) {
 func TestAnteHandlerSetPubKey(t *testing.T) {
 	// setup
 	ms, capKey := setupMultiStore()
-	cdc := wire.NewCodec()
-	RegisterBaseAccount(cdc)
-	mapper := NewAccountMapper(cdc, capKey, &BaseAccount{})
+	mapper := NewAccountMapper(capKey, &BaseAccount{})
 	anteHandler := NewAnteHandler(mapper)
 	ctx := sdk.NewContext(ms, wrsp.Header{ChainID: "mychainid"}, false, nil)
 
@@ -322,16 +310,16 @@ func TestAnteHandlerSetPubKey(t *testing.T) {
 	msg = newTestMsg(addr2)
 	tx = newTestTx(ctx, msg, privs, seqs, fee)
 	sigs := tx.GetSignatures()
-	sigs[0].PubKey = nil
+	sigs[0].PubKey = crypto.PubKey{}
 	checkInvalidTx(t, anteHandler, ctx, tx, sdk.CodeInvalidPubKey)
 
 	acc2 = mapper.GetAccount(ctx, addr2)
-	assert.Nil(t, acc2.GetPubKey())
+	assert.True(t, acc2.GetPubKey().Empty())
 
 	// test invalid signature and public key
 	tx = newTestTx(ctx, msg, privs, seqs, fee)
 	checkInvalidTx(t, anteHandler, ctx, tx, sdk.CodeInvalidPubKey)
 
 	acc2 = mapper.GetAccount(ctx, addr2)
-	assert.Nil(t, acc2.GetPubKey())
+	assert.True(t, acc2.GetPubKey().Empty())
 }

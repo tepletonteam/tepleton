@@ -61,7 +61,7 @@ func (acc BaseAccount) GetPubKey() crypto.PubKey {
 
 // Implements sdk.Account.
 func (acc *BaseAccount) SetPubKey(pubKey crypto.PubKey) error {
-	if acc.PubKey != nil {
+	if !acc.PubKey.Empty() {
 		return errors.New("cannot override BaseAccount pubkey")
 	}
 	acc.PubKey = pubKey
@@ -93,9 +93,7 @@ func (acc *BaseAccount) SetSequence(seq int64) error {
 //----------------------------------------
 // Wire
 
-// Most users shouldn't use this, but this comes handy for tests.
-func RegisterBaseAccount(cdc *wire.Codec) {
-	cdc.RegisterInterface((*sdk.Account)(nil), nil)
-	cdc.RegisterConcrete(&BaseAccount{}, "tepleton-sdk/BaseAccount", nil)
+func RegisterWireBaseAccount(cdc *wire.Codec) {
+	// Register crypto.[PubKey,PrivKey,Signature] types.
 	wire.RegisterCrypto(cdc)
 }

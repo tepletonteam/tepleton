@@ -5,7 +5,6 @@ import (
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/x/bank"
-	wrsp "github.com/tepleton/wrsp/types"
 )
 
 //nolint
@@ -33,17 +32,6 @@ func NewHandler(k Keeper, ck bank.CoinKeeper) sdk.Handler {
 		default:
 			return sdk.ErrTxDecode("invalid message parse in staking module").Result()
 		}
-	}
-}
-
-//_______________________________________________
-
-// NewEndBlocker generates sdk.EndBlocker
-// Performs tick functionality
-func NewEndBlocker(k Keeper) sdk.EndBlocker {
-	return func(ctx sdk.Context, req wrsp.RequestEndBlock) (res wrsp.ResponseEndBlock) {
-		res.ValidatorUpdates = k.Tick(ctx)
-		return
 	}
 }
 
