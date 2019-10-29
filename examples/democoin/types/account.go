@@ -4,9 +4,6 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
-
-	"github.com/tepleton/tepleton-sdk/examples/democoin/x/cool"
-	"github.com/tepleton/tepleton-sdk/examples/democoin/x/pow"
 )
 
 var _ sdk.Account = (*AppAccount)(nil)
@@ -44,9 +41,7 @@ func GetAccountDecoder(cdc *wire.Codec) sdk.AccountDecoder {
 
 // State to Unmarshal
 type GenesisState struct {
-	Accounts    []*GenesisAccount `json:"accounts"`
-	PowGenesis  pow.PowGenesis    `json:"pow"`
-	CoolGenesis cool.CoolGenesis  `json:"cool"`
+	Accounts []*GenesisAccount `json:"accounts"`
 }
 
 // GenesisAccount doesn't need pubkey or sequence
@@ -60,7 +55,7 @@ func NewGenesisAccount(aa *AppAccount) *GenesisAccount {
 	return &GenesisAccount{
 		Name:    aa.Name,
 		Address: aa.Address,
-		Coins:   aa.Coins.Sort(),
+		Coins:   aa.Coins,
 	}
 }
 
@@ -68,7 +63,7 @@ func NewGenesisAccount(aa *AppAccount) *GenesisAccount {
 func (ga *GenesisAccount) ToAppAccount() (acc *AppAccount, err error) {
 	baseAcc := auth.BaseAccount{
 		Address: ga.Address,
-		Coins:   ga.Coins.Sort(),
+		Coins:   ga.Coins,
 	}
 	return &AppAccount{
 		BaseAccount: baseAcc,

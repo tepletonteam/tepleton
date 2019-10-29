@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -23,13 +24,17 @@ import (
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/types"
 )
 
-// rootCmd is the entry point for this binary
+// toncliCmd is the entry point for this binary
 var (
-	rootCmd = &cobra.Command{
+	basecliCmd = &cobra.Command{
 		Use:   "basecli",
 		Short: "Basecoin light-client",
 	}
 )
+
+func todoNotImplemented(_ *cobra.Command, _ []string) error {
+	return errors.New("TODO: Command not yet implemented")
+}
 
 func main() {
 	// disable sorting
@@ -43,36 +48,36 @@ func main() {
 	// with the cdc
 
 	// add standard rpc, and tx commands
-	rpc.AddCommands(rootCmd)
-	rootCmd.AddCommand(client.LineBreak)
-	tx.AddCommands(rootCmd, cdc)
-	rootCmd.AddCommand(client.LineBreak)
+	rpc.AddCommands(basecliCmd)
+	basecliCmd.AddCommand(client.LineBreak)
+	tx.AddCommands(basecliCmd, cdc)
+	basecliCmd.AddCommand(client.LineBreak)
 
 	// add query/post commands (custom to binary)
-	rootCmd.AddCommand(
+	basecliCmd.AddCommand(
 		client.GetCommands(
 			authcmd.GetAccountCmd("main", cdc, types.GetAccountDecoder(cdc)),
 		)...)
-	rootCmd.AddCommand(
+	basecliCmd.AddCommand(
 		client.PostCommands(
 			bankcmd.SendTxCmd(cdc),
 		)...)
-	rootCmd.AddCommand(
+	basecliCmd.AddCommand(
 		client.PostCommands(
 			ibccmd.IBCTransferCmd(cdc),
 		)...)
-	rootCmd.AddCommand(
+	basecliCmd.AddCommand(
 		client.PostCommands(
 			ibccmd.IBCRelayCmd(cdc),
 			simplestakingcmd.BondTxCmd(cdc),
 		)...)
-	rootCmd.AddCommand(
+	basecliCmd.AddCommand(
 		client.PostCommands(
 			simplestakingcmd.UnbondTxCmd(cdc),
 		)...)
 
 	// add proxy, version and key info
-	rootCmd.AddCommand(
+	basecliCmd.AddCommand(
 		client.LineBreak,
 		lcd.ServeCommand(cdc),
 		keys.Commands(),
@@ -81,6 +86,6 @@ func main() {
 	)
 
 	// prepare and add flags
-	executor := cli.PrepareMainCmd(rootCmd, "BC", os.ExpandEnv("$HOME/.basecli"))
+	executor := cli.PrepareMainCmd(basecliCmd, "BC", os.ExpandEnv("$HOME/.basecli"))
 	executor.Execute()
 }

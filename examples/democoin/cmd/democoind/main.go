@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -9,41 +10,45 @@ import (
 
 	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/tmlibs/cli"
+	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/tepleton-sdk/examples/democoin/app"
 	"github.com/tepleton/tepleton-sdk/server"
-	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/version"
 )
 
-// rootCmd is the entry point for this binary
+// democoindCmd is the entry point for this binary
 var (
-	context = server.NewDefaultContext()
-	rootCmd = &cobra.Command{
-		Use:               "democoind",
-		Short:             "Democoin Daemon (server)",
-		PersistentPreRunE: server.PersistentPreRunEFn(context),
+	democoindCmd = &cobra.Command{
+		Use:   "democoind",
+		Short: "Gaia Daemon (server)",
 	}
 )
 
-// defaultAppState sets up the app_state for the
+// defaultOptions sets up the app_options for the
 // default genesis file
-func defaultAppState(args []string, addr sdk.Address, coinDenom string) (json.RawMessage, error) {
-	baseJSON, err := server.DefaultGenAppState(args, addr, coinDenom)
+func defaultOptions(args []string) (json.RawMessage, string, cmn.HexBytes, error) {
+	addr, secret, err := server.GenerateCoinKey()
 	if err != nil {
-		return nil, err
+		return nil, "", nil, err
 	}
-	var jsonMap map[string]json.RawMessage
-	err = json.Unmarshal(baseJSON, &jsonMap)
-	if err != nil {
-		return nil, err
-	}
-	jsonMap["cool"] = json.RawMessage(`{
-        "trend": "ice-cold"
-      }`)
-	bz, err := json.Marshal(jsonMap)
-	return json.RawMessage(bz), err
+	fmt.Println("Secret phrase to access coins:")
+	fmt.Println(secret)
+
+	opts := fmt.Sprintf(`{
+      "accounts": [{
+        "address": "%s",
+        "coins": [
+          {
+            "denom": "mycoin",
+            "amount": 9007199254740992
+          }
+        ]
+      }]
+    }`, addr)
+	return json.RawMessage(opts), "", nil, nil
 }
 
 func generateApp(rootDir string, logger log.Logger) (wrsp.Application, error) {
@@ -52,10 +57,6 @@ func generateApp(rootDir string, logger log.Logger) (wrsp.Application, error) {
 		return nil, err
 	}
 	dbAcc, err := dbm.NewGoLevelDB("democoin-acc", filepath.Join(rootDir, "data"))
-	if err != nil {
-		return nil, err
-	}
-	dbPow, err := dbm.NewGoLevelDB("democoin-pow", filepath.Join(rootDir, "data"))
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +71,6 @@ func generateApp(rootDir string, logger log.Logger) (wrsp.Application, error) {
 	dbs := map[string]dbm.DB{
 		"main":    dbMain,
 		"acc":     dbAcc,
-		"pow":     dbPow,
 		"ibc":     dbIBC,
 		"staking": dbStaking,
 	}
@@ -79,10 +79,21 @@ func generateApp(rootDir string, logger log.Logger) (wrsp.Application, error) {
 }
 
 func main() {
-	server.AddCommands(rootCmd, defaultAppState, generateApp, context)
+	// TODO: set logger through CLI
+	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).
+		With("module", "main")
+
+	democoindCmd.AddCommand(
+		server.InitCmd(defaultOptions, logger),
+		server.StartCmd(generateApp, logger),
+		server.UnsafeResetAllCmd(logger),
+		server.ShowNodeIdCmd(logger),
+		server.ShowValidatorCmd(logger),
+		version.VersionCmd,
+	)
 
 	// prepare and add flags
 	rootDir := os.ExpandEnv("$HOME/.democoind")
-	executor := cli.PrepareBaseCmd(rootCmd, "BC", rootDir)
+	executor := cli.PrepareBaseCmd(democoindCmd, "BC", rootDir)
 	executor.Execute()
 }

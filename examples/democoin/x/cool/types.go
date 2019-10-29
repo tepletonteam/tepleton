@@ -15,11 +15,6 @@ type SetTrendMsg struct {
 	Cool   string
 }
 
-// Genesis state - specify genesis trend
-type CoolGenesis struct {
-	Trend string `json:"trend"`
-}
-
 // New cool message
 func NewSetTrendMsg(sender sdk.Address, cool string) SetTrendMsg {
 	return SetTrendMsg{

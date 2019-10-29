@@ -10,7 +10,6 @@ import (
 	wire "github.com/tepleton/go-wire"
 
 	"github.com/tepleton/tepleton-sdk/client"
-	"github.com/tepleton/tepleton-sdk/client/context"
 	ctypes "github.com/tepleton/tepleton/rpc/core/types"
 )
 
@@ -26,7 +25,7 @@ func statusCommand() *cobra.Command {
 
 func getNodeStatus() (*ctypes.ResultStatus, error) {
 	// get the node
-	node, err := context.NewCoreContextFromViper().GetNode()
+	node, err := client.GetNode()
 	if err != nil {
 		return &ctypes.ResultStatus{}, err
 	}

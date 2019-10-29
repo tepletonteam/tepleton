@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/tepleton/tepleton-sdk/client"
-	"github.com/tepleton/tepleton-sdk/client/context"
+	"github.com/tepleton/tepleton-sdk/client/builder"
 	"github.com/tepleton/tepleton-sdk/wire"
 
 	"github.com/tepleton/tepleton-sdk/examples/democoin/x/cool"
@@ -24,10 +24,8 @@ func QuizTxCmd(cdc *wire.Codec) *cobra.Command {
 				return errors.New("You must provide an answer")
 			}
 
-			ctx := context.NewCoreContextFromViper()
-
 			// get the from address from the name flag
-			from, err := ctx.GetFromAddress()
+			from, err := builder.GetFromAddress()
 			if err != nil {
 				return err
 			}
@@ -39,7 +37,7 @@ func QuizTxCmd(cdc *wire.Codec) *cobra.Command {
 			name := viper.GetString(client.FlagName)
 
 			// build and sign the transaction, then broadcast to Tendermint
-			res, err := ctx.SignBuildBroadcast(name, msg, cdc)
+			res, err := builder.SignBuildBroadcast(name, msg, cdc)
 			if err != nil {
 				return err
 			}
@@ -60,10 +58,8 @@ func SetTrendTxCmd(cdc *wire.Codec) *cobra.Command {
 				return errors.New("You must provide an answer")
 			}
 
-			ctx := context.NewCoreContextFromViper()
-
 			// get the from address from the name flag
-			from, err := ctx.GetFromAddress()
+			from, err := builder.GetFromAddress()
 			if err != nil {
 				return err
 			}
@@ -75,7 +71,7 @@ func SetTrendTxCmd(cdc *wire.Codec) *cobra.Command {
 			msg := cool.NewSetTrendMsg(from, args[0])
 
 			// build and sign the transaction, then broadcast to Tendermint
-			res, err := ctx.SignBuildBroadcast(name, msg, cdc)
+			res, err := builder.SignBuildBroadcast(name, msg, cdc)
 			if err != nil {
 				return err
 			}

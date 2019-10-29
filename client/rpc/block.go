@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/tepleton/tepleton-sdk/client"
-	"github.com/tepleton/tepleton-sdk/client/context"
 )
 
 const (
@@ -32,8 +31,7 @@ func blockCommand() *cobra.Command {
 
 func getBlock(height *int64) ([]byte, error) {
 	// get the node
-	ctx := context.NewCoreContextFromViper()
-	node, err := ctx.GetNode()
+	node, err := client.GetNode()
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +55,7 @@ func getBlock(height *int64) ([]byte, error) {
 }
 
 func GetChainHeight() (int64, error) {
-	node, err := context.NewCoreContextFromViper().GetNode()
+	node, err := client.GetNode()
 	if err != nil {
 		return -1, err
 	}

@@ -9,7 +9,8 @@ import (
 
 	crypto "github.com/tepleton/go-crypto"
 
-	"github.com/tepleton/tepleton-sdk/client/context"
+	"github.com/tepleton/tepleton-sdk/client"
+	"github.com/tepleton/tepleton-sdk/client/builder"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/simplestake"
@@ -47,9 +48,7 @@ type commander struct {
 }
 
 func (co commander) bondTxCmd(cmd *cobra.Command, args []string) error {
-	ctx := context.NewCoreContextFromViper()
-
-	from, err := ctx.GetFromAddress()
+	from, err := builder.GetFromAddress()
 	if err != nil {
 		return err
 	}
@@ -83,7 +82,7 @@ func (co commander) bondTxCmd(cmd *cobra.Command, args []string) error {
 }
 
 func (co commander) unbondTxCmd(cmd *cobra.Command, args []string) error {
-	from, err := context.NewCoreContextFromViper().GetFromAddress()
+	from, err := builder.GetFromAddress()
 	if err != nil {
 		return err
 	}
@@ -94,8 +93,8 @@ func (co commander) unbondTxCmd(cmd *cobra.Command, args []string) error {
 }
 
 func (co commander) sendMsg(msg sdk.Msg) error {
-	ctx := context.NewCoreContextFromViper()
-	res, err := ctx.SignBuildBroadcast(ctx.FromAddressName, msg, co.cdc)
+	name := viper.GetString(client.FlagName)
+	res, err := builder.SignBuildBroadcast(name, msg, co.cdc)
 	if err != nil {
 		return err
 	}

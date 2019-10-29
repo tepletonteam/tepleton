@@ -11,7 +11,7 @@ import (
 
 	crypto "github.com/tepleton/go-crypto"
 
-	"github.com/tepleton/tepleton-sdk/client/context"
+	"github.com/tepleton/tepleton-sdk/client/builder"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire" // XXX fix
 	"github.com/tepleton/tepleton-sdk/x/stake"
@@ -47,8 +47,7 @@ func GetCmdQueryCandidates(cdc *wire.Codec, storeName string) *cobra.Command {
 
 			key := PrefixedKey(stake.MsgType, stake.CandidatesKey)
 
-			ctx := context.NewCoreContextFromViper()
-			res, err := ctx.Query(key, storeName)
+			res, err := builder.Query(key, storeName)
 			if err != nil {
 				return err
 			}
@@ -88,9 +87,7 @@ func GetCmdQueryCandidate(cdc *wire.Codec, storeName string) *cobra.Command {
 
 			key := PrefixedKey(stake.MsgType, stake.GetCandidateKey(addr))
 
-			ctx := context.NewCoreContextFromViper()
-
-			res, err := ctx.Query(key, storeName)
+			res, err := builder.Query(key, storeName)
 			if err != nil {
 				return err
 			}
@@ -136,9 +133,7 @@ func GetCmdQueryDelegatorBond(cdc *wire.Codec, storeName string) *cobra.Command 
 
 			key := PrefixedKey(stake.MsgType, stake.GetDelegatorBondKey(delegator, addr, cdc))
 
-			ctx := context.NewCoreContextFromViper()
-
-			res, err := ctx.Query(key, storeName)
+			res, err := builder.Query(key, storeName)
 			if err != nil {
 				return err
 			}
@@ -180,9 +175,7 @@ func GetCmdQueryDelegatorBonds(cdc *wire.Codec, storeName string) *cobra.Command
 
 			key := PrefixedKey(stake.MsgType, stake.GetDelegatorBondsKey(delegator, cdc))
 
-			ctx := context.NewCoreContextFromViper()
-
-			res, err := ctx.Query(key, storeName)
+			res, err := builder.Query(key, storeName)
 			if err != nil {
 				return err
 			}
