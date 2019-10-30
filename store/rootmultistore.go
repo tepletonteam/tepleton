@@ -247,10 +247,9 @@ func parsePath(path string) (storeName string, subpath string, err sdk.Error) {
 func (rs *rootMultiStore) loadCommitStoreFromParams(id CommitID, params storeParams) (store CommitStore, err error) {
 	var db dbm.DB
 	if params.db != nil {
-		db = params.db
+		db = dbm.NewPrefixDB(params.db, []byte("s/_/"))
 	} else {
-		db = rs.db
-		db = dbm.NewPrefixDB(rs.db, []byte(params.key.Name()))
+		db = dbm.NewPrefixDB(rs.db, []byte("s/k:"+params.key.Name()+"/"))
 	}
 	switch params.typ {
 	case sdk.StoreTypeMulti:
@@ -380,10 +379,11 @@ func commitStores(version int64, storeMap map[StoreKey]CommitStore) commitInfo {
 		storeInfos = append(storeInfos, si)
 	}
 
-	return commitInfo{
+	ci := commitInfo{
 		Version:    version,
 		StoreInfos: storeInfos,
 	}
+	return ci
 }
 
 // Gets commitInfo from disk.
