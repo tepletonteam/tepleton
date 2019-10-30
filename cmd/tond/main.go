@@ -28,29 +28,11 @@ var (
 // TODO: distinguish from basecoin
 func generateApp(rootDir string, logger log.Logger) (wrsp.Application, error) {
 	dataDir := filepath.Join(rootDir, "data")
-	dbMain, err := dbm.NewGoLevelDB("ton", dataDir)
+	db, err := dbm.NewGoLevelDB("ton", dataDir)
 	if err != nil {
 		return nil, err
 	}
-	dbAcc, err := dbm.NewGoLevelDB("ton-acc", dataDir)
-	if err != nil {
-		return nil, err
-	}
-	dbIBC, err := dbm.NewGoLevelDB("ton-ibc", dataDir)
-	if err != nil {
-		return nil, err
-	}
-	dbStaking, err := dbm.NewGoLevelDB("ton-staking", dataDir)
-	if err != nil {
-		return nil, err
-	}
-	dbs := map[string]dbm.DB{
-		"main":    dbMain,
-		"acc":     dbAcc,
-		"ibc":     dbIBC,
-		"staking": dbStaking,
-	}
-	bapp := app.NewBasecoinApp(logger, dbs)
+	bapp := app.NewBasecoinApp(logger, db)
 	return bapp, nil
 }
 
