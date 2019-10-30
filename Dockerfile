@@ -1,34 +1,28 @@
-# Simple usage with a mounted data directory:
-# > docker build -t ton .
-# > docker run -v $HOME/.tond:/root/.tond ton init
-# > docker run -v $HOME/.tond:/root/.tond ton start
+FROM alpine:3.5
 
-FROM alpine:edge
+# BCHOME is where your genesis.json, key.json and other files including state are stored.
+ENV BCHOME /basecoin
 
-# Set up dependencies
-ENV PACKAGES go glide make git libc-dev bash
+# Create a basecoin user and group first so the IDs get set the same way, even
+# as the rest of this may change over time.
+RUN addgroup basecoin && \
+    adduser -S -G basecoin basecoin
 
-# Set up GOPATH & PATH
+RUN mkdir -p $BCHOME && \
+    chown -R basecoin:basecoin $BCHOME
+WORKDIR $BCHOME
 
-ENV GOPATH       /root/go
-ENV BASE_PATH    $GOPATH/src/github.com/tepleton
-ENV REPO_PATH    $BASE_PATH/tepleton-sdk
-ENV WORKDIR      /tepleton/
-ENV PATH         $GOPATH/bin:$PATH
+# Expose the basecoin home directory as a volume since there's mutable state in there.
+VOLUME $BCHOME
 
-# Link expected Go repo path
+# jq and curl used for extracting `pub_key` from private validator while
+# deploying tepleton with Kubernetes. It is nice to have bash so the users
+# could execute bash commands.
+RUN apk add --no-cache bash curl jq
 
-RUN mkdir -p $WORKDIR $GOPATH/pkg $ $GOPATH/bin $BASE_PATH
+COPY basecoin /usr/bin/basecoin
 
-# Add source files
+ENTRYPOINT ["basecoin"]
 
-ADD . $REPO_PATH
-
-# Install minimum necessary dependencies, build tepleton SDK, remove packages
-RUN apk add --no-cache $PACKAGES && \
-    cd $REPO_PATH && make get_tools && make get_vendor_deps && make all && make install && \
-    apk del $PACKAGES
-
-# Set entrypoint
-
-ENTRYPOINT ["tond"]
+# By default you will get the basecoin with local MerkleEyes and in-proc Tendermint.
+CMD ["start", "--dir=${BCHOME}"]
