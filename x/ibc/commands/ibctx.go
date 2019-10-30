@@ -13,7 +13,6 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	wire "github.com/tepleton/tepleton-sdk/wire"
 
-	authcmd "github.com/tepleton/tepleton-sdk/x/auth/commands"
 	"github.com/tepleton/tepleton-sdk/x/ibc"
 )
 
@@ -40,7 +39,7 @@ type sendCommander struct {
 }
 
 func (c sendCommander) sendIBCTransfer(cmd *cobra.Command, args []string) error {
-	ctx := context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(c.cdc))
+	ctx := context.NewCoreContextFromViper()
 
 	// get the from address
 	from, err := ctx.GetFromAddress()
@@ -50,12 +49,6 @@ func (c sendCommander) sendIBCTransfer(cmd *cobra.Command, args []string) error 
 
 	// build the message
 	msg, err := buildMsg(from)
-	if err != nil {
-		return err
-	}
-
-	// default to next sequence number if none provided
-	ctx, err = context.EnsureSequence(ctx)
 	if err != nil {
 		return err
 	}
