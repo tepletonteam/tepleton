@@ -10,6 +10,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/context"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
+	authcmd "github.com/tepleton/tepleton-sdk/x/auth/commands"
 	"github.com/tepleton/tepleton-sdk/x/bank"
 )
 
@@ -36,7 +37,7 @@ type Commander struct {
 }
 
 func (c Commander) sendTxCmd(cmd *cobra.Command, args []string) error {
-	ctx := context.NewCoreContextFromViper()
+	ctx := context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(c.Cdc))
 
 	// get the from address
 	from, err := ctx.GetFromAddress()
@@ -61,6 +62,12 @@ func (c Commander) sendTxCmd(cmd *cobra.Command, args []string) error {
 
 	// build message
 	msg := BuildMsg(from, to, coins)
+
+	// default to next sequence number if none provided
+	ctx, err = context.EnsureSequence(ctx)
+	if err != nil {
+		return err
+	}
 
 	// build and sign the transaction, then broadcast to Tendermint
 	res, err := ctx.SignBuildBroadcast(ctx.FromAddressName, msg, c.Cdc)
