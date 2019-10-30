@@ -11,7 +11,6 @@ import (
 
 	"github.com/tepleton/tepleton-sdk/examples/democoin/x/pow"
 	"github.com/tepleton/tepleton-sdk/wire"
-	authcmd "github.com/tepleton/tepleton-sdk/x/auth/commands"
 )
 
 func MineCmd(cdc *wire.Codec) *cobra.Command {
@@ -25,7 +24,7 @@ func MineCmd(cdc *wire.Codec) *cobra.Command {
 
 			// get from address and parse arguments
 
-			ctx := context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(cdc))
+			ctx := context.NewCoreContextFromViper()
 
 			from, err := ctx.GetFromAddress()
 			if err != nil {
@@ -53,12 +52,6 @@ func MineCmd(cdc *wire.Codec) *cobra.Command {
 
 			// get account name
 			name := ctx.FromAddressName
-
-			// default to next sequence number if none provided
-			ctx, err = context.EnsureSequence(ctx)
-			if err != nil {
-				return err
-			}
 
 			// build and sign the transaction, then broadcast to Tendermint
 			res, err := ctx.SignBuildBroadcast(name, msg, cdc)

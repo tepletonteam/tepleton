@@ -12,7 +12,6 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/context"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
-	authcmd "github.com/tepleton/tepleton-sdk/x/auth/commands"
 	"github.com/tepleton/tepleton-sdk/x/simplestake"
 )
 
@@ -95,14 +94,7 @@ func (co commander) unbondTxCmd(cmd *cobra.Command, args []string) error {
 }
 
 func (co commander) sendMsg(msg sdk.Msg) error {
-	ctx := context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(co.cdc))
-
-	// default to next sequence number if none provided
-	ctx, err := context.EnsureSequence(ctx)
-	if err != nil {
-		return err
-	}
-
+	ctx := context.NewCoreContextFromViper()
 	res, err := ctx.SignBuildBroadcast(ctx.FromAddressName, msg, co.cdc)
 	if err != nil {
 		return err
