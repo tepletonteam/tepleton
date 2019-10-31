@@ -7,77 +7,93 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/tepleton/tepleton-sdk/server"
 	"github.com/tepleton/tepleton-sdk/tests"
+	"github.com/tepleton/tepleton-sdk/x/auth"
 )
 
 func TestGaiaCLI(t *testing.T) {
 
-	// clear genesis/keys
-	_ = tests.ExecuteT(t, "tond unsafe_reset_all")
-	_, wc0, _ := tests.GoExecuteT(t, "toncli keys delete foo")
-	defer wc0.Close()
-	_, err := wc0.Write([]byte("1234567890\n"))
-	require.NoError(t, err)
-	_, wc1, _ := tests.GoExecuteT(t, "toncli keys delete bar")
-	defer wc1.Close()
-	_, err = wc1.Write([]byte("1234567890\n"))
-	require.NoError(t, err)
-	time.Sleep(time.Second)
+	tests.ExecuteT(t, "tond unsafe_reset_all")
+	pass := "1234567890"
+	executeWrite(t, "toncli keys delete foo", pass)
+	executeWrite(t, "toncli keys delete bar", pass)
+	masterKey, chainID := executeInit(t, "tond init")
 
-	// init genesis get master key
-	out := tests.ExecuteT(t, "tond init")
-	var initRes map[string]interface{}
-	outCut := "{" + strings.SplitN(out, "{", 2)[1]
-	err = json.Unmarshal([]byte(outCut), &initRes)
-	require.NoError(t, err, "out %v outCut %v err %v", out, outCut, err)
-	masterKey := (initRes["secret"]).(string)
-	chainID := (initRes["chain_id"]).(string)
+	// get a free port, also setup some common flags
+	servAddr := server.FreeTCPAddr(t)
+	flags := fmt.Sprintf("--node=%v --chain-id=%v", servAddr, chainID)
 
 	// start tond server
-	_, wc2, _ := tests.GoExecuteT(t, "tond start")
-	defer wc2.Close()
-	time.Sleep(time.Second)
+	cmd, _, _ := tests.GoExecuteT(t, fmt.Sprintf("tond start --rpc.laddr=%v", servAddr))
+	defer cmd.Process.Kill()
+	time.Sleep(time.Second) // waiting for some blocks to pass
 
-	// add the master key
-	_, wc3, _ := tests.GoExecuteT(t, "toncli keys add foo --recover")
-	defer wc3.Close()
-	_, err = wc3.Write([]byte("1234567890\n"))
+	//executeWrite(t, "toncli keys add foo --recover", pass, masterKey)
+	cmd, wc3, _ := tests.GoExecuteT(t, "toncli keys add foo --recover")
+	time.Sleep(time.Second) // waiting for some blocks to pass
+	_, err := wc3.Write([]byte("1234567890\n"))
 	require.NoError(t, err)
 	_, err = wc3.Write([]byte(masterKey + "\n"))
 	require.NoError(t, err)
-	time.Sleep(time.Second)
+	cmd.Wait()
+	time.Sleep(time.Second * 5) // waiting for some blocks to pass
+	fooAddr := executeGetAddr(t, "toncli keys show foo")
+	panic(fmt.Sprintf("debug fooAddr: %v\n", fooAddr))
 
-	// add a secondary key
-	_, wc4, _ := tests.GoExecuteT(t, "toncli keys add bar")
-	time.Sleep(time.Second * 5)
-	_, err = wc4.Write([]byte("1234567890\n"))
-	require.NoError(t, err)
-	time.Sleep(time.Second * 5)
+	executeWrite(t, "toncli keys add bar", pass)
+	barAddr := executeGetAddr(t, "toncli keys show bar")
+	executeWrite(t, fmt.Sprintf("toncli send %v --amount=10fermion --to=%v --name=foo", flags, barAddr), pass)
+	time.Sleep(time.Second * 3) // waiting for some blocks to pass
 
-	// get addresses
-	out = tests.ExecuteT(t, "toncli keys show foo")
-	fooAddr := strings.TrimLeft(out, "foo\t")
-	out = tests.ExecuteT(t, "toncli keys show bar")
-	barAddr := strings.TrimLeft(out, "bar\t")
-	fmt.Printf("debug barAddr: %v\n", barAddr)
+	barAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barAddr, flags))
+	assert.Equal(t, int64(10), barAcc.GetCoins().AmountOf("fermion"))
+	fooAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooAddr, flags))
+	assert.Equal(t, int64(99990), fooAcc.GetCoins().AmountOf("fermion"))
 
-	// send money from foo to bar
-	cmdStr := fmt.Sprintf("toncli send --sequence=0 --chain-id=%v --amount=10fermion --to=%v --name=foo", chainID, barAddr)
-	_, wc5, rc5 := tests.GoExecuteT(t, cmdStr)
-	_, err = wc5.Write([]byte("1234567890\n"))
-	require.NoError(t, err)
-	fmt.Printf("debug outCh: %v\n", out)
-	time.Sleep(time.Second)
-	bz := make([]byte, 1000000)
-	rc5.Read(bz)
-	fmt.Printf("debug ex: %v\n", string(bz))
+	// declare candidacy
+	//executeWrite(t, "toncli declare-candidacy -", pass)
+}
 
-	// verify money sent to bar
-	time.Sleep(time.Second)
-	out = tests.ExecuteT(t, fmt.Sprintf("toncli account %v", fooAddr))
-	fmt.Printf("debug out: %v\n", out)
-	out = tests.ExecuteT(t, fmt.Sprintf("toncli account %v", barAddr))
-	require.Fail(t, "debug out: %v\n", out)
+func executeWrite(t *testing.T, cmdStr string, writes ...string) {
+	cmd, wc, _ := tests.GoExecuteT(t, cmdStr)
+	for _, write := range writes {
+		_, err := wc.Write([]byte(write + "\n"))
+		require.NoError(t, err)
+	}
+	cmd.Wait()
+}
+
+func executeInit(t *testing.T, cmdStr string) (masterKey, chainID string) {
+	tests.GoExecuteT(t, cmdStr)
+	out := tests.ExecuteT(t, cmdStr)
+	outCut := "{" + strings.SplitN(out, "{", 2)[1] // weird I'm sorry
+
+	var initRes map[string]json.RawMessage
+	err := json.Unmarshal([]byte(outCut), &initRes)
+	require.NoError(t, err, "out %v outCut %v err %v", out, outCut, err)
+	masterKey = string(initRes["secret"])
+	chainID = string(initRes["chain_id"])
+	return
+}
+
+func executeGetAddr(t *testing.T, cmdStr string) (addr string) {
+	out := tests.ExecuteT(t, cmdStr)
+	name := strings.SplitN(cmdStr, " show ", 2)[1]
+	return strings.TrimLeft(out, name+"\t")
+}
+
+func executeGetAccount(t *testing.T, cmdStr string) auth.BaseAccount {
+	out := tests.ExecuteT(t, cmdStr)
+	var initRes map[string]json.RawMessage
+	err := json.Unmarshal([]byte(out), &initRes)
+	require.NoError(t, err, "out %v, err %v", out, err)
+	value := initRes["value"]
+	var acc auth.BaseAccount
+	_ = json.Unmarshal(value, &acc) //XXX pubkey can't be decoded go amino issue
+	require.NoError(t, err, "value %v, err %v", string(value), err)
+	return acc
 }
