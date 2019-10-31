@@ -32,25 +32,6 @@ func generateApp(rootDir string, logger log.Logger) (wrsp.Application, error) {
 		return nil, err
 	}
 	bapp := app.NewGaiaApp(logger, db)
-	//dbAcc, err := dbm.NewGoLevelDB("ton-acc", dataDir)
-	//if err != nil {
-	//return nil, err
-	//}
-	//dbIBC, err := dbm.NewGoLevelDB("ton-ibc", dataDir)
-	//if err != nil {
-	//return nil, err
-	//}
-	//dbStake, err := dbm.NewGoLevelDB("ton-stake", dataDir)
-	//if err != nil {
-	//return nil, err
-	//}
-	//dbs := map[string]dbm.DB{
-	//"main":  dbMain,
-	//"acc":   dbAcc,
-	//"ibc":   dbIBC,
-	//"stake": dbStake,
-	//}
-	//bapp := app.NewGaiaApp(logger, dbs)
 	return bapp, nil
 }
 
