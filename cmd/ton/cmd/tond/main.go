@@ -40,22 +40,22 @@ func generateApp(rootDir string, logger log.Logger) (wrsp.Application, error) {
 	//if err != nil {
 	//return nil, err
 	//}
-	//dbStaking, err := dbm.NewGoLevelDB("ton-staking", dataDir)
+	//dbStake, err := dbm.NewGoLevelDB("ton-stake", dataDir)
 	//if err != nil {
 	//return nil, err
 	//}
 	//dbs := map[string]dbm.DB{
-	//"main":    dbMain,
-	//"acc":     dbAcc,
-	//"ibc":     dbIBC,
-	//"staking": dbStaking,
+	//"main":  dbMain,
+	//"acc":   dbAcc,
+	//"ibc":   dbIBC,
+	//"stake": dbStake,
 	//}
 	//bapp := app.NewGaiaApp(logger, dbs)
 	return bapp, nil
 }
 
 func main() {
-	server.AddCommands(rootCmd, server.DefaultGenAppState, generateApp, context)
+	server.AddCommands(rootCmd, app.DefaultGenAppState, generateApp, context)
 
 	// prepare and add flags
 	rootDir := os.ExpandEnv("$HOME/.tond")
