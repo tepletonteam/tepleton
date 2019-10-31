@@ -24,7 +24,7 @@ RUN mkdir -p $WORKDIR $GOPATH/pkg $ $GOPATH/bin $BASE_PATH
 
 ADD . $REPO_PATH
 
-# Install minimum necessary dependencies, build tepleton SDK, remove packages
+# Install minimum necessary dependencies, build Tepleton SDK, remove packages
 RUN apk add --no-cache $PACKAGES && \
     cd $REPO_PATH && make get_tools && make get_vendor_deps && make all && make install && \
     apk del $PACKAGES
