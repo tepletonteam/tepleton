@@ -1,6 +1,8 @@
 package stake
 
 import (
+	"encoding/hex"
+
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 	wrsp "github.com/tepleton/wrsp/types"
@@ -131,12 +133,20 @@ type Validator struct {
 
 // wrsp validator from stake validator type
 func (v Validator) wrspValidator(cdc *wire.Codec) wrsp.Validator {
-	pkBytes, err := cdc.MarshalBinary(v.PubKey)
+	//pkBytes, err := cdc.MarshalBinary(v.PubKey)
+	//if err != nil {
+	//panic(err)
+	//}
+	//return wrsp.Validator{
+	//PubKey: pkBytes,
+	//Power:  v.Power.Evaluate(),
+	//}
+	TypeDistinguisher, err := hex.DecodeString("1624de6220")
 	if err != nil {
 		panic(err)
 	}
 	return wrsp.Validator{
-		PubKey: pkBytes,
+		PubKey: append(TypeDistinguisher, v.PubKey.Bytes()...),
 		Power:  v.Power.Evaluate(),
 	}
 }
@@ -144,12 +154,20 @@ func (v Validator) wrspValidator(cdc *wire.Codec) wrsp.Validator {
 // wrsp validator from stake validator type
 // with zero power used for validator updates
 func (v Validator) wrspValidatorZero(cdc *wire.Codec) wrsp.Validator {
-	pkBytes, err := cdc.MarshalBinary(v.PubKey)
+	//pkBytes, err := cdc.MarshalBinary(v.PubKey)
+	//if err != nil {
+	//panic(err)
+	//}
+	//return wrsp.Validator{
+	//PubKey: pkBytes,
+	//Power:  0,
+	//}
+	TypeDistinguisher, err := hex.DecodeString("1624de6220")
 	if err != nil {
 		panic(err)
 	}
 	return wrsp.Validator{
-		PubKey: pkBytes,
+		PubKey: append(TypeDistinguisher, v.PubKey.Bytes()...),
 		Power:  0,
 	}
 }
