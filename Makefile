@@ -36,8 +36,8 @@ else
 endif
 
 install: 
-	go install $(BUILD_FLAGS) ./cmd/tond
-	go install $(BUILD_FLAGS) ./cmd/toncli
+	go install $(BUILD_FLAGS) ./cmd/ton/cmd/tond
+	go install $(BUILD_FLAGS) ./cmd/ton/cmd/toncli
 
 install_examples: 
 	go install $(BUILD_FLAGS) ./examples/basecoin/cmd/basecoind
