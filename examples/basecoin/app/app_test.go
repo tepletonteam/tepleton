@@ -344,9 +344,10 @@ func TestQuizMsg(t *testing.T) {
 
 	// Construct genesis state
 	// Construct some genesis bytes to reflect basecoin/types/AppAccount
+	coins := sdk.Coins{}
 	baseAcc := auth.BaseAccount{
 		Address: addr1,
-		Coins:   nil,
+		Coins:   coins,
 	}
 	acc1 := &types.AppAccount{baseAcc, "foobart"}
 
