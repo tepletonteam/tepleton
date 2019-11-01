@@ -26,9 +26,6 @@ func (k Keeper) Tick(ctx sdk.Context) (change []wrsp.Validator) {
 	// save the params
 	k.setPool(ctx, p)
 
-	// reset the counter
-	k.setCounter(ctx, 0)
-
 	change = k.getAccUpdateValidators(ctx)
 
 	return
