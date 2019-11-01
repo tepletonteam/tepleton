@@ -25,7 +25,6 @@ func (code WRSPCodeType) IsOK() bool {
 	return false
 }
 
-// get the wrsp code from the local code and codespace
 func ToWRSPCode(space CodespaceType, code CodeType) WRSPCodeType {
 	// TODO: Make Tendermint more aware of codespaces.
 	if space == CodespaceRoot && code == CodeOK {
@@ -34,7 +33,6 @@ func ToWRSPCode(space CodespaceType, code CodeType) WRSPCodeType {
 	return WRSPCodeType((uint32(space) << 16) | uint32(code))
 }
 
-// SDK error codes
 const (
 	// WRSP error codes
 	WRSPCodeOK WRSPCodeType = 0

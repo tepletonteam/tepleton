@@ -42,12 +42,12 @@ var (
 		0,
 	}
 
-	sendMsg1 = bank.MsgSend{
+	sendMsg1 = bank.SendMsg{
 		Inputs:  []bank.Input{bank.NewInput(addr1, coins)},
 		Outputs: []bank.Output{bank.NewOutput(addr2, coins)},
 	}
 
-	sendMsg2 = bank.MsgSend{
+	sendMsg2 = bank.SendMsg{
 		Inputs: []bank.Input{bank.NewInput(addr1, coins)},
 		Outputs: []bank.Output{
 			bank.NewOutput(addr2, halfCoins),
@@ -55,7 +55,7 @@ var (
 		},
 	}
 
-	sendMsg3 = bank.MsgSend{
+	sendMsg3 = bank.SendMsg{
 		Inputs: []bank.Input{
 			bank.NewInput(addr1, coins),
 			bank.NewInput(addr4, coins),
@@ -66,7 +66,7 @@ var (
 		},
 	}
 
-	sendMsg4 = bank.MsgSend{
+	sendMsg4 = bank.SendMsg{
 		Inputs: []bank.Input{
 			bank.NewInput(addr2, coins),
 		},
@@ -75,7 +75,7 @@ var (
 		},
 	}
 
-	sendMsg5 = bank.MsgSend{
+	sendMsg5 = bank.SendMsg{
 		Inputs: []bank.Input{
 			bank.NewInput(addr1, manyCoins),
 		},
@@ -208,7 +208,7 @@ func TestGenesis(t *testing.T) {
 	assert.Equal(t, acc, res1)
 }
 
-func TestMsgSendWithAccounts(t *testing.T) {
+func TestSendMsgWithAccounts(t *testing.T) {
 	bapp := newBasecoinApp()
 
 	// Construct some genesis bytes to reflect basecoin/types/AppAccount
@@ -249,7 +249,7 @@ func TestMsgSendWithAccounts(t *testing.T) {
 	SignCheckDeliver(t, bapp, sendMsg1, []int64{1}, true, priv1)
 }
 
-func TestMsgSendMultipleOut(t *testing.T) {
+func TestSendMsgMultipleOut(t *testing.T) {
 	bapp := newBasecoinApp()
 
 	genCoins, err := sdk.ParseCoins("42foocoin")
@@ -311,7 +311,7 @@ func TestSengMsgMultipleInOut(t *testing.T) {
 	CheckBalance(t, bapp, addr3, "10foocoin")
 }
 
-func TestMsgSendDependent(t *testing.T) {
+func TestSendMsgDependent(t *testing.T) {
 	bapp := newBasecoinApp()
 
 	genCoins, err := sdk.ParseCoins("42foocoin")
@@ -339,7 +339,7 @@ func TestMsgSendDependent(t *testing.T) {
 	CheckBalance(t, bapp, addr1, "42foocoin")
 }
 
-func TestMsgQuiz(t *testing.T) {
+func TestQuizMsg(t *testing.T) {
 	bapp := newBasecoinApp()
 
 	// Construct genesis state

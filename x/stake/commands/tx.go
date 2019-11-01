@@ -48,7 +48,13 @@ func GetCmdDeclareCandidacy(cdc *wire.Codec) *cobra.Command {
 			// build and sign the transaction, then broadcast to Tendermint
 			ctx := context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(cdc))
 
-			res, err := ctx.EnsureSignBuildBroadcast(ctx.FromAddressName, msg, cdc)
+			// default to next sequence number if none provided
+			ctx, err = context.EnsureSequence(ctx)
+			if err != nil {
+				return err
+			}
+
+			res, err := ctx.SignBuildBroadcast(ctx.FromAddressName, msg, cdc)
 			if err != nil {
 				return err
 			}
@@ -87,7 +93,13 @@ func GetCmdEditCandidacy(cdc *wire.Codec) *cobra.Command {
 			// build and sign the transaction, then broadcast to Tendermint
 			ctx := context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(cdc))
 
-			res, err := ctx.EnsureSignBuildBroadcast(ctx.FromAddressName, msg, cdc)
+			// default to next sequence number if none provided
+			ctx, err = context.EnsureSequence(ctx)
+			if err != nil {
+				return err
+			}
+
+			res, err := ctx.SignBuildBroadcast(ctx.FromAddressName, msg, cdc)
 			if err != nil {
 				return err
 			}
@@ -124,7 +136,13 @@ func GetCmdDelegate(cdc *wire.Codec) *cobra.Command {
 			// build and sign the transaction, then broadcast to Tendermint
 			ctx := context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(cdc))
 
-			res, err := ctx.EnsureSignBuildBroadcast(ctx.FromAddressName, msg, cdc)
+			// default to next sequence number if none provided
+			ctx, err = context.EnsureSequence(ctx)
+			if err != nil {
+				return err
+			}
+
+			res, err := ctx.SignBuildBroadcast(ctx.FromAddressName, msg, cdc)
 			if err != nil {
 				return err
 			}
@@ -172,7 +190,13 @@ func GetCmdUnbond(cdc *wire.Codec) *cobra.Command {
 			// build and sign the transaction, then broadcast to Tendermint
 			ctx := context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(cdc))
 
-			res, err := ctx.EnsureSignBuildBroadcast(ctx.FromAddressName, msg, cdc)
+			// default to next sequence number if none provided
+			ctx, err = context.EnsureSequence(ctx)
+			if err != nil {
+				return err
+			}
+
+			res, err := ctx.SignBuildBroadcast(ctx.FromAddressName, msg, cdc)
 			if err != nil {
 				return err
 			}

@@ -13,7 +13,7 @@ import (
 type Keeper struct {
 	storeKey   sdk.StoreKey
 	cdc        *wire.Codec
-	coinKeeper bank.Keeper
+	coinKeeper bank.CoinKeeper
 
 	// caches
 	gs     Pool
@@ -23,7 +23,7 @@ type Keeper struct {
 	codespace sdk.CodespaceType
 }
 
-func NewKeeper(cdc *wire.Codec, key sdk.StoreKey, ck bank.Keeper, codespace sdk.CodespaceType) Keeper {
+func NewKeeper(cdc *wire.Codec, key sdk.StoreKey, ck bank.CoinKeeper, codespace sdk.CodespaceType) Keeper {
 	keeper := Keeper{
 		storeKey:   key,
 		cdc:        cdc,
@@ -101,9 +101,9 @@ func (k Keeper) setCandidate(ctx sdk.Context, candidate Candidate) {
 
 	// update the list ordered by voting power
 	if oldFound {
-		store.Delete(GetValidatorKey(address, oldCandidate.Assets, k.cdc))
+		store.Delete(GetValidatorKey(address, oldCandidate.Assets, oldCandidate.ValidatorHeight, k.cdc))
 	}
-	store.Set(GetValidatorKey(address, validator.Power, k.cdc), bz)
+	store.Set(GetValidatorKey(address, validator.Power, validator.Height, k.cdc), bz)
 
 	// add to the validators to update list if is already a validator
 	// or is a new validator
@@ -136,7 +136,7 @@ func (k Keeper) removeCandidate(ctx sdk.Context, address sdk.Address) {
 	// delete the old candidate record
 	store := ctx.KVStore(k.storeKey)
 	store.Delete(GetCandidateKey(address))
-	store.Delete(GetValidatorKey(address, candidate.Assets, k.cdc))
+	store.Delete(GetValidatorKey(address, candidate.Assets, candidate.ValidatorHeight, k.cdc))
 
 	// delete from recent and power weighted validator groups if the validator
 	// exists and add validator with zero power to the validator updates

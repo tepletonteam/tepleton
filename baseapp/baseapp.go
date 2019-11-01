@@ -114,6 +114,7 @@ func (app *BaseApp) SetEndBlocker(endBlocker sdk.EndBlocker) {
 func (app *BaseApp) SetAnteHandler(ah sdk.AnteHandler) {
 	app.anteHandler = ah
 }
+
 func (app *BaseApp) Router() Router { return app.router }
 
 // load latest application version
@@ -336,7 +337,7 @@ func (app *BaseApp) DeliverTx(txBytes []byte) (res wrsp.ResponseDeliverTx) {
 	}
 }
 
-// nolint- Mostly for testing
+// Mostly for testing
 func (app *BaseApp) Check(tx sdk.Tx) (result sdk.Result) {
 	return app.runTx(true, nil, tx)
 }

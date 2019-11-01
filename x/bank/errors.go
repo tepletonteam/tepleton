@@ -5,7 +5,7 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
-// Bank errors reserve 100 ~ 199.
+// Coin errors reserve 100 ~ 199.
 const (
 	DefaultCodespace sdk.CodespaceType = 2
 
