@@ -153,7 +153,7 @@ func (v Validator) wrspValidatorZero(cdc *wire.Codec) wrsp.Validator {
 // pubKey.
 // TODO better way of managing space
 type DelegatorBond struct {
-	DelegatorAddr sdk.Address `json:"delegatoraddr"`
+	DelegatorAddr sdk.Address `json:"delegator_addr"`
 	CandidateAddr sdk.Address `json:"candidate_addr"`
 	Shares        sdk.Rat     `json:"shares"`
 }
