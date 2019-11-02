@@ -7,8 +7,7 @@ import (
 	wire "github.com/tepleton/tepleton-sdk/wire"
 )
 
-// Solidity list like structure
-type ListMapper interface {
+type ListMapper interface { // Solidity list like structure
 	Len(sdk.Context) int64
 	Get(sdk.Context, int64, interface{})
 	Set(sdk.Context, int64, interface{})
@@ -91,7 +90,6 @@ func (lm listMapper) Iterate(ctx sdk.Context, ptr interface{}, fn func(sdk.Conte
 	}
 }
 
-// mapper interface for queue
 type QueueMapper interface {
 	Push(sdk.Context, interface{})
 	Peek(sdk.Context, interface{})

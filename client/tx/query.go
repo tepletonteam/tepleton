@@ -21,37 +21,19 @@ import (
 )
 
 // Get the default command for a tx query
-func QueryTxCmd(cdc *wire.Codec) *cobra.Command {
+func QueryTxCmd(cmdr commander) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "tx [hash]",
 		Short: "Matches this txhash over all committed blocks",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) != 1 || len(args[0]) == 0 {
-				return errors.New("You must provide a tx hash")
-			}
-
-			// find the key to look up the account
-			hashHexStr := args[0]
-			trustNode := viper.GetBool(client.FlagTrustNode)
-
-			output, err := queryTx(cdc, hashHexStr, trustNode)
-			if err != nil {
-				return err
-			}
-			fmt.Println(string(output))
-
-			return nil
-		},
+		RunE:  cmdr.queryAndPrintTx,
 	}
-
 	cmd.Flags().StringP(client.FlagNode, "n", "tcp://localhost:46657", "Node to connect to")
-
 	// TODO: change this to false when we can
 	cmd.Flags().Bool(client.FlagTrustNode, true, "Don't verify proofs for responses")
 	return cmd
 }
 
-func queryTx(cdc *wire.Codec, hashHexStr string, trustNode bool) ([]byte, error) {
+func (c commander) queryTx(hashHexStr string, trustNode bool) ([]byte, error) {
 	hash, err := hex.DecodeString(hashHexStr)
 	if err != nil {
 		return nil, err
@@ -67,7 +49,7 @@ func queryTx(cdc *wire.Codec, hashHexStr string, trustNode bool) ([]byte, error)
 	if err != nil {
 		return nil, err
 	}
-	info, err := formatTxResult(cdc, res)
+	info, err := formatTxResult(c.cdc, res)
 	if err != nil {
 		return nil, err
 	}
@@ -106,10 +88,31 @@ func parseTx(cdc *wire.Codec, txBytes []byte) (sdk.Tx, error) {
 	return tx, nil
 }
 
+// CMD
+
+// command to query for a transaction
+func (c commander) queryAndPrintTx(cmd *cobra.Command, args []string) error {
+	if len(args) != 1 || len(args[0]) == 0 {
+		return errors.New("You must provide a tx hash")
+	}
+
+	// find the key to look up the account
+	hashHexStr := args[0]
+	trustNode := viper.GetBool(client.FlagTrustNode)
+
+	output, err := c.queryTx(hashHexStr, trustNode)
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(output))
+
+	return nil
+}
+
 // REST
 
-// transaction query REST handler
 func QueryTxRequestHandler(cdc *wire.Codec) func(http.ResponseWriter, *http.Request) {
+	c := commander{cdc}
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		hashHexStr := vars["hash"]
@@ -119,7 +122,7 @@ func QueryTxRequestHandler(cdc *wire.Codec) func(http.ResponseWriter, *http.Requ
 			trustNode = true
 		}
 
-		output, err := queryTx(cdc, hashHexStr, trustNode)
+		output, err := c.queryTx(hashHexStr, trustNode)
 		if err != nil {
 			w.WriteHeader(500)
 			w.Write([]byte(err.Error()))

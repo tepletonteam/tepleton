@@ -75,14 +75,6 @@ func initialPool() Pool {
 	}
 }
 
-// get raw genesis raw message for testing
-func GetDefaultGenesisState() GenesisState {
-	return GenesisState{
-		Pool:   initialPool(),
-		Params: defaultParams(),
-	}
-}
-
 // XXX reference the common declaration of this function
 func subspace(prefix []byte) (start, end []byte) {
 	end = make([]byte, len(prefix))
@@ -96,8 +88,8 @@ func makeTestCodec() *wire.Codec {
 
 	// Register Msgs
 	cdc.RegisterInterface((*sdk.Msg)(nil), nil)
-	cdc.RegisterConcrete(bank.MsgSend{}, "test/stake/Send", nil)
-	cdc.RegisterConcrete(bank.MsgIssue{}, "test/stake/Issue", nil)
+	cdc.RegisterConcrete(bank.SendMsg{}, "test/stake/Send", nil)
+	cdc.RegisterConcrete(bank.IssueMsg{}, "test/stake/Issue", nil)
 	cdc.RegisterConcrete(MsgDeclareCandidacy{}, "test/stake/DeclareCandidacy", nil)
 	cdc.RegisterConcrete(MsgEditCandidacy{}, "test/stake/EditCandidacy", nil)
 	cdc.RegisterConcrete(MsgUnbond{}, "test/stake/Unbond", nil)
@@ -139,8 +131,8 @@ func createTestInput(t *testing.T, isCheckTx bool, initCoins int64) (sdk.Context
 		keyMain,             // target store
 		&auth.BaseAccount{}, // prototype
 	).Seal()
-	ck := bank.NewKeeper(accountMapper)
-	keeper := NewKeeper(cdc, keyStake, ck, DefaultCodespace)
+	ck := bank.NewCoinKeeper(accountMapper)
+	keeper := NewKeeper(ctx, cdc, keyStake, ck)
 	keeper.setPool(ctx, initialPool())
 	keeper.setParams(ctx, defaultParams())
 
