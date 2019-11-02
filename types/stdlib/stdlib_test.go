@@ -9,7 +9,7 @@ import (
 
 	wrsp "github.com/tepleton/wrsp/types"
 
-	"github.com/tepleton/tepleton-sdk/store"
+	store "github.com/tepleton/tepleton-sdk/mock"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	wire "github.com/tepleton/tepleton-sdk/wire"
 )
