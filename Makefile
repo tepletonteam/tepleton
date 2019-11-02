@@ -7,7 +7,7 @@ all: check_tools get_vendor_deps build build_examples test
 ########################################
 ### CI
 
-ci: get_tools get_vendor_deps build test_cover
+ci: get_tools get_vendor_deps install test_cover
 
 ########################################
 ### Build
@@ -15,11 +15,11 @@ ci: get_tools get_vendor_deps build test_cover
 # This can be unified later, here for easy demos
 build:
 ifeq ($(OS),Windows_NT)
-	go build $(BUILD_FLAGS) -o build/tond.exe ./cmd/tond
-	go build $(BUILD_FLAGS) -o build/toncli.exe ./cmd/toncli
+	go build $(BUILD_FLAGS) -o build/tond.exe ./cmd/ton/cmd/tond
+	go build $(BUILD_FLAGS) -o build/toncli.exe ./cmd/ton/cmd/toncli
 else
-	go build $(BUILD_FLAGS) -o build/tond ./cmd/tond
-	go build $(BUILD_FLAGS) -o build/toncli ./cmd/toncli
+	go build $(BUILD_FLAGS) -o build/tond ./cmd/ton/cmd/tond
+	go build $(BUILD_FLAGS) -o build/toncli ./cmd/ton/cmd/toncli
 endif
 
 build_examples:
@@ -36,8 +36,8 @@ else
 endif
 
 install: 
-	go install $(BUILD_FLAGS) ./cmd/tond
-	go install $(BUILD_FLAGS) ./cmd/toncli
+	go install $(BUILD_FLAGS) ./cmd/ton/cmd/tond
+	go install $(BUILD_FLAGS) ./cmd/ton/cmd/toncli
 
 install_examples: 
 	go install $(BUILD_FLAGS) ./examples/basecoin/cmd/basecoind

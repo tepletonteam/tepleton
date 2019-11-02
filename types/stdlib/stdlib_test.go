@@ -1,4 +1,4 @@
-package stdlib
+package types
 
 import (
 	"testing"
@@ -9,7 +9,7 @@ import (
 
 	wrsp "github.com/tepleton/wrsp/types"
 
-	store "github.com/tepleton/tepleton-sdk/mock"
+	"github.com/tepleton/tepleton-sdk/store"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	wire "github.com/tepleton/tepleton-sdk/wire"
 )
@@ -32,7 +32,7 @@ func defaultComponents(key sdk.StoreKey) (sdk.Context, *wire.Codec) {
 func TestListMapper(t *testing.T) {
 	key := sdk.NewKVStoreKey("list")
 	ctx, cdc := defaultComponents(key)
-	lm := NewListMapper(cdc, key, "data")
+	lm := NewListMapper(cdc, key)
 
 	val := S{1, true}
 	var res S
@@ -46,19 +46,12 @@ func TestListMapper(t *testing.T) {
 	lm.Set(ctx, int64(0), val)
 	lm.Get(ctx, int64(0), &res)
 	assert.Equal(t, val, res)
-
-	lm.Iterate(ctx, &res, func(ctx sdk.Context, index int64) (brk bool) {
-		lm.Set(ctx, index, S{res.I + 1, !res.B})
-		return
-	})
-	lm.Get(ctx, int64(0), &res)
-	assert.Equal(t, S{3, true}, res)
 }
 
 func TestQueueMapper(t *testing.T) {
 	key := sdk.NewKVStoreKey("queue")
 	ctx, cdc := defaultComponents(key)
-	qm := NewQueueMapper(cdc, key, "data")
+	qm := NewQueueMapper(cdc, key)
 
 	val := S{1, true}
 	var res S
@@ -70,20 +63,7 @@ func TestQueueMapper(t *testing.T) {
 	qm.Pop(ctx)
 	empty := qm.IsEmpty(ctx)
 
-	assert.True(t, empty)
+	assert.Equal(t, true, empty)
+
 	assert.Panics(t, func() { qm.Peek(ctx, &res) })
-
-	qm.Push(ctx, S{1, true})
-	qm.Push(ctx, S{2, true})
-	qm.Push(ctx, S{3, true})
-	qm.Iterate(ctx, &res, func(ctx sdk.Context) (brk bool) {
-		if res.I == 3 {
-			brk = true
-		}
-		return
-	})
-
-	assert.False(t, qm.IsEmpty(ctx))
-	qm.Pop(ctx)
-	assert.True(t, qm.IsEmpty(ctx))
 }
