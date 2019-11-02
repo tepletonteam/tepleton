@@ -2,6 +2,7 @@ package stake
 
 import (
 	"bytes"
+	"encoding/json"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
@@ -13,24 +14,31 @@ import (
 type Keeper struct {
 	storeKey   sdk.StoreKey
 	cdc        *wire.Codec
-	coinKeeper bank.Keeper
+	coinKeeper bank.CoinKeeper
 
 	// caches
 	gs     Pool
 	params Params
-
-	// codespace
-	codespace sdk.CodespaceType
 }
 
-func NewKeeper(cdc *wire.Codec, key sdk.StoreKey, ck bank.Keeper, codespace sdk.CodespaceType) Keeper {
+func NewKeeper(ctx sdk.Context, cdc *wire.Codec, key sdk.StoreKey, ck bank.CoinKeeper) Keeper {
 	keeper := Keeper{
 		storeKey:   key,
 		cdc:        cdc,
 		coinKeeper: ck,
-		codespace:  codespace,
 	}
 	return keeper
+}
+
+// InitGenesis - store genesis parameters
+func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) error {
+	var state GenesisState
+	if err := json.Unmarshal(data, &state); err != nil {
+		return err
+	}
+	k.setPool(ctx, state.Pool)
+	k.setParams(ctx, state.Params)
+	return nil
 }
 
 //_________________________________________________________________________
@@ -297,8 +305,7 @@ func (k Keeper) clearAccUpdateValidators(ctx sdk.Context) {
 
 //_____________________________________________________________________
 
-// load a delegator bong
-func (k Keeper) GetDelegatorBond(ctx sdk.Context,
+func (k Keeper) getDelegatorBond(ctx sdk.Context,
 	delegatorAddr, candidateAddr sdk.Address) (bond DelegatorBond, found bool) {
 
 	store := ctx.KVStore(k.storeKey)
@@ -315,7 +322,7 @@ func (k Keeper) GetDelegatorBond(ctx sdk.Context,
 }
 
 // load all bonds of a delegator
-func (k Keeper) GetDelegatorBonds(ctx sdk.Context, delegator sdk.Address, maxRetrieve int16) (bonds []DelegatorBond) {
+func (k Keeper) getDelegatorBonds(ctx sdk.Context, delegator sdk.Address, maxRetrieve int16) (bonds []DelegatorBond) {
 	store := ctx.KVStore(k.storeKey)
 	delegatorPrefixKey := GetDelegatorBondsKey(delegator, k.cdc)
 	iterator := store.Iterator(subspace(delegatorPrefixKey)) //smallest to largest

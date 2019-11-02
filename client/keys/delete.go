@@ -48,15 +48,12 @@ func runDeleteCmd(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-////////////////////////
 // REST
 
-// delete key request REST body
 type DeleteKeyBody struct {
 	Password string `json:"password"`
 }
 
-// delete key REST handler
 func DeleteKeyRequestHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]

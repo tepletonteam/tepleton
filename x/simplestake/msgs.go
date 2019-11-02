@@ -8,43 +8,44 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
-//_________________________________________________________----
+// -------------------------
+// BondMsg
 
-// simple bond message
-type MsgBond struct {
+type BondMsg struct {
 	Address sdk.Address   `json:"address"`
 	Stake   sdk.Coin      `json:"coins"`
 	PubKey  crypto.PubKey `json:"pub_key"`
 }
 
-func NewMsgBond(addr sdk.Address, stake sdk.Coin, pubKey crypto.PubKey) MsgBond {
-	return MsgBond{
+func NewBondMsg(addr sdk.Address, stake sdk.Coin, pubKey crypto.PubKey) BondMsg {
+	return BondMsg{
 		Address: addr,
 		Stake:   stake,
 		PubKey:  pubKey,
 	}
 }
 
-//nolint
-func (msg MsgBond) Type() string                            { return moduleName } //TODO update "stake/declarecandidacy"
-func (msg MsgBond) Get(key interface{}) (value interface{}) { return nil }
-func (msg MsgBond) GetSigners() []sdk.Address               { return []sdk.Address{msg.Address} }
+func (msg BondMsg) Type() string {
+	return moduleName
+}
 
-// basic validation of the bond message
-func (msg MsgBond) ValidateBasic() sdk.Error {
+func (msg BondMsg) ValidateBasic() sdk.Error {
 	if msg.Stake.IsZero() {
-		return ErrEmptyStake(DefaultCodespace)
+		return ErrEmptyStake()
 	}
 
 	if msg.PubKey == nil {
-		return sdk.ErrInvalidPubKey("MsgBond.PubKey must not be empty")
+		return sdk.ErrInvalidPubKey("BondMsg.PubKey must not be empty")
 	}
 
 	return nil
 }
 
-// get bond message sign bytes
-func (msg MsgBond) GetSignBytes() []byte {
+func (msg BondMsg) Get(key interface{}) interface{} {
+	return nil
+}
+
+func (msg BondMsg) GetSignBytes() []byte {
 	bz, err := json.Marshal(msg)
 	if err != nil {
 		panic(err)
@@ -52,30 +53,43 @@ func (msg MsgBond) GetSignBytes() []byte {
 	return bz
 }
 
-//_______________________________________________________________
+func (msg BondMsg) GetSigners() []sdk.Address {
+	return []sdk.Address{msg.Address}
+}
 
-// simple unbond message
-type MsgUnbond struct {
+// -------------------------
+// UnbondMsg
+
+type UnbondMsg struct {
 	Address sdk.Address `json:"address"`
 }
 
-func NewMsgUnbond(addr sdk.Address) MsgUnbond {
-	return MsgUnbond{
+func NewUnbondMsg(addr sdk.Address) UnbondMsg {
+	return UnbondMsg{
 		Address: addr,
 	}
 }
 
-//nolint
-func (msg MsgUnbond) Type() string                            { return moduleName } //TODO update "stake/declarecandidacy"
-func (msg MsgUnbond) Get(key interface{}) (value interface{}) { return nil }
-func (msg MsgUnbond) GetSigners() []sdk.Address               { return []sdk.Address{msg.Address} }
-func (msg MsgUnbond) ValidateBasic() sdk.Error                { return nil }
+func (msg UnbondMsg) Type() string {
+	return moduleName
+}
 
-// get unbond message sign bytes
-func (msg MsgUnbond) GetSignBytes() []byte {
+func (msg UnbondMsg) ValidateBasic() sdk.Error {
+	return nil
+}
+
+func (msg UnbondMsg) Get(key interface{}) interface{} {
+	return nil
+}
+
+func (msg UnbondMsg) GetSignBytes() []byte {
 	bz, err := json.Marshal(msg)
 	if err != nil {
 		panic(err)
 	}
 	return bz
+}
+
+func (msg UnbondMsg) GetSigners() []sdk.Address {
+	return []sdk.Address{msg.Address}
 }

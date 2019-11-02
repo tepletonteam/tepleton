@@ -33,11 +33,11 @@ func TestPowKeeperGetSet(t *testing.T) {
 
 	am := auth.NewAccountMapper(cdc, capKey, &auth.BaseAccount{})
 	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil)
-	config := NewConfig("pow", int64(1))
-	ck := bank.NewKeeper(am)
-	keeper := NewKeeper(capKey, config, ck, DefaultCodespace)
+	config := NewPowConfig("pow", int64(1))
+	ck := bank.NewCoinKeeper(am)
+	keeper := NewKeeper(capKey, config, ck)
 
-	err := keeper.InitGenesis(ctx, Genesis{uint64(1), uint64(0)})
+	err := keeper.InitGenesis(ctx, PowGenesis{uint64(1), uint64(0)})
 	assert.Nil(t, err)
 
 	res, err := keeper.GetLastDifficulty(ctx)

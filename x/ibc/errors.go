@@ -4,10 +4,7 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
-// IBC errors reserve 200 ~ 299.
 const (
-	DefaultCodespace sdk.CodespaceType = 3
-
 	// IBC errors reserve 200 - 299.
 	CodeInvalidSequence sdk.CodeType = 200
 	CodeIdenticalChains sdk.CodeType = 201
@@ -25,25 +22,26 @@ func codeToDefaultMsg(code sdk.CodeType) string {
 	}
 }
 
-// nolint
-func ErrInvalidSequence(codespace sdk.CodespaceType) sdk.Error {
-	return newError(codespace, CodeInvalidSequence, "")
+func ErrInvalidSequence() sdk.Error {
+	return newError(CodeInvalidSequence, "")
 }
-func ErrIdenticalChains(codespace sdk.CodespaceType) sdk.Error {
-	return newError(codespace, CodeIdenticalChains, "")
+
+func ErrIdenticalChains() sdk.Error {
+	return newError(CodeIdenticalChains, "")
 }
 
 // -------------------------
 // Helpers
 
-func newError(codespace sdk.CodespaceType, code sdk.CodeType, msg string) sdk.Error {
+func newError(code sdk.CodeType, msg string) sdk.Error {
 	msg = msgOrDefaultMsg(msg, code)
-	return sdk.NewError(codespace, code, msg)
+	return sdk.NewError(code, msg)
 }
 
 func msgOrDefaultMsg(msg string, code sdk.CodeType) string {
 	if msg != "" {
 		return msg
+	} else {
+		return codeToDefaultMsg(code)
 	}
-	return codeToDefaultMsg(code)
 }

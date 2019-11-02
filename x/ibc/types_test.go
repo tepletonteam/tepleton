@@ -106,6 +106,7 @@ func constructIBCPacket(valid bool) IBCPacket {
 
 	if valid {
 		return NewIBCPacket(srcAddr, destAddr, coins, srcChain, destChain)
+	} else {
+		return NewIBCPacket(srcAddr, destAddr, coins, srcChain, srcChain)
 	}
-	return NewIBCPacket(srcAddr, destAddr, coins, srcChain, srcChain)
 }

@@ -2,7 +2,6 @@ package store
 
 import (
 	"bytes"
-
 	cmn "github.com/tepleton/tmlibs/common"
 )
 
@@ -23,8 +22,9 @@ func Last(st KVStore, start, end []byte) (kv cmn.KVPair, ok bool) {
 	if !iter.Valid() {
 		if v := st.Get(start); v != nil {
 			return cmn.KVPair{cp(start), cp(v)}, true
+		} else {
+			return kv, false
 		}
-		return kv, false
 	}
 	defer iter.Close()
 

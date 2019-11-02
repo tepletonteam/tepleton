@@ -2,44 +2,25 @@ package types
 
 import (
 	"fmt"
-
-	cmn "github.com/tepleton/tmlibs/common"
+	"runtime"
 
 	wrsp "github.com/tepleton/wrsp/types"
 )
 
-// WRSPCodeType - combined codetype / codespace
-type WRSPCodeType uint32
+// WRSP Response Code
+type CodeType uint32
 
-// CodeType - code identifier within codespace
-type CodeType uint16
-
-// CodespaceType - codespace identifier
-type CodespaceType uint16
-
-// IsOK - is everything okay?
-func (code WRSPCodeType) IsOK() bool {
-	if code == WRSPCodeOK {
+// is everything okay?
+func (code CodeType) IsOK() bool {
+	if code == CodeOK {
 		return true
 	}
 	return false
 }
 
-// get the wrsp code from the local code and codespace
-func ToWRSPCode(space CodespaceType, code CodeType) WRSPCodeType {
-	// TODO: Make Tendermint more aware of codespaces.
-	if space == CodespaceRoot && code == CodeOK {
-		return WRSPCodeOK
-	}
-	return WRSPCodeType((uint32(space) << 16) | uint32(code))
-}
-
-// SDK error codes
+// WRSP Response Codes
+// Base SDK reserves 0 - 99.
 const (
-	// WRSP error codes
-	WRSPCodeOK WRSPCodeType = 0
-
-	// Base error codes
 	CodeOK                CodeType = 0
 	CodeInternal          CodeType = 1
 	CodeTxDecode          CodeType = 2
@@ -53,14 +34,7 @@ const (
 	CodeInsufficientCoins CodeType = 10
 	CodeInvalidCoins      CodeType = 11
 
-	// CodespaceRoot is a codespace for error codes in this file only.
-	// Notice that 0 is an "unset" codespace, which can be overridden with
-	// Error.WithDefaultCodespace().
-	CodespaceUndefined CodespaceType = 0
-	CodespaceRoot      CodespaceType = 1
-
-	// Maximum reservable codespace (2^16 - 1)
-	MaximumCodespace CodespaceType = 65535
+	CodeGenesisParse CodeType = 0xdead // TODO: remove ? // why remove?
 )
 
 // NOTE: Don't stringer this, we'll put better messages in later.
@@ -70,6 +44,8 @@ func CodeToDefaultMsg(code CodeType) string {
 		return "Internal error"
 	case CodeTxDecode:
 		return "Tx parse error"
+	case CodeGenesisParse:
+		return "Genesis parse error"
 	case CodeInvalidSequence:
 		return "Invalid sequence"
 	case CodeUnauthorized:
@@ -99,37 +75,40 @@ func CodeToDefaultMsg(code CodeType) string {
 
 // nolint
 func ErrInternal(msg string) Error {
-	return newErrorWithRootCodespace(CodeInternal, msg)
+	return newError(CodeInternal, msg)
 }
 func ErrTxDecode(msg string) Error {
-	return newErrorWithRootCodespace(CodeTxDecode, msg)
+	return newError(CodeTxDecode, msg)
+}
+func ErrGenesisParse(msg string) Error {
+	return newError(CodeGenesisParse, msg)
 }
 func ErrInvalidSequence(msg string) Error {
-	return newErrorWithRootCodespace(CodeInvalidSequence, msg)
+	return newError(CodeInvalidSequence, msg)
 }
 func ErrUnauthorized(msg string) Error {
-	return newErrorWithRootCodespace(CodeUnauthorized, msg)
+	return newError(CodeUnauthorized, msg)
 }
 func ErrInsufficientFunds(msg string) Error {
-	return newErrorWithRootCodespace(CodeInsufficientFunds, msg)
+	return newError(CodeInsufficientFunds, msg)
 }
 func ErrUnknownRequest(msg string) Error {
-	return newErrorWithRootCodespace(CodeUnknownRequest, msg)
+	return newError(CodeUnknownRequest, msg)
 }
 func ErrInvalidAddress(msg string) Error {
-	return newErrorWithRootCodespace(CodeInvalidAddress, msg)
+	return newError(CodeInvalidAddress, msg)
 }
 func ErrUnknownAddress(msg string) Error {
-	return newErrorWithRootCodespace(CodeUnknownAddress, msg)
+	return newError(CodeUnknownAddress, msg)
 }
 func ErrInvalidPubKey(msg string) Error {
-	return newErrorWithRootCodespace(CodeInvalidPubKey, msg)
+	return newError(CodeInvalidPubKey, msg)
 }
 func ErrInsufficientCoins(msg string) Error {
-	return newErrorWithRootCodespace(CodeInsufficientCoins, msg)
+	return newError(CodeInsufficientCoins, msg)
 }
 func ErrInvalidCoins(msg string) Error {
-	return newErrorWithRootCodespace(CodeInvalidCoins, msg)
+	return newError(CodeInvalidCoins, msg)
 }
 
 //----------------------------------------
@@ -138,98 +117,104 @@ func ErrInvalidCoins(msg string) Error {
 // sdk Error type
 type Error interface {
 	Error() string
-	Code() CodeType
-	Codespace() CodespaceType
+	WRSPCode() CodeType
 	WRSPLog() string
-	WRSPCode() WRSPCodeType
-	WithDefaultCodespace(codespace CodespaceType) Error
 	Trace(msg string) Error
-	T() interface{}
+	TraceCause(cause error, msg string) Error
+	Cause() error
 	Result() Result
 	QueryResult() wrsp.ResponseQuery
 }
 
-// NewError - create an error
-func NewError(codespace CodespaceType, code CodeType, msg string) Error {
-	return newError(codespace, code, msg)
+func NewError(code CodeType, msg string) Error {
+	return newError(code, msg)
 }
 
-func newErrorWithRootCodespace(code CodeType, msg string) *sdkError {
-	return newError(CodespaceRoot, code, msg)
+type traceItem struct {
+	msg      string
+	filename string
+	lineno   int
 }
 
-func newError(codespace CodespaceType, code CodeType, msg string) *sdkError {
+func (ti traceItem) String() string {
+	return fmt.Sprintf("%v:%v %v", ti.filename, ti.lineno, ti.msg)
+}
+
+type sdkError struct {
+	code   CodeType
+	msg    string
+	cause  error
+	traces []traceItem
+}
+
+func newError(code CodeType, msg string) *sdkError {
+	// TODO capture stacktrace if ENV is set.
 	if msg == "" {
 		msg = CodeToDefaultMsg(code)
 	}
 	return &sdkError{
-		codespace: codespace,
-		code:      code,
-		err:       cmn.NewErrorWithT(code, msg),
+		code:   code,
+		msg:    msg,
+		cause:  nil,
+		traces: nil,
 	}
-}
-
-type sdkError struct {
-	codespace CodespaceType
-	code      CodeType
-	err       cmn.Error
 }
 
 // Implements WRSPError.
 func (err *sdkError) Error() string {
-	return fmt.Sprintf("Error{%d:%d,%#v}", err.codespace, err.code, err.err)
+	return fmt.Sprintf("Error{%d:%s,%v,%v}", err.code, err.msg, err.cause, len(err.traces))
 }
 
 // Implements WRSPError.
-func (err *sdkError) WRSPCode() WRSPCodeType {
-	return ToWRSPCode(err.codespace, err.code)
-}
-
-// Implements Error.
-func (err *sdkError) Codespace() CodespaceType {
-	return err.codespace
-}
-
-// Implements Error.
-func (err *sdkError) Code() CodeType {
+func (err *sdkError) WRSPCode() CodeType {
 	return err.code
 }
 
 // Implements WRSPError.
 func (err *sdkError) WRSPLog() string {
-	return fmt.Sprintf(`=== WRSP Log ===
-Codespace: %v
-Code:      %v
-WRSPCode:  %v
-Error:     %#v
-=== /WRSP Log ===
-`, err.codespace, err.code, err.WRSPCode(), err.err)
+	traceLog := ""
+	for _, ti := range err.traces {
+		traceLog += ti.String() + "\n"
+	}
+	return fmt.Sprintf("msg: %v\ntrace:\n%v",
+		err.msg,
+		traceLog,
+	)
 }
 
 // Add tracing information with msg.
 func (err *sdkError) Trace(msg string) Error {
-	return &sdkError{
-		codespace: err.codespace,
-		code:      err.code,
-		err:       err.err.Trace(msg),
-	}
+	return err.doTrace(msg, 2)
 }
 
-// Implements Error.
-func (err *sdkError) WithDefaultCodespace(cs CodespaceType) Error {
-	codespace := err.codespace
-	if codespace == CodespaceUndefined {
-		codespace = cs
-	}
-	return &sdkError{
-		codespace: codespace,
-		code:      err.code,
-		err:       err.err,
-	}
+// Add tracing information with cause and msg.
+func (err *sdkError) TraceCause(cause error, msg string) Error {
+	err.cause = cause
+	return err.doTrace(msg, 2)
 }
 
-func (err *sdkError) T() interface{} {
-	return err.err.T()
+func (err *sdkError) doTrace(msg string, n int) Error {
+	_, fn, line, ok := runtime.Caller(n)
+	if !ok {
+		if fn == "" {
+			fn = "<unknown>"
+		}
+		if line <= 0 {
+			line = -1
+		}
+	}
+	// Include file & line number & msg.
+	// Do not include the whole stack trace.
+	err.traces = append(err.traces, traceItem{
+		filename: fn,
+		lineno:   line,
+		msg:      msg,
+	})
+	return err
+}
+
+func (err *sdkError) Cause() error {
+	return err.cause
 }
 
 func (err *sdkError) Result() Result {

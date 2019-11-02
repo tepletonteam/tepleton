@@ -12,7 +12,7 @@ import (
 
 // ShowNodeIDCmd - ported from Tendermint, dump node ID to stdout
 func ShowNodeIDCmd(ctx *Context) *cobra.Command {
-	cmd := showNodeID{ctx}
+	cmd := showNodeId{ctx}
 	return &cobra.Command{
 		Use:   "show_node_id",
 		Short: "Show this node's ID",
@@ -20,11 +20,11 @@ func ShowNodeIDCmd(ctx *Context) *cobra.Command {
 	}
 }
 
-type showNodeID struct {
+type showNodeId struct {
 	context *Context
 }
 
-func (s showNodeID) run(cmd *cobra.Command, args []string) error {
+func (s showNodeId) run(cmd *cobra.Command, args []string) error {
 	cfg := s.context.Config
 	nodeKey, err := p2p.LoadOrGenNodeKey(cfg.NodeKeyFile())
 	if err != nil {
