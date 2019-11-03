@@ -13,6 +13,7 @@ import (
 	cmn "github.com/tepleton/tmlibs/common"
 
 	client "github.com/tepleton/tepleton-sdk/client"
+	"github.com/tepleton/tepleton-sdk/client/context"
 	keys "github.com/tepleton/tepleton-sdk/client/keys"
 	rpc "github.com/tepleton/tepleton-sdk/client/rpc"
 	tx "github.com/tepleton/tepleton-sdk/client/tx"
@@ -73,12 +74,14 @@ func createHandler(cdc *wire.Codec) http.Handler {
 		panic(err)
 	}
 
+	ctx := context.NewCoreContextFromViper()
+
 	// TODO make more functional? aka r = keys.RegisterRoutes(r)
 	keys.RegisterRoutes(r)
-	rpc.RegisterRoutes(r)
-	tx.RegisterRoutes(r, cdc)
-	auth.RegisterRoutes(r, cdc, "main")
-	bank.RegisterRoutes(r, cdc, kb)
-	ibc.RegisterRoutes(r, cdc, kb)
+	rpc.RegisterRoutes(ctx, r)
+	tx.RegisterRoutes(ctx, r, cdc)
+	auth.RegisterRoutes(ctx, r, cdc, "main")
+	bank.RegisterRoutes(ctx, r, cdc, kb)
+	ibc.RegisterRoutes(ctx, r, cdc, kb)
 	return r
 }
