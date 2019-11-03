@@ -51,7 +51,6 @@ func printNodeStatus(cmd *cobra.Command, args []string) error {
 
 // REST
 
-// REST handler for node info
 func NodeInfoRequestHandler(w http.ResponseWriter, r *http.Request) {
 	status, err := getNodeStatus()
 	if err != nil {
@@ -70,7 +69,6 @@ func NodeInfoRequestHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 
-// REST handler for node syncing
 func NodeSyncingRequestHandler(w http.ResponseWriter, r *http.Request) {
 	status, err := getNodeStatus()
 	if err != nil {

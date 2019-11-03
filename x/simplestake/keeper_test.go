@@ -33,7 +33,7 @@ func TestKeeperGetSet(t *testing.T) {
 	ms, _, capKey := setupMultiStore()
 
 	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil)
-	stakeKeeper := NewKeeper(capKey, bank.NewKeeper(nil), DefaultCodespace)
+	stakeKeeper := NewKeeper(capKey, bank.NewCoinKeeper(nil))
 	addr := sdk.Address([]byte("some-address"))
 
 	bi := stakeKeeper.getBondInfo(ctx, addr)
@@ -62,14 +62,14 @@ func TestBonding(t *testing.T) {
 	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil)
 
 	accountMapper := auth.NewAccountMapper(cdc, authKey, &auth.BaseAccount{})
-	coinKeeper := bank.NewKeeper(accountMapper)
-	stakeKeeper := NewKeeper(capKey, coinKeeper, DefaultCodespace)
+	coinKeeper := bank.NewCoinKeeper(accountMapper)
+	stakeKeeper := NewKeeper(capKey, coinKeeper)
 	addr := sdk.Address([]byte("some-address"))
 	privKey := crypto.GenPrivKeyEd25519()
 	pubKey := privKey.PubKey()
 
 	_, _, err := stakeKeeper.unbondWithoutCoins(ctx, addr)
-	assert.Equal(t, err, ErrInvalidUnbond(DefaultCodespace))
+	assert.Equal(t, err, ErrInvalidUnbond())
 
 	_, err = stakeKeeper.bondWithoutCoins(ctx, addr, pubKey, sdk.Coin{"steak", 10})
 	assert.Nil(t, err)
@@ -82,5 +82,5 @@ func TestBonding(t *testing.T) {
 	assert.Equal(t, pubKey, pk)
 
 	_, _, err = stakeKeeper.unbondWithoutCoins(ctx, addr)
-	assert.Equal(t, err, ErrInvalidUnbond(DefaultCodespace))
+	assert.Equal(t, err, ErrInvalidUnbond())
 }

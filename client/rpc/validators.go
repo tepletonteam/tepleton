@@ -12,8 +12,6 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/context"
 )
 
-// TODO these next two functions feel kinda hacky based on their placement
-
 func validatorCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "validatorset <height>",
@@ -26,7 +24,7 @@ func validatorCommand() *cobra.Command {
 	return cmd
 }
 
-func getValidators(height *int64) ([]byte, error) {
+func GetValidators(height *int64) ([]byte, error) {
 	// get the node
 	node, err := context.NewCoreContextFromViper().GetNode()
 	if err != nil {
@@ -61,7 +59,7 @@ func printValidators(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	output, err := getValidators(height)
+	output, err := GetValidators(height)
 	if err != nil {
 		return err
 	}
@@ -72,8 +70,7 @@ func printValidators(cmd *cobra.Command, args []string) error {
 
 // REST
 
-// Validator Set at a height REST handler
-func ValidatorSetRequestHandler(w http.ResponseWriter, r *http.Request) {
+func ValidatorsetRequestHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	height, err := strconv.ParseInt(vars["height"], 10, 64)
 	if err != nil {
@@ -87,7 +84,7 @@ func ValidatorSetRequestHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("ERROR: Requested block height is bigger then the chain length."))
 		return
 	}
-	output, err := getValidators(&height)
+	output, err := GetValidators(&height)
 	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte(err.Error()))
@@ -96,15 +93,14 @@ func ValidatorSetRequestHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 
-// Latest Validator Set REST handler
-func LatestValidatorSetRequestHandler(w http.ResponseWriter, r *http.Request) {
+func LatestValidatorsetRequestHandler(w http.ResponseWriter, r *http.Request) {
 	height, err := GetChainHeight()
 	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte(err.Error()))
 		return
 	}
-	output, err := getValidators(&height)
+	output, err := GetValidators(&height)
 	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte(err.Error()))

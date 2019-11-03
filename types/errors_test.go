@@ -16,6 +16,7 @@ var codeTypes = []CodeType{
 	CodeUnknownRequest,
 	CodeUnknownAddress,
 	CodeInvalidPubKey,
+	CodeGenesisParse,
 }
 
 type errFn func(msg string) Error
@@ -29,12 +30,14 @@ var errFns = []errFn{
 	ErrUnknownRequest,
 	ErrUnknownAddress,
 	ErrInvalidPubKey,
+	ErrGenesisParse,
 }
 
 func TestCodeType(t *testing.T) {
-	assert.True(t, WRSPCodeOK.IsOK())
+	assert.True(t, CodeOK.IsOK())
 
 	for _, c := range codeTypes {
+		assert.False(t, c.IsOK())
 		msg := CodeToDefaultMsg(c)
 		assert.False(t, strings.HasPrefix(msg, "Unknown code"))
 	}
@@ -44,7 +47,7 @@ func TestErrFn(t *testing.T) {
 	for i, errFn := range errFns {
 		err := errFn("")
 		codeType := codeTypes[i]
-		assert.Equal(t, err.Code(), codeType)
-		assert.Equal(t, err.Result().Code, ToWRSPCode(CodespaceRoot, codeType))
+		assert.Equal(t, err.WRSPCode(), codeType)
+		assert.Equal(t, err.Result().Code, codeType)
 	}
 }
