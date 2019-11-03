@@ -13,10 +13,10 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/rpc"
 	"github.com/tepleton/tepleton-sdk/client/tx"
 	"github.com/tepleton/tepleton-sdk/version"
-	authcmd "github.com/tepleton/tepleton-sdk/x/auth/commands"
-	bankcmd "github.com/tepleton/tepleton-sdk/x/bank/commands"
-	ibccmd "github.com/tepleton/tepleton-sdk/x/ibc/commands"
-	stakecmd "github.com/tepleton/tepleton-sdk/x/stake/commands"
+	authcmd "github.com/tepleton/tepleton-sdk/x/auth/client/cli"
+	bankcmd "github.com/tepleton/tepleton-sdk/x/bank/client/cli"
+	ibccmd "github.com/tepleton/tepleton-sdk/x/ibc/client/cli"
+	stakecmd "github.com/tepleton/tepleton-sdk/x/stake/client/cli"
 
 	"github.com/tepleton/tepleton-sdk/cmd/ton/app"
 )

@@ -18,9 +18,9 @@ import (
 	tx "github.com/tepleton/tepleton-sdk/client/tx"
 	version "github.com/tepleton/tepleton-sdk/version"
 	"github.com/tepleton/tepleton-sdk/wire"
-	auth "github.com/tepleton/tepleton-sdk/x/auth/rest"
-	bank "github.com/tepleton/tepleton-sdk/x/bank/rest"
-	ibc "github.com/tepleton/tepleton-sdk/x/ibc/rest"
+	auth "github.com/tepleton/tepleton-sdk/x/auth/client/rest"
+	bank "github.com/tepleton/tepleton-sdk/x/bank/client/rest"
+	ibc "github.com/tepleton/tepleton-sdk/x/ibc/client/rest"
 )
 
 const (
