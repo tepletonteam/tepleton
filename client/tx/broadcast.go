@@ -7,12 +7,10 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/context"
 )
 
-// Tx Broadcast Body
 type BroadcastTxBody struct {
 	TxBytes string `json="tx"`
 }
 
-// BroadcastTx REST Handler
 func BroadcastTxRequestHandler(w http.ResponseWriter, r *http.Request) {
 	var m BroadcastTxBody
 

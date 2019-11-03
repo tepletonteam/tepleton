@@ -24,7 +24,7 @@ func setupMultiStore() (sdk.MultiStore, *sdk.KVStoreKey) {
 	return ms, authKey
 }
 
-func TestKeeper(t *testing.T) {
+func TestCoinKeeper(t *testing.T) {
 	ms, authKey := setupMultiStore()
 
 	cdc := wire.NewCodec()
@@ -32,7 +32,7 @@ func TestKeeper(t *testing.T) {
 
 	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil)
 	accountMapper := auth.NewAccountMapper(cdc, authKey, &auth.BaseAccount{})
-	coinKeeper := NewKeeper(accountMapper)
+	coinKeeper := NewCoinKeeper(accountMapper)
 
 	addr := sdk.Address([]byte("addr1"))
 	addr2 := sdk.Address([]byte("addr2"))
@@ -118,7 +118,7 @@ func TestSendKeeper(t *testing.T) {
 
 	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil)
 	accountMapper := auth.NewAccountMapper(cdc, authKey, &auth.BaseAccount{})
-	coinKeeper := NewKeeper(accountMapper)
+	coinKeeper := NewCoinKeeper(accountMapper)
 	sendKeeper := NewSendKeeper(accountMapper)
 
 	addr := sdk.Address([]byte("addr1"))
@@ -187,7 +187,7 @@ func TestViewKeeper(t *testing.T) {
 
 	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil)
 	accountMapper := auth.NewAccountMapper(cdc, authKey, &auth.BaseAccount{})
-	coinKeeper := NewKeeper(accountMapper)
+	coinKeeper := NewCoinKeeper(accountMapper)
 	viewKeeper := NewViewKeeper(accountMapper)
 
 	addr := sdk.Address([]byte("addr1"))

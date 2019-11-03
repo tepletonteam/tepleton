@@ -14,7 +14,6 @@ import (
 	authcmd "github.com/tepleton/tepleton-sdk/x/auth/commands"
 )
 
-// command to mine some pow!
 func MineCmd(cdc *wire.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "mine [difficulty] [count] [nonce] [solution]",
@@ -37,10 +36,12 @@ func MineCmd(cdc *wire.Codec) *cobra.Command {
 			if err != nil {
 				return err
 			}
+
 			count, err := strconv.ParseUint(args[1], 0, 64)
 			if err != nil {
 				return err
 			}
+
 			nonce, err := strconv.ParseUint(args[2], 0, 64)
 			if err != nil {
 				return err
@@ -48,13 +49,19 @@ func MineCmd(cdc *wire.Codec) *cobra.Command {
 
 			solution := []byte(args[3])
 
-			msg := pow.NewMsgMine(from, difficulty, count, nonce, solution)
+			msg := pow.NewMineMsg(from, difficulty, count, nonce, solution)
 
 			// get account name
 			name := ctx.FromAddressName
 
+			// default to next sequence number if none provided
+			ctx, err = context.EnsureSequence(ctx)
+			if err != nil {
+				return err
+			}
+
 			// build and sign the transaction, then broadcast to Tendermint
-			res, err := ctx.EnsureSignBuildBroadcast(name, msg, cdc)
+			res, err := ctx.SignBuildBroadcast(name, msg, cdc)
 			if err != nil {
 				return err
 			}
