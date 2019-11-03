@@ -4,10 +4,9 @@ import (
 	"github.com/tepleton/tepleton-sdk/wire"
 )
 
-// Register concrete types on wire codec
+// XXX complete
 func RegisterWire(cdc *wire.Codec) {
-	cdc.RegisterConcrete(MsgDeclareCandidacy{}, "tepleton-sdk/MsgDeclareCandidacy", nil)
-	cdc.RegisterConcrete(MsgEditCandidacy{}, "tepleton-sdk/MsgEditCandidacy", nil)
-	cdc.RegisterConcrete(MsgDelegate{}, "tepleton-sdk/MsgDelegate", nil)
-	cdc.RegisterConcrete(MsgUnbond{}, "tepleton-sdk/MsgUnbond", nil)
+	// TODO include option to always include prefix bytes.
+	//cdc.RegisterConcrete(SendMsg{}, "tepleton-sdk/SendMsg", nil)
+	//cdc.RegisterConcrete(IssueMsg{}, "tepleton-sdk/IssueMsg", nil)
 }

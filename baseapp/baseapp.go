@@ -24,12 +24,11 @@ var dbHeaderKey = []byte("header")
 // The WRSP application
 type BaseApp struct {
 	// initialized on creation
-	Logger     log.Logger
-	name       string               // application name from wrsp.Info
-	db         dbm.DB               // common DB backend
-	cms        sdk.CommitMultiStore // Main (uncached) state
-	router     Router               // handle any kind of message
-	codespacer *sdk.Codespacer      // handle module codespacing
+	Logger log.Logger
+	name   string               // application name from wrsp.Info
+	db     dbm.DB               // common DB backend
+	cms    sdk.CommitMultiStore // Main (uncached) state
+	router Router               // handle any kind of message
 
 	// must be set
 	txDecoder   sdk.TxDecoder   // unmarshal []byte into sdk.Tx
@@ -57,28 +56,18 @@ var _ wrsp.Application = (*BaseApp)(nil)
 // Create and name new BaseApp
 // NOTE: The db is used to store the version number for now.
 func NewBaseApp(name string, logger log.Logger, db dbm.DB) *BaseApp {
-	app := &BaseApp{
-		Logger:     logger,
-		name:       name,
-		db:         db,
-		cms:        store.NewCommitMultiStore(db),
-		router:     NewRouter(),
-		codespacer: sdk.NewCodespacer(),
+	return &BaseApp{
+		Logger: logger,
+		name:   name,
+		db:     db,
+		cms:    store.NewCommitMultiStore(db),
+		router: NewRouter(),
 	}
-	// Register the undefined & root codespaces, which should not be used by any modules
-	app.codespacer.RegisterOrPanic(sdk.CodespaceUndefined)
-	app.codespacer.RegisterOrPanic(sdk.CodespaceRoot)
-	return app
 }
 
 // BaseApp Name
 func (app *BaseApp) Name() string {
 	return app.name
-}
-
-// Register the next available codespace through the baseapp's codespacer, starting from a default
-func (app *BaseApp) RegisterCodespace(codespace sdk.CodespaceType) sdk.CodespaceType {
-	return app.codespacer.RegisterNext(codespace)
 }
 
 // Mount a store to the provided key in the BaseApp multistore
@@ -114,6 +103,7 @@ func (app *BaseApp) SetEndBlocker(endBlocker sdk.EndBlocker) {
 func (app *BaseApp) SetAnteHandler(ah sdk.AnteHandler) {
 	app.anteHandler = ah
 }
+
 func (app *BaseApp) Router() Router { return app.router }
 
 // load latest application version
@@ -321,8 +311,9 @@ func (app *BaseApp) DeliverTx(txBytes []byte) (res wrsp.ResponseDeliverTx) {
 	if result.IsOK() {
 		app.valUpdates = append(app.valUpdates, result.ValidatorUpdates...)
 	} else {
-		// Even though the Result.Code is not OK, there are still effects,
-		// namely fee deductions and sequence incrementing.
+		// Even though the Code is not OK, there will be some side
+		// effects, like those caused by fee deductions or sequence
+		// incrementations.
 	}
 
 	// Tell the blockchain engine (i.e. Tendermint).
@@ -336,7 +327,7 @@ func (app *BaseApp) DeliverTx(txBytes []byte) (res wrsp.ResponseDeliverTx) {
 	}
 }
 
-// nolint- Mostly for testing
+// Mostly for testing
 func (app *BaseApp) Check(tx sdk.Tx) (result sdk.Result) {
 	return app.runTx(true, nil, tx)
 }
@@ -364,7 +355,6 @@ func (app *BaseApp) runTx(isCheckTx bool, txBytes []byte, tx sdk.Tx) (result sdk
 	// Validate the Msg.
 	err := msg.ValidateBasic()
 	if err != nil {
-		err = err.WithDefaultCodespace(sdk.CodespaceRoot)
 		return err.Result()
 	}
 
@@ -451,7 +441,7 @@ func (app *BaseApp) Commit() (res wrsp.ResponseCommit) {
 	// Use the header from this latest block.
 	app.setCheckState(header)
 
-	// Empty the Deliver state
+	// Emtpy the Deliver state
 	app.deliverState = nil
 
 	return wrsp.ResponseCommit{
