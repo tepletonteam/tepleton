@@ -9,14 +9,14 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
-func TestNewMsgSend(t *testing.T) {}
+func TestNewSendMsg(t *testing.T) {}
 
-func TestMsgSendType(t *testing.T) {
-	// Construct a MsgSend
+func TestSendMsgType(t *testing.T) {
+	// Construct a SendMsg
 	addr1 := sdk.Address([]byte("input"))
 	addr2 := sdk.Address([]byte("output"))
 	coins := sdk.Coins{{"atom", 10}}
-	var msg = MsgSend{
+	var msg = SendMsg{
 		Inputs:  []Input{NewInput(addr1, coins)},
 		Outputs: []Output{NewOutput(addr2, coins)},
 	}
@@ -109,7 +109,7 @@ func TestOutputValidation(t *testing.T) {
 	}
 }
 
-func TestMsgSendValidation(t *testing.T) {
+func TestSendMsgValidation(t *testing.T) {
 	addr1 := sdk.Address([]byte{1, 2})
 	addr2 := sdk.Address([]byte{7, 8})
 	atom123 := sdk.Coins{{"atom", 123}}
@@ -128,40 +128,40 @@ func TestMsgSendValidation(t *testing.T) {
 
 	cases := []struct {
 		valid bool
-		tx    MsgSend
+		tx    SendMsg
 	}{
-		{false, MsgSend{}},                           // no input or output
-		{false, MsgSend{Inputs: []Input{input1}}},    // just input
-		{false, MsgSend{Outputs: []Output{output1}}}, // just ouput
-		{false, MsgSend{
+		{false, SendMsg{}},                           // no input or output
+		{false, SendMsg{Inputs: []Input{input1}}},    // just input
+		{false, SendMsg{Outputs: []Output{output1}}}, // just ouput
+		{false, SendMsg{
 			Inputs:  []Input{NewInput(emptyAddr, atom123)}, // invalid input
 			Outputs: []Output{output1}}},
-		{false, MsgSend{
+		{false, SendMsg{
 			Inputs:  []Input{input1},
 			Outputs: []Output{{emptyAddr, atom123}}}, // invalid ouput
 		},
-		{false, MsgSend{
+		{false, SendMsg{
 			Inputs:  []Input{input1},
 			Outputs: []Output{output2}}, // amounts dont match
 		},
-		{false, MsgSend{
+		{false, SendMsg{
 			Inputs:  []Input{input1},
 			Outputs: []Output{output3}}, // amounts dont match
 		},
-		{false, MsgSend{
+		{false, SendMsg{
 			Inputs:  []Input{input1},
 			Outputs: []Output{outputMulti}}, // amounts dont match
 		},
-		{false, MsgSend{
+		{false, SendMsg{
 			Inputs:  []Input{input2},
 			Outputs: []Output{output1}}, // amounts dont match
 		},
 
-		{true, MsgSend{
+		{true, SendMsg{
 			Inputs:  []Input{input1},
 			Outputs: []Output{output1}},
 		},
-		{true, MsgSend{
+		{true, SendMsg{
 			Inputs:  []Input{input1, input2},
 			Outputs: []Output{outputMulti}},
 		},
@@ -177,11 +177,29 @@ func TestMsgSendValidation(t *testing.T) {
 	}
 }
 
-func TestMsgSendGet(t *testing.T) {
+func TestSendMsgString(t *testing.T) {
+	// Construct a SendMsg
+	addr1String := "input"
+	addr2String := "output"
+	addr1 := sdk.Address([]byte(addr1String))
+	addr2 := sdk.Address([]byte(addr2String))
+	coins := sdk.Coins{{"atom", 10}}
+	var msg = SendMsg{
+		Inputs:  []Input{NewInput(addr1, coins)},
+		Outputs: []Output{NewOutput(addr2, coins)},
+	}
+
+	res := msg.String()
+	expected := fmt.Sprintf("SendMsg{[Input{%X,10atom}]->[Output{%X,10atom}]}", addr1String, addr2String)
+	// TODO some failures for bad results
+	assert.Equal(t, expected, res)
+}
+
+func TestSendMsgGet(t *testing.T) {
 	addr1 := sdk.Address([]byte("input"))
 	addr2 := sdk.Address([]byte("output"))
 	coins := sdk.Coins{{"atom", 10}}
-	var msg = MsgSend{
+	var msg = SendMsg{
 		Inputs:  []Input{NewInput(addr1, coins)},
 		Outputs: []Output{NewOutput(addr2, coins)},
 	}
@@ -189,11 +207,11 @@ func TestMsgSendGet(t *testing.T) {
 	assert.Nil(t, res)
 }
 
-func TestMsgSendGetSignBytes(t *testing.T) {
+func TestSendMsgGetSignBytes(t *testing.T) {
 	addr1 := sdk.Address([]byte("input"))
 	addr2 := sdk.Address([]byte("output"))
 	coins := sdk.Coins{{"atom", 10}}
-	var msg = MsgSend{
+	var msg = SendMsg{
 		Inputs:  []Input{NewInput(addr1, coins)},
 		Outputs: []Output{NewOutput(addr2, coins)},
 	}
@@ -202,8 +220,8 @@ func TestMsgSendGetSignBytes(t *testing.T) {
 	assert.Equal(t, string(res), `{"inputs":[{"address":"696E707574","coins":[{"denom":"atom","amount":10}]}],"outputs":[{"address":"6F7574707574","coins":[{"denom":"atom","amount":10}]}]}`)
 }
 
-func TestMsgSendGetSigners(t *testing.T) {
-	var msg = MsgSend{
+func TestSendMsgGetSigners(t *testing.T) {
+	var msg = SendMsg{
 		Inputs: []Input{
 			NewInput(sdk.Address([]byte("input1")), nil),
 			NewInput(sdk.Address([]byte("input2")), nil),
@@ -217,7 +235,7 @@ func TestMsgSendGetSigners(t *testing.T) {
 
 /*
 // what to do w/ this test?
-func TestMsgSendSigners(t *testing.T) {
+func TestSendMsgSigners(t *testing.T) {
 	signers := []sdk.Address{
 		{1, 2, 3},
 		{4, 5, 6},
@@ -229,24 +247,24 @@ func TestMsgSendSigners(t *testing.T) {
 	for i, signer := range signers {
 		inputs[i] = NewInput(signer, someCoins)
 	}
-	tx := NewMsgSend(inputs, nil)
+	tx := NewSendMsg(inputs, nil)
 
 	assert.Equal(t, signers, tx.Signers())
 }
 */
 
 // ----------------------------------------
-// MsgIssue Tests
+// IssueMsg Tests
 
-func TestNewMsgIssue(t *testing.T) {
+func TestNewIssueMsg(t *testing.T) {
 	// TODO
 }
 
-func TestMsgIssueType(t *testing.T) {
-	// Construct an MsgIssue
+func TestIssueMsgType(t *testing.T) {
+	// Construct an IssueMsg
 	addr := sdk.Address([]byte("loan-from-bank"))
 	coins := sdk.Coins{{"atom", 10}}
-	var msg = MsgIssue{
+	var msg = IssueMsg{
 		Banker:  sdk.Address([]byte("input")),
 		Outputs: []Output{NewOutput(addr, coins)},
 	}
@@ -255,14 +273,29 @@ func TestMsgIssueType(t *testing.T) {
 	assert.Equal(t, msg.Type(), "bank")
 }
 
-func TestMsgIssueValidation(t *testing.T) {
+func TestIssueMsgValidation(t *testing.T) {
 	// TODO
 }
 
-func TestMsgIssueGet(t *testing.T) {
+func TestIssueMsgString(t *testing.T) {
+	addrString := "loan-from-bank"
+	bankerString := "input"
+	// Construct a IssueMsg
+	addr := sdk.Address([]byte(addrString))
+	coins := sdk.Coins{{"atom", 10}}
+	var msg = IssueMsg{
+		Banker:  sdk.Address([]byte(bankerString)),
+		Outputs: []Output{NewOutput(addr, coins)},
+	}
+	res := msg.String()
+	expected := fmt.Sprintf("IssueMsg{%X#[Output{%X,10atom}]}", bankerString, addrString)
+	assert.Equal(t, expected, res)
+}
+
+func TestIssueMsgGet(t *testing.T) {
 	addr := sdk.Address([]byte("loan-from-bank"))
 	coins := sdk.Coins{{"atom", 10}}
-	var msg = MsgIssue{
+	var msg = IssueMsg{
 		Banker:  sdk.Address([]byte("input")),
 		Outputs: []Output{NewOutput(addr, coins)},
 	}
@@ -270,10 +303,10 @@ func TestMsgIssueGet(t *testing.T) {
 	assert.Nil(t, res)
 }
 
-func TestMsgIssueGetSignBytes(t *testing.T) {
+func TestIssueMsgGetSignBytes(t *testing.T) {
 	addr := sdk.Address([]byte("loan-from-bank"))
 	coins := sdk.Coins{{"atom", 10}}
-	var msg = MsgIssue{
+	var msg = IssueMsg{
 		Banker:  sdk.Address([]byte("input")),
 		Outputs: []Output{NewOutput(addr, coins)},
 	}
@@ -282,8 +315,8 @@ func TestMsgIssueGetSignBytes(t *testing.T) {
 	assert.Equal(t, string(res), `{"banker":"696E707574","outputs":[{"address":"6C6F616E2D66726F6D2D62616E6B","coins":[{"denom":"atom","amount":10}]}]}`)
 }
 
-func TestMsgIssueGetSigners(t *testing.T) {
-	var msg = MsgIssue{
+func TestIssueMsgGetSigners(t *testing.T) {
+	var msg = IssueMsg{
 		Banker: sdk.Address([]byte("onlyone")),
 	}
 	res := msg.GetSigners()

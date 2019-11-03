@@ -9,10 +9,9 @@ import (
 	crypto "github.com/tepleton/go-crypto"
 )
 
-// generate the mine message
-func GenerateMsgMine(sender sdk.Address, count uint64, difficulty uint64) MsgMine {
+func GenerateMineMsg(sender sdk.Address, count uint64, difficulty uint64) MineMsg {
 	nonce, hash := mine(sender, count, difficulty)
-	return NewMsgMine(sender, difficulty, count, nonce, hash)
+	return NewMineMsg(sender, difficulty, count, nonce, hash)
 }
 
 func hash(sender sdk.Address, count uint64, nonce uint64) []byte {

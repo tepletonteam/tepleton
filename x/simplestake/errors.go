@@ -4,10 +4,7 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
-// simple stake errors reserve 300 ~ 399.
 const (
-	DefaultCodespace sdk.CodespaceType = 4
-
 	// simplestake errors reserve 300 - 399.
 	CodeEmptyValidator        sdk.CodeType = 300
 	CodeInvalidUnbond         sdk.CodeType = 301
@@ -15,23 +12,25 @@ const (
 	CodeIncorrectStakingToken sdk.CodeType = 303
 )
 
-// nolint
-func ErrIncorrectStakingToken(codespace sdk.CodespaceType) sdk.Error {
-	return newError(codespace, CodeIncorrectStakingToken, "")
+func ErrIncorrectStakingToken() sdk.Error {
+	return newError(CodeIncorrectStakingToken, "")
 }
-func ErrEmptyValidator(codespace sdk.CodespaceType) sdk.Error {
-	return newError(codespace, CodeEmptyValidator, "")
+
+func ErrEmptyValidator() sdk.Error {
+	return newError(CodeEmptyValidator, "")
 }
-func ErrInvalidUnbond(codespace sdk.CodespaceType) sdk.Error {
-	return newError(codespace, CodeInvalidUnbond, "")
+
+func ErrInvalidUnbond() sdk.Error {
+	return newError(CodeInvalidUnbond, "")
 }
-func ErrEmptyStake(codespace sdk.CodespaceType) sdk.Error {
-	return newError(codespace, CodeEmptyStake, "")
+
+func ErrEmptyStake() sdk.Error {
+	return newError(CodeEmptyStake, "")
 }
 
 // -----------------------------
 // Helpers
 
-func newError(codespace sdk.CodespaceType, code sdk.CodeType, msg string) sdk.Error {
-	return sdk.NewError(codespace, code, msg)
+func newError(code sdk.CodeType, msg string) sdk.Error {
+	return sdk.NewError(code, msg)
 }

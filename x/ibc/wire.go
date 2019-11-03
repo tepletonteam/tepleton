@@ -6,6 +6,6 @@ import (
 
 // Register concrete types on wire codec
 func RegisterWire(cdc *wire.Codec) {
-	cdc.RegisterConcrete(IBCTransferMsg{}, "tepleton-sdk/IBCTransferMsg", nil)
-	cdc.RegisterConcrete(IBCReceiveMsg{}, "tepleton-sdk/IBCReceiveMsg", nil)
+	//cdc.RegisterConcrete(IBCTransferMsg{}, "github.com/tepleton/tepleton-sdk/x/ibc/IBCTransferMsg", nil)
+	//cdc.RegisterConcrete(IBCReceiveMsg{}, "github.com/tepleton/tepleton-sdk/x/ibc/IBCReceiveMsg", nil)
 }
