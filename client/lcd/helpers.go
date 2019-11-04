@@ -7,32 +7,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	cmn "github.com/tepleton/tmlibs/common"
 
 	cfg "github.com/tepleton/tepleton/config"
-	ctypes "github.com/tepleton/tepleton/rpc/core/types"
-	rpcclient "github.com/tepleton/tepleton/rpc/lib/client"
 )
 
 var globalConfig *cfg.Config
-
-func waitForRPC() {
-	laddr := GetConfig().RPC.ListenAddress
-	fmt.Println("LADDR", laddr)
-	client := rpcclient.NewJSONRPCClient(laddr)
-	ctypes.RegisterAmino(client.Codec())
-	result := new(ctypes.ResultStatus)
-	for {
-		_, err := client.Call("status", map[string]interface{}{}, result)
-		if err == nil {
-			return
-		}
-		fmt.Println("error", err)
-		time.Sleep(time.Millisecond)
-	}
-}
 
 // f**ing long, but unique for each test
 func makePathname() string {
