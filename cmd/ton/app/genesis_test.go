@@ -3,21 +3,23 @@ package app
 import (
 	"testing"
 
+	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/stretchr/testify/assert"
 	crypto "github.com/tepleton/go-crypto"
 )
 
 func TestToAccount(t *testing.T) {
-	priv = crypto.GenPrivKeyEd25519()
-	addr = priv.PubKey().Address()
+	priv := crypto.GenPrivKeyEd25519()
+	addr := sdk.Address(priv.PubKey().Address())
 	authAcc := auth.NewBaseAccountWithAddress(addr)
-	genAcc := NewGenesisAccount(authAcc)
-	assert.Equal(t, authAcc, genAcc.ToAccount())
+	genAcc := NewGenesisAccount(&authAcc)
+	assert.Equal(t, authAcc, *genAcc.ToAccount())
 }
 
 func TestGaiaAppGenTx(t *testing.T) {
 	cdc := MakeCodec()
+	_ = cdc
 
 	//TODO test that key overwrite flags work / no overwrites if set off
 	//TODO test validator created has provided pubkey
@@ -26,6 +28,7 @@ func TestGaiaAppGenTx(t *testing.T) {
 
 func TestGaiaAppGenState(t *testing.T) {
 	cdc := MakeCodec()
+	_ = cdc
 
 	// TODO test must provide at least genesis transaction
 	// TODO test with both one and two genesis transactions:
