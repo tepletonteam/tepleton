@@ -6,6 +6,9 @@ import (
 	"path/filepath"
 
 	wrsp "github.com/tepleton/wrsp/types"
+	crypto "github.com/tepleton/go-crypto"
+	tmtypes "github.com/tepleton/tepleton/types"
+	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
 
@@ -103,11 +106,18 @@ func InitChainer(key sdk.StoreKey) func(sdk.Context, wrsp.RequestInitChain) wrsp
 	}
 }
 
-// GenInitOptions can be passed into InitCmd,
-// returns a static string of a few key-values that can be parsed
-// by InitChainer
-func GenInitOptions(args []string, addr sdk.Address, coinDenom string) (json.RawMessage, error) {
-	opts := []byte(`{
+// GenAppState can be passed into InitCmd, returns a static string of a few
+// key-values that can be parsed by InitChainer
+func GenAppState(pubKey crypto.PubKey) (chainID string, validators []tmtypes.GenesisValidator, appState json.RawMessage, err error) {
+
+	chainID = cmn.Fmt("test-chain-%v", cmn.RandStr(6))
+
+	validators = []tmtypes.GenesisValidator{{
+		PubKey: pubKey,
+		Power:  10,
+	}}
+
+	appState = json.RawMessage(fmt.Sprintf(`{
   "values": [
     {
         "key": "hello",
@@ -118,6 +128,6 @@ func GenInitOptions(args []string, addr sdk.Address, coinDenom string) (json.Raw
         "value": "bar"
     }
   ]
-}`)
-	return opts, nil
+}`))
+	return
 }

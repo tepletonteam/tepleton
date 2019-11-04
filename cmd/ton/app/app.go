@@ -2,13 +2,17 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 
 	wrsp "github.com/tepleton/wrsp/types"
+	crypto "github.com/tepleton/go-crypto"
+	tmtypes "github.com/tepleton/tepleton/types"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
 
 	bam "github.com/tepleton/tepleton-sdk/baseapp"
+	"github.com/tepleton/tepleton-sdk/server"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
@@ -177,9 +181,24 @@ func (ga *GenesisAccount) ToAccount() (acc *auth.BaseAccount) {
 	}
 }
 
-// DefaultGenAppState expects two args: an account address
+// GaiaGenAppState expects two args: an account address
 // and a coin denomination, and gives lots of coins to that address.
-func DefaultGenAppState(args []string, addr sdk.Address, coinDenom string) (json.RawMessage, error) {
+func GaiaGenAppState(pubKey crypto.PubKey) (chainID string, validators []tmtypes.GenesisValidator, appState json.RawMessage, err error) {
+
+	var addr sdk.Address
+	var secret string
+	addr, secret, err = server.GenerateCoinKey()
+	if err != nil {
+		return
+	}
+	fmt.Printf("secret recovery key:\n%s\n", secret)
+
+	chainID = cmn.Fmt("test-chain-%v", cmn.RandStr(6))
+
+	validators = []tmtypes.GenesisValidator{{
+		PubKey: pubKey,
+		Power:  10,
+	}}
 
 	accAuth := auth.NewBaseAccountWithAddress(addr)
 	accAuth.Coins = sdk.Coins{{"fermion", 100000}}
@@ -191,10 +210,6 @@ func DefaultGenAppState(args []string, addr sdk.Address, coinDenom string) (json
 		StakeData: stake.GetDefaultGenesisState(),
 	}
 
-	stateBytes, err := json.MarshalIndent(genesisState, "", "\t")
-	if err != nil {
-		return nil, err
-	}
-
-	return stateBytes, nil
+	appState, err = json.MarshalIndent(genesisState, "", "\t")
+	return
 }
