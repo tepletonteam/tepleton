@@ -8,42 +8,29 @@ import (
 	"github.com/spf13/cobra"
 
 	wrsp "github.com/tepleton/wrsp/types"
+	crypto "github.com/tepleton/go-crypto"
+	tmtypes "github.com/tepleton/tepleton/types"
 	"github.com/tepleton/tmlibs/cli"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/tepleton-sdk/examples/democoin/app"
 	"github.com/tepleton/tepleton-sdk/server"
-	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/wire"
 )
 
-// rootCmd is the entry point for this binary
-var (
-	context = server.NewDefaultContext()
-	rootCmd = &cobra.Command{
-		Use:               "democoind",
-		Short:             "Democoin Daemon (server)",
-		PersistentPreRunE: server.PersistentPreRunEFn(context),
-	}
-)
-
-// defaultAppState sets up the app_state for the
-// default genesis file
-func defaultAppState(args []string, addr sdk.Address, coinDenom string) (json.RawMessage, error) {
-	baseJSON, err := server.DefaultGenAppState(args, addr, coinDenom)
+// coolGenAppState sets up the app_state and appends the cool app state
+func CoolGenAppState(cdc *wire.Codec, pubKey crypto.PubKey) (chainID string, validators []tmtypes.GenesisValidator, appState, message json.RawMessage, err error) {
+	chainID, validators, appState, message, err = server.SimpleGenAppState(cdc, pubKey)
 	if err != nil {
-		return nil, err
+		return
 	}
-	var jsonMap map[string]json.RawMessage
-	err = json.Unmarshal(baseJSON, &jsonMap)
-	if err != nil {
-		return nil, err
-	}
-	jsonMap["cool"] = json.RawMessage(`{
+	key := "cool"
+	value := json.RawMessage(`{
         "trend": "ice-cold"
       }`)
-	bz, err := json.Marshal(jsonMap)
-	return json.RawMessage(bz), err
+	appState, err = server.AppendJSON(cdc, appState, key, value)
+	return
 }
 
 func generateApp(rootDir string, logger log.Logger) (wrsp.Application, error) {
@@ -56,7 +43,16 @@ func generateApp(rootDir string, logger log.Logger) (wrsp.Application, error) {
 }
 
 func main() {
-	server.AddCommands(rootCmd, defaultAppState, generateApp, context)
+	cdc := app.MakeCodec()
+	ctx := server.NewDefaultContext()
+
+	rootCmd := &cobra.Command{
+		Use:               "democoind",
+		Short:             "Democoin Daemon (server)",
+		PersistentPreRunE: server.PersistentPreRunEFn(ctx),
+	}
+
+	server.AddCommands(ctx, cdc, rootCmd, CoolGenAppState, generateApp)
 
 	// prepare and add flags
 	rootDir := os.ExpandEnv("$HOME/.democoind")
