@@ -8,8 +8,6 @@ import (
 	"github.com/spf13/cobra"
 
 	wrsp "github.com/tepleton/wrsp/types"
-	crypto "github.com/tepleton/go-crypto"
-	tmtypes "github.com/tepleton/tepleton/types"
 	"github.com/tepleton/tmlibs/cli"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
@@ -21,12 +19,13 @@ import (
 
 // init parameters
 var CoolAppInit = server.AppInit{
-	GenAppParams: CoolGenAppParams,
+	AppGenState: CoolAppGenState,
+	AppGenTx:    server.SimpleAppGenTx,
 }
 
 // coolGenAppParams sets up the app_state and appends the cool app state
-func CoolGenAppParams(cdc *wire.Codec, pubKey crypto.PubKey) (chainID string, validators []tmtypes.GenesisValidator, appState, cliPrint json.RawMessage, err error) {
-	chainID, validators, appState, cliPrint, err = server.SimpleGenAppParams(cdc, pubKey)
+func CoolAppGenState(cdc *wire.Codec, appGenTxs []json.RawMessage) (appState json.RawMessage, err error) {
+	appState, err = server.SimpleAppGenState(cdc, appGenTxs)
 	if err != nil {
 		return
 	}

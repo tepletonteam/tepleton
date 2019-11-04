@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	wrsp "github.com/tepleton/wrsp/types"
-	crypto "github.com/tepleton/go-crypto"
 )
 
 // TestInitApp makes sure we can initialize this thing without an error
@@ -22,9 +21,9 @@ func TestInitApp(t *testing.T) {
 	require.NoError(t, err)
 
 	// initialize it future-way
-	pubKey := crypto.GenPrivKeyEd25519().PubKey()
-	_, _, appState, _, err := GenAppParams(nil, pubKey)
+	appState, err := AppGenState(nil, nil)
 	require.NoError(t, err)
+
 	//TODO test validators in the init chain?
 	req := wrsp.RequestInitChain{
 		AppStateBytes: appState,
