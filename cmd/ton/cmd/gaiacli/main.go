@@ -1,8 +1,6 @@
 package main
 
 import (
-	"os"
-
 	"github.com/spf13/cobra"
 
 	"github.com/tepleton/tmlibs/cli"
@@ -73,6 +71,6 @@ func main() {
 	)
 
 	// prepare and add flags
-	executor := cli.PrepareMainCmd(rootCmd, "GA", os.ExpandEnv("$HOME/.toncli"))
+	executor := cli.PrepareMainCmd(rootCmd, "GA", app.DefaultCLIHome)
 	executor.Execute()
 }
