@@ -1,8 +1,6 @@
 package app
 
 import (
-	"encoding/json"
-
 	wrsp "github.com/tepleton/wrsp/types"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
@@ -147,7 +145,7 @@ func (app *DemocoinApp) initChainerFn(coolKeeper cool.Keeper, powKeeper pow.Keep
 		stateJSON := req.AppStateBytes
 
 		genesisState := new(types.GenesisState)
-		err := json.Unmarshal(stateJSON, genesisState)
+		err := app.cdc.UnmarshalJSON(stateJSON, genesisState)
 		if err != nil {
 			panic(err) // TODO https://github.com/tepleton/tepleton-sdk/issues/468
 			// return sdk.ErrGenesisParse("").TraceCause(err, "")
