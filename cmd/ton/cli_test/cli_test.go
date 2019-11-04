@@ -13,13 +13,14 @@ import (
 	"github.com/tepleton/tepleton-sdk/cmd/ton/app"
 	"github.com/tepleton/tepleton-sdk/server"
 	"github.com/tepleton/tepleton-sdk/tests"
+	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/stake"
 )
 
 func TestGaiaCLISend(t *testing.T) {
 
-	tests.ExecuteT(t, "tond unsafe_reset_all", 1)
+	tests.ExecuteT(t, "tond unsafe_reset_all")
 	pass := "1234567890"
 	executeWrite(t, "toncli keys delete foo", pass)
 	executeWrite(t, "toncli keys delete bar", pass)
@@ -53,9 +54,10 @@ func TestGaiaCLISend(t *testing.T) {
 
 func TestGaiaCLIDeclareCandidacy(t *testing.T) {
 
-	tests.ExecuteT(t, "tond unsafe_reset_all", 1)
+	tests.ExecuteT(t, "tond unsafe_reset_all")
 	pass := "1234567890"
 	executeWrite(t, "toncli keys delete foo", pass)
+	executeWrite(t, "toncli keys delete bar", pass)
 	key, chainID := executeInit(t, "tond init -o --name=foo")
 
 	// get a free port, also setup some common flags
@@ -70,11 +72,14 @@ func TestGaiaCLIDeclareCandidacy(t *testing.T) {
 	executeWrite(t, "toncli keys add bar", pass)
 	fooAddr, _ := executeGetAddrPK(t, "toncli keys show foo --output=json")
 	barAddr, barPubKey := executeGetAddrPK(t, "toncli keys show bar --output=json")
+
+	executeWrite(t, fmt.Sprintf("toncli send %v --amount=10fermion --to=%v --name=foo", flags, barAddr), pass)
 	time.Sleep(time.Second * 3) // waiting for some blocks to pass
-	barAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barAddr, flags))
-	assert.Equal(t, int64(10), barAcc.GetCoins().AmountOf("fermion"))
+
 	fooAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooAddr, flags))
 	assert.Equal(t, int64(40), fooAcc.GetCoins().AmountOf("fermion"))
+	barAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barAddr, flags))
+	assert.Equal(t, int64(10), barAcc.GetCoins().AmountOf("fermion"))
 
 	// declare candidacy
 	declStr := fmt.Sprintf("toncli declare-candidacy %v", flags)
@@ -85,7 +90,7 @@ func TestGaiaCLIDeclareCandidacy(t *testing.T) {
 	declStr += fmt.Sprintf(" --moniker=%v", "bar-vally")
 	fmt.Printf("debug declStr: %v\n", declStr)
 	executeWrite(t, declStr, pass)
-	time.Sleep(time.Second * 3) // waiting for some blocks to pass
+	time.Sleep(time.Second) // waiting for some blocks to pass
 	barAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barAddr, flags))
 	assert.Equal(t, int64(7), barAcc.GetCoins().AmountOf("fermion"))
 	candidate := executeGetCandidate(t, fmt.Sprintf("toncli candidate %v --address-candidate=%v", flags, barAddr))
@@ -116,6 +121,7 @@ func executeWrite(t *testing.T, cmdStr string, writes ...string) {
 		_, err := wc.Write([]byte(write + "\n"))
 		require.NoError(t, err)
 	}
+	fmt.Printf("debug waiting cmdStr: %v\n", cmdStr)
 	cmd.Wait()
 }
 
@@ -126,6 +132,7 @@ func executeWritePrint(t *testing.T, cmdStr string, writes ...string) {
 		_, err := wc.Write([]byte(write + "\n"))
 		require.NoError(t, err)
 	}
+	fmt.Printf("debug waiting cmdStr: %v\n", cmdStr)
 	cmd.Wait()
 
 	bz := make([]byte, 100000)
@@ -134,7 +141,7 @@ func executeWritePrint(t *testing.T, cmdStr string, writes ...string) {
 }
 
 func executeInit(t *testing.T, cmdStr string) (key, chainID string) {
-	out := tests.ExecuteT(t, cmdStr, 1)
+	out := tests.ExecuteT(t, cmdStr)
 
 	var initRes map[string]json.RawMessage
 	err := json.Unmarshal([]byte(out), &initRes)
@@ -154,26 +161,28 @@ func executeInit(t *testing.T, cmdStr string) (key, chainID string) {
 }
 
 func executeGetAddrPK(t *testing.T, cmdStr string) (addr, pubKey string) {
-	out := tests.ExecuteT(t, cmdStr, 2)
+	out := tests.ExecuteT(t, cmdStr)
 	var ko keys.KeyOutput
 	keys.UnmarshalJSON([]byte(out), &ko)
 	return ko.Address, ko.PubKey
 }
 
 func executeGetAccount(t *testing.T, cmdStr string) auth.BaseAccount {
-	out := tests.ExecuteT(t, cmdStr, 2)
+	out := tests.ExecuteT(t, cmdStr)
 	var initRes map[string]json.RawMessage
 	err := json.Unmarshal([]byte(out), &initRes)
 	require.NoError(t, err, "out %v, err %v", out, err)
 	value := initRes["value"]
 	var acc auth.BaseAccount
-	_ = json.Unmarshal(value, &acc) //XXX pubkey can't be decoded go amino issue
+	cdc := wire.NewCodec()
+	wire.RegisterCrypto(cdc)
+	err = cdc.UnmarshalJSON(value, &acc)
 	require.NoError(t, err, "value %v, err %v", string(value), err)
 	return acc
 }
 
 func executeGetCandidate(t *testing.T, cmdStr string) stake.Candidate {
-	out := tests.ExecuteT(t, cmdStr, 2)
+	out := tests.ExecuteT(t, cmdStr)
 	var candidate stake.Candidate
 	cdc := app.MakeCodec()
 	err := cdc.UnmarshalJSON([]byte(out), &candidate)
