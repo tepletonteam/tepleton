@@ -14,13 +14,11 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/tx"
 
 	"github.com/tepleton/tepleton-sdk/version"
-	authcmd "github.com/tepleton/tepleton-sdk/x/auth/client/cli"
 	bankcmd "github.com/tepleton/tepleton-sdk/x/bank/client/cli"
 	ibccmd "github.com/tepleton/tepleton-sdk/x/ibc/client/cli"
-	simplestakingcmd "github.com/tepleton/tepleton-sdk/x/simplestake/client/cli"
+	stakecmd "github.com/tepleton/tepleton-sdk/x/stake/client/cli"
 
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/app"
-	"github.com/tepleton/tepleton-sdk/examples/basecoin/types"
 )
 
 // rootCmd is the entry point for this binary
@@ -50,25 +48,14 @@ func main() {
 
 	// add query/post commands (custom to binary)
 	rootCmd.AddCommand(
-		client.GetCommands(
-			authcmd.GetAccountCmd("main", cdc, types.GetAccountDecoder(cdc)),
-		)...)
-	rootCmd.AddCommand(
 		client.PostCommands(
 			bankcmd.SendTxCmd(cdc),
-		)...)
-	rootCmd.AddCommand(
-		client.PostCommands(
 			ibccmd.IBCTransferCmd(cdc),
-		)...)
-	rootCmd.AddCommand(
-		client.PostCommands(
 			ibccmd.IBCRelayCmd(cdc),
-			simplestakingcmd.BondTxCmd(cdc),
-		)...)
-	rootCmd.AddCommand(
-		client.PostCommands(
-			simplestakingcmd.UnbondTxCmd(cdc),
+			stakecmd.GetCmdDeclareCandidacy(cdc),
+			stakecmd.GetCmdEditCandidacy(cdc),
+			stakecmd.GetCmdDelegate(cdc),
+			stakecmd.GetCmdUnbond(cdc),
 		)...)
 
 	// add proxy, version and key info

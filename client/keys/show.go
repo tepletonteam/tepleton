@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	keys "github.com/tepleton/go-crypto/keys"
 
 	"github.com/spf13/cobra"
@@ -14,15 +15,7 @@ var showKeysCmd = &cobra.Command{
 	Use:   "show <name>",
 	Short: "Show key info for the given name",
 	Long:  `Return public details of one local key.`,
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		name := args[0]
-		info, err := getKey(name)
-		if err == nil {
-			printInfo(info)
-		}
-		return err
-	},
+	RunE:  runShowCmd,
 }
 
 func getKey(name string) (keys.Info, error) {
@@ -32,6 +25,21 @@ func getKey(name string) (keys.Info, error) {
 	}
 
 	return kb.Get(name)
+}
+
+// CMD
+
+func runShowCmd(cmd *cobra.Command, args []string) error {
+	if len(args) != 1 || len(args[0]) == 0 {
+		return errors.New("You must provide a name for the key")
+	}
+	name := args[0]
+
+	info, err := getKey(name)
+	if err == nil {
+		printInfo(info)
+	}
+	return err
 }
 
 ///////////////////////////
