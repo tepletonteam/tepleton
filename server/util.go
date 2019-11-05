@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/tepleton/tepleton-sdk/baseapp"
 	"github.com/tepleton/tepleton-sdk/version"
 	"github.com/tepleton/tepleton-sdk/wire"
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
@@ -68,7 +69,7 @@ func PersistentPreRunEFn(context *Context) func(*cobra.Command, []string) error 
 func AddCommands(
 	ctx *Context, cdc *wire.Codec,
 	rootCmd *cobra.Command, appInit AppInit,
-	appCreator AppCreator, appExporter AppExporter) {
+	appCreator baseapp.AppCreator, appExporter baseapp.AppExporter) {
 
 	rootCmd.PersistentFlags().String("log_level", ctx.Config.LogLevel, "Log level")
 

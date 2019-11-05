@@ -6,14 +6,13 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/tepleton/wrsp/server"
-	wrsp "github.com/tepleton/wrsp/types"
 
+	"github.com/tepleton/tepleton-sdk/baseapp"
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 	"github.com/tepleton/tepleton/node"
 	"github.com/tepleton/tepleton/proxy"
 	pvm "github.com/tepleton/tepleton/types/priv_validator"
 	cmn "github.com/tepleton/tmlibs/common"
-	"github.com/tepleton/tmlibs/log"
 )
 
 const (
@@ -21,13 +20,9 @@ const (
 	flagAddress        = "address"
 )
 
-// AppCreator lets us lazily initialize app, using home dir
-// and other flags (?) to start
-type AppCreator func(string, log.Logger) (wrsp.Application, error)
-
 // StartCmd runs the service passed in, either
 // stand-alone, or in-process with tepleton
-func StartCmd(ctx *Context, appCreator AppCreator) *cobra.Command {
+func StartCmd(ctx *Context, appCreator baseapp.AppCreator) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "start",
 		Short: "Run the full node",
@@ -50,7 +45,7 @@ func StartCmd(ctx *Context, appCreator AppCreator) *cobra.Command {
 	return cmd
 }
 
-func startStandAlone(ctx *Context, appCreator AppCreator) error {
+func startStandAlone(ctx *Context, appCreator baseapp.AppCreator) error {
 	// Generate the app in the proper dir
 	addr := viper.GetString(flagAddress)
 	home := viper.GetString("home")
@@ -74,7 +69,7 @@ func startStandAlone(ctx *Context, appCreator AppCreator) error {
 	return nil
 }
 
-func startInProcess(ctx *Context, appCreator AppCreator) error {
+func startInProcess(ctx *Context, appCreator baseapp.AppCreator) error {
 	cfg := ctx.Config
 	home := cfg.RootDir
 	app, err := appCreator(home, ctx.Logger)

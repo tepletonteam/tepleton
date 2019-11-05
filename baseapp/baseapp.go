@@ -241,6 +241,13 @@ func (app *BaseApp) setDeliverState(header wrsp.Header) {
 }
 
 //______________________________________________________________________________
+
+// ExportGenesis returns the genesis state in a wire-serializable format
+// should be overridden by applications extending baseapp
+func (app *BaseApp) ExportGenesis() interface{} {
+	return nil
+}
+
 // WRSP
 
 // Implements WRSP
