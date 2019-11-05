@@ -12,6 +12,8 @@ import (
 
 	"github.com/tepleton/tepleton-sdk/cmd/ton/app"
 	"github.com/tepleton/tepleton-sdk/server"
+	stake "github.com/tepleton/tepleton-sdk/x/stake"
+	stakecmd "github.com/tepleton/tepleton-sdk/x/stake/commands"
 )
 
 func main() {
