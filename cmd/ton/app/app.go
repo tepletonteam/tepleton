@@ -119,6 +119,9 @@ func (app *GaiaApp) initChainer(ctx sdk.Context, req wrsp.RequestInitChain) wrsp
 }
 
 // custom logic for export
-func (app *GaiaApp) ExportStake() stake.GenesisState {
-	return app.stakeKeeper.WriteGenesis(app.NewContext(true, wrsp.Header{}))
+func (app *GaiaApp) ExportGenesis() GenesisState {
+	return GenesisState{
+		Accounts:  []GenesisAccount{},
+		StakeData: app.stakeKeeper.WriteGenesis(app.NewContext(true, wrsp.Header{})),
+	}
 }

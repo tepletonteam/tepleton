@@ -119,3 +119,8 @@ func (app *BasecoinApp) initChainer(ctx sdk.Context, req wrsp.RequestInitChain) 
 	}
 	return wrsp.ResponseInitChain{}
 }
+
+// Custom logic for state export
+func (app *BasecoinApp) ExportGenesis() types.GenesisState {
+	return types.GenesisState{}
+}
