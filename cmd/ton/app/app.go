@@ -113,7 +113,7 @@ func (app *GaiaApp) initChainer(ctx sdk.Context, req wrsp.RequestInitChain) wrsp
 	}
 
 	// load the initial stake information
-	stake.InitGenesis(ctx, app.stakeKeeper, genesisState.StakeData)
+	app.stakeKeeper.InitGenesis(ctx, genesisState.StakeData)
 
 	return wrsp.ResponseInitChain{}
 }
