@@ -120,8 +120,17 @@ func (app *GaiaApp) initChainer(ctx sdk.Context, req wrsp.RequestInitChain) wrsp
 
 // custom logic for export
 func (app *GaiaApp) ExportGenesis() interface{} {
+	ctx := app.NewContext(true, wrsp.Header{})
+	accounts := []GenesisAccount{}
+	app.accountMapper.IterateAccounts(ctx, func(a sdk.Account) bool {
+		accounts = append(accounts, GenesisAccount{
+			Address: a.GetAddress(),
+			Coins:   a.GetCoins(),
+		})
+		return false
+	})
 	return GenesisState{
-		Accounts:  []GenesisAccount{},
-		StakeData: stake.WriteGenesis(app.NewContext(true, wrsp.Header{}), app.stakeKeeper),
+		Accounts:  accounts,
+		StakeData: stake.WriteGenesis(ctx, app.stakeKeeper),
 	}
 }
