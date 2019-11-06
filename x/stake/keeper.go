@@ -2,7 +2,6 @@ package stake
 
 import (
 	"bytes"
-	"encoding/json"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
@@ -14,31 +13,49 @@ import (
 type Keeper struct {
 	storeKey   sdk.StoreKey
 	cdc        *wire.Codec
-	coinKeeper bank.CoinKeeper
+	coinKeeper bank.Keeper
 
 	// caches
-	gs     Pool
+	pool   Pool
 	params Params
+
+	// codespace
+	codespace sdk.CodespaceType
 }
 
-func NewKeeper(ctx sdk.Context, cdc *wire.Codec, key sdk.StoreKey, ck bank.CoinKeeper) Keeper {
+func NewKeeper(cdc *wire.Codec, key sdk.StoreKey, ck bank.Keeper, codespace sdk.CodespaceType) Keeper {
 	keeper := Keeper{
 		storeKey:   key,
 		cdc:        cdc,
 		coinKeeper: ck,
+		codespace:  codespace,
 	}
 	return keeper
 }
 
-// InitGenesis - store genesis parameters
-func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) error {
-	var state GenesisState
-	if err := json.Unmarshal(data, &state); err != nil {
-		return err
+// get the current in-block validator operation counter
+func (k Keeper) getCounter(ctx sdk.Context) int16 {
+	store := ctx.KVStore(k.storeKey)
+	b := store.Get(CounterKey)
+	if b == nil {
+		return 0
 	}
-	k.setPool(ctx, state.Pool)
-	k.setParams(ctx, state.Params)
-	return nil
+	var counter int16
+	err := k.cdc.UnmarshalJSON(b, &counter)
+	if err != nil {
+		panic(err)
+	}
+	return counter
+}
+
+// set the current in-block validator operation counter
+func (k Keeper) setCounter(ctx sdk.Context, counter int16) {
+	store := ctx.KVStore(k.storeKey)
+	bz, err := k.cdc.MarshalJSON(counter)
+	if err != nil {
+		panic(err)
+	}
+	store.Set(CounterKey, bz)
 }
 
 //_________________________________________________________________________
@@ -50,7 +67,7 @@ func (k Keeper) GetCandidate(ctx sdk.Context, addr sdk.Address) (candidate Candi
 	if b == nil {
 		return candidate, false
 	}
-	err := k.cdc.UnmarshalBinary(b, &candidate)
+	err := k.cdc.UnmarshalJSON(b, &candidate)
 	if err != nil {
 		panic(err)
 	}
@@ -71,7 +88,7 @@ func (k Keeper) GetCandidates(ctx sdk.Context, maxRetrieve int16) (candidates Ca
 		}
 		bz := iterator.Value()
 		var candidate Candidate
-		err := k.cdc.UnmarshalBinary(bz, &candidate)
+		err := k.cdc.UnmarshalJSON(bz, &candidate)
 		if err != nil {
 			panic(err)
 		}
@@ -88,30 +105,60 @@ func (k Keeper) setCandidate(ctx sdk.Context, candidate Candidate) {
 	// retreive the old candidate record
 	oldCandidate, oldFound := k.GetCandidate(ctx, address)
 
+	// if found, copy the old block height and counter
+	if oldFound {
+		candidate.ValidatorBondHeight = oldCandidate.ValidatorBondHeight
+		candidate.ValidatorBondCounter = oldCandidate.ValidatorBondCounter
+	}
+
 	// marshal the candidate record and add to the state
-	bz, err := k.cdc.MarshalBinary(candidate)
+	bz, err := k.cdc.MarshalJSON(candidate)
 	if err != nil {
 		panic(err)
 	}
 	store.Set(GetCandidateKey(candidate.Address), bz)
-
-	// mashal the new validator record
-	validator := candidate.validator()
-	bz, err = k.cdc.MarshalBinary(validator)
-	if err != nil {
-		panic(err)
-	}
 
 	// if the voting power is the same no need to update any of the other indexes
 	if oldFound && oldCandidate.Assets.Equal(candidate.Assets) {
 		return
 	}
 
+	updateHeight := false
+
 	// update the list ordered by voting power
 	if oldFound {
-		store.Delete(GetValidatorKey(address, oldCandidate.Assets, k.cdc))
+		if !k.isNewValidator(ctx, store, candidate.Address) {
+			updateHeight = true
+		}
+		// else already in the validator set - retain the old validator height and counter
+		store.Delete(GetValidatorKey(address, oldCandidate.Assets, oldCandidate.ValidatorBondHeight, oldCandidate.ValidatorBondCounter, k.cdc))
+	} else {
+		updateHeight = true
 	}
-	store.Set(GetValidatorKey(address, validator.Power, k.cdc), bz)
+
+	if updateHeight {
+		// wasn't a candidate or wasn't in the validator set, update the validator block height and counter
+		candidate.ValidatorBondHeight = ctx.BlockHeight()
+		counter := k.getCounter(ctx)
+		candidate.ValidatorBondCounter = counter
+		k.setCounter(ctx, counter+1)
+	}
+
+	// update the candidate record
+	bz, err = k.cdc.MarshalJSON(candidate)
+	if err != nil {
+		panic(err)
+	}
+	store.Set(GetCandidateKey(candidate.Address), bz)
+
+	// marshal the new validator record
+	validator := candidate.validator()
+	bz, err = k.cdc.MarshalJSON(validator)
+	if err != nil {
+		panic(err)
+	}
+
+	store.Set(GetValidatorKey(address, validator.Power, validator.Height, validator.Counter, k.cdc), bz)
 
 	// add to the validators to update list if is already a validator
 	// or is a new validator
@@ -124,12 +171,14 @@ func (k Keeper) setCandidate(ctx sdk.Context, candidate Candidate) {
 		setAcc = true
 	}
 	if setAcc {
-		bz, err = k.cdc.MarshalBinary(validator.wrspValidator(k.cdc))
+		bz, err = k.cdc.MarshalJSON(validator.wrspValidator(k.cdc))
 		if err != nil {
 			panic(err)
 		}
 		store.Set(GetAccUpdateValidatorKey(validator.Address), bz)
+
 	}
+
 	return
 }
 
@@ -144,14 +193,14 @@ func (k Keeper) removeCandidate(ctx sdk.Context, address sdk.Address) {
 	// delete the old candidate record
 	store := ctx.KVStore(k.storeKey)
 	store.Delete(GetCandidateKey(address))
-	store.Delete(GetValidatorKey(address, candidate.Assets, k.cdc))
+	store.Delete(GetValidatorKey(address, candidate.Assets, candidate.ValidatorBondHeight, candidate.ValidatorBondCounter, k.cdc))
 
 	// delete from recent and power weighted validator groups if the validator
 	// exists and add validator with zero power to the validator updates
 	if store.Get(GetRecentValidatorKey(address)) == nil {
 		return
 	}
-	bz, err := k.cdc.MarshalBinary(candidate.validator().wrspValidatorZero(k.cdc))
+	bz, err := k.cdc.MarshalJSON(candidate.validator().wrspValidatorZero(k.cdc))
 	if err != nil {
 		panic(err)
 	}
@@ -193,7 +242,7 @@ func (k Keeper) GetValidators(ctx sdk.Context) (validators []Validator) {
 		}
 		bz := iterator.Value()
 		var validator Validator
-		err := k.cdc.UnmarshalBinary(bz, &validator)
+		err := k.cdc.UnmarshalJSON(bz, &validator)
 		if err != nil {
 			panic(err)
 		}
@@ -217,11 +266,11 @@ func (k Keeper) GetValidators(ctx sdk.Context) (validators []Validator) {
 		// get the zero wrsp validator from the ToKickOut iterator value
 		bz := iterator.Value()
 		var validator Validator
-		err := k.cdc.UnmarshalBinary(bz, &validator)
+		err := k.cdc.UnmarshalJSON(bz, &validator)
 		if err != nil {
 			panic(err)
 		}
-		bz, err = k.cdc.MarshalBinary(validator.wrspValidatorZero(k.cdc))
+		bz, err = k.cdc.MarshalJSON(validator.wrspValidatorZero(k.cdc))
 		if err != nil {
 			panic(err)
 		}
@@ -248,7 +297,7 @@ func (k Keeper) isNewValidator(ctx sdk.Context, store sdk.KVStore, address sdk.A
 		}
 		bz := iterator.Value()
 		var val Validator
-		err := k.cdc.UnmarshalBinary(bz, &val)
+		err := k.cdc.UnmarshalJSON(bz, &val)
 		if err != nil {
 			panic(err)
 		}
@@ -281,7 +330,7 @@ func (k Keeper) getAccUpdateValidators(ctx sdk.Context) (updates []wrsp.Validato
 	for ; iterator.Valid(); iterator.Next() {
 		valBytes := iterator.Value()
 		var val wrsp.Validator
-		err := k.cdc.UnmarshalBinary(valBytes, &val)
+		err := k.cdc.UnmarshalJSON(valBytes, &val)
 		if err != nil {
 			panic(err)
 		}
@@ -305,7 +354,8 @@ func (k Keeper) clearAccUpdateValidators(ctx sdk.Context) {
 
 //_____________________________________________________________________
 
-func (k Keeper) getDelegatorBond(ctx sdk.Context,
+// load a delegator bond
+func (k Keeper) GetDelegatorBond(ctx sdk.Context,
 	delegatorAddr, candidateAddr sdk.Address) (bond DelegatorBond, found bool) {
 
 	store := ctx.KVStore(k.storeKey)
@@ -314,15 +364,39 @@ func (k Keeper) getDelegatorBond(ctx sdk.Context,
 		return bond, false
 	}
 
-	err := k.cdc.UnmarshalBinary(delegatorBytes, &bond)
+	err := k.cdc.UnmarshalJSON(delegatorBytes, &bond)
 	if err != nil {
 		panic(err)
 	}
 	return bond, true
 }
 
+// load all bonds
+func (k Keeper) getBonds(ctx sdk.Context, maxRetrieve int16) (bonds []DelegatorBond) {
+	store := ctx.KVStore(k.storeKey)
+	iterator := store.Iterator(subspace(DelegatorBondKeyPrefix))
+
+	bonds = make([]DelegatorBond, maxRetrieve)
+	i := 0
+	for ; ; i++ {
+		if !iterator.Valid() || i > int(maxRetrieve-1) {
+			iterator.Close()
+			break
+		}
+		bondBytes := iterator.Value()
+		var bond DelegatorBond
+		err := k.cdc.UnmarshalJSON(bondBytes, &bond)
+		if err != nil {
+			panic(err)
+		}
+		bonds[i] = bond
+		iterator.Next()
+	}
+	return bonds[:i] // trim
+}
+
 // load all bonds of a delegator
-func (k Keeper) getDelegatorBonds(ctx sdk.Context, delegator sdk.Address, maxRetrieve int16) (bonds []DelegatorBond) {
+func (k Keeper) GetDelegatorBonds(ctx sdk.Context, delegator sdk.Address, maxRetrieve int16) (bonds []DelegatorBond) {
 	store := ctx.KVStore(k.storeKey)
 	delegatorPrefixKey := GetDelegatorBondsKey(delegator, k.cdc)
 	iterator := store.Iterator(subspace(delegatorPrefixKey)) //smallest to largest
@@ -336,7 +410,7 @@ func (k Keeper) getDelegatorBonds(ctx sdk.Context, delegator sdk.Address, maxRet
 		}
 		bondBytes := iterator.Value()
 		var bond DelegatorBond
-		err := k.cdc.UnmarshalBinary(bondBytes, &bond)
+		err := k.cdc.UnmarshalJSON(bondBytes, &bond)
 		if err != nil {
 			panic(err)
 		}
@@ -348,7 +422,7 @@ func (k Keeper) getDelegatorBonds(ctx sdk.Context, delegator sdk.Address, maxRet
 
 func (k Keeper) setDelegatorBond(ctx sdk.Context, bond DelegatorBond) {
 	store := ctx.KVStore(k.storeKey)
-	b, err := k.cdc.MarshalBinary(bond)
+	b, err := k.cdc.MarshalJSON(bond)
 	if err != nil {
 		panic(err)
 	}
@@ -365,7 +439,7 @@ func (k Keeper) removeDelegatorBond(ctx sdk.Context, bond DelegatorBond) {
 // load/save the global staking params
 func (k Keeper) GetParams(ctx sdk.Context) (params Params) {
 	// check if cached before anything
-	if k.params != (Params{}) {
+	if !k.params.equal(Params{}) {
 		return k.params
 	}
 	store := ctx.KVStore(k.storeKey)
@@ -374,7 +448,7 @@ func (k Keeper) GetParams(ctx sdk.Context) (params Params) {
 		panic("Stored params should not have been nil")
 	}
 
-	err := k.cdc.UnmarshalBinary(b, &params)
+	err := k.cdc.UnmarshalJSON(b, &params)
 	if err != nil {
 		panic(err)
 	}
@@ -382,7 +456,7 @@ func (k Keeper) GetParams(ctx sdk.Context) (params Params) {
 }
 func (k Keeper) setParams(ctx sdk.Context, params Params) {
 	store := ctx.KVStore(k.storeKey)
-	b, err := k.cdc.MarshalBinary(params)
+	b, err := k.cdc.MarshalJSON(params)
 	if err != nil {
 		panic(err)
 	}
@@ -393,17 +467,17 @@ func (k Keeper) setParams(ctx sdk.Context, params Params) {
 //_______________________________________________________________________
 
 // load/save the pool
-func (k Keeper) GetPool(ctx sdk.Context) (gs Pool) {
+func (k Keeper) GetPool(ctx sdk.Context) (pool Pool) {
 	// check if cached before anything
-	if k.gs != (Pool{}) {
-		return k.gs
+	if !k.pool.equal(Pool{}) {
+		return k.pool
 	}
 	store := ctx.KVStore(k.storeKey)
 	b := store.Get(PoolKey)
 	if b == nil {
 		panic("Stored pool should not have been nil")
 	}
-	err := k.cdc.UnmarshalBinary(b, &gs)
+	err := k.cdc.UnmarshalJSON(b, &pool)
 	if err != nil {
 		panic(err) // This error should never occur big problem if does
 	}
@@ -412,10 +486,10 @@ func (k Keeper) GetPool(ctx sdk.Context) (gs Pool) {
 
 func (k Keeper) setPool(ctx sdk.Context, p Pool) {
 	store := ctx.KVStore(k.storeKey)
-	b, err := k.cdc.MarshalBinary(p)
+	b, err := k.cdc.MarshalJSON(p)
 	if err != nil {
 		panic(err)
 	}
 	store.Set(PoolKey, b)
-	k.gs = Pool{} // clear the cache
+	k.pool = Pool{} //clear the cache
 }
