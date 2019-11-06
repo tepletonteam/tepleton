@@ -1,6 +1,8 @@
 package app
 
 import (
+	"encoding/json"
+
 	wrsp "github.com/tepleton/wrsp/types"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
@@ -151,19 +153,25 @@ func (app *DemocoinApp) initChainerFn(coolKeeper cool.Keeper, powKeeper pow.Keep
 }
 
 // Custom logic for state export
-func (app *DemocoinApp) ExportGenesis() interface{} {
+func (app *DemocoinApp) ExportAppStateJSON() (appState json.RawMessage, err error) {
 	ctx := app.NewContext(true, wrsp.Header{})
+
+	// iterate to get the accounts
 	accounts := []*types.GenesisAccount{}
-	app.accountMapper.IterateAccounts(ctx, func(a sdk.Account) bool {
-		accounts = append(accounts, &types.GenesisAccount{
-			Address: a.GetAddress(),
-			Coins:   a.GetCoins(),
-		})
+	appendAccount := func(acc sdk.Account) (stop bool) {
+		account := &types.GenesisAccount{
+			Address: acc.GetAddress(),
+			Coins:   acc.GetCoins(),
+		}
+		accounts = append(accounts, account)
 		return false
-	})
-	return types.GenesisState{
+	}
+	app.accountMapper.IterateAccounts(ctx, appendAccount)
+
+	genState := types.GenesisState{
 		Accounts:    accounts,
 		POWGenesis:  pow.WriteGenesis(ctx, app.powKeeper),
 		CoolGenesis: cool.WriteGenesis(ctx, app.coolKeeper),
 	}
+	return wire.MarshalJSONIndent(app.cdc, genState)
 }

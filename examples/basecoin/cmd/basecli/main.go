@@ -14,6 +14,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/tx"
 
 	"github.com/tepleton/tepleton-sdk/version"
+	authcmd "github.com/tepleton/tepleton-sdk/x/auth/client/cli"
 	bankcmd "github.com/tepleton/tepleton-sdk/x/bank/client/cli"
 	ibccmd "github.com/tepleton/tepleton-sdk/x/ibc/client/cli"
 	stakecmd "github.com/tepleton/tepleton-sdk/x/stake/client/cli"

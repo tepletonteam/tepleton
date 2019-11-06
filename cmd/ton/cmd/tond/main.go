@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+
 	"github.com/spf13/cobra"
 
 	wrsp "github.com/tepleton/wrsp/types"
@@ -8,10 +10,8 @@ import (
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
 
-	"github.com/tepleton/tepleton-sdk/baseapp"
 	"github.com/tepleton/tepleton-sdk/cmd/ton/app"
 	"github.com/tepleton/tepleton-sdk/server"
-	"github.com/tepleton/tepleton-sdk/wire"
 )
 
 func main() {
@@ -24,8 +24,8 @@ func main() {
 	}
 
 	server.AddCommands(ctx, cdc, rootCmd, app.GaiaAppInit(),
-		baseapp.GenerateFn(newApp, "ton"),
-		baseapp.ExportFn(exportApp, "ton"))
+		server.ConstructAppCreator(newApp, "ton"),
+		server.ConstructAppExporter(exportAppState, "ton"))
 
 	// prepare and add flags
 	executor := cli.PrepareBaseCmd(rootCmd, "GA", app.DefaultNodeHome)
@@ -36,7 +36,7 @@ func newApp(logger log.Logger, db dbm.DB) wrsp.Application {
 	return app.NewGaiaApp(logger, db)
 }
 
-func exportApp(logger log.Logger, db dbm.DB) (interface{}, *wire.Codec) {
+func exportAppState(logger log.Logger, db dbm.DB) (json.RawMessage, error) {
 	gapp := app.NewGaiaApp(logger, db)
-	return gapp.ExportGenesis(), app.MakeCodec()
+	return gapp.ExportAppStateJSON()
 }
