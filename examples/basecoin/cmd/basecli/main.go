@@ -19,6 +19,7 @@ import (
 	stakecmd "github.com/tepleton/tepleton-sdk/x/stake/client/cli"
 
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/app"
+	"github.com/tepleton/tepleton-sdk/examples/basecoin/types"
 )
 
 // rootCmd is the entry point for this binary
@@ -47,6 +48,11 @@ func main() {
 	rootCmd.AddCommand(client.LineBreak)
 
 	// add query/post commands (custom to binary)
+	rootCmd.AddCommand(
+		client.GetCommands(
+			authcmd.GetAccountCmd("acc", cdc, types.GetAccountDecoder(cdc)),
+		)...)
+
 	rootCmd.AddCommand(
 		client.PostCommands(
 			bankcmd.SendTxCmd(cdc),
