@@ -265,6 +265,7 @@ func (app *BaseApp) SetOption(req wrsp.RequestSetOption) (res wrsp.ResponseSetOp
 // InitChain runs the initialization logic directly on the CommitMultiStore and commits it.
 func (app *BaseApp) InitChain(req wrsp.RequestInitChain) (res wrsp.ResponseInitChain) {
 	if app.initChainer == nil {
+		// TODO: should we have some default handling of validators?
 		return
 	}
 
@@ -274,6 +275,7 @@ func (app *BaseApp) InitChain(req wrsp.RequestInitChain) (res wrsp.ResponseInitC
 
 	// NOTE: we don't commit, but BeginBlock for block 1
 	// starts from this deliverState
+
 	return
 }
 
