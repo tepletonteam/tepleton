@@ -54,6 +54,11 @@ func (msg MsgSend) ValidateBasic() sdk.Error {
 }
 
 // Implements Msg.
+func (msg MsgSend) Get(key interface{}) (value interface{}) {
+	return nil
+}
+
+// Implements Msg.
 func (msg MsgSend) GetSignBytes() []byte {
 	b, err := json.Marshal(msg) // XXX: ensure some canonical form
 	if err != nil {
@@ -99,6 +104,11 @@ func (msg MsgIssue) ValidateBasic() sdk.Error {
 			return err.Trace("")
 		}
 	}
+	return nil
+}
+
+// Implements Msg.
+func (msg MsgIssue) Get(key interface{}) (value interface{}) {
 	return nil
 }
 

@@ -11,6 +11,9 @@ type Msg interface {
 	// Must be alphanumeric or empty.
 	Type() string
 
+	// Get some property of the Msg.
+	Get(key interface{}) (value interface{})
+
 	// Get the canonical byte representation of the Msg.
 	GetSignBytes() []byte
 
@@ -171,7 +174,8 @@ func NewTestMsg(addrs ...Address) *TestMsg {
 }
 
 //nolint
-func (msg *TestMsg) Type() string { return "TestMsg" }
+func (msg *TestMsg) Type() string                            { return "TestMsg" }
+func (msg *TestMsg) Get(key interface{}) (value interface{}) { return nil }
 func (msg *TestMsg) GetSignBytes() []byte {
 	bz, err := json.Marshal(msg.signers)
 	if err != nil {
