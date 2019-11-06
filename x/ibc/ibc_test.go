@@ -8,6 +8,7 @@ import (
 	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/go-crypto"
 	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/tepleton-sdk/store"
 	sdk "github.com/tepleton/tepleton-sdk/types"
@@ -23,7 +24,7 @@ func defaultContext(key sdk.StoreKey) sdk.Context {
 	cms := store.NewCommitMultiStore(db)
 	cms.MountStoreWithDB(key, sdk.StoreTypeIAVL, db)
 	cms.LoadLatestVersion()
-	ctx := sdk.NewContext(cms, wrsp.Header{}, false, nil)
+	ctx := sdk.NewContext(cms, wrsp.Header{}, false, nil, log.NewNopLogger())
 	return ctx
 }
 

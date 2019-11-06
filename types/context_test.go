@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/tepleton-sdk/store"
 	"github.com/tepleton/tepleton-sdk/types"
@@ -14,7 +15,7 @@ import (
 
 func TestContextGetOpShouldNeverPanic(t *testing.T) {
 	var ms types.MultiStore
-	ctx := types.NewContext(ms, wrsp.Header{}, false, nil)
+	ctx := types.NewContext(ms, wrsp.Header{}, false, nil, log.NewNopLogger())
 	indices := []int64{
 		-10, 1, 0, 10, 20,
 	}
@@ -29,7 +30,7 @@ func defaultContext(key types.StoreKey) types.Context {
 	cms := store.NewCommitMultiStore(db)
 	cms.MountStoreWithDB(key, types.StoreTypeIAVL, db)
 	cms.LoadLatestVersion()
-	ctx := types.NewContext(cms, wrsp.Header{}, false, nil)
+	ctx := types.NewContext(cms, wrsp.Header{}, false, nil, log.NewNopLogger())
 	return ctx
 }
 

@@ -10,6 +10,7 @@ import (
 	wrsp "github.com/tepleton/wrsp/types"
 	crypto "github.com/tepleton/go-crypto"
 	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/tepleton-sdk/store"
 	sdk "github.com/tepleton/tepleton-sdk/types"
@@ -32,7 +33,7 @@ func setupMultiStore() (sdk.MultiStore, *sdk.KVStoreKey, *sdk.KVStoreKey) {
 func TestKeeperGetSet(t *testing.T) {
 	ms, _, capKey := setupMultiStore()
 
-	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil)
+	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil, log.NewNopLogger())
 	stakeKeeper := NewKeeper(capKey, bank.NewKeeper(nil), DefaultCodespace)
 	addr := sdk.Address([]byte("some-address"))
 
@@ -59,7 +60,7 @@ func TestBonding(t *testing.T) {
 	cdc := wire.NewCodec()
 	auth.RegisterBaseAccount(cdc)
 
-	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil)
+	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil, log.NewNopLogger())
 
 	accountMapper := auth.NewAccountMapper(cdc, authKey, &auth.BaseAccount{})
 	coinKeeper := bank.NewKeeper(accountMapper)
