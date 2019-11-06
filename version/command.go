@@ -25,13 +25,15 @@ func getVersion() string {
 }
 
 // CMD
+
 func printVersion(cmd *cobra.Command, args []string) {
 	v := getVersion()
 	fmt.Println(v)
 }
 
-// version REST handler endpoint
-func RequestHandler(w http.ResponseWriter, r *http.Request) {
+// REST
+
+func VersionRequestHandler(w http.ResponseWriter, r *http.Request) {
 	v := getVersion()
 	w.Write([]byte(v))
 }

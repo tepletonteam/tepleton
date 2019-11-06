@@ -6,18 +6,16 @@ import (
 	"path/filepath"
 
 	wrsp "github.com/tepleton/wrsp/types"
-	crypto "github.com/tepleton/go-crypto"
-	tmtypes "github.com/tepleton/tepleton/types"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
 
 	bam "github.com/tepleton/tepleton-sdk/baseapp"
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/wire"
 )
 
-// NewApp creates a simple mock kvstore app for testing. It should work
-// similar to a real app. Make sure rootDir is empty before running the test,
+// NewApp creates a simple mock kvstore app for testing.
+// It should work similar to a real app.
+// Make sure rootDir is empty before running the test,
 // in order to guarantee consistent results
 func NewApp(rootDir string, logger log.Logger) (wrsp.Application, error) {
 	db, err := dbm.NewGoLevelDB("mock", filepath.Join(rootDir, "data"))
@@ -29,7 +27,7 @@ func NewApp(rootDir string, logger log.Logger) (wrsp.Application, error) {
 	capKeyMainStore := sdk.NewKVStoreKey("main")
 
 	// Create BaseApp.
-	baseApp := bam.NewBaseApp("kvstore", nil, logger, db)
+	baseApp := bam.NewBaseApp("kvstore", logger, db)
 
 	// Set mounts for BaseApp's MultiStore.
 	baseApp.MountStoresIAVL(capKeyMainStore)
@@ -105,10 +103,11 @@ func InitChainer(key sdk.StoreKey) func(sdk.Context, wrsp.RequestInitChain) wrsp
 	}
 }
 
-// AppGenState can be passed into InitCmd, returns a static string of a few
-// key-values that can be parsed by InitChainer
-func AppGenState(_ *wire.Codec, _ []json.RawMessage) (appState json.RawMessage, err error) {
-	appState = json.RawMessage(`{
+// GenInitOptions can be passed into InitCmd,
+// returns a static string of a few key-values that can be parsed
+// by InitChainer
+func GenInitOptions(args []string, addr sdk.Address, coinDenom string) (json.RawMessage, error) {
+	opts := []byte(`{
   "values": [
     {
         "key": "hello",
@@ -120,16 +119,5 @@ func AppGenState(_ *wire.Codec, _ []json.RawMessage) (appState json.RawMessage, 
     }
   ]
 }`)
-	return
-}
-
-// Return a validator, not much else
-func AppGenTx(_ *wire.Codec, pk crypto.PubKey) (
-	appGenTx, cliPrint json.RawMessage, validator tmtypes.GenesisValidator, err error) {
-
-	validator = tmtypes.GenesisValidator{
-		PubKey: pk,
-		Power:  10,
-	}
-	return
+	return opts, nil
 }

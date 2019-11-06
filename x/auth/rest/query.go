@@ -10,19 +10,16 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/context"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
-	auth "github.com/tepleton/tepleton-sdk/x/auth/commands"
 )
 
-// register REST routes
-func RegisterRoutes(r *mux.Router, cdc *wire.Codec, storeName string) {
-	r.HandleFunc(
-		"/accounts/{address}",
-		QueryAccountRequestHandler(storeName, cdc, auth.GetAccountDecoder(cdc)),
-	).Methods("GET")
+type commander struct {
+	storeName string
+	cdc       *wire.Codec
+	decoder   sdk.AccountDecoder
 }
 
-// query accountREST Handler
 func QueryAccountRequestHandler(storeName string, cdc *wire.Codec, decoder sdk.AccountDecoder) func(http.ResponseWriter, *http.Request) {
+	c := commander{storeName, cdc, decoder}
 	ctx := context.NewCoreContextFromViper()
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -36,7 +33,7 @@ func QueryAccountRequestHandler(storeName string, cdc *wire.Codec, decoder sdk.A
 		}
 		key := sdk.Address(bz)
 
-		res, err := ctx.Query(key, storeName)
+		res, err := ctx.Query(key, c.storeName)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(fmt.Sprintf("Could't query account. Error: %s", err.Error())))
@@ -50,7 +47,7 @@ func QueryAccountRequestHandler(storeName string, cdc *wire.Codec, decoder sdk.A
 		}
 
 		// decode the value
-		account, err := decoder(res)
+		account, err := c.decoder(res)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(fmt.Sprintf("Could't parse query result. Result: %s. Error: %s", res, err.Error())))

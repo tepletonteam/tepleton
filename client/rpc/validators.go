@@ -12,13 +12,10 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/context"
 )
 
-// TODO these next two functions feel kinda hacky based on their placement
-
 func validatorCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "validatorset [height]",
+		Use:   "validatorset <height>",
 		Short: "Get the full validator set at given height",
-		Args:  cobra.MaximumNArgs(1),
 		RunE:  printValidators,
 	}
 	cmd.Flags().StringP(client.FlagNode, "n", "tcp://localhost:46657", "Node to connect to")
@@ -27,9 +24,9 @@ func validatorCommand() *cobra.Command {
 	return cmd
 }
 
-func getValidators(ctx context.CoreContext, height *int64) ([]byte, error) {
+func GetValidators(height *int64) ([]byte, error) {
 	// get the node
-	node, err := ctx.GetNode()
+	node, err := context.NewCoreContextFromViper().GetNode()
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +59,7 @@ func printValidators(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	output, err := getValidators(context.NewCoreContextFromViper(), height)
+	output, err := GetValidators(height)
 	if err != nil {
 		return err
 	}
@@ -73,47 +70,41 @@ func printValidators(cmd *cobra.Command, args []string) error {
 
 // REST
 
-// Validator Set at a height REST handler
-func ValidatorSetRequestHandlerFn(ctx context.CoreContext) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		height, err := strconv.ParseInt(vars["height"], 10, 64)
-		if err != nil {
-			w.WriteHeader(400)
-			w.Write([]byte("ERROR: Couldn't parse block height. Assumed format is '/validatorsets/{height}'."))
-			return
-		}
-		chainHeight, err := GetChainHeight(ctx)
-		if height > chainHeight {
-			w.WriteHeader(404)
-			w.Write([]byte("ERROR: Requested block height is bigger then the chain length."))
-			return
-		}
-		output, err := getValidators(ctx, &height)
-		if err != nil {
-			w.WriteHeader(500)
-			w.Write([]byte(err.Error()))
-			return
-		}
-		w.Write(output)
+func ValidatorsetRequestHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	height, err := strconv.ParseInt(vars["height"], 10, 64)
+	if err != nil {
+		w.WriteHeader(400)
+		w.Write([]byte("ERROR: Couldn't parse block height. Assumed format is '/validatorsets/{height}'."))
+		return
 	}
+	chainHeight, err := GetChainHeight()
+	if height > chainHeight {
+		w.WriteHeader(404)
+		w.Write([]byte("ERROR: Requested block height is bigger then the chain length."))
+		return
+	}
+	output, err := GetValidators(&height)
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	w.Write(output)
 }
 
-// Latest Validator Set REST handler
-func LatestValidatorSetRequestHandlerFn(ctx context.CoreContext) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		height, err := GetChainHeight(ctx)
-		if err != nil {
-			w.WriteHeader(500)
-			w.Write([]byte(err.Error()))
-			return
-		}
-		output, err := getValidators(ctx, &height)
-		if err != nil {
-			w.WriteHeader(500)
-			w.Write([]byte(err.Error()))
-			return
-		}
-		w.Write(output)
+func LatestValidatorsetRequestHandler(w http.ResponseWriter, r *http.Request) {
+	height, err := GetChainHeight()
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(err.Error()))
+		return
 	}
+	output, err := GetValidators(&height)
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	w.Write(output)
 }

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -15,31 +15,31 @@ import (
 	"github.com/tepleton/tepleton-sdk/server"
 )
 
-func main() {
-	cdc := app.MakeCodec()
-	ctx := server.NewDefaultContext()
-
-	rootCmd := &cobra.Command{
+// rootCmd is the entry point for this binary
+var (
+	context = server.NewDefaultContext()
+	rootCmd = &cobra.Command{
 		Use:               "basecoind",
 		Short:             "Basecoin Daemon (server)",
-		PersistentPreRunE: server.PersistentPreRunEFn(ctx),
+		PersistentPreRunE: server.PersistentPreRunEFn(context),
 	}
+)
 
-	server.AddCommands(ctx, cdc, rootCmd, server.DefaultAppInit,
-		server.ConstructAppCreator(newApp, "basecoin"),
-		server.ConstructAppExporter(exportAppState, "basecoin"))
+func generateApp(rootDir string, logger log.Logger) (wrsp.Application, error) {
+	dataDir := filepath.Join(rootDir, "data")
+	db, err := dbm.NewGoLevelDB("basecoin", dataDir)
+	if err != nil {
+		return nil, err
+	}
+	bapp := app.NewBasecoinApp(logger, db)
+	return bapp, nil
+}
+
+func main() {
+	server.AddCommands(rootCmd, server.DefaultGenAppState, generateApp, context)
 
 	// prepare and add flags
 	rootDir := os.ExpandEnv("$HOME/.basecoind")
 	executor := cli.PrepareBaseCmd(rootCmd, "BC", rootDir)
 	executor.Execute()
-}
-
-func newApp(logger log.Logger, db dbm.DB) wrsp.Application {
-	return app.NewBasecoinApp(logger, db)
-}
-
-func exportAppState(logger log.Logger, db dbm.DB) (json.RawMessage, error) {
-	bapp := app.NewBasecoinApp(logger, db)
-	return bapp.ExportAppStateJSON()
 }

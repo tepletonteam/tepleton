@@ -12,23 +12,20 @@ const stakingToken = "steak"
 
 const moduleName = "simplestake"
 
-// simple stake keeper
 type Keeper struct {
-	ck bank.Keeper
+	ck bank.CoinKeeper
 
-	key       sdk.StoreKey
-	cdc       *wire.Codec
-	codespace sdk.CodespaceType
+	key sdk.StoreKey
+	cdc *wire.Codec
 }
 
-func NewKeeper(key sdk.StoreKey, coinKeeper bank.Keeper, codespace sdk.CodespaceType) Keeper {
+func NewKeeper(key sdk.StoreKey, coinKeeper bank.CoinKeeper) Keeper {
 	cdc := wire.NewCodec()
 	wire.RegisterCrypto(cdc)
 	return Keeper{
-		key:       key,
-		cdc:       cdc,
-		ck:        coinKeeper,
-		codespace: codespace,
+		key: key,
+		cdc: cdc,
+		ck:  coinKeeper,
 	}
 }
 
@@ -60,10 +57,9 @@ func (k Keeper) deleteBondInfo(ctx sdk.Context, addr sdk.Address) {
 	store.Delete(addr)
 }
 
-// register a bond with the keeper
 func (k Keeper) Bond(ctx sdk.Context, addr sdk.Address, pubKey crypto.PubKey, stake sdk.Coin) (int64, sdk.Error) {
 	if stake.Denom != stakingToken {
-		return 0, ErrIncorrectStakingToken(k.codespace)
+		return 0, ErrIncorrectStakingToken()
 	}
 
 	_, err := k.ck.SubtractCoins(ctx, addr, []sdk.Coin{stake})
@@ -85,11 +81,10 @@ func (k Keeper) Bond(ctx sdk.Context, addr sdk.Address, pubKey crypto.PubKey, st
 	return bi.Power, nil
 }
 
-// register an unbond with the keeper
 func (k Keeper) Unbond(ctx sdk.Context, addr sdk.Address) (crypto.PubKey, int64, sdk.Error) {
 	bi := k.getBondInfo(ctx, addr)
 	if bi.isEmpty() {
-		return nil, 0, ErrInvalidUnbond(k.codespace)
+		return nil, 0, ErrInvalidUnbond()
 	}
 	k.deleteBondInfo(ctx, addr)
 
@@ -107,7 +102,7 @@ func (k Keeper) Unbond(ctx sdk.Context, addr sdk.Address) (crypto.PubKey, int64,
 
 func (k Keeper) bondWithoutCoins(ctx sdk.Context, addr sdk.Address, pubKey crypto.PubKey, stake sdk.Coin) (int64, sdk.Error) {
 	if stake.Denom != stakingToken {
-		return 0, ErrIncorrectStakingToken(k.codespace)
+		return 0, ErrIncorrectStakingToken()
 	}
 
 	bi := k.getBondInfo(ctx, addr)
@@ -127,7 +122,7 @@ func (k Keeper) bondWithoutCoins(ctx sdk.Context, addr sdk.Address, pubKey crypt
 func (k Keeper) unbondWithoutCoins(ctx sdk.Context, addr sdk.Address) (crypto.PubKey, int64, sdk.Error) {
 	bi := k.getBondInfo(ctx, addr)
 	if bi.isEmpty() {
-		return nil, 0, ErrInvalidUnbond(k.codespace)
+		return nil, 0, ErrInvalidUnbond()
 	}
 	k.deleteBondInfo(ctx, addr)
 

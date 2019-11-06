@@ -31,10 +31,8 @@ func runListCmd(cmd *cobra.Command, args []string) error {
 	return err
 }
 
-/////////////////////////
-// REST
+//REST
 
-// query key list REST handler
 func QueryKeysRequestHandler(w http.ResponseWriter, r *http.Request) {
 	kb, err := GetKeyBase()
 	if err != nil {
