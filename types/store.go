@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	wrsp "github.com/tepleton/wrsp/types"
+	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
 )
 
@@ -260,6 +261,4 @@ func PrefixEndBytes(prefix []byte) []byte {
 //----------------------------------------
 
 // key-value result for iterator queries
-type KV struct {
-	Key, Value []byte
-}
+type KVPair cmn.KVPair
