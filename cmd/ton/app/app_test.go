@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/bank"
 	"github.com/tepleton/tepleton-sdk/x/ibc"
@@ -107,7 +108,7 @@ func setGenesis(gapp *GaiaApp, accs ...*auth.BaseAccount) error {
 		StakeData: stake.GetDefaultGenesisState(),
 	}
 
-	stateBytes, err := json.MarshalIndent(genesisState, "", "\t")
+	stateBytes, err := wire.MarshalJSONIndent(gapp.cdc, genesisState)
 	if err != nil {
 		return err
 	}
