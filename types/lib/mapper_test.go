@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
 	wrsp "github.com/tepleton/wrsp/types"
 
@@ -24,7 +25,7 @@ func defaultComponents(key sdk.StoreKey) (sdk.Context, *wire.Codec) {
 	cms := store.NewCommitMultiStore(db)
 	cms.MountStoreWithDB(key, sdk.StoreTypeIAVL, db)
 	cms.LoadLatestVersion()
-	ctx := sdk.NewContext(cms, wrsp.Header{}, false, nil)
+	ctx := sdk.NewContext(cms, wrsp.Header{}, false, nil, log.NewNopLogger())
 	cdc := wire.NewCodec()
 	return ctx, cdc
 }
