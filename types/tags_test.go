@@ -7,9 +7,9 @@ import (
 )
 
 func TestAppendTags(t *testing.T) {
-	a := SingleTag(MakeTag("a", []byte("1")))
-	b := SingleTag(MakeTag("b", []byte("2")))
-	c := AppendTags(a, b)
+	a := NewTags("a", []byte("1"))
+	b := NewTags("b", []byte("2"))
+	c := a.AppendTags(b)
 	require.Equal(t, c, Tags{MakeTag("a", []byte("1")), MakeTag("b", []byte("2"))})
 }
 
@@ -18,13 +18,7 @@ func TestEmptyTags(t *testing.T) {
 	require.Equal(t, a, Tags{})
 }
 
-func TestSingleTag(t *testing.T) {
-	a := MakeTag("a", []byte("1"))
-	b := SingleTag(a)
+func TestNewTags(t *testing.T) {
+	b := NewTags("a", []byte("1"))
 	require.Equal(t, b, Tags{MakeTag("a", []byte("1"))})
-}
-
-func TestMakeTag(t *testing.T) {
-	a := MakeTag("a", []byte("1"))
-	require.Equal(t, a, Tag{[]byte("a"), []byte("1")})
 }
