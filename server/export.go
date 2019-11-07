@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/tepleton/tepleton-sdk/wire"
-	tmtypes "github.com/tepleton/tepleton/types"
 )
 
 // ExportCmd dumps app state to JSON
@@ -22,16 +21,7 @@ func ExportCmd(ctx *Context, cdc *wire.Codec, appExporter AppExporter) *cobra.Co
 			if err != nil {
 				return errors.Errorf("Error exporting state: %v\n", err)
 			}
-			doc, err := tmtypes.GenesisDocFromFile(ctx.Config.GenesisFile())
-			if err != nil {
-				return err
-			}
-			doc.AppStateJSON = appState
-			encoded, err := wire.MarshalJSONIndent(cdc, doc)
-			if err != nil {
-				return err
-			}
-			fmt.Println(string(encoded))
+			fmt.Println(string(appState))
 			return nil
 		},
 	}
