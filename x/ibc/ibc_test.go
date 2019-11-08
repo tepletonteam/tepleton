@@ -24,7 +24,7 @@ func defaultContext(key sdk.StoreKey) sdk.Context {
 	cms := store.NewCommitMultiStore(db)
 	cms.MountStoreWithDB(key, sdk.StoreTypeIAVL, db)
 	cms.LoadLatestVersion()
-	ctx := sdk.NewContext(cms, wrsp.Header{}, false, nil, log.NewNopLogger())
+	ctx := sdk.NewContext(cms, wrsp.Header{}, false, nil, log.NewNopLogger(), 0)
 	return ctx
 }
 
