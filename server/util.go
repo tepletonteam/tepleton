@@ -1,16 +1,12 @@
 package server
 
 import (
-	"encoding/json"
-	"net"
 	"os"
 
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
 	"github.com/tepleton/tepleton-sdk/version"
-	"github.com/tepleton/tepleton-sdk/wire"
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 	cfg "github.com/tepleton/tepleton/config"
 	"github.com/tepleton/tmlibs/cli"
@@ -18,7 +14,6 @@ import (
 	"github.com/tepleton/tmlibs/log"
 )
 
-// server context
 type Context struct {
 	Config *cfg.Config
 	Logger log.Logger
@@ -35,7 +30,7 @@ func NewContext(config *cfg.Config, logger log.Logger) *Context {
 	return &Context{config, logger}
 }
 
-//___________________________________________________________________________________
+//--------------------------------------------------------------------
 
 // PersistentPreRunEFn returns a PersistentPreRunE function for cobra
 // that initailizes the passed in context with a properly configured
@@ -64,75 +59,19 @@ func PersistentPreRunEFn(context *Context) func(*cobra.Command, []string) error 
 	}
 }
 
-// add server commands
 func AddCommands(
-	ctx *Context, cdc *wire.Codec,
-	rootCmd *cobra.Command, appInit AppInit,
-	appCreator AppCreator, appExport AppExporter) {
+	rootCmd *cobra.Command,
+	appState GenAppState, appCreator AppCreator,
+	context *Context) {
 
-	rootCmd.PersistentFlags().String("log_level", ctx.Config.LogLevel, "Log level")
+	rootCmd.PersistentFlags().String("log_level", context.Config.LogLevel, "Log level")
 
 	rootCmd.AddCommand(
-		InitCmd(ctx, cdc, appInit),
-		StartCmd(ctx, appCreator),
-		UnsafeResetAllCmd(ctx),
-		ShowNodeIDCmd(ctx),
-		ShowValidatorCmd(ctx),
-		ExportCmd(ctx, cdc, appExport),
-		UnsafeResetAllCmd(ctx),
+		InitCmd(appState, context),
+		StartCmd(appCreator, context),
+		UnsafeResetAllCmd(context),
+		ShowNodeIDCmd(context),
+		ShowValidatorCmd(context),
 		version.VersionCmd,
 	)
-}
-
-//___________________________________________________________________________________
-
-// append a new json field to existing json message
-func AppendJSON(cdc *wire.Codec, baseJSON []byte, key string, value json.RawMessage) (appended []byte, err error) {
-	var jsonMap map[string]json.RawMessage
-	err = cdc.UnmarshalJSON(baseJSON, &jsonMap)
-	if err != nil {
-		return nil, err
-	}
-	jsonMap[key] = value
-	bz, err := wire.MarshalJSONIndent(cdc, jsonMap)
-	return json.RawMessage(bz), err
-}
-
-// https://stackoverflow.com/questions/23558425/how-do-i-get-the-local-ip-address-in-go
-// TODO there must be a better way to get external IP
-func externalIP() (string, error) {
-	ifaces, err := net.Interfaces()
-	if err != nil {
-		return "", err
-	}
-	for _, iface := range ifaces {
-		if iface.Flags&net.FlagUp == 0 {
-			continue // interface down
-		}
-		if iface.Flags&net.FlagLoopback != 0 {
-			continue // loopback interface
-		}
-		addrs, err := iface.Addrs()
-		if err != nil {
-			return "", err
-		}
-		for _, addr := range addrs {
-			var ip net.IP
-			switch v := addr.(type) {
-			case *net.IPNet:
-				ip = v.IP
-			case *net.IPAddr:
-				ip = v.IP
-			}
-			if ip == nil || ip.IsLoopback() {
-				continue
-			}
-			ip = ip.To4()
-			if ip == nil {
-				continue // not an ipv4 address
-			}
-			return ip.String(), nil
-		}
-	}
-	return "", errors.New("are you connected to the network?")
 }

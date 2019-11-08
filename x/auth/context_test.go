@@ -6,14 +6,13 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	wrsp "github.com/tepleton/wrsp/types"
-	"github.com/tepleton/tmlibs/log"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
 func TestContextWithSigners(t *testing.T) {
 	ms, _ := setupMultiStore()
-	ctx := sdk.NewContext(ms, wrsp.Header{ChainID: "mychainid"}, false, nil, log.NewNopLogger())
+	ctx := sdk.NewContext(ms, wrsp.Header{ChainID: "mychainid"}, false, nil)
 
 	_, _, addr1 := keyPubAddr()
 	_, _, addr2 := keyPubAddr()

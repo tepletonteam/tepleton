@@ -2,7 +2,6 @@ package context
 
 import (
 	"fmt"
-
 	"github.com/spf13/viper"
 
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
@@ -10,10 +9,11 @@ import (
 	tmtypes "github.com/tepleton/tepleton/types"
 
 	"github.com/tepleton/tepleton-sdk/client"
+	"github.com/tepleton/tepleton-sdk/client/core"
 )
 
 // NewCoreContextFromViper - return a new context with parameters from the command line
-func NewCoreContextFromViper() CoreContext {
+func NewCoreContextFromViper() core.CoreContext {
 	nodeURI := viper.GetString(client.FlagNode)
 	var rpc rpcclient.Client
 	if nodeURI != "" {
@@ -27,7 +27,7 @@ func NewCoreContextFromViper() CoreContext {
 			chainID = def
 		}
 	}
-	return CoreContext{
+	return core.CoreContext{
 		ChainID:         chainID,
 		Height:          viper.GetInt64(client.FlagHeight),
 		TrustNode:       viper.GetBool(client.FlagTrustNode),
@@ -36,7 +36,7 @@ func NewCoreContextFromViper() CoreContext {
 		Sequence:        viper.GetInt64(client.FlagSequence),
 		Client:          rpc,
 		Decoder:         nil,
-		AccountStore:    "acc",
+		AccountStore:    "main",
 	}
 }
 
@@ -54,9 +54,8 @@ func defaultChainID() (string, error) {
 }
 
 // EnsureSequence - automatically set sequence number if none provided
-func EnsureSequence(ctx CoreContext) (CoreContext, error) {
-	// Should be viper.IsSet, but this does not work - https://github.com/spf13/viper/pull/331
-	if viper.GetInt64(client.FlagSequence) != 0 {
+func EnsureSequence(ctx core.CoreContext) (core.CoreContext, error) {
+	if viper.IsSet(client.FlagSequence) {
 		return ctx, nil
 	}
 	from, err := ctx.GetFromAddress()

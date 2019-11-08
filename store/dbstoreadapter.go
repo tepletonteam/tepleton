@@ -10,7 +10,7 @@ type dbStoreAdapter struct {
 }
 
 // Implements Store.
-func (dbStoreAdapter) GetStoreType() StoreType {
+func (_ dbStoreAdapter) GetStoreType() StoreType {
 	return sdk.StoreTypeDB
 }
 

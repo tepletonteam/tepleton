@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/tepleton/tepleton-sdk/client"
-	"github.com/tepleton/tepleton-sdk/client/context"
 )
 
 const (
@@ -45,12 +44,11 @@ func initClientCommand() *cobra.Command {
 	return cmd
 }
 
-// Register REST endpoints
-func RegisterRoutes(ctx context.CoreContext, r *mux.Router) {
-	r.HandleFunc("/node_info", NodeInfoRequestHandlerFn(ctx)).Methods("GET")
-	r.HandleFunc("/syncing", NodeSyncingRequestHandlerFn(ctx)).Methods("GET")
-	r.HandleFunc("/blocks/latest", LatestBlockRequestHandlerFn(ctx)).Methods("GET")
-	r.HandleFunc("/blocks/{height}", BlockRequestHandlerFn(ctx)).Methods("GET")
-	r.HandleFunc("/validatorsets/latest", LatestValidatorSetRequestHandlerFn(ctx)).Methods("GET")
-	r.HandleFunc("/validatorsets/{height}", ValidatorSetRequestHandlerFn(ctx)).Methods("GET")
+func RegisterRoutes(r *mux.Router) {
+	r.HandleFunc("/node_info", NodeInfoRequestHandler).Methods("GET")
+	r.HandleFunc("/syncing", NodeSyncingRequestHandler).Methods("GET")
+	r.HandleFunc("/blocks/latest", LatestBlockRequestHandler).Methods("GET")
+	r.HandleFunc("/blocks/{height}", BlockRequestHandler).Methods("GET")
+	r.HandleFunc("/validatorsets/latest", LatestValidatorsetRequestHandler).Methods("GET")
+	r.HandleFunc("/validatorsets/{height}", ValidatorsetRequestHandler).Methods("GET")
 }

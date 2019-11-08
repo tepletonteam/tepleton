@@ -13,15 +13,14 @@ import (
 	cmn "github.com/tepleton/tmlibs/common"
 
 	client "github.com/tepleton/tepleton-sdk/client"
-	"github.com/tepleton/tepleton-sdk/client/context"
 	keys "github.com/tepleton/tepleton-sdk/client/keys"
 	rpc "github.com/tepleton/tepleton-sdk/client/rpc"
 	tx "github.com/tepleton/tepleton-sdk/client/tx"
 	version "github.com/tepleton/tepleton-sdk/version"
 	"github.com/tepleton/tepleton-sdk/wire"
-	auth "github.com/tepleton/tepleton-sdk/x/auth/client/rest"
-	bank "github.com/tepleton/tepleton-sdk/x/bank/client/rest"
-	ibc "github.com/tepleton/tepleton-sdk/x/ibc/client/rest"
+	auth "github.com/tepleton/tepleton-sdk/x/auth/rest"
+	bank "github.com/tepleton/tepleton-sdk/x/bank/rest"
+	ibc "github.com/tepleton/tepleton-sdk/x/ibc/rest"
 )
 
 const (
@@ -67,21 +66,19 @@ func startRESTServerFn(cdc *wire.Codec) func(cmd *cobra.Command, args []string) 
 
 func createHandler(cdc *wire.Codec) http.Handler {
 	r := mux.NewRouter()
-	r.HandleFunc("/version", version.RequestHandler).Methods("GET")
+	r.HandleFunc("/version", version.VersionRequestHandler).Methods("GET")
 
 	kb, err := keys.GetKeyBase() //XXX
 	if err != nil {
 		panic(err)
 	}
 
-	ctx := context.NewCoreContextFromViper()
-
 	// TODO make more functional? aka r = keys.RegisterRoutes(r)
 	keys.RegisterRoutes(r)
-	rpc.RegisterRoutes(ctx, r)
-	tx.RegisterRoutes(ctx, r, cdc)
-	auth.RegisterRoutes(ctx, r, cdc, "acc")
-	bank.RegisterRoutes(ctx, r, cdc, kb)
-	ibc.RegisterRoutes(ctx, r, cdc, kb)
+	rpc.RegisterRoutes(r)
+	tx.RegisterRoutes(r, cdc)
+	auth.RegisterRoutes(r, cdc, "main")
+	bank.RegisterRoutes(r, cdc, kb)
+	ibc.RegisterRoutes(r, cdc, kb)
 	return r
 }

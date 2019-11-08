@@ -9,7 +9,6 @@ import (
 // ------------------------------
 // IBCPacket
 
-// nolint - TODO rename to Packet as IBCPacket stutters (golint)
 // IBCPacket defines a piece of data that can be send between two separate
 // blockchains.
 type IBCPacket struct {
@@ -32,10 +31,9 @@ func NewIBCPacket(srcAddr sdk.Address, destAddr sdk.Address, coins sdk.Coins,
 	}
 }
 
-// validator the ibc packey
 func (ibcp IBCPacket) ValidateBasic() sdk.Error {
 	if ibcp.SrcChain == ibcp.DestChain {
-		return ErrIdenticalChains(DefaultCodespace).Trace("")
+		return ErrIdenticalChains().Trace("")
 	}
 	if !ibcp.Coins.IsValid() {
 		return sdk.ErrInvalidCoins("")
@@ -46,19 +44,19 @@ func (ibcp IBCPacket) ValidateBasic() sdk.Error {
 // ----------------------------------
 // IBCTransferMsg
 
-// nolint - TODO rename to TransferMsg as folks will reference with ibc.TransferMsg
 // IBCTransferMsg defines how another module can send an IBCPacket.
 type IBCTransferMsg struct {
 	IBCPacket
 }
 
-// nolint
-func (msg IBCTransferMsg) Type() string { return "ibc" }
+func (msg IBCTransferMsg) Type() string {
+	return "ibc"
+}
 
-// x/bank/tx.go MsgSend.GetSigners()
-func (msg IBCTransferMsg) GetSigners() []sdk.Address { return []sdk.Address{msg.SrcAddr} }
+func (msg IBCTransferMsg) Get(key interface{}) interface{} {
+	return nil
+}
 
-// get the sign bytes for ibc transfer message
 func (msg IBCTransferMsg) GetSignBytes() []byte {
 	cdc := wire.NewCodec()
 	bz, err := cdc.MarshalBinary(msg)
@@ -68,15 +66,18 @@ func (msg IBCTransferMsg) GetSignBytes() []byte {
 	return bz
 }
 
-// validate ibc transfer message
 func (msg IBCTransferMsg) ValidateBasic() sdk.Error {
 	return msg.IBCPacket.ValidateBasic()
+}
+
+// x/bank/tx.go SendMsg.GetSigners()
+func (msg IBCTransferMsg) GetSigners() []sdk.Address {
+	return []sdk.Address{msg.SrcAddr}
 }
 
 // ----------------------------------
 // IBCReceiveMsg
 
-// nolint - TODO rename to ReceiveMsg as folks will reference with ibc.ReceiveMsg
 // IBCReceiveMsg defines the message that a relayer uses to post an IBCPacket
 // to the destination chain.
 type IBCReceiveMsg struct {
@@ -85,14 +86,14 @@ type IBCReceiveMsg struct {
 	Sequence int64
 }
 
-// nolint
-func (msg IBCReceiveMsg) Type() string             { return "ibc" }
-func (msg IBCReceiveMsg) ValidateBasic() sdk.Error { return msg.IBCPacket.ValidateBasic() }
+func (msg IBCReceiveMsg) Type() string {
+	return "ibc"
+}
 
-// x/bank/tx.go MsgSend.GetSigners()
-func (msg IBCReceiveMsg) GetSigners() []sdk.Address { return []sdk.Address{msg.Relayer} }
+func (msg IBCReceiveMsg) Get(key interface{}) interface{} {
+	return nil
+}
 
-// get the sign bytes for ibc receive message
 func (msg IBCReceiveMsg) GetSignBytes() []byte {
 	cdc := wire.NewCodec()
 	bz, err := cdc.MarshalBinary(msg)
@@ -100,4 +101,13 @@ func (msg IBCReceiveMsg) GetSignBytes() []byte {
 		panic(err)
 	}
 	return bz
+}
+
+func (msg IBCReceiveMsg) ValidateBasic() sdk.Error {
+	return msg.IBCPacket.ValidateBasic()
+}
+
+// x/bank/tx.go SendMsg.GetSigners()
+func (msg IBCReceiveMsg) GetSigners() []sdk.Address {
+	return []sdk.Address{msg.Relayer}
 }

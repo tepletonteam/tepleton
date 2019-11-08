@@ -33,7 +33,6 @@ type rootMultiStore struct {
 var _ CommitMultiStore = (*rootMultiStore)(nil)
 var _ Queryable = (*rootMultiStore)(nil)
 
-// nolint
 func NewCommitMultiStore(db dbm.DB) *rootMultiStore {
 	return &rootMultiStore{
 		db:           db,
@@ -268,7 +267,7 @@ func (rs *rootMultiStore) loadCommitStoreFromParams(id CommitID, params storePar
 }
 
 func (rs *rootMultiStore) nameToKey(name string) StoreKey {
-	for key := range rs.storesParams {
+	for key, _ := range rs.storesParams {
 		if key.Name() == name {
 			return key
 		}
