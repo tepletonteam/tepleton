@@ -37,10 +37,10 @@ func TestBaseAccountAddressPubKey(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, pub1, acc.GetPubKey())
 
-	// can override pubkey
+	// can't override pubkey
 	err = acc.SetPubKey(pub2)
-	assert.Nil(t, err)
-	assert.Equal(t, pub2, acc.GetPubKey())
+	assert.NotNil(t, err)
+	assert.Equal(t, pub1, acc.GetPubKey())
 
 	//------------------------------------
 
