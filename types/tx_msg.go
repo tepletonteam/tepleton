@@ -11,9 +11,6 @@ type Msg interface {
 	// Must be alphanumeric or empty.
 	Type() string
 
-	// Get some property of the Msg.
-	Get(key interface{}) (value interface{})
-
 	// Get the canonical byte representation of the Msg.
 	GetSignBytes() []byte
 
@@ -80,8 +77,8 @@ func FeePayer(tx Tx) Address {
 // gas to be used by the transaction. The ratio yields an effective "gasprice",
 // which must be above some miminum to be accepted into the mempool.
 type StdFee struct {
-	Amount Coins `json:"amount"`
-	Gas    int64 `json:"gas"`
+	Amount Coins `json"amount"`
+	Gas    int64 `json"gas"`
 }
 
 func NewStdFee(gas int64, amount ...Coin) StdFee {
@@ -174,8 +171,7 @@ func NewTestMsg(addrs ...Address) *TestMsg {
 }
 
 //nolint
-func (msg *TestMsg) Type() string                            { return "TestMsg" }
-func (msg *TestMsg) Get(key interface{}) (value interface{}) { return nil }
+func (msg *TestMsg) Type() string { return "TestMsg" }
 func (msg *TestMsg) GetSignBytes() []byte {
 	bz, err := json.Marshal(msg.signers)
 	if err != nil {

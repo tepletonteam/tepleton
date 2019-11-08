@@ -2,14 +2,13 @@ package types
 
 import (
 	wrsp "github.com/tepleton/wrsp/types"
-	cmn "github.com/tepleton/tmlibs/common"
 )
 
 // Result is the union of ResponseDeliverTx and ResponseCheckTx.
 type Result struct {
 
 	// Code is the response code, is stored back on the chain.
-	Code CodeType
+	Code WRSPCodeType
 
 	// Data is any data returned from the app.
 	Data []byte
@@ -20,7 +19,7 @@ type Result struct {
 	// GasWanted is the maximum units of work we allow this tx to perform.
 	GasWanted int64
 
-	// GasUsed is the amount of gas actually consumed. NOTE: not used.
+	// GasUsed is the amount of gas actually consumed. NOTE: unimplemented
 	GasUsed int64
 
 	// Tx fee amount and denom.
@@ -31,7 +30,7 @@ type Result struct {
 	ValidatorUpdates []wrsp.Validator
 
 	// Tags are used for transaction indexing and pubsub.
-	Tags []cmn.KVPair
+	Tags Tags
 }
 
 // TODO: In the future, more codes may be OK.
