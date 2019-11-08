@@ -21,13 +21,9 @@ func TestInitApp(t *testing.T) {
 	require.NoError(t, err)
 
 	// initialize it future-way
-	appState, err := AppGenState(nil, nil)
+	opts, err := GenInitOptions(nil, nil, "")
 	require.NoError(t, err)
-
-	//TODO test validators in the init chain?
-	req := wrsp.RequestInitChain{
-		AppStateBytes: appState,
-	}
+	req := wrsp.RequestInitChain{AppStateBytes: opts}
 	app.InitChain(req)
 	app.Commit()
 

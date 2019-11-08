@@ -9,65 +9,70 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
-func TestNewMsgMine(t *testing.T) {
+func TestNewMineMsg(t *testing.T) {
 	addr := sdk.Address([]byte("sender"))
-	msg := MsgMine{addr, 0, 0, 0, []byte("")}
-	equiv := NewMsgMine(addr, 0, 0, 0, []byte(""))
+	msg := MineMsg{addr, 0, 0, 0, []byte("")}
+	equiv := NewMineMsg(addr, 0, 0, 0, []byte(""))
 	assert.Equal(t, msg, equiv, "%s != %s", msg, equiv)
 }
 
-func TestMsgMineType(t *testing.T) {
+func TestMineMsgType(t *testing.T) {
 	addr := sdk.Address([]byte("sender"))
-	msg := MsgMine{addr, 0, 0, 0, []byte("")}
+	msg := MineMsg{addr, 0, 0, 0, []byte("")}
 	assert.Equal(t, msg.Type(), "pow")
 }
 
-func TestMsgMineValidation(t *testing.T) {
+func TestMineMsgValidation(t *testing.T) {
 	addr := sdk.Address([]byte("sender"))
 	otherAddr := sdk.Address([]byte("another"))
 	count := uint64(0)
-
 	for difficulty := uint64(1); difficulty < 1000; difficulty += 100 {
-
-		count++
+		count += 1
 		nonce, proof := mine(addr, count, difficulty)
-		msg := MsgMine{addr, difficulty, count, nonce, proof}
+		msg := MineMsg{addr, difficulty, count, nonce, proof}
 		err := msg.ValidateBasic()
 		assert.Nil(t, err, "error with difficulty %d - %+v", difficulty, err)
 
-		msg.Count++
+		msg.Count += 1
 		err = msg.ValidateBasic()
 		assert.NotNil(t, err, "count was wrong, should have thrown error with msg %s", msg)
 
-		msg.Count--
-		msg.Nonce++
+		msg.Count -= 1
+		msg.Nonce += 1
 		err = msg.ValidateBasic()
 		assert.NotNil(t, err, "nonce was wrong, should have thrown error with msg %s", msg)
 
-		msg.Nonce--
+		msg.Nonce -= 1
 		msg.Sender = otherAddr
 		err = msg.ValidateBasic()
 		assert.NotNil(t, err, "sender was wrong, should have thrown error with msg %s", msg)
 	}
 }
 
-func TestMsgMineString(t *testing.T) {
+func TestMineMsgString(t *testing.T) {
 	addr := sdk.Address([]byte("sender"))
-	msg := MsgMine{addr, 0, 0, 0, []byte("abc")}
+	msg := MineMsg{addr, 0, 0, 0, []byte("abc")}
 	res := msg.String()
-	assert.Equal(t, res, "MsgMine{Sender: 73656E646572, Difficulty: 0, Count: 0, Nonce: 0, Proof: abc}")
+	assert.Equal(t, res, "MineMsg{Sender: 73656E646572, Difficulty: 0, Count: 0, Nonce: 0, Proof: abc}")
 }
 
-func TestMsgMineGetSignBytes(t *testing.T) {
+func TestMineMsgGet(t *testing.T) {
 	addr := sdk.Address([]byte("sender"))
-	msg := MsgMine{addr, 1, 1, 1, []byte("abc")}
+	msg := MineMsg{addr, 0, 0, 0, []byte("")}
+	res := msg.Get(nil)
+	assert.Nil(t, res)
+}
+
+func TestMineMsgGetSignBytes(t *testing.T) {
+	addr := sdk.Address([]byte("sender"))
+	msg := MineMsg{addr, 1, 1, 1, []byte("abc")}
 	res := msg.GetSignBytes()
 	assert.Equal(t, string(res), `{"sender":"73656E646572","difficulty":1,"count":1,"nonce":1,"proof":"YWJj"}`)
 }
 
-func TestMsgMineGetSigners(t *testing.T) {
+func TestMineMsgGetSigners(t *testing.T) {
 	addr := sdk.Address([]byte("sender"))
-	msg := MsgMine{addr, 1, 1, 1, []byte("abc")}
+	msg := MineMsg{addr, 1, 1, 1, []byte("abc")}
 	res := msg.GetSigners()
 	assert.Equal(t, fmt.Sprintf("%v", res), "[73656E646572]")
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-PKGS=$(go list ./... | grep -v /vendor/ | grep -v github.com/tepleton/tepleton-sdk/cmd/ton/cli_test)
+PKGS=$(go list ./... | grep -v /vendor/)
 
 set -e
 echo "mode: atomic" > coverage.txt

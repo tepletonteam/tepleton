@@ -17,7 +17,6 @@ const (
 	defaultIAVLNumHistory = 1<<53 - 1 // DEPRECATED
 )
 
-// load the iavl store
 func LoadIAVLStore(db dbm.DB, id CommitID) (CommitStore, error) {
 	tree := iavl.NewVersionedTree(db, defaultIAVLCacheSize)
 	_, err := tree.LoadVersion(id.Version)
@@ -176,16 +175,7 @@ func (st *iavlStore) Query(req wrsp.RequestQuery) (res wrsp.ResponseQuery) {
 		} else {
 			_, res.Value = tree.GetVersioned(key, height)
 		}
-	case "/subspace":
-		subspace := req.Data
-		res.Key = subspace
-		var KVs []KVPair
-		iterator := st.SubspaceIterator(subspace)
-		for ; iterator.Valid(); iterator.Next() {
-			KVs = append(KVs, KVPair{iterator.Key(), iterator.Value()})
-		}
-		iterator.Close()
-		res.Value = cdc.MustMarshalBinary(KVs)
+
 	default:
 		msg := fmt.Sprintf("Unexpected Query path: %v", req.Path)
 		return sdk.ErrUnknownRequest(msg).QueryResult()

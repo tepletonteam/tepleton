@@ -8,7 +8,6 @@ import (
 	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/go-crypto"
 	dbm "github.com/tepleton/tmlibs/db"
-	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/tepleton-sdk/store"
 	sdk "github.com/tepleton/tepleton-sdk/types"
@@ -17,14 +16,14 @@ import (
 	"github.com/tepleton/tepleton-sdk/x/bank"
 )
 
-// AccountMapper(/Keeper) and IBCMapper should use different StoreKey later
+// AccountMapper(/CoinKeeper) and IBCMapper should use different StoreKey later
 
 func defaultContext(key sdk.StoreKey) sdk.Context {
 	db := dbm.NewMemDB()
 	cms := store.NewCommitMultiStore(db)
 	cms.MountStoreWithDB(key, sdk.StoreTypeIAVL, db)
 	cms.LoadLatestVersion()
-	ctx := sdk.NewContext(cms, wrsp.Header{}, false, nil, log.NewNopLogger())
+	ctx := sdk.NewContext(cms, wrsp.Header{}, false, nil)
 	return ctx
 }
 
@@ -32,10 +31,9 @@ func newAddress() crypto.Address {
 	return crypto.GenPrivKeyEd25519().PubKey().Address()
 }
 
-func getCoins(ck bank.Keeper, ctx sdk.Context, addr crypto.Address) (sdk.Coins, sdk.Error) {
+func getCoins(ck bank.CoinKeeper, ctx sdk.Context, addr crypto.Address) (sdk.Coins, sdk.Error) {
 	zero := sdk.Coins(nil)
-	coins, _, err := ck.AddCoins(ctx, addr, zero)
-	return coins, err
+	return ck.AddCoins(ctx, addr, zero)
 }
 
 func makeCodec() *wire.Codec {
@@ -43,8 +41,8 @@ func makeCodec() *wire.Codec {
 
 	// Register Msgs
 	cdc.RegisterInterface((*sdk.Msg)(nil), nil)
-	cdc.RegisterConcrete(bank.MsgSend{}, "test/ibc/Send", nil)
-	cdc.RegisterConcrete(bank.MsgIssue{}, "test/ibc/Issue", nil)
+	cdc.RegisterConcrete(bank.SendMsg{}, "test/ibc/Send", nil)
+	cdc.RegisterConcrete(bank.IssueMsg{}, "test/ibc/Issue", nil)
 	cdc.RegisterConcrete(IBCTransferMsg{}, "test/ibc/IBCTransferMsg", nil)
 	cdc.RegisterConcrete(IBCReceiveMsg{}, "test/ibc/IBCReceiveMsg", nil)
 
@@ -63,7 +61,7 @@ func TestIBC(t *testing.T) {
 	ctx := defaultContext(key)
 
 	am := auth.NewAccountMapper(cdc, key, &auth.BaseAccount{})
-	ck := bank.NewKeeper(am)
+	ck := bank.NewCoinKeeper(am)
 
 	src := newAddress()
 	dest := newAddress()
@@ -71,11 +69,11 @@ func TestIBC(t *testing.T) {
 	zero := sdk.Coins(nil)
 	mycoins := sdk.Coins{sdk.Coin{"mycoin", 10}}
 
-	coins, _, err := ck.AddCoins(ctx, src, mycoins)
+	coins, err := ck.AddCoins(ctx, src, mycoins)
 	assert.Nil(t, err)
 	assert.Equal(t, mycoins, coins)
 
-	ibcm := NewMapper(cdc, key, DefaultCodespace)
+	ibcm := NewIBCMapper(cdc, key)
 	h := NewHandler(ibcm, ck)
 	packet := IBCPacket{
 		SrcAddr:   src,

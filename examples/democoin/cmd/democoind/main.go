@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -13,57 +14,49 @@ import (
 
 	"github.com/tepleton/tepleton-sdk/examples/democoin/app"
 	"github.com/tepleton/tepleton-sdk/server"
-	"github.com/tepleton/tepleton-sdk/wire"
+	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
-// init parameters
-var CoolAppInit = server.AppInit{
-	AppGenState: CoolAppGenState,
-	AppGenTx:    server.SimpleAppGenTx,
-}
-
-// coolGenAppParams sets up the app_state and appends the cool app state
-func CoolAppGenState(cdc *wire.Codec, appGenTxs []json.RawMessage) (appState json.RawMessage, err error) {
-	appState, err = server.SimpleAppGenState(cdc, appGenTxs)
-	if err != nil {
-		return
+// rootCmd is the entry point for this binary
+var (
+	context = server.NewDefaultContext()
+	rootCmd = &cobra.Command{
+		Use:               "democoind",
+		Short:             "Democoin Daemon (server)",
+		PersistentPreRunE: server.PersistentPreRunEFn(context),
 	}
-	key := "cool"
-	value := json.RawMessage(`{
+)
+
+// defaultAppState sets up the app_state for the
+// default genesis file
+func defaultAppState(args []string, addr sdk.Address, coinDenom string) (json.RawMessage, error) {
+	baseJSON, err := server.DefaultGenAppState(args, addr, coinDenom)
+	if err != nil {
+		return nil, err
+	}
+	var jsonMap map[string]json.RawMessage
+	err = json.Unmarshal(baseJSON, &jsonMap)
+	if err != nil {
+		return nil, err
+	}
+	jsonMap["cool"] = json.RawMessage(`{
         "trend": "ice-cold"
       }`)
-	appState, err = server.AppendJSON(cdc, appState, key, value)
-	key = "pow"
-	value = json.RawMessage(`{
-        "difficulty": 1,
-        "count": 0
-      }`)
-	appState, err = server.AppendJSON(cdc, appState, key, value)
-	return
+	bz, err := json.Marshal(jsonMap)
+	return json.RawMessage(bz), err
 }
 
-func newApp(logger log.Logger, db dbm.DB) wrsp.Application {
-	return app.NewDemocoinApp(logger, db)
-}
-
-func exportAppState(logger log.Logger, db dbm.DB) (json.RawMessage, error) {
-	dapp := app.NewDemocoinApp(logger, db)
-	return dapp.ExportAppStateJSON()
+func generateApp(rootDir string, logger log.Logger) (wrsp.Application, error) {
+	db, err := dbm.NewGoLevelDB("democoin", filepath.Join(rootDir, "data"))
+	if err != nil {
+		return nil, err
+	}
+	bapp := app.NewDemocoinApp(logger, db)
+	return bapp, nil
 }
 
 func main() {
-	cdc := app.MakeCodec()
-	ctx := server.NewDefaultContext()
-
-	rootCmd := &cobra.Command{
-		Use:               "democoind",
-		Short:             "Democoin Daemon (server)",
-		PersistentPreRunE: server.PersistentPreRunEFn(ctx),
-	}
-
-	server.AddCommands(ctx, cdc, rootCmd, CoolAppInit,
-		server.ConstructAppCreator(newApp, "democoin"),
-		server.ConstructAppExporter(exportAppState, "democoin"))
+	server.AddCommands(rootCmd, defaultAppState, generateApp, context)
 
 	// prepare and add flags
 	rootDir := os.ExpandEnv("$HOME/.democoind")

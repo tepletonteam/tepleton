@@ -7,16 +7,6 @@ import (
 	crypto "github.com/tepleton/go-crypto"
 )
 
-// GenesisState - all staking state that must be provided at genesis
-type GenesisState struct {
-	Pool       Pool            `json:"pool"`
-	Params     Params          `json:"params"`
-	Candidates []Candidate     `json:"candidates"`
-	Bonds      []DelegatorBond `json:"bonds"`
-}
-
-//_________________________________________________________________________
-
 // Params defines the high level settings for staking
 type Params struct {
 	InflationRateChange sdk.Rat `json:"inflation_rate_change"` // maximum annual change in inflation rate
@@ -26,15 +16,6 @@ type Params struct {
 
 	MaxValidators uint16 `json:"max_validators"` // maximum number of validators
 	BondDenom     string `json:"bond_denom"`     // bondable coin denomination
-}
-
-func (p Params) equal(p2 Params) bool {
-	return p.InflationRateChange.Equal(p2.InflationRateChange) &&
-		p.InflationMax.Equal(p2.InflationMax) &&
-		p.InflationMin.Equal(p2.InflationMin) &&
-		p.GoalBonded.Equal(p2.GoalBonded) &&
-		p.MaxValidators == p2.MaxValidators &&
-		p.BondDenom == p2.BondDenom
 }
 
 //_________________________________________________________________________
@@ -50,17 +31,13 @@ type Pool struct {
 	Inflation         sdk.Rat `json:"inflation"`           // current annual inflation rate
 }
 
-func (p Pool) equal(p2 Pool) bool {
-	return p.BondedShares.Equal(p2.BondedShares) &&
-		p.UnbondedShares.Equal(p2.UnbondedShares) &&
-		p.Inflation.Equal(p2.Inflation) &&
-		p.TotalSupply == p2.TotalSupply &&
-		p.BondedPool == p2.BondedPool &&
-		p.UnbondedPool == p2.UnbondedPool &&
-		p.InflationLastTime == p2.InflationLastTime
+// GenesisState - all staking state that must be provided at genesis
+type GenesisState struct {
+	Pool   Pool   `json:"pool"`
+	Params Params `json:"params"`
 }
 
-//_________________________________________________________________________
+//_______________________________________________________________________________________________________
 
 // CandidateStatus - status of a validator-candidate
 type CandidateStatus byte
@@ -80,30 +57,23 @@ const (
 // exchange rate. Voting power can be calculated as total bonds multiplied by
 // exchange rate.
 type Candidate struct {
-	Status               CandidateStatus `json:"status"`                 // Bonded status
-	Address              sdk.Address     `json:"owner"`                  // Sender of BondTx - UnbondTx returns here
-	PubKey               crypto.PubKey   `json:"pub_key"`                // Pubkey of candidate
-	Assets               sdk.Rat         `json:"assets"`                 // total shares of a global hold pools
-	Liabilities          sdk.Rat         `json:"liabilities"`            // total shares issued to a candidate's delegators
-	Description          Description     `json:"description"`            // Description terms for the candidate
-	ValidatorBondHeight  int64           `json:"validator_bond_height"`  // Earliest height as a bonded validator
-	ValidatorBondCounter int16           `json:"validator_bond_counter"` // Block-local tx index of validator change
+	Status      CandidateStatus `json:"status"`      // Bonded status
+	Address     sdk.Address     `json:"owner"`       // Sender of BondTx - UnbondTx returns here
+	PubKey      crypto.PubKey   `json:"pub_key"`     // Pubkey of candidate
+	Assets      sdk.Rat         `json:"assets"`      // total shares of a global hold pools
+	Liabilities sdk.Rat         `json:"liabilities"` // total shares issued to a candidate's delegators
+	Description Description     `json:"description"` // Description terms for the candidate
 }
-
-// Candidates - list of Candidates
-type Candidates []Candidate
 
 // NewCandidate - initialize a new candidate
 func NewCandidate(address sdk.Address, pubKey crypto.PubKey, description Description) Candidate {
 	return Candidate{
-		Status:               Unbonded,
-		Address:              address,
-		PubKey:               pubKey,
-		Assets:               sdk.ZeroRat(),
-		Liabilities:          sdk.ZeroRat(),
-		Description:          description,
-		ValidatorBondHeight:  int64(0),
-		ValidatorBondCounter: int16(0),
+		Status:      Unbonded,
+		Address:     address,
+		PubKey:      pubKey,
+		Assets:      sdk.ZeroRat,
+		Liabilities: sdk.ZeroRat,
+		Description: description,
 	}
 }
 
@@ -127,7 +97,7 @@ func NewDescription(moniker, identity, website, details string) Description {
 // get the exchange rate of global pool shares over delegator shares
 func (c Candidate) delegatorShareExRate() sdk.Rat {
 	if c.Liabilities.IsZero() {
-		return sdk.OneRat()
+		return sdk.OneRat
 	}
 	return c.Assets.Quo(c.Liabilities)
 }
@@ -139,8 +109,6 @@ func (c Candidate) validator() Validator {
 		Address: c.Address,
 		PubKey:  c.PubKey,
 		Power:   c.Assets,
-		Height:  c.ValidatorBondHeight,
-		Counter: c.ValidatorBondCounter,
 	}
 }
 
@@ -154,14 +122,16 @@ type Validator struct {
 	Address sdk.Address   `json:"address"`
 	PubKey  crypto.PubKey `json:"pub_key"`
 	Power   sdk.Rat       `json:"voting_power"`
-	Height  int64         `json:"height"`  // Earliest height as a validator
-	Counter int16         `json:"counter"` // Block-local tx index for resolving equal voting power & height
 }
 
 // wrsp validator from stake validator type
 func (v Validator) wrspValidator(cdc *wire.Codec) wrsp.Validator {
+	pkBytes, err := cdc.MarshalBinary(v.PubKey)
+	if err != nil {
+		panic(err)
+	}
 	return wrsp.Validator{
-		PubKey: v.PubKey.Bytes(),
+		PubKey: pkBytes,
 		Power:  v.Power.Evaluate(),
 	}
 }
@@ -169,11 +139,20 @@ func (v Validator) wrspValidator(cdc *wire.Codec) wrsp.Validator {
 // wrsp validator from stake validator type
 // with zero power used for validator updates
 func (v Validator) wrspValidatorZero(cdc *wire.Codec) wrsp.Validator {
+	pkBytes, err := cdc.MarshalBinary(v.PubKey)
+	if err != nil {
+		panic(err)
+	}
 	return wrsp.Validator{
-		PubKey: v.PubKey.Bytes(),
+		PubKey: pkBytes,
 		Power:  0,
 	}
 }
+
+//_________________________________________________________________________
+
+// Candidates - list of Candidates
+type Candidates []Candidate
 
 //_________________________________________________________________________
 
@@ -182,8 +161,7 @@ func (v Validator) wrspValidatorZero(cdc *wire.Codec) wrsp.Validator {
 // pubKey.
 // TODO better way of managing space
 type DelegatorBond struct {
-	DelegatorAddr sdk.Address `json:"delegator_addr"`
+	DelegatorAddr sdk.Address `json:"delegatoraddr"`
 	CandidateAddr sdk.Address `json:"candidate_addr"`
 	Shares        sdk.Rat     `json:"shares"`
-	Height        int64       `json:"height"` // Last height bond updated
 }

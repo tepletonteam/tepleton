@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/tepleton/tepleton-sdk/mock"
-	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/wrsp/server"
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 	"github.com/tepleton/tmlibs/log"
@@ -26,12 +25,7 @@ func TestStartStandAlone(t *testing.T) {
 	cfg, err := tcmd.ParseConfig()
 	require.Nil(t, err)
 	ctx := NewContext(cfg, logger)
-	cdc := wire.NewCodec()
-	appInit := AppInit{
-		AppGenState: mock.AppGenState,
-		AppGenTx:    mock.AppGenTx,
-	}
-	initCmd := InitCmd(ctx, cdc, appInit)
+	initCmd := InitCmd(mock.GenInitOptions, ctx)
 	err = initCmd.RunE(nil, nil)
 	require.NoError(t, err)
 
@@ -57,18 +51,13 @@ func TestStartWithTendermint(t *testing.T) {
 	cfg, err := tcmd.ParseConfig()
 	require.Nil(t, err)
 	ctx := NewContext(cfg, logger)
-	cdc := wire.NewCodec()
-	appInit := AppInit{
-		AppGenState: mock.AppGenState,
-		AppGenTx:    mock.AppGenTx,
-	}
-	initCmd := InitCmd(ctx, cdc, appInit)
+	initCmd := InitCmd(mock.GenInitOptions, ctx)
 	err = initCmd.RunE(nil, nil)
 	require.NoError(t, err)
 
 	// set up app and start up
 	viper.Set(flagWithTendermint, true)
-	startCmd := StartCmd(ctx, mock.NewApp)
+	startCmd := StartCmd(mock.NewApp, ctx)
 	startCmd.Flags().Set(flagAddress, FreeTCPAddr(t)) // set to a new free address
 	timeout := time.Duration(5) * time.Second
 

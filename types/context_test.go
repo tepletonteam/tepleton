@@ -4,46 +4,17 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	dbm "github.com/tepleton/tmlibs/db"
-	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/tepleton-sdk/store"
 	"github.com/tepleton/tepleton-sdk/types"
 	wrsp "github.com/tepleton/wrsp/types"
 )
 
-type MockLogger struct {
-	logs *[]string
-}
-
-func NewMockLogger() MockLogger {
-	logs := make([]string, 0)
-	return MockLogger{
-		&logs,
-	}
-}
-
-func (l MockLogger) Debug(msg string, kvs ...interface{}) {
-	*l.logs = append(*l.logs, msg)
-}
-
-func (l MockLogger) Info(msg string, kvs ...interface{}) {
-	*l.logs = append(*l.logs, msg)
-}
-
-func (l MockLogger) Error(msg string, kvs ...interface{}) {
-	*l.logs = append(*l.logs, msg)
-}
-
-func (l MockLogger) With(kvs ...interface{}) log.Logger {
-	panic("not implemented")
-}
-
 func TestContextGetOpShouldNeverPanic(t *testing.T) {
 	var ms types.MultiStore
-	ctx := types.NewContext(ms, wrsp.Header{}, false, nil, log.NewNopLogger())
+	ctx := types.NewContext(ms, wrsp.Header{}, false, nil)
 	indices := []int64{
 		-10, 1, 0, 10, 20,
 	}
@@ -58,7 +29,7 @@ func defaultContext(key types.StoreKey) types.Context {
 	cms := store.NewCommitMultiStore(db)
 	cms.MountStoreWithDB(key, types.StoreTypeIAVL, db)
 	cms.LoadLatestVersion()
-	ctx := types.NewContext(cms, wrsp.Header{}, false, nil, log.NewNopLogger())
+	ctx := types.NewContext(cms, wrsp.Header{}, false, nil)
 	return ctx
 }
 
@@ -87,15 +58,4 @@ func TestCacheContext(t *testing.T) {
 	write()
 
 	assert.Equal(t, v2, store.Get(k2))
-}
-
-func TestLogContext(t *testing.T) {
-	key := types.NewKVStoreKey(t.Name())
-	ctx := defaultContext(key)
-	logger := NewMockLogger()
-	ctx = ctx.WithLogger(logger)
-	ctx.Logger().Debug("debug")
-	ctx.Logger().Info("info")
-	ctx.Logger().Error("error")
-	require.Equal(t, *logger.logs, []string{"debug", "info", "error"})
 }
