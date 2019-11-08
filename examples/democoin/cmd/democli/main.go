@@ -14,15 +14,15 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/tx"
 
 	"github.com/tepleton/tepleton-sdk/version"
-	authcmd "github.com/tepleton/tepleton-sdk/x/auth/commands"
-	bankcmd "github.com/tepleton/tepleton-sdk/x/bank/commands"
-	ibccmd "github.com/tepleton/tepleton-sdk/x/ibc/commands"
-	simplestakingcmd "github.com/tepleton/tepleton-sdk/x/simplestake/commands"
+	authcmd "github.com/tepleton/tepleton-sdk/x/auth/client/cli"
+	bankcmd "github.com/tepleton/tepleton-sdk/x/bank/client/cli"
+	ibccmd "github.com/tepleton/tepleton-sdk/x/ibc/client/cli"
 
 	"github.com/tepleton/tepleton-sdk/examples/democoin/app"
 	"github.com/tepleton/tepleton-sdk/examples/democoin/types"
-	coolcmd "github.com/tepleton/tepleton-sdk/examples/democoin/x/cool/commands"
-	powcmd "github.com/tepleton/tepleton-sdk/examples/democoin/x/pow/commands"
+	coolcmd "github.com/tepleton/tepleton-sdk/examples/democoin/x/cool/client/cli"
+	powcmd "github.com/tepleton/tepleton-sdk/examples/democoin/x/pow/client/cli"
+	simplestakingcmd "github.com/tepleton/tepleton-sdk/examples/democoin/x/simplestake/client/cli"
 )
 
 // rootCmd is the entry point for this binary
@@ -54,7 +54,7 @@ func main() {
 	// start with commands common to basecoin
 	rootCmd.AddCommand(
 		client.GetCommands(
-			authcmd.GetAccountCmd("main", cdc, types.GetAccountDecoder(cdc)),
+			authcmd.GetAccountCmd("acc", cdc, types.GetAccountDecoder(cdc)),
 		)...)
 	rootCmd.AddCommand(
 		client.PostCommands(

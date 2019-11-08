@@ -1,13 +1,14 @@
 PACKAGES=$(shell go list ./... | grep -v '/vendor/')
+PACKAGES_NOCLITEST=$(shell go list ./... | grep -v '/vendor/' | grep -v github.com/tepleton/tepleton-sdk/cmd/ton/cli_test)
 COMMIT_HASH := $(shell git rev-parse --short HEAD)
 BUILD_FLAGS = -ldflags "-X github.com/tepleton/tepleton-sdk/version.GitCommit=${COMMIT_HASH}"
 
-all: check_tools get_vendor_deps build build_examples test
+all: check_tools get_vendor_deps install install_examples test_lint test
 
 ########################################
 ### CI
 
-ci: get_tools get_vendor_deps build test_cover
+ci: get_tools get_vendor_deps install test_cover test_lint test
 
 ########################################
 ### Build
@@ -15,11 +16,11 @@ ci: get_tools get_vendor_deps build test_cover
 # This can be unified later, here for easy demos
 build:
 ifeq ($(OS),Windows_NT)
-	go build $(BUILD_FLAGS) -o build/tond.exe ./cmd/tond
-	go build $(BUILD_FLAGS) -o build/toncli.exe ./cmd/toncli
+	go build $(BUILD_FLAGS) -o build/tond.exe ./cmd/ton/cmd/tond
+	go build $(BUILD_FLAGS) -o build/toncli.exe ./cmd/ton/cmd/toncli
 else
-	go build $(BUILD_FLAGS) -o build/tond ./cmd/tond
-	go build $(BUILD_FLAGS) -o build/toncli ./cmd/toncli
+	go build $(BUILD_FLAGS) -o build/tond ./cmd/ton/cmd/tond
+	go build $(BUILD_FLAGS) -o build/toncli ./cmd/ton/cmd/toncli
 endif
 
 build_examples:
@@ -36,8 +37,8 @@ else
 endif
 
 install: 
-	go install $(BUILD_FLAGS) ./cmd/tond
-	go install $(BUILD_FLAGS) ./cmd/toncli
+	go install $(BUILD_FLAGS) ./cmd/ton/cmd/tond
+	go install $(BUILD_FLAGS) ./cmd/ton/cmd/toncli
 
 install_examples: 
 	go install $(BUILD_FLAGS) ./examples/basecoin/cmd/basecoind
@@ -83,21 +84,22 @@ godocs:
 ########################################
 ### Testing
 
-test: test_unit # test_cli
+test: test_unit
 
-# Must  be run in each package seperately for the visualization
-# Added here for easy reference
-# coverage:
-#	 go test -coverprofile=c.out && go tool cover -html=c.out
+test_cli: 
+	@go test -count 1 -p 1 `go list github.com/tepleton/tepleton-sdk/cmd/ton/cli_test`
 
 test_unit:
-	@go test $(PACKAGES)
+	@go test $(PACKAGES_NOCLITEST)
 
 test_cover:
 	@bash tests/test_cover.sh
 
+test_lint:
+	gometalinter --disable-all --enable='golint' --vendor ./...
+
 benchmark:
-	@go test -bench=. $(PACKAGES)
+	@go test -bench=. $(PACKAGES_NOCLITEST)
 
 
 ########################################
@@ -127,4 +129,4 @@ devdoc_update:
 # To avoid unintended conflicts with file names, always add to .PHONY
 # unless there is a reason not to.
 # https://www.gnu.org/software/make/manual/html_node/Phony-Targets.html
-.PHONY: build build_examples install install_examples dist check_tools get_tools get_vendor_deps draw_deps test test_unit test_tutorial benchmark devdoc_init devdoc devdoc_save devdoc_update
+.PHONY: build build_examples install install_examples dist check_tools get_tools get_vendor_deps draw_deps test test_cli test_unit test_cover test_lint benchmark devdoc_init devdoc devdoc_save devdoc_update
