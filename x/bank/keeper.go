@@ -135,6 +135,7 @@ func hasCoins(ctx sdk.Context, am sdk.AccountMapper, addr sdk.Address, amt sdk.C
 
 // SubtractCoins subtracts amt from the coins at the addr.
 func subtractCoins(ctx sdk.Context, am sdk.AccountMapper, addr sdk.Address, amt sdk.Coins) (sdk.Coins, sdk.Tags, sdk.Error) {
+	ctx.GasMeter().ConsumeGas(10, "subtractCoins")
 	oldCoins := getCoins(ctx, am, addr)
 	newCoins := oldCoins.Minus(amt)
 	if !newCoins.IsNotNegative() {
@@ -147,6 +148,7 @@ func subtractCoins(ctx sdk.Context, am sdk.AccountMapper, addr sdk.Address, amt 
 
 // AddCoins adds amt to the coins at the addr.
 func addCoins(ctx sdk.Context, am sdk.AccountMapper, addr sdk.Address, amt sdk.Coins) (sdk.Coins, sdk.Tags, sdk.Error) {
+	ctx.GasMeter().ConsumeGas(10, "addCoins")
 	oldCoins := getCoins(ctx, am, addr)
 	newCoins := oldCoins.Plus(amt)
 	if !newCoins.IsNotNegative() {
