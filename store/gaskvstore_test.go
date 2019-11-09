@@ -14,7 +14,7 @@ func newGasKVStore() KVStore {
 	return NewGasKVStore(meter, mem)
 }
 
-func TestGasKVStore(t *testing.T) {
+func TestGasKVStoreBasic(t *testing.T) {
 	mem := dbStoreAdapter{dbm.NewMemDB()}
 	meter := sdk.NewGasMeter(1000)
 	st := NewGasKVStore(meter, mem)
@@ -24,4 +24,11 @@ func TestGasKVStore(t *testing.T) {
 	mem.Set(keyFmt(1), valFmt(1))
 	st.Set(keyFmt(1), valFmt(1))
 	require.Equal(t, valFmt(1), st.Get(keyFmt(1)))
+}
+
+func TestGasKVStoreOutOfGas(t *testing.T) {
+	mem := dbStoreAdapter{dbm.NewMemDB()}
+	meter := sdk.NewGasMeter(0)
+	st := NewGasKVStore(meter, mem)
+	require.Panics(t, func() { st.Set(keyFmt(1), valFmt(1)) }, "Expected out-of-gas")
 }
