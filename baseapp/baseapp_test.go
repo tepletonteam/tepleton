@@ -167,7 +167,7 @@ func TestInitChainer(t *testing.T) {
 	}
 
 	query := wrsp.RequestQuery{
-		Path: "/main/key",
+		Path: "/store/main/key",
 		Data: key,
 	}
 
@@ -308,7 +308,7 @@ func TestQuery(t *testing.T) {
 	})
 
 	query := wrsp.RequestQuery{
-		Path: "/main/key",
+		Path: "/store/main/key",
 		Data: key,
 	}
 
