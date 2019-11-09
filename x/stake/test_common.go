@@ -158,7 +158,7 @@ func createTestInput(t *testing.T, isCheckTx bool, initCoins int64) (sdk.Context
 	err := ms.LoadLatestVersion()
 	require.Nil(t, err)
 
-	ctx := sdk.NewContext(ms, wrsp.Header{ChainID: "foochainid"}, isCheckTx, nil, log.NewNopLogger())
+	ctx := sdk.NewContext(ms, wrsp.Header{ChainID: "foochainid"}, isCheckTx, nil, log.NewNopLogger(), 100000000)
 	cdc := makeTestCodec()
 	accountMapper := auth.NewAccountMapper(
 		cdc,                 // amino codec

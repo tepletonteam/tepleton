@@ -25,7 +25,7 @@ func defaultLogger() log.Logger {
 func newBaseApp(name string) *BaseApp {
 	logger := defaultLogger()
 	db := dbm.NewMemDB()
-	return NewBaseApp(name, nil, logger, db)
+	return NewBaseApp(name, nil, logger, db, 10000)
 }
 
 func TestMountStores(t *testing.T) {
@@ -59,7 +59,7 @@ func TestLoadVersion(t *testing.T) {
 	logger := defaultLogger()
 	db := dbm.NewMemDB()
 	name := t.Name()
-	app := NewBaseApp(name, nil, logger, db)
+	app := NewBaseApp(name, nil, logger, db, 10000)
 
 	// make a cap key and mount the store
 	capKey := sdk.NewKVStoreKey("main")
@@ -81,7 +81,7 @@ func TestLoadVersion(t *testing.T) {
 	commitID := sdk.CommitID{1, res.Data}
 
 	// reload
-	app = NewBaseApp(name, nil, logger, db)
+	app = NewBaseApp(name, nil, logger, db, 10000)
 	app.MountStoresIAVL(capKey)
 	err = app.LoadLatestVersion(capKey) // needed to make stores non-nil
 	assert.Nil(t, err)
@@ -147,7 +147,7 @@ func TestInitChainer(t *testing.T) {
 	name := t.Name()
 	db := dbm.NewMemDB()
 	logger := defaultLogger()
-	app := NewBaseApp(name, nil, logger, db)
+	app := NewBaseApp(name, nil, logger, db, 10000)
 	// make cap keys and mount the stores
 	// NOTE/TODO: mounting multiple stores is broken
 	// see https://github.com/tepleton/tepleton-sdk/issues/532
@@ -184,7 +184,7 @@ func TestInitChainer(t *testing.T) {
 	assert.Equal(t, value, res.Value)
 
 	// reload app
-	app = NewBaseApp(name, nil, logger, db)
+	app = NewBaseApp(name, nil, logger, db, 10000)
 	app.MountStoresIAVL(capKey, capKey2)
 	err = app.LoadLatestVersion(capKey) // needed to make stores non-nil
 	assert.Nil(t, err)
@@ -258,6 +258,34 @@ func TestDeliverTx(t *testing.T) {
 		app.EndBlock(wrsp.RequestEndBlock{})
 		app.Commit()
 	}
+}
+
+// Test that transactions exceeding gas limits fail
+func TestTxGasLimits(t *testing.T) {
+	logger := defaultLogger()
+	db := dbm.NewMemDB()
+	app := NewBaseApp(t.Name(), nil, logger, db, 0)
+
+	// make a cap key and mount the store
+	capKey := sdk.NewKVStoreKey("main")
+	app.MountStoresIAVL(capKey)
+	err := app.LoadLatestVersion(capKey) // needed to make stores non-nil
+	assert.Nil(t, err)
+
+	app.SetAnteHandler(func(ctx sdk.Context, tx sdk.Tx) (newCtx sdk.Context, res sdk.Result, abort bool) { return })
+	app.Router().AddRoute(msgType, func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
+		ctx.GasMeter().ConsumeGas(10, "counter")
+		return sdk.Result{}
+	})
+
+	tx := testUpdatePowerTx{} // doesn't matter
+	header := wrsp.Header{AppHash: []byte("apphash")}
+
+	app.BeginBlock(wrsp.RequestBeginBlock{Header: header})
+	res := app.Deliver(tx)
+	assert.Equal(t, res.Code, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeOutOfGas), "Expected transaction to run out of gas")
+	app.EndBlock(wrsp.RequestEndBlock{})
+	app.Commit()
 }
 
 // Test that we can only query from the latest committed state.

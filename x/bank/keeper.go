@@ -108,6 +108,7 @@ func (keeper ViewKeeper) HasCoins(ctx sdk.Context, addr sdk.Address, amt sdk.Coi
 //______________________________________________________________________________________________
 
 func getCoins(ctx sdk.Context, am sdk.AccountMapper, addr sdk.Address) sdk.Coins {
+	ctx.GasMeter().ConsumeGas(10, "getCoins")
 	acc := am.GetAccount(ctx, addr)
 	if acc == nil {
 		return sdk.Coins{}
@@ -116,6 +117,7 @@ func getCoins(ctx sdk.Context, am sdk.AccountMapper, addr sdk.Address) sdk.Coins
 }
 
 func setCoins(ctx sdk.Context, am sdk.AccountMapper, addr sdk.Address, amt sdk.Coins) sdk.Error {
+	ctx.GasMeter().ConsumeGas(100, "setCoins")
 	acc := am.GetAccount(ctx, addr)
 	if acc == nil {
 		acc = am.NewAccountWithAddress(ctx, addr)
@@ -127,6 +129,7 @@ func setCoins(ctx sdk.Context, am sdk.AccountMapper, addr sdk.Address, amt sdk.C
 
 // HasCoins returns whether or not an account has at least amt coins.
 func hasCoins(ctx sdk.Context, am sdk.AccountMapper, addr sdk.Address, amt sdk.Coins) bool {
+	ctx.GasMeter().ConsumeGas(10, "hasCoins")
 	return getCoins(ctx, am, addr).IsGTE(amt)
 }
 

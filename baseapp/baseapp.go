@@ -35,6 +35,7 @@ type BaseApp struct {
 	// must be set
 	txDecoder   sdk.TxDecoder   // unmarshal []byte into sdk.Tx
 	anteHandler sdk.AnteHandler // ante handler for fee and auth
+	txGasLimit  sdk.Gas         // per-transaction gas limit
 
 	// may be nil
 	initChainer  sdk.InitChainer  // initialize state with validators and state blob
@@ -57,7 +58,7 @@ var _ wrsp.Application = (*BaseApp)(nil)
 
 // Create and name new BaseApp
 // NOTE: The db is used to store the version number for now.
-func NewBaseApp(name string, cdc *wire.Codec, logger log.Logger, db dbm.DB) *BaseApp {
+func NewBaseApp(name string, cdc *wire.Codec, logger log.Logger, db dbm.DB, txGasLimit sdk.Gas) *BaseApp {
 	app := &BaseApp{
 		Logger:     logger,
 		name:       name,
@@ -66,6 +67,7 @@ func NewBaseApp(name string, cdc *wire.Codec, logger log.Logger, db dbm.DB) *Bas
 		router:     NewRouter(),
 		codespacer: sdk.NewCodespacer(),
 		txDecoder:  defaultTxDecoder(cdc),
+		txGasLimit: txGasLimit,
 	}
 	// Register the undefined & root codespaces, which should not be used by any modules
 	app.codespacer.RegisterOrPanic(sdk.CodespaceUndefined)
@@ -210,9 +212,9 @@ func (app *BaseApp) initFromStore(mainKey sdk.StoreKey) error {
 // NewContext returns a new Context with the correct store, the given header, and nil txBytes.
 func (app *BaseApp) NewContext(isCheckTx bool, header wrsp.Header) sdk.Context {
 	if isCheckTx {
-		return sdk.NewContext(app.checkState.ms, header, true, nil, app.Logger)
+		return sdk.NewContext(app.checkState.ms, header, true, nil, app.Logger, app.txGasLimit)
 	}
-	return sdk.NewContext(app.deliverState.ms, header, false, nil, app.Logger)
+	return sdk.NewContext(app.deliverState.ms, header, false, nil, app.Logger, app.txGasLimit)
 }
 
 type state struct {
@@ -228,7 +230,7 @@ func (app *BaseApp) setCheckState(header wrsp.Header) {
 	ms := app.cms.CacheMultiStore()
 	app.checkState = &state{
 		ms:  ms,
-		ctx: sdk.NewContext(ms, header, true, nil, app.Logger),
+		ctx: sdk.NewContext(ms, header, true, nil, app.Logger, app.txGasLimit),
 	}
 }
 
@@ -236,7 +238,7 @@ func (app *BaseApp) setDeliverState(header wrsp.Header) {
 	ms := app.cms.CacheMultiStore()
 	app.deliverState = &state{
 		ms:  ms,
-		ctx: sdk.NewContext(ms, header, false, nil, app.Logger),
+		ctx: sdk.NewContext(ms, header, false, nil, app.Logger, app.txGasLimit),
 	}
 }
 
@@ -312,7 +314,7 @@ func (app *BaseApp) CheckTx(txBytes []byte) (res wrsp.ResponseCheckTx) {
 	if err != nil {
 		result = err.Result()
 	} else {
-		result = app.runTx(true, txBytes, tx)
+		result = app.runTx(true, false, txBytes, tx)
 	}
 
 	return wrsp.ResponseCheckTx{
@@ -320,6 +322,7 @@ func (app *BaseApp) CheckTx(txBytes []byte) (res wrsp.ResponseCheckTx) {
 		Data:      result.Data,
 		Log:       result.Log,
 		GasWanted: result.GasWanted,
+		GasUsed:   result.GasUsed,
 		Fee: cmn.KI64Pair{
 			[]byte(result.FeeDenom),
 			result.FeeAmount,
@@ -336,7 +339,7 @@ func (app *BaseApp) DeliverTx(txBytes []byte) (res wrsp.ResponseDeliverTx) {
 	if err != nil {
 		result = err.Result()
 	} else {
-		result = app.runTx(false, txBytes, tx)
+		result = app.runTx(false, false, txBytes, tx)
 	}
 
 	// After-handler hooks.
@@ -358,22 +361,35 @@ func (app *BaseApp) DeliverTx(txBytes []byte) (res wrsp.ResponseDeliverTx) {
 	}
 }
 
-// nolint- Mostly for testing
+// nolint - Mostly for testing
 func (app *BaseApp) Check(tx sdk.Tx) (result sdk.Result) {
-	return app.runTx(true, nil, tx)
+	return app.runTx(true, false, nil, tx)
 }
+
+// nolint - full tx execution
+func (app *BaseApp) CheckFull(tx sdk.Tx) (result sdk.Result) {
+	return app.runTx(true, true, nil, tx)
+}
+
+// nolint
 func (app *BaseApp) Deliver(tx sdk.Tx) (result sdk.Result) {
-	return app.runTx(false, nil, tx)
+	return app.runTx(false, false, nil, tx)
 }
 
 // txBytes may be nil in some cases, eg. in tests.
 // Also, in the future we may support "internal" transactions.
-func (app *BaseApp) runTx(isCheckTx bool, txBytes []byte, tx sdk.Tx) (result sdk.Result) {
+func (app *BaseApp) runTx(isCheckTx bool, simulateDeliver bool, txBytes []byte, tx sdk.Tx) (result sdk.Result) {
 	// Handle any panics.
 	defer func() {
 		if r := recover(); r != nil {
-			log := fmt.Sprintf("Recovered: %v\nstack:\n%v", r, string(debug.Stack()))
-			result = sdk.ErrInternal(log).Result()
+			switch r.(type) {
+			case sdk.ErrorOutOfGas:
+				log := fmt.Sprintf("Out of gas in location: %v", r.(sdk.ErrorOutOfGas).Descriptor)
+				result = sdk.ErrOutOfGas(log).Result()
+			default:
+				log := fmt.Sprintf("Recovered: %v\nstack:\n%v", r, string(debug.Stack()))
+				result = sdk.ErrInternal(log).Result()
+			}
 		}
 	}()
 
@@ -398,6 +414,14 @@ func (app *BaseApp) runTx(isCheckTx bool, txBytes []byte, tx sdk.Tx) (result sdk
 		ctx = app.deliverState.ctx.WithTxBytes(txBytes)
 	}
 
+	// Create a new zeroed gas meter
+	ctx = ctx.WithGasMeter(sdk.NewGasMeter(app.txGasLimit))
+
+	// Simulate a DeliverTx for gas calculation
+	if isCheckTx && simulateDeliver {
+		ctx = ctx.WithIsCheckTx(false)
+	}
+
 	// Run the ante handler.
 	if app.anteHandler != nil {
 		newCtx, result, abort := app.anteHandler(ctx, tx)
@@ -418,7 +442,7 @@ func (app *BaseApp) runTx(isCheckTx bool, txBytes []byte, tx sdk.Tx) (result sdk
 
 	// Get the correct cache
 	var msCache sdk.CacheMultiStore
-	if isCheckTx == true {
+	if isCheckTx {
 		// CacheWrap app.checkState.ms in case it fails.
 		msCache = app.checkState.CacheMultiStore()
 		ctx = ctx.WithMultiStore(msCache)
@@ -426,13 +450,15 @@ func (app *BaseApp) runTx(isCheckTx bool, txBytes []byte, tx sdk.Tx) (result sdk
 		// CacheWrap app.deliverState.ms in case it fails.
 		msCache = app.deliverState.CacheMultiStore()
 		ctx = ctx.WithMultiStore(msCache)
-
 	}
 
 	result = handler(ctx, msg)
 
-	// If result was successful, write to app.checkState.ms or app.deliverState.ms
-	if result.IsOK() {
+	// Set gas utilized
+	result.GasUsed = ctx.GasMeter().GasConsumed()
+
+	// If not a simulated run and result was successful, write to app.checkState.ms or app.deliverState.ms
+	if !simulateDeliver && result.IsOK() {
 		msCache.Write()
 	}
 
