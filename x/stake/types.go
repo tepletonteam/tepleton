@@ -2,9 +2,9 @@ package stake
 
 import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/wire"
-	wrsp "github.com/tepleton/wrsp/types"
 	crypto "github.com/tepleton/go-crypto"
+
+	"github.com/tepleton/tepleton-sdk/wire"
 )
 
 // GenesisState - all staking state that must be provided at genesis
@@ -159,8 +159,8 @@ type Validator struct {
 }
 
 // wrsp validator from stake validator type
-func (v Validator) wrspValidator(cdc *wire.Codec) wrsp.Validator {
-	return wrsp.Validator{
+func (v Validator) wrspValidator(cdc *wire.Codec) sdk.Validator {
+	return sdk.Validator{
 		PubKey: v.PubKey.Bytes(),
 		Power:  v.Power.Evaluate(),
 	}
@@ -168,8 +168,8 @@ func (v Validator) wrspValidator(cdc *wire.Codec) wrsp.Validator {
 
 // wrsp validator from stake validator type
 // with zero power used for validator updates
-func (v Validator) wrspValidatorZero(cdc *wire.Codec) wrsp.Validator {
-	return wrsp.Validator{
+func (v Validator) wrspValidatorZero(cdc *wire.Codec) sdk.Validator {
+	return sdk.Validator{
 		PubKey: v.PubKey.Bytes(),
 		Power:  0,
 	}
