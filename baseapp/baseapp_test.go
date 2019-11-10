@@ -305,7 +305,7 @@ func TestSimulateTx(t *testing.T) {
 		app.BeginBlock(wrsp.RequestBeginBlock{Header: header})
 		result := app.Simulate(tx)
 		require.Equal(t, result.Code, sdk.WRSPCodeOK)
-		require.Equal(t, result.GasUsed, int64(80))
+		require.Equal(t, int64(80), result.GasUsed)
 		counter--
 		encoded, err := json.Marshal(tx)
 		require.Nil(t, err)
@@ -317,8 +317,8 @@ func TestSimulateTx(t *testing.T) {
 		require.Equal(t, queryResult.Code, uint32(sdk.WRSPCodeOK))
 		var res sdk.Result
 		app.cdc.MustUnmarshalBinary(queryResult.Value, &res)
-		require.Equal(t, res.Code, sdk.WRSPCodeOK)
-		require.Equal(t, res.GasUsed, int64(80))
+		require.Equal(t, sdk.WRSPCodeOK, res.Code)
+		require.Equal(t, int64(160), res.GasUsed)
 		app.EndBlock(wrsp.RequestEndBlock{})
 		app.Commit()
 	}
