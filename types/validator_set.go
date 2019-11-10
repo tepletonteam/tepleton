@@ -2,16 +2,7 @@ package types
 
 import (
 	wrsp "github.com/tepleton/wrsp/types"
-	"github.com/tepleton/go-crypto"
-
-	"github.com/tepleton/tepleton-sdk/wire"
 )
-
-var cdc = wire.NewCodec()
-
-func init() {
-	crypto.RegisterAmino(cdc)
-}
 
 type Validator = wrsp.Validator
 
