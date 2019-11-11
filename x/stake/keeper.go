@@ -108,7 +108,7 @@ func (k Keeper) setValidator(ctx sdk.Context, validator Validator) {
 	// add to the validators and return to update list if is already a validator and power is increasing
 	if powerIncreasing && oldValidator.Status == sdk.Bonded {
 		bzWRSP := k.cdc.MustMarshalBinary(validator.wrspValidator(k.cdc))
-		store.Set(GetValidatorsTendermintUpdatesKey(address), bzWRSP)
+		store.Set(GetTendermintUpdatesKey(address), bzWRSP)
 
 		// also update the recent validator store
 		store.Set(GetValidatorsBondedKey(validator.PubKey), bzVal)
@@ -139,7 +139,7 @@ func (k Keeper) removeValidator(ctx sdk.Context, address sdk.Address) {
 		return
 	}
 	bz := k.cdc.MustMarshalBinary(validator.wrspValidatorZero(k.cdc))
-	store.Set(GetValidatorsTendermintUpdatesKey(address), bz)
+	store.Set(GetTendermintUpdatesKey(address), bz)
 	store.Delete(GetValidatorsBondedKey(validator.PubKey))
 }
 
@@ -239,7 +239,7 @@ func (k Keeper) updateValidators(ctx sdk.Context, store sdk.KVStore, updatedVali
 		// MOST IMPORTANTLY, add to the accumulated changes if this is the modified validator
 		if bytes.Equal(updatedValidatorAddr, validator.Address) {
 			bz = k.cdc.MustMarshalBinary(validator.wrspValidator(k.cdc))
-			store.Set(GetValidatorsTendermintUpdatesKey(updatedValidatorAddr), bz)
+			store.Set(GetTendermintUpdatesKey(updatedValidatorAddr), bz)
 		}
 
 		iterator.Next()
@@ -252,7 +252,7 @@ func (k Keeper) updateValidators(ctx sdk.Context, store sdk.KVStore, updatedVali
 		var validator Validator
 		k.cdc.MustUnmarshalBinary(value, &validator)
 		bz := k.cdc.MustMarshalBinary(validator.wrspValidatorZero(k.cdc))
-		store.Set(GetValidatorsTendermintUpdatesKey(addr), bz)
+		store.Set(GetTendermintUpdatesKey(addr), bz)
 	}
 }
 
@@ -260,10 +260,10 @@ func (k Keeper) updateValidators(ctx sdk.Context, store sdk.KVStore, updatedVali
 // Accumulated updates to the active/bonded validator set for tepleton
 
 // get the most recently updated validators
-func (k Keeper) getValidatorsTendermintUpdates(ctx sdk.Context) (updates []wrsp.Validator) {
+func (k Keeper) getTendermintUpdates(ctx sdk.Context) (updates []wrsp.Validator) {
 	store := ctx.KVStore(k.storeKey)
 
-	iterator := store.SubspaceIterator(ValidatorsTendermintUpdatesKey) //smallest to largest
+	iterator := store.SubspaceIterator(TendermintUpdatesKey) //smallest to largest
 	for ; iterator.Valid(); iterator.Next() {
 		valBytes := iterator.Value()
 		var val wrsp.Validator
@@ -275,11 +275,11 @@ func (k Keeper) getValidatorsTendermintUpdates(ctx sdk.Context) (updates []wrsp.
 }
 
 // remove all validator update entries after applied to Tendermint
-func (k Keeper) clearValidatorsTendermintUpdates(ctx sdk.Context) {
+func (k Keeper) clearTendermintUpdates(ctx sdk.Context) {
 	store := ctx.KVStore(k.storeKey)
 
 	// delete subspace
-	iterator := store.SubspaceIterator(ValidatorsTendermintUpdatesKey)
+	iterator := store.SubspaceIterator(TendermintUpdatesKey)
 	for ; iterator.Valid(); iterator.Next() {
 		store.Delete(iterator.Key())
 	}
