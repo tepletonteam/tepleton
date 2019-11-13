@@ -26,12 +26,14 @@ func (k Keeper) Tick(ctx sdk.Context) (change []wrsp.Validator) {
 	// save the params
 	k.setPool(ctx, p)
 
-	// reset the counter
-	k.setCounter(ctx, 0)
+	// reset the intra-transaction counter
+	k.setIntraTxCounter(ctx, 0)
 
-	change = k.getAccUpdateValidators(ctx)
+	// calculate validator set changes
+	change = k.getTendermintUpdates(ctx)
+	k.clearTendermintUpdates(ctx)
 
-	return
+	return change
 }
 
 // process provisions for an hour period
@@ -45,7 +47,7 @@ func (k Keeper) processProvisions(ctx sdk.Context) Pool {
 	// which needs to be updated is the `BondedPool`. So for each previsions cycle:
 
 	provisions := pool.Inflation.Mul(sdk.NewRat(pool.TotalSupply)).Quo(hrsPerYrRat).Evaluate()
-	pool.BondedPool += provisions
+	pool.BondedTokens += provisions
 	pool.TotalSupply += provisions
 	return pool
 }

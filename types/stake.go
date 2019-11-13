@@ -13,13 +13,12 @@ const (
 	Unbonded  BondStatus = 0x00
 	Unbonding BondStatus = 0x01
 	Bonded    BondStatus = 0x02
-	Revoked   BondStatus = 0x03
 )
 
 // validator for a delegated proof of stake system
 type Validator interface {
 	GetStatus() BondStatus    // status of the validator
-	GetAddress() Address      // owner address to receive/return validators coins
+	GetOwner() Address        // owner address to receive/return validators coins
 	GetPubKey() crypto.PubKey // validation pubkey
 	GetPower() Rat            // validation power
 	GetBondHeight() int64     // height in which the validator became active

@@ -66,8 +66,9 @@ func GaiaAppInit() server.AppInit {
 
 	fsAppGenTx := pflag.NewFlagSet("", pflag.ContinueOnError)
 	fsAppGenTx.String(flagName, "", "validator moniker, if left blank, do not add validator")
-	fsAppGenTx.String(flagClientHome, DefaultCLIHome, "home directory for the client, used for key generation")
-	fsAppGenTx.Bool(flagOWK, false, "overwrite the for the accounts created")
+	fsAppGenTx.String(flagClientHome, DefaultCLIHome,
+		"home directory for the client, used for key generation")
+	fsAppGenTx.Bool(flagOWK, false, "overwrite the accounts created")
 
 	return server.AppInit{
 		FlagsAppGenState: fsAppGenState,
@@ -134,7 +135,7 @@ func GaiaAppGenState(cdc *wire.Codec, appGenTxs []json.RawMessage) (appState jso
 	}
 
 	// start with the default staking genesis state
-	stakeData := stake.GetDefaultGenesisState()
+	stakeData := stake.DefaultGenesisState()
 
 	// get genesis flag account information
 	genaccs := make([]GenesisAccount, len(appGenTxs))
@@ -159,14 +160,14 @@ func GaiaAppGenState(cdc *wire.Codec, appGenTxs []json.RawMessage) (appState jso
 		// add the validator
 		if len(genTx.Name) > 0 {
 			desc := stake.NewDescription(genTx.Name, "", "", "")
-			candidate := stake.NewCandidate(genTx.Address, genTx.PubKey, desc)
-			candidate.Assets = sdk.NewRat(freeFermionVal)
-			stakeData.Candidates = append(stakeData.Candidates, candidate)
+			validator := stake.NewValidator(genTx.Address, genTx.PubKey, desc)
+			validator.PoolShares = stake.NewBondedShares(sdk.NewRat(freeFermionVal))
+			stakeData.Validators = append(stakeData.Validators, validator)
 
 			// pool logic
 			stakeData.Pool.TotalSupply += freeFermionVal
-			stakeData.Pool.BondedPool += freeFermionVal
-			stakeData.Pool.BondedShares = sdk.NewRat(stakeData.Pool.BondedPool)
+			stakeData.Pool.BondedTokens += freeFermionVal
+			stakeData.Pool.BondedShares = sdk.NewRat(stakeData.Pool.BondedTokens)
 		}
 	}
 
