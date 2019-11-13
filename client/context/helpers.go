@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/tepleton/tepleton-sdk/wire"
+	"github.com/tepleton/tepleton-sdk/x/auth"
 	rpcclient "github.com/tepleton/tepleton/rpc/client"
 	ctypes "github.com/tepleton/tepleton/rpc/core/types"
 	cmn "github.com/tepleton/tmlibs/common"
@@ -109,11 +110,11 @@ func (ctx CoreContext) SignAndBuild(name, passphrase string, msg sdk.Msg, cdc *w
 		return nil, errors.Errorf("Chain ID required but not specified")
 	}
 	sequence := ctx.Sequence
-	signMsg := sdk.StdSignMsg{
+	signMsg := auth.StdSignMsg{
 		ChainID:   chainID,
 		Sequences: []int64{sequence},
 		Msg:       msg,
-		Fee:       sdk.NewStdFee(10000, sdk.Coin{}), // TODO run simulate to estimate gas?
+		Fee:       auth.NewStdFee(10000, sdk.Coin{}), // TODO run simulate to estimate gas?
 	}
 
 	keybase, err := keys.GetKeyBase()
@@ -128,14 +129,14 @@ func (ctx CoreContext) SignAndBuild(name, passphrase string, msg sdk.Msg, cdc *w
 	if err != nil {
 		return nil, err
 	}
-	sigs := []sdk.StdSignature{{
+	sigs := []auth.StdSignature{{
 		PubKey:    pubkey,
 		Signature: sig,
 		Sequence:  sequence,
 	}}
 
 	// marshal bytes
-	tx := sdk.NewStdTx(signMsg.Msg, signMsg.Fee, sigs)
+	tx := auth.NewStdTx(signMsg.Msg, signMsg.Fee, sigs)
 
 	return cdc.MarshalBinary(tx)
 }

@@ -1,90 +1,25 @@
 package auth
 
 import (
-	"errors"
-
-	crypto "github.com/tepleton/go-crypto"
-
 	sdk "github.com/tepleton/tepleton-sdk/types"
+	crypto "github.com/tepleton/go-crypto"
 )
 
-//-----------------------------------------------------------
-// BaseAccount
+// Account is a standard account using a sequence number for replay protection
+// and a pubkey for authentication.
+type Account interface {
+	GetAddress() sdk.Address
+	SetAddress(sdk.Address) error // errors if already set.
 
-var _ sdk.Account = (*BaseAccount)(nil)
+	GetPubKey() crypto.PubKey // can return nil.
+	SetPubKey(crypto.PubKey) error
 
-// BaseAccount - base account structure.
-// Extend this by embedding this in your AppAccount.
-// See the examples/basecoin/types/account.go for an example.
-type BaseAccount struct {
-	Address  crypto.Address `json:"address"`
-	Coins    sdk.Coins      `json:"coins"`
-	PubKey   crypto.PubKey  `json:"public_key"`
-	Sequence int64          `json:"sequence"`
+	GetSequence() int64
+	SetSequence(int64) error
+
+	GetCoins() sdk.Coins
+	SetCoins(sdk.Coins) error
 }
 
-func NewBaseAccountWithAddress(addr crypto.Address) BaseAccount {
-	return BaseAccount{
-		Address: addr,
-	}
-}
-
-// Implements sdk.Account.
-func (acc BaseAccount) Get(key interface{}) (value interface{}, err error) {
-	panic("not implemented yet")
-}
-
-// Implements sdk.Account.
-func (acc *BaseAccount) Set(key interface{}, value interface{}) error {
-	panic("not implemented yet")
-}
-
-// Implements sdk.Account.
-func (acc BaseAccount) GetAddress() crypto.Address {
-	return acc.Address
-}
-
-// Implements sdk.Account.
-func (acc *BaseAccount) SetAddress(addr crypto.Address) error {
-	if len(acc.Address) != 0 {
-		return errors.New("cannot override BaseAccount address")
-	}
-	acc.Address = addr
-	return nil
-}
-
-// Implements sdk.Account.
-func (acc BaseAccount) GetPubKey() crypto.PubKey {
-	return acc.PubKey
-}
-
-// Implements sdk.Account.
-func (acc *BaseAccount) SetPubKey(pubKey crypto.PubKey) error {
-	if acc.PubKey != nil {
-		return errors.New("cannot override BaseAccount pubkey")
-	}
-	acc.PubKey = pubKey
-	return nil
-}
-
-// Implements sdk.Account.
-func (acc *BaseAccount) GetCoins() sdk.Coins {
-	return acc.Coins
-}
-
-// Implements sdk.Account.
-func (acc *BaseAccount) SetCoins(coins sdk.Coins) error {
-	acc.Coins = coins
-	return nil
-}
-
-// Implements sdk.Account.
-func (acc *BaseAccount) GetSequence() int64 {
-	return acc.Sequence
-}
-
-// Implements sdk.Account.
-func (acc *BaseAccount) SetSequence(seq int64) error {
-	acc.Sequence = seq
-	return nil
-}
+// AccountDecoder unmarshals account bytes
+type AccountDecoder func(accountBytes []byte) (Account, error)

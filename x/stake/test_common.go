@@ -1,6 +1,7 @@
 package stake
 
 import (
+	"bytes"
 	"encoding/hex"
 	"testing"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/bank"
+	"github.com/tepleton/tepleton-sdk/x/baseaccount"
 )
 
 // dummy addresses used for testing
@@ -51,14 +53,70 @@ var (
 	emptyPubkey crypto.PubKey
 )
 
-//_______________________________________________________________________________________
-
-// intended to be used with require/assert:  require.True(ValEq(...))
-func ValEq(t *testing.T, exp, got Validator) (*testing.T, bool, string, Validator, Validator) {
-	return t, exp.equal(got), "expected:\t%v\ngot:\t\t%v", exp, got
+func validatorsEqual(b1, b2 Validator) bool {
+	return bytes.Equal(b1.Address, b2.Address) &&
+		b1.PubKey.Equals(b2.PubKey) &&
+		b1.Power.Equal(b2.Power) &&
+		b1.Height == b2.Height &&
+		b1.Counter == b2.Counter
 }
 
-//_______________________________________________________________________________________
+func candidatesEqual(c1, c2 Candidate) bool {
+	return c1.Status == c2.Status &&
+		c1.PubKey.Equals(c2.PubKey) &&
+		bytes.Equal(c1.Address, c2.Address) &&
+		c1.Assets.Equal(c2.Assets) &&
+		c1.Liabilities.Equal(c2.Liabilities) &&
+		c1.Description == c2.Description
+}
+
+func bondsEqual(b1, b2 DelegatorBond) bool {
+	return bytes.Equal(b1.DelegatorAddr, b2.DelegatorAddr) &&
+		bytes.Equal(b1.CandidateAddr, b2.CandidateAddr) &&
+		b1.Height == b2.Height &&
+		b1.Shares.Equal(b2.Shares)
+}
+
+// default params for testing
+func defaultParams() Params {
+	return Params{
+		InflationRateChange: sdk.NewRat(13, 100),
+		InflationMax:        sdk.NewRat(20, 100),
+		InflationMin:        sdk.NewRat(7, 100),
+		GoalBonded:          sdk.NewRat(67, 100),
+		MaxValidators:       100,
+		BondDenom:           "steak",
+	}
+}
+
+// initial pool for testing
+func initialPool() Pool {
+	return Pool{
+		TotalSupply:       0,
+		BondedShares:      sdk.ZeroRat(),
+		UnbondedShares:    sdk.ZeroRat(),
+		BondedPool:        0,
+		UnbondedPool:      0,
+		InflationLastTime: 0,
+		Inflation:         sdk.NewRat(7, 100),
+	}
+}
+
+// get raw genesis raw message for testing
+func GetDefaultGenesisState() GenesisState {
+	return GenesisState{
+		Pool:   initialPool(),
+		Params: defaultParams(),
+	}
+}
+
+// XXX reference the common declaration of this function
+func subspace(prefix []byte) (start, end []byte) {
+	end = make([]byte, len(prefix))
+	copy(end, prefix)
+	end[len(end)-1]++
+	return prefix, end
+}
 
 func makeTestCodec() *wire.Codec {
 	var cdc = wire.NewCodec()
@@ -72,8 +130,8 @@ func makeTestCodec() *wire.Codec {
 	cdc.RegisterConcrete(MsgUnbond{}, "test/stake/Unbond", nil)
 
 	// Register AppAccount
-	cdc.RegisterInterface((*sdk.Account)(nil), nil)
-	cdc.RegisterConcrete(&auth.BaseAccount{}, "test/stake/Account", nil)
+	cdc.RegisterInterface((*auth.Account)(nil), nil)
+	cdc.RegisterConcrete(&baseaccount.BaseAccount{}, "test/stake/Account", nil)
 	wire.RegisterCrypto(cdc)
 
 	return cdc
@@ -91,28 +149,27 @@ func paramsNoInflation() Params {
 }
 
 // hogpodge of all sorts of input required for testing
-func createTestInput(t *testing.T, isCheckTx bool, initCoins int64) (sdk.Context, sdk.AccountMapper, Keeper) {
-	keyStake := sdk.NewKVStoreKey("stake")
-	keyAcc := sdk.NewKVStoreKey("acc")
-
+func createTestInput(t *testing.T, isCheckTx bool, initCoins int64) (sdk.Context, auth.AccountMapper, Keeper) {
 	db := dbm.NewMemDB()
+	keyStake := sdk.NewKVStoreKey("stake")
+	keyMain := keyStake //sdk.NewKVStoreKey("main") //TODO fix multistore
+
 	ms := store.NewCommitMultiStore(db)
 	ms.MountStoreWithDB(keyStake, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keyAcc, sdk.StoreTypeIAVL, db)
 	err := ms.LoadLatestVersion()
 	require.Nil(t, err)
 
 	ctx := sdk.NewContext(ms, wrsp.Header{ChainID: "foochainid"}, isCheckTx, nil, log.NewNopLogger())
 	cdc := makeTestCodec()
 	accountMapper := auth.NewAccountMapper(
-		cdc,                 // amino codec
-		keyAcc,              // target store
-		&auth.BaseAccount{}, // prototype
+		cdc,                        // amino codec
+		keyMain,                    // target store
+		&baseaccount.BaseAccount{}, // prototype
 	)
 	ck := bank.NewKeeper(accountMapper)
 	keeper := NewKeeper(cdc, keyStake, ck, DefaultCodespace)
 	keeper.setPool(ctx, initialPool())
-	keeper.setNewParams(ctx, defaultParams())
+	keeper.setParams(ctx, defaultParams())
 
 	// fill all the addresses with some coins
 	for _, addr := range addrs {
