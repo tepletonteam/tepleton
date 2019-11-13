@@ -14,7 +14,6 @@ import (
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/bank"
-	feed "github.com/tepleton/tepleton-sdk/x/fee_distribution"
 	"github.com/tepleton/tepleton-sdk/x/ibc"
 	"github.com/tepleton/tepleton-sdk/x/stake"
 )
@@ -82,7 +81,7 @@ func NewGaiaApp(logger log.Logger, db dbm.DB) *GaiaApp {
 	app.SetInitChainer(app.initChainer)
 	app.SetEndBlocker(stake.NewEndBlocker(app.stakeKeeper))
 	app.MountStoresIAVL(app.keyMain, app.keyAccount, app.keyIBC, app.keyStake)
-	app.SetAnteHandler(auth.NewAnteHandler(app.accountMapper, feed.BurnFeeHandler))
+	app.SetAnteHandler(auth.NewAnteHandler(app.accountMapper, stake.FeeHandler))
 	err := app.LoadLatestVersion(app.keyMain)
 	if err != nil {
 		cmn.Exit(err.Error())

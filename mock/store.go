@@ -50,10 +50,6 @@ func (ms multiStore) GetKVStore(key sdk.StoreKey) sdk.KVStore {
 	return ms.kv[key]
 }
 
-func (ms multiStore) GetKVStoreWithGas(meter sdk.GasMeter, key sdk.StoreKey) sdk.KVStore {
-	panic("not implemented")
-}
-
 func (ms multiStore) GetStore(key sdk.StoreKey) sdk.Store {
 	panic("not implemented")
 }
