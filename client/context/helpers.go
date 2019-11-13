@@ -58,7 +58,8 @@ func (ctx CoreContext) QuerySubspace(cdc *wire.Codec, subspace []byte, storeName
 
 // Query from Tendermint with the provided storename and path
 func (ctx CoreContext) query(key cmn.HexBytes, storeName, endPath string) (res []byte, err error) {
-	path := fmt.Sprintf("/store/%s/key", storeName)
+
+	path := fmt.Sprintf("/%s/%s", storeName, endPath)
 	node, err := ctx.GetNode()
 	if err != nil {
 		return res, err
@@ -113,7 +114,6 @@ func (ctx CoreContext) SignAndBuild(name, passphrase string, msg sdk.Msg, cdc *w
 		ChainID:   chainID,
 		Sequences: []int64{sequence},
 		Msg:       msg,
-		Fee:       sdk.NewStdFee(10000, sdk.Coin{}), // TODO run simulate to estimate gas?
 	}
 
 	keybase, err := keys.GetKeyBase()

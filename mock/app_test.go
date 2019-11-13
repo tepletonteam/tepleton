@@ -31,9 +31,10 @@ func TestInitApp(t *testing.T) {
 	app.InitChain(req)
 	app.Commit()
 
+	// XXX test failing
 	// make sure we can query these values
 	query := wrsp.RequestQuery{
-		Path: "/store/main/key",
+		Path: "/main/key",
 		Data: []byte("foo"),
 	}
 	qres := app.Query(query)
@@ -69,7 +70,7 @@ func TestDeliverTx(t *testing.T) {
 
 	// make sure we can query these values
 	query := wrsp.RequestQuery{
-		Path: "/store/main/key",
+		Path: "/main/key",
 		Data: []byte(key),
 	}
 	qres := app.Query(query)
