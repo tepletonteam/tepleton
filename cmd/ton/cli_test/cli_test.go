@@ -101,7 +101,7 @@ func TestGaiaCLIDeclareCandidacy(t *testing.T) {
 	assert.Equal(t, int64(7), barAcc.GetCoins().AmountOf("steak"))
 	candidate := executeGetCandidate(t, fmt.Sprintf("toncli candidate %v --address-candidate=%v", flags, barAddr))
 	assert.Equal(t, candidate.Address.String(), barAddr)
-	assert.Equal(t, int64(3), candidate.BondedShares.Evaluate())
+	assert.Equal(t, int64(3), candidate.Assets.Evaluate())
 
 	// TODO timeout issues if not connected to the internet
 	// unbond a single share
@@ -117,7 +117,7 @@ func TestGaiaCLIDeclareCandidacy(t *testing.T) {
 	//barAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barAddr, flags))
 	//assert.Equal(t, int64(99998), barAcc.GetCoins().AmountOf("steak"))
 	//candidate = executeGetCandidate(t, fmt.Sprintf("toncli candidate %v --address-candidate=%v", flags, barAddr))
-	//assert.Equal(t, int64(2), candidate.BondedShares.Evaluate())
+	//assert.Equal(t, int64(2), candidate.Assets.Evaluate())
 }
 
 func executeWrite(t *testing.T, cmdStr string, writes ...string) {

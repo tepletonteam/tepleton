@@ -11,5 +11,3 @@ func RegisterWire(cdc *wire.Codec) {
 	cdc.RegisterConcrete(MsgDelegate{}, "tepleton-sdk/MsgDelegate", nil)
 	cdc.RegisterConcrete(MsgUnbond{}, "tepleton-sdk/MsgUnbond", nil)
 }
-
-var cdcEmpty = wire.NewCodec()

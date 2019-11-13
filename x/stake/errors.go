@@ -14,8 +14,9 @@ const (
 
 	// Gaia errors reserve 200 ~ 299.
 	CodeInvalidValidator CodeType = 201
-	CodeInvalidBond      CodeType = 202
-	CodeInvalidInput     CodeType = 203
+	CodeInvalidCandidate CodeType = 202
+	CodeInvalidBond      CodeType = 203
+	CodeInvalidInput     CodeType = 204
 	CodeUnauthorized     CodeType = sdk.CodeUnauthorized
 	CodeInternal         CodeType = sdk.CodeInternal
 	CodeUnknownRequest   CodeType = sdk.CodeUnknownRequest
@@ -26,6 +27,8 @@ func codeToDefaultMsg(code CodeType) string {
 	switch code {
 	case CodeInvalidValidator:
 		return "Invalid Validator"
+	case CodeInvalidCandidate:
+		return "Invalid Candidate"
 	case CodeInvalidBond:
 		return "Invalid Bond"
 	case CodeInvalidInput:
@@ -47,8 +50,8 @@ func codeToDefaultMsg(code CodeType) string {
 func ErrNotEnoughBondShares(codespace sdk.CodespaceType, shares string) sdk.Error {
 	return newError(codespace, CodeInvalidBond, fmt.Sprintf("not enough shares only have %v", shares))
 }
-func ErrValidatorEmpty(codespace sdk.CodespaceType) sdk.Error {
-	return newError(codespace, CodeInvalidValidator, "Cannot bond to an empty validator")
+func ErrCandidateEmpty(codespace sdk.CodespaceType) sdk.Error {
+	return newError(codespace, CodeInvalidValidator, "Cannot bond to an empty candidate")
 }
 func ErrBadBondingDenom(codespace sdk.CodespaceType) sdk.Error {
 	return newError(codespace, CodeInvalidBond, "Invalid coin denomination")
@@ -68,13 +71,16 @@ func ErrCommissionHuge(codespace sdk.CodespaceType) sdk.Error {
 func ErrBadValidatorAddr(codespace sdk.CodespaceType) sdk.Error {
 	return newError(codespace, CodeInvalidValidator, "Validator does not exist for that address")
 }
+func ErrBadCandidateAddr(codespace sdk.CodespaceType) sdk.Error {
+	return newError(codespace, CodeInvalidValidator, "Candidate does not exist for that address")
+}
 func ErrBadDelegatorAddr(codespace sdk.CodespaceType) sdk.Error {
 	return newError(codespace, CodeInvalidValidator, "Delegator does not exist for that address")
 }
-func ErrValidatorExistsAddr(codespace sdk.CodespaceType) sdk.Error {
-	return newError(codespace, CodeInvalidValidator, "Validator already exist, cannot re-declare candidacy")
+func ErrCandidateExistsAddr(codespace sdk.CodespaceType) sdk.Error {
+	return newError(codespace, CodeInvalidValidator, "Candidate already exist, cannot re-declare candidacy")
 }
-func ErrValidatorRevoked(codespace sdk.CodespaceType) sdk.Error {
+func ErrCandidateRevoked(codespace sdk.CodespaceType) sdk.Error {
 	return newError(codespace, CodeInvalidValidator, "Candidacy for this address is currently revoked")
 }
 func ErrMissingSignature(codespace sdk.CodespaceType) sdk.Error {
@@ -83,7 +89,7 @@ func ErrMissingSignature(codespace sdk.CodespaceType) sdk.Error {
 func ErrBondNotNominated(codespace sdk.CodespaceType) sdk.Error {
 	return newError(codespace, CodeInvalidValidator, "Cannot bond to non-nominated account")
 }
-func ErrNoValidatorForAddress(codespace sdk.CodespaceType) sdk.Error {
+func ErrNoCandidateForAddress(codespace sdk.CodespaceType) sdk.Error {
 	return newError(codespace, CodeInvalidValidator, "Validator does not exist for that address")
 }
 func ErrNoDelegatorForAddress(codespace sdk.CodespaceType) sdk.Error {
