@@ -65,7 +65,7 @@ func GaiaAppInit() server.AppInit {
 	fsAppGenState := pflag.NewFlagSet("", pflag.ContinueOnError)
 
 	fsAppGenTx := pflag.NewFlagSet("", pflag.ContinueOnError)
-	fsAppGenTx.String(flagName, "", "validator moniker, required")
+	fsAppGenTx.String(flagName, "", "validator moniker, if left blank, do not add validator")
 	fsAppGenTx.String(flagClientHome, DefaultCLIHome,
 		"home directory for the client, used for key generation")
 	fsAppGenTx.Bool(flagOWK, false, "overwrite the accounts created")
@@ -94,9 +94,6 @@ func GaiaAppGenTx(cdc *wire.Codec, pk crypto.PubKey) (
 	clientRoot := viper.GetString(flagClientHome)
 	overwrite := viper.GetBool(flagOWK)
 	name := viper.GetString(flagName)
-	if name == "" {
-		return nil, nil, tmtypes.GenesisValidator{}, errors.New("Must specify --name (validator moniker)")
-	}
 	addr, secret, err = server.GenerateSaveCoinKey(clientRoot, name, "1234567890", overwrite)
 	if err != nil {
 		return
@@ -138,7 +135,7 @@ func GaiaAppGenState(cdc *wire.Codec, appGenTxs []json.RawMessage) (appState jso
 	}
 
 	// start with the default staking genesis state
-	stakeData := stake.GetDefaultGenesisState()
+	stakeData := stake.DefaultGenesisState()
 
 	// get genesis flag account information
 	genaccs := make([]GenesisAccount, len(appGenTxs))
@@ -158,19 +155,18 @@ func GaiaAppGenState(cdc *wire.Codec, appGenTxs []json.RawMessage) (appState jso
 		}
 		acc := NewGenesisAccount(&accAuth)
 		genaccs[i] = acc
-		stakeData.Pool.TotalSupply += freeFermionsAcc // increase the supply
+		stakeData.Pool.LooseUnbondedTokens += freeFermionsAcc // increase the supply
 
 		// add the validator
 		if len(genTx.Name) > 0 {
 			desc := stake.NewDescription(genTx.Name, "", "", "")
-			candidate := stake.NewCandidate(genTx.Address, genTx.PubKey, desc)
-			candidate.Assets = sdk.NewRat(freeFermionVal)
-			stakeData.Candidates = append(stakeData.Candidates, candidate)
+			validator := stake.NewValidator(genTx.Address, genTx.PubKey, desc)
+			validator.PoolShares = stake.NewBondedShares(sdk.NewRat(freeFermionVal))
+			stakeData.Validators = append(stakeData.Validators, validator)
 
 			// pool logic
-			stakeData.Pool.TotalSupply += freeFermionVal
-			stakeData.Pool.BondedPool += freeFermionVal
-			stakeData.Pool.BondedShares = sdk.NewRat(stakeData.Pool.BondedPool)
+			stakeData.Pool.BondedTokens += freeFermionVal
+			stakeData.Pool.BondedShares = sdk.NewRat(stakeData.Pool.BondedTokens)
 		}
 	}
 
