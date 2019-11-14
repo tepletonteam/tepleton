@@ -2,7 +2,6 @@ package lcd
 
 import (
 	"bytes"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -17,7 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	wrsp "github.com/tepleton/wrsp/types"
-	crypto "github.com/tepleton/go-crypto"
 	cryptoKeys "github.com/tepleton/go-crypto/keys"
 	tmcfg "github.com/tepleton/tepleton/config"
 	nm "github.com/tepleton/tepleton/node"
@@ -33,19 +31,15 @@ import (
 
 	client "github.com/tepleton/tepleton-sdk/client"
 	keys "github.com/tepleton/tepleton-sdk/client/keys"
-	gapp "github.com/tepleton/tepleton-sdk/cmd/ton/app"
+	bapp "github.com/tepleton/tepleton-sdk/examples/basecoin/app"
+	btypes "github.com/tepleton/tepleton-sdk/examples/basecoin/types"
 	tests "github.com/tepleton/tepleton-sdk/tests"
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/x/stake"
 )
 
 var (
 	coinDenom  = "mycoin"
 	coinAmount = int64(10000000)
-
-	stakeDenom     = "steak"
-	candidateAddr1 = ""
-	candidateAddr2 = ""
 
 	// XXX bad globals
 	name     = "test"
@@ -311,46 +305,6 @@ func TestTxs(t *testing.T) {
 	// assert.NotEqual(t, "[]", body)
 }
 
-func TestBond(t *testing.T) {
-
-	// create bond TX
-	resultTx := doBond(t, port, seed)
-	tests.WaitForHeight(resultTx.Height+1, port)
-
-	// check if tx was commited
-	assert.Equal(t, uint32(0), resultTx.CheckTx.Code)
-	assert.Equal(t, uint32(0), resultTx.DeliverTx.Code)
-
-	// query sender
-	acc := getAccount(t, sendAddr)
-	coins := acc.GetCoins()
-	assert.Equal(t, int64(9999900), coins.AmountOf(stakeDenom))
-
-	// query candidate
-	bond := getDelegation(t, sendAddr, candidateAddr1)
-	assert.Equal(t, "100/1", bond.Shares.String())
-}
-
-func TestUnbond(t *testing.T) {
-
-	// create unbond TX
-	resultTx := doUnbond(t, port, seed)
-	tests.WaitForHeight(resultTx.Height+1, port)
-
-	// check if tx was commited
-	assert.Equal(t, uint32(0), resultTx.CheckTx.Code)
-	assert.Equal(t, uint32(0), resultTx.DeliverTx.Code)
-
-	// query sender
-	acc := getAccount(t, sendAddr)
-	coins := acc.GetCoins()
-	assert.Equal(t, int64(9999911), coins.AmountOf(stakeDenom))
-
-	// query candidate
-	bond := getDelegation(t, sendAddr, candidateAddr1)
-	assert.Equal(t, "99/1", bond.Shares.String())
-}
-
 //__________________________________________________________
 // helpers
 
@@ -380,12 +334,12 @@ func startTMAndLCD() (*nm.Node, net.Listener, error) {
 	config.Consensus.SkipTimeoutCommit = false
 
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
-	logger = log.NewFilter(logger, log.AllowError())
+	// logger = log.NewFilter(logger, log.AllowError())
 	privValidatorFile := config.PrivValidatorFile()
 	privVal := pvm.LoadOrGenFilePV(privValidatorFile)
 	db := dbm.NewMemDB()
-	app := gapp.NewGaiaApp(logger, db)
-	cdc = gapp.MakeCodec() // XXX
+	app := bapp.NewBasecoinApp(logger, db)
+	cdc = bapp.MakeCodec() // XXX
 
 	genesisFile := config.GenesisFile()
 	genDoc, err := tmtypes.GenesisDocFromFile(genesisFile)
@@ -393,62 +347,17 @@ func startTMAndLCD() (*nm.Node, net.Listener, error) {
 		return nil, nil, err
 	}
 
-	genDoc.Validators = append(genDoc.Validators,
-		tmtypes.GenesisValidator{
-			PubKey: crypto.GenPrivKeyEd25519().PubKey(),
-			Power:  1,
-			Name:   "val",
-		},
-	)
-	candidateAddr1 = hex.EncodeToString(genDoc.Validators[0].PubKey.Address())
-	candidateAddr2 = hex.EncodeToString(genDoc.Validators[1].PubKey.Address())
-
-	coins := sdk.Coins{
-		{coinDenom, coinAmount},
-		{stakeDenom, coinAmount},
-	}
-	appState := gapp.GenesisState{
-		Accounts: []gapp.GenesisAccount{
+	coins := sdk.Coins{{coinDenom, coinAmount}}
+	appState := map[string]interface{}{
+		"accounts": []*btypes.GenesisAccount{
 			{
+				Name:    "tester",
 				Address: pubKey.Address(),
 				Coins:   coins,
 			},
 		},
-		StakeData: stake.GenesisState{
-			Pool: stake.Pool{
-				BondedShares:     sdk.NewRat(200, 1),
-				UnbondedShares:   sdk.ZeroRat(),
-				Inflation:        sdk.NewRat(7, 100),
-				PrevBondedShares: sdk.ZeroRat(),
-			},
-			Params: stake.Params{
-				InflationRateChange: sdk.NewRat(13, 100),
-				InflationMax:        sdk.NewRat(1, 5),
-				InflationMin:        sdk.NewRat(7, 100),
-				GoalBonded:          sdk.NewRat(67, 100),
-				MaxValidators:       100,
-				BondDenom:           stakeDenom,
-			},
-			Validators: []stake.Validator{
-				{
-					Owner:  genDoc.Validators[0].PubKey.Address(),
-					PubKey: genDoc.Validators[0].PubKey,
-					Description: stake.Description{
-						Moniker: "validator1",
-					},
-				},
-				{
-					Owner:  genDoc.Validators[1].PubKey.Address(),
-					PubKey: genDoc.Validators[1].PubKey,
-					Description: stake.Description{
-						Moniker: "validator2",
-					},
-				},
-			},
-		},
 	}
-
-	stateBytes, err := cdc.MarshalJSONIndent(appState, "", "  ")
+	stateBytes, err := json.Marshal(appState)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -580,107 +489,4 @@ func doIBCTransfer(t *testing.T, port, seed string) (resultTx ctypes.ResultBroad
 	require.Nil(t, err)
 
 	return resultTx
-}
-
-func getDelegation(t *testing.T, delegatorAddr, candidateAddr string) stake.Delegation {
-	// get the account to get the sequence
-	res, body := request(t, port, "GET", "/stake/"+delegatorAddr+"/bonding_status/"+candidateAddr, nil)
-	require.Equal(t, http.StatusOK, res.StatusCode, body)
-	var bond stake.Delegation
-	err := cdc.UnmarshalJSON([]byte(body), &bond)
-	require.Nil(t, err)
-	return bond
-}
-
-func doBond(t *testing.T, port, seed string) (resultTx ctypes.ResultBroadcastTxCommit) {
-	// get the account to get the sequence
-	acc := getAccount(t, sendAddr)
-	sequence := acc.GetSequence()
-
-	// send
-	jsonStr := []byte(fmt.Sprintf(`{
-		"name": "%s",
-		"password": "%s",
-		"sequence": %d,
-		"bond": [
-			{
-				"candidate": "%s",
-				"amount": { "denom": "%s", "amount": 100 }
-			}
-		],
-		"unbond": []
-	}`, name, password, sequence, candidateAddr1, stakeDenom))
-	res, body := request(t, port, "POST", "/stake/bondunbond", jsonStr)
-	require.Equal(t, http.StatusOK, res.StatusCode, body)
-
-	var results []ctypes.ResultBroadcastTxCommit
-	err := cdc.UnmarshalJSON([]byte(body), &results)
-	require.Nil(t, err)
-
-	return results[0]
-}
-
-func doUnbond(t *testing.T, port, seed string) (resultTx ctypes.ResultBroadcastTxCommit) {
-	// get the account to get the sequence
-	acc := getAccount(t, sendAddr)
-	sequence := acc.GetSequence()
-
-	// send
-	jsonStr := []byte(fmt.Sprintf(`{
-		"name": "%s",
-		"password": "%s",
-		"sequence": %d,
-		"bond": [],
-		"unbond": [
-			{
-				"candidate": "%s",
-				"shares": "1"
-			}
-		]
-	}`, name, password, sequence, candidateAddr1))
-	res, body := request(t, port, "POST", "/stake/bondunbond", jsonStr)
-	require.Equal(t, http.StatusOK, res.StatusCode, body)
-
-	var results []ctypes.ResultBroadcastTxCommit
-	err := cdc.UnmarshalJSON([]byte(body), &results)
-	require.Nil(t, err)
-
-	return results[0]
-}
-
-func doMultiBond(t *testing.T, port, seed string) (resultTx ctypes.ResultBroadcastTxCommit) {
-	// get the account to get the sequence
-	acc := getAccount(t, sendAddr)
-	sequence := acc.GetSequence()
-
-	// send
-	jsonStr := []byte(fmt.Sprintf(`{
-		"name": "%s",
-		"password": "%s",
-		"sequence": %d,
-		"bond": [
-			{
-				"candidate": "%s",
-				"amount": { "denom": "%s", "amount": 1 }
-			},
-			{
-				"candidate": "%s",
-				"amount": { "denom": "%s", "amount": 1 }
-			},
-		],
-		"unbond": [
-			{
-				"candidate": "%s",
-				"shares": "1"
-			}
-		]
-	}`, name, password, sequence, candidateAddr1, stakeDenom, candidateAddr2, stakeDenom, candidateAddr1))
-	res, body := request(t, port, "POST", "/stake/bondunbond", jsonStr)
-	require.Equal(t, http.StatusOK, res.StatusCode, body)
-
-	var results []ctypes.ResultBroadcastTxCommit
-	err := cdc.UnmarshalJSON([]byte(body), &results)
-	require.Nil(t, err)
-
-	return results[0]
 }

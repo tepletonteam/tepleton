@@ -1,0 +1,17 @@
+[Unit]
+Description=tond
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+Restart=on-failure
+User=tond
+Group=tond
+PermissionsStartOnly=true
+ExecStart=/usr/bin/tond start
+ExecReload=/bin/kill -HUP $MAINPID
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target
+
