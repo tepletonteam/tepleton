@@ -38,7 +38,7 @@ var (
 	coins     = sdk.Coins{{"foocoin", 10}}
 	halfCoins = sdk.Coins{{"foocoin", 5}}
 	manyCoins = sdk.Coins{{"foocoin", 1}, {"barcoin", 1}}
-	fee       = auth.StdFee{
+	fee       = sdk.StdFee{
 		sdk.Coins{{"foocoin", 0}},
 		100000,
 	}
@@ -105,7 +105,7 @@ func setGenesis(gapp *GaiaApp, accs ...*auth.BaseAccount) error {
 
 	genesisState := GenesisState{
 		Accounts:  genaccs,
-		StakeData: stake.DefaultGenesisState(),
+		StakeData: stake.GetDefaultGenesisState(),
 	}
 
 	stateBytes, err := wire.MarshalJSONIndent(gapp.cdc, genesisState)
@@ -147,7 +147,7 @@ func setGenesisAccounts(gapp *GaiaApp, accs ...*auth.BaseAccount) error {
 
 	genesisState := GenesisState{
 		Accounts:  genaccs,
-		StakeData: stake.DefaultGenesisState(),
+		StakeData: stake.GetDefaultGenesisState(),
 	}
 
 	stateBytes, err := json.MarshalIndent(genesisState, "", "\t")
@@ -405,15 +405,9 @@ func TestStakeMsgs(t *testing.T) {
 	ctxDeliver := gapp.BaseApp.NewContext(false, wrsp.Header{})
 	res1 = gapp.accountMapper.GetAccount(ctxDeliver, addr1)
 	require.Equal(t, genCoins.Minus(sdk.Coins{bondCoin}), res1.GetCoins())
-	validator, found := gapp.stakeKeeper.GetValidator(ctxDeliver, addr1)
+	candidate, found := gapp.stakeKeeper.GetCandidate(ctxDeliver, addr1)
 	require.True(t, found)
-	require.Equal(t, addr1, validator.Owner)
-	require.Equal(t, sdk.Bonded, validator.Status())
-	require.True(sdk.RatEq(t, sdk.NewRat(10), validator.PoolShares.Bonded()))
-
-	// check the bond that should have been created as well
-	bond, found := gapp.stakeKeeper.GetDelegation(ctxDeliver, addr1, addr1)
-	require.True(sdk.RatEq(t, sdk.NewRat(10), bond.Shares))
+	require.Equal(t, candidate.Address, addr1)
 
 	// Edit Candidacy
 
@@ -423,9 +417,9 @@ func TestStakeMsgs(t *testing.T) {
 	)
 	SignDeliver(t, gapp, editCandidacyMsg, []int64{1}, true, priv1)
 
-	validator, found = gapp.stakeKeeper.GetValidator(ctxDeliver, addr1)
+	candidate, found = gapp.stakeKeeper.GetCandidate(ctxDeliver, addr1)
 	require.True(t, found)
-	require.Equal(t, description, validator.Description)
+	require.Equal(t, candidate.Description, description)
 
 	// Delegate
 
@@ -434,13 +428,12 @@ func TestStakeMsgs(t *testing.T) {
 	)
 	SignDeliver(t, gapp, delegateMsg, []int64{0}, true, priv2)
 
+	ctxDeliver = gapp.BaseApp.NewContext(false, wrsp.Header{})
 	res2 = gapp.accountMapper.GetAccount(ctxDeliver, addr2)
 	require.Equal(t, genCoins.Minus(sdk.Coins{bondCoin}), res2.GetCoins())
-	bond, found = gapp.stakeKeeper.GetDelegation(ctxDeliver, addr2, addr1)
+	bond, found := gapp.stakeKeeper.GetDelegatorBond(ctxDeliver, addr2, addr1)
 	require.True(t, found)
-	require.Equal(t, addr2, bond.DelegatorAddr)
-	require.Equal(t, addr1, bond.ValidatorAddr)
-	require.True(sdk.RatEq(t, sdk.NewRat(10), bond.Shares))
+	require.Equal(t, bond.DelegatorAddr, addr2)
 
 	// Unbond
 
@@ -449,9 +442,10 @@ func TestStakeMsgs(t *testing.T) {
 	)
 	SignDeliver(t, gapp, unbondMsg, []int64{1}, true, priv2)
 
+	ctxDeliver = gapp.BaseApp.NewContext(false, wrsp.Header{})
 	res2 = gapp.accountMapper.GetAccount(ctxDeliver, addr2)
 	require.Equal(t, genCoins, res2.GetCoins())
-	_, found = gapp.stakeKeeper.GetDelegation(ctxDeliver, addr2, addr1)
+	_, found = gapp.stakeKeeper.GetDelegatorBond(ctxDeliver, addr2, addr1)
 	require.False(t, found)
 }
 
@@ -463,17 +457,17 @@ func CheckBalance(t *testing.T, gapp *GaiaApp, addr sdk.Address, balExpected str
 	assert.Equal(t, balExpected, fmt.Sprintf("%v", res2.GetCoins()))
 }
 
-func genTx(msg sdk.Msg, seq []int64, priv ...crypto.PrivKeyEd25519) auth.StdTx {
-	sigs := make([]auth.StdSignature, len(priv))
+func genTx(msg sdk.Msg, seq []int64, priv ...crypto.PrivKeyEd25519) sdk.StdTx {
+	sigs := make([]sdk.StdSignature, len(priv))
 	for i, p := range priv {
-		sigs[i] = auth.StdSignature{
+		sigs[i] = sdk.StdSignature{
 			PubKey:    p.PubKey(),
-			Signature: p.Sign(auth.StdSignBytes(chainID, seq, fee, msg)),
+			Signature: p.Sign(sdk.StdSignBytes(chainID, seq, fee, msg)),
 			Sequence:  seq[i],
 		}
 	}
 
-	return auth.NewStdTx(msg, fee, sigs)
+	return sdk.NewStdTx(msg, fee, sigs)
 
 }
 

@@ -11,14 +11,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	wrsp "github.com/tepleton/wrsp/types"
-	crypto "github.com/tepleton/go-crypto"
+	"github.com/tepleton/go-crypto"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
-	"github.com/tepleton/tepleton-sdk/x/auth"
 )
 
 func defaultLogger() log.Logger {
@@ -447,12 +446,12 @@ type testUpdatePowerTx struct {
 
 const msgType = "testUpdatePowerTx"
 
-func (tx testUpdatePowerTx) Type() string                       { return msgType }
-func (tx testUpdatePowerTx) GetMsg() sdk.Msg                    { return tx }
-func (tx testUpdatePowerTx) GetSignBytes() []byte               { return nil }
-func (tx testUpdatePowerTx) ValidateBasic() sdk.Error           { return nil }
-func (tx testUpdatePowerTx) GetSigners() []sdk.Address          { return nil }
-func (tx testUpdatePowerTx) GetSignatures() []auth.StdSignature { return nil }
+func (tx testUpdatePowerTx) Type() string                      { return msgType }
+func (tx testUpdatePowerTx) GetMsg() sdk.Msg                   { return tx }
+func (tx testUpdatePowerTx) GetSignBytes() []byte              { return nil }
+func (tx testUpdatePowerTx) ValidateBasic() sdk.Error          { return nil }
+func (tx testUpdatePowerTx) GetSigners() []sdk.Address         { return nil }
+func (tx testUpdatePowerTx) GetSignatures() []sdk.StdSignature { return nil }
 
 func TestValidatorChange(t *testing.T) {
 

@@ -9,6 +9,9 @@ import (
 	crypto "github.com/tepleton/go-crypto"
 )
 
+var _ sdk.AccountMapper = (*AccountMapper)(nil)
+
+// Implements sdk.AccountMapper.
 // This AccountMapper encodes/decodes accounts using the
 // go-amino (binary) encoding/decoding library.
 type AccountMapper struct {
@@ -16,8 +19,8 @@ type AccountMapper struct {
 	// The (unexposed) key used to access the store from the Context.
 	key sdk.StoreKey
 
-	// The prototypical Account concrete type.
-	proto Account
+	// The prototypical sdk.Account concrete type.
+	proto sdk.Account
 
 	// The wire codec for binary encoding/decoding of accounts.
 	cdc *wire.Codec
@@ -26,7 +29,7 @@ type AccountMapper struct {
 // NewAccountMapper returns a new sdk.AccountMapper that
 // uses go-amino to (binary) encode and decode concrete sdk.Accounts.
 // nolint
-func NewAccountMapper(cdc *wire.Codec, key sdk.StoreKey, proto Account) AccountMapper {
+func NewAccountMapper(cdc *wire.Codec, key sdk.StoreKey, proto sdk.Account) AccountMapper {
 	return AccountMapper{
 		key:   key,
 		proto: proto,
@@ -35,14 +38,14 @@ func NewAccountMapper(cdc *wire.Codec, key sdk.StoreKey, proto Account) AccountM
 }
 
 // Implaements sdk.AccountMapper.
-func (am AccountMapper) NewAccountWithAddress(ctx sdk.Context, addr sdk.Address) Account {
+func (am AccountMapper) NewAccountWithAddress(ctx sdk.Context, addr sdk.Address) sdk.Account {
 	acc := am.clonePrototype()
 	acc.SetAddress(addr)
 	return acc
 }
 
 // Implements sdk.AccountMapper.
-func (am AccountMapper) GetAccount(ctx sdk.Context, addr sdk.Address) Account {
+func (am AccountMapper) GetAccount(ctx sdk.Context, addr sdk.Address) sdk.Account {
 	store := ctx.KVStore(am.key)
 	bz := store.Get(addr)
 	if bz == nil {
@@ -53,7 +56,7 @@ func (am AccountMapper) GetAccount(ctx sdk.Context, addr sdk.Address) Account {
 }
 
 // Implements sdk.AccountMapper.
-func (am AccountMapper) SetAccount(ctx sdk.Context, acc Account) {
+func (am AccountMapper) SetAccount(ctx sdk.Context, acc sdk.Account) {
 	addr := acc.GetAddress()
 	store := ctx.KVStore(am.key)
 	bz := am.encodeAccount(acc)
@@ -61,7 +64,7 @@ func (am AccountMapper) SetAccount(ctx sdk.Context, acc Account) {
 }
 
 // Implements sdk.AccountMapper.
-func (am AccountMapper) IterateAccounts(ctx sdk.Context, process func(Account) (stop bool)) {
+func (am AccountMapper) IterateAccounts(ctx sdk.Context, process func(sdk.Account) (stop bool)) {
 	store := ctx.KVStore(am.key)
 	iter := store.Iterator(nil, nil)
 	for {
@@ -86,8 +89,7 @@ func (am AccountMapper) GetPubKey(ctx sdk.Context, addr sdk.Address) (crypto.Pub
 	return acc.GetPubKey(), nil
 }
 
-// Sets the PubKey of the account at address
-func (am AccountMapper) SetPubKey(ctx sdk.Context, addr sdk.Address, newPubKey crypto.PubKey) sdk.Error {
+func (am AccountMapper) setPubKey(ctx sdk.Context, addr sdk.Address, newPubKey crypto.PubKey) sdk.Error {
 	acc := am.GetAccount(ctx, addr)
 	if acc == nil {
 		return sdk.ErrUnknownAddress(addr.String())
@@ -120,7 +122,7 @@ func (am AccountMapper) setSequence(ctx sdk.Context, addr sdk.Address, newSequen
 // misc.
 
 // Creates a new struct (or pointer to struct) from am.proto.
-func (am AccountMapper) clonePrototype() Account {
+func (am AccountMapper) clonePrototype() sdk.Account {
 	protoRt := reflect.TypeOf(am.proto)
 	if protoRt.Kind() == reflect.Ptr {
 		protoCrt := protoRt.Elem()
@@ -128,7 +130,7 @@ func (am AccountMapper) clonePrototype() Account {
 			panic("accountMapper requires a struct proto sdk.Account, or a pointer to one")
 		}
 		protoRv := reflect.New(protoCrt)
-		clone, ok := protoRv.Interface().(Account)
+		clone, ok := protoRv.Interface().(sdk.Account)
 		if !ok {
 			panic(fmt.Sprintf("accountMapper requires a proto sdk.Account, but %v doesn't implement sdk.Account", protoRt))
 		}
@@ -136,14 +138,14 @@ func (am AccountMapper) clonePrototype() Account {
 	}
 
 	protoRv := reflect.New(protoRt).Elem()
-	clone, ok := protoRv.Interface().(Account)
+	clone, ok := protoRv.Interface().(sdk.Account)
 	if !ok {
 		panic(fmt.Sprintf("accountMapper requires a proto sdk.Account, but %v doesn't implement sdk.Account", protoRt))
 	}
 	return clone
 }
 
-func (am AccountMapper) encodeAccount(acc Account) []byte {
+func (am AccountMapper) encodeAccount(acc sdk.Account) []byte {
 	bz, err := am.cdc.MarshalBinaryBare(acc)
 	if err != nil {
 		panic(err)
@@ -151,7 +153,7 @@ func (am AccountMapper) encodeAccount(acc Account) []byte {
 	return bz
 }
 
-func (am AccountMapper) decodeAccount(bz []byte) (acc Account) {
+func (am AccountMapper) decodeAccount(bz []byte) (acc sdk.Account) {
 	err := am.cdc.UnmarshalBinaryBare(bz, &acc)
 	if err != nil {
 		panic(err)

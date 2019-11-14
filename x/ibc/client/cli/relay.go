@@ -12,7 +12,6 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/context"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	wire "github.com/tepleton/tepleton-sdk/wire"
-	"github.com/tepleton/tepleton-sdk/x/auth"
 	authcmd "github.com/tepleton/tepleton-sdk/x/auth/client/cli"
 	"github.com/tepleton/tepleton-sdk/x/ibc"
 )
@@ -28,10 +27,9 @@ const (
 type relayCommander struct {
 	cdc       *wire.Codec
 	address   sdk.Address
-	decoder   auth.AccountDecoder
+	decoder   sdk.AccountDecoder
 	mainStore string
 	ibcStore  string
-	accStore  string
 
 	logger log.Logger
 }
@@ -43,7 +41,6 @@ func IBCRelayCmd(cdc *wire.Codec) *cobra.Command {
 		decoder:   authcmd.GetAccountDecoder(cdc),
 		ibcStore:  "ibc",
 		mainStore: "main",
-		accStore:  "acc",
 
 		logger: log.NewTMLogger(log.NewSyncWriter(os.Stdout)),
 	}
@@ -160,20 +157,17 @@ func (c relayCommander) broadcastTx(seq int64, node string, tx []byte) error {
 }
 
 func (c relayCommander) getSequence(node string) int64 {
-	res, err := query(node, c.address, c.accStore)
+	res, err := query(node, c.address, c.mainStore)
 	if err != nil {
 		panic(err)
 	}
-	if nil != res {
-		account, err := c.decoder(res)
-		if err != nil {
-			panic(err)
-		}
 
-		return account.GetSequence()
+	account, err := c.decoder(res)
+	if err != nil {
+		panic(err)
 	}
 
-	return 0
+	return account.GetSequence()
 }
 
 func (c relayCommander) refine(bz []byte, sequence int64, passphrase string) []byte {
@@ -188,7 +182,7 @@ func (c relayCommander) refine(bz []byte, sequence int64, passphrase string) []b
 		Sequence:  sequence,
 	}
 
-	ctx := context.NewCoreContextFromViper().WithSequence(sequence)
+	ctx := context.NewCoreContextFromViper()
 	res, err := ctx.SignAndBuild(ctx.FromAddressName, passphrase, msg, c.cdc)
 	if err != nil {
 		panic(err)

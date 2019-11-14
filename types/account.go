@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"errors"
 
+	crypto "github.com/tepleton/go-crypto"
 	cmn "github.com/tepleton/tmlibs/common"
 )
 
@@ -21,3 +22,31 @@ func GetAddress(address string) (addr Address, err error) {
 	}
 	return Address(bz), nil
 }
+
+// Account is a standard account using a sequence number for replay protection
+// and a pubkey for authentication.
+type Account interface {
+	GetAddress() Address
+	SetAddress(Address) error // errors if already set.
+
+	GetPubKey() crypto.PubKey // can return nil.
+	SetPubKey(crypto.PubKey) error
+
+	GetSequence() int64
+	SetSequence(int64) error
+
+	GetCoins() Coins
+	SetCoins(Coins) error
+}
+
+// AccountMapper stores and retrieves accounts from stores
+// retrieved from the context.
+type AccountMapper interface {
+	NewAccountWithAddress(ctx Context, addr Address) Account
+	GetAccount(ctx Context, addr Address) Account
+	SetAccount(ctx Context, acc Account)
+	IterateAccounts(ctx Context, process func(Account) (stop bool))
+}
+
+// AccountDecoder unmarshals account bytes
+type AccountDecoder func(accountBytes []byte) (Account, error)
