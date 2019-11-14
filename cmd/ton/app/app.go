@@ -14,7 +14,6 @@ import (
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/bank"
-	"github.com/tepleton/tepleton-sdk/x/baseaccount"
 	"github.com/tepleton/tepleton-sdk/x/ibc"
 	"github.com/tepleton/tepleton-sdk/x/stake"
 )
@@ -63,8 +62,8 @@ func NewGaiaApp(logger log.Logger, db dbm.DB) *GaiaApp {
 	// define the accountMapper
 	app.accountMapper = auth.NewAccountMapper(
 		app.cdc,
-		app.keyAccount,             // target store
-		&baseaccount.BaseAccount{}, // prototype
+		app.keyAccount,      // target store
+		&auth.BaseAccount{}, // prototype
 	)
 
 	// add handlers
@@ -97,7 +96,7 @@ func MakeCodec() *wire.Codec {
 	ibc.RegisterWire(cdc)
 	bank.RegisterWire(cdc)
 	stake.RegisterWire(cdc)
-	baseaccount.RegisterWire(cdc)
+	auth.RegisterWire(cdc)
 	sdk.RegisterWire(cdc)
 	wire.RegisterCrypto(cdc)
 	return cdc

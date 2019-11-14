@@ -1,4 +1,4 @@
-package auth
+package baseaccount
 
 import (
 	"encoding/json"
@@ -21,7 +21,7 @@ func NewMsgChangeKey(addr sdk.Address, pubkey crypto.PubKey) MsgChangeKey {
 }
 
 // Implements Msg.
-func (msg MsgChangeKey) Type() string { return "auth" }
+func (msg MsgChangeKey) Type() string { return "baseaccount" }
 
 // Implements Msg.
 func (msg MsgChangeKey) ValidateBasic() sdk.Error {

@@ -13,7 +13,6 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
-	"github.com/tepleton/tepleton-sdk/x/baseaccount"
 	"github.com/tepleton/tepleton-sdk/x/stake"
 )
 
@@ -29,7 +28,7 @@ type GenesisAccount struct {
 	Coins   sdk.Coins   `json:"coins"`
 }
 
-func NewGenesisAccount(acc *baseaccount.BaseAccount) GenesisAccount {
+func NewGenesisAccount(acc *auth.BaseAccount) GenesisAccount {
 	return GenesisAccount{
 		Address: acc.Address,
 		Coins:   acc.Coins,
@@ -44,8 +43,8 @@ func NewGenesisAccountI(acc auth.Account) GenesisAccount {
 }
 
 // convert GenesisAccount to auth.BaseAccount
-func (ga *GenesisAccount) ToAccount() (acc *baseaccount.BaseAccount) {
-	return &baseaccount.BaseAccount{
+func (ga *GenesisAccount) ToAccount() (acc *auth.BaseAccount) {
+	return &auth.BaseAccount{
 		Address: ga.Address,
 		Coins:   ga.Coins.Sort(),
 	}
@@ -136,7 +135,7 @@ func GaiaAppGenState(cdc *wire.Codec, appGenTxs []json.RawMessage) (appState jso
 	}
 
 	// start with the default staking genesis state
-	stakeData := stake.GetDefaultGenesisState()
+	stakeData := stake.DefaultGenesisState()
 
 	// get genesis flag account information
 	genaccs := make([]GenesisAccount, len(appGenTxs))
@@ -149,26 +148,25 @@ func GaiaAppGenState(cdc *wire.Codec, appGenTxs []json.RawMessage) (appState jso
 		}
 
 		// create the genesis account, give'm few steaks and a buncha token with there name
-		accAuth := baseaccount.NewBaseAccountWithAddress(genTx.Address)
+		accAuth := auth.NewBaseAccountWithAddress(genTx.Address)
 		accAuth.Coins = sdk.Coins{
 			{genTx.Name + "Token", 1000},
 			{"steak", freeFermionsAcc},
 		}
 		acc := NewGenesisAccount(&accAuth)
 		genaccs[i] = acc
-		stakeData.Pool.TotalSupply += freeFermionsAcc // increase the supply
+		stakeData.Pool.LooseUnbondedTokens += freeFermionsAcc // increase the supply
 
 		// add the validator
 		if len(genTx.Name) > 0 {
 			desc := stake.NewDescription(genTx.Name, "", "", "")
-			candidate := stake.NewCandidate(genTx.Address, genTx.PubKey, desc)
-			candidate.Assets = sdk.NewRat(freeFermionVal)
-			stakeData.Candidates = append(stakeData.Candidates, candidate)
+			validator := stake.NewValidator(genTx.Address, genTx.PubKey, desc)
+			validator.PoolShares = stake.NewBondedShares(sdk.NewRat(freeFermionVal))
+			stakeData.Validators = append(stakeData.Validators, validator)
 
 			// pool logic
-			stakeData.Pool.TotalSupply += freeFermionVal
-			stakeData.Pool.BondedPool += freeFermionVal
-			stakeData.Pool.BondedShares = sdk.NewRat(stakeData.Pool.BondedPool)
+			stakeData.Pool.BondedTokens += freeFermionVal
+			stakeData.Pool.BondedShares = sdk.NewRat(stakeData.Pool.BondedTokens)
 		}
 	}
 

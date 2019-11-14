@@ -10,19 +10,20 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/context"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
-	auth "github.com/tepleton/tepleton-sdk/x/auth/client/cli"
+	"github.com/tepleton/tepleton-sdk/x/auth"
+	authcmd "github.com/tepleton/tepleton-sdk/x/auth/client/cli"
 )
 
 // register REST routes
 func RegisterRoutes(ctx context.CoreContext, r *mux.Router, cdc *wire.Codec, storeName string) {
 	r.HandleFunc(
 		"/accounts/{address}",
-		QueryAccountRequestHandlerFn(storeName, cdc, auth.GetAccountDecoder(cdc), ctx),
+		QueryAccountRequestHandlerFn(storeName, cdc, authcmd.GetAccountDecoder(cdc), ctx),
 	).Methods("GET")
 }
 
 // query accountREST Handler
-func QueryAccountRequestHandlerFn(storeName string, cdc *wire.Codec, decoder sdk.AccountDecoder, ctx context.CoreContext) http.HandlerFunc {
+func QueryAccountRequestHandlerFn(storeName string, cdc *wire.Codec, decoder auth.AccountDecoder, ctx context.CoreContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		addr := vars["address"]

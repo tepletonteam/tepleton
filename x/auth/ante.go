@@ -24,7 +24,7 @@ func NewAnteHandler(am AccountMapper) sdk.AnteHandler {
 		// This AnteHandler requires Txs to be StdTxs
 		stdTx, ok := tx.(StdTx)
 		if !ok {
-			return ctx, sdk.ErrInternal("tx must be sdk.StdTx").Result(), true
+			return ctx, sdk.ErrInternal("tx must be StdTx").Result(), true
 		}
 
 		// Assert that there are signatures.
@@ -166,5 +166,4 @@ func deductFees(acc Account, fee StdFee) (Account, sdk.Result) {
 }
 
 // BurnFeeHandler burns all fees (decreasing total supply)
-func BurnFeeHandler(ctx sdk.Context, tx sdk.Tx, fee sdk.Coins) {
-}
+func BurnFeeHandler(_ sdk.Context, _ sdk.Tx, _ sdk.Coins) {}

@@ -1,36 +1,19 @@
-package auth
+package baseaccount
 
 import (
 	"errors"
 
+	crypto "github.com/tepleton/go-crypto"
+
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
-	crypto "github.com/tepleton/go-crypto"
+	"github.com/tepleton/tepleton-sdk/x/auth"
 )
-
-// Account is a standard account using a sequence number for replay protection
-// and a pubkey for authentication.
-type Account interface {
-	GetAddress() sdk.Address
-	SetAddress(sdk.Address) error // errors if already set.
-
-	GetPubKey() crypto.PubKey // can return nil.
-	SetPubKey(crypto.PubKey) error
-
-	GetSequence() int64
-	SetSequence(int64) error
-
-	GetCoins() sdk.Coins
-	SetCoins(sdk.Coins) error
-}
-
-// AccountDecoder unmarshals account bytes
-type AccountDecoder func(accountBytes []byte) (Account, error)
 
 //-----------------------------------------------------------
 // BaseAccount
 
-var _ Account = (*BaseAccount)(nil)
+var _ auth.Account = (*BaseAccount)(nil)
 
 // BaseAccount - base account structure.
 // Extend this by embedding this in your AppAccount.
@@ -100,7 +83,7 @@ func (acc *BaseAccount) SetSequence(seq int64) error {
 
 // Most users shouldn't use this, but this comes handy for tests.
 func RegisterBaseAccount(cdc *wire.Codec) {
-	cdc.RegisterInterface((*Account)(nil), nil)
+	cdc.RegisterInterface((*auth.Account)(nil), nil)
 	cdc.RegisterConcrete(&BaseAccount{}, "tepleton-sdk/BaseAccount", nil)
 	wire.RegisterCrypto(cdc)
 }
