@@ -54,29 +54,25 @@
 
 [[override]]
   name = "github.com/tepleton/wrsp"
-  branch = "cwgoes/timestamp-in-evidence"
+  branch = "develop"
 
 [[constraint]]
   name = "github.com/tepleton/go-crypto"
   version = "~0.6.2"
 
-[[override]]
-  name = "github.com/tepleton/go-wire"
-  version = "0.7.3"
-
 [[constraint]]
   name = "github.com/tepleton/go-amino"
   version = "~0.9.9"
 
-[[constraint]]
+[[override]]
   name = "github.com/tepleton/iavl"
   branch = "develop"
 
-[[constraint]]
+[[override]]
   name = "github.com/tepleton/tepleton"
   branch = "cwgoes/update-wrsp"
 
-[[override]]
+[[constraint]]
   name = "github.com/tepleton/tmlibs"
   version = "~0.8.3-rc0"
   
@@ -88,3 +84,4 @@
 [prune]
   go-tests = true
   unused-packages = true
+
