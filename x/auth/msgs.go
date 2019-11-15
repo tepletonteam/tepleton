@@ -3,9 +3,8 @@ package auth
 import (
 	"encoding/json"
 
-	"github.com/tepleton/go-crypto"
-
 	sdk "github.com/tepleton/tepleton-sdk/types"
+	crypto "github.com/tepleton/go-crypto"
 )
 
 // MsgChangeKey - high level transaction of the auth module
