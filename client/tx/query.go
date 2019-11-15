@@ -17,6 +17,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/context"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
+	"github.com/tepleton/tepleton-sdk/x/auth"
 )
 
 // Get the default command for a tx query
@@ -95,7 +96,7 @@ type txInfo struct {
 }
 
 func parseTx(cdc *wire.Codec, txBytes []byte) (sdk.Tx, error) {
-	var tx sdk.StdTx
+	var tx auth.StdTx
 	err := cdc.UnmarshalBinary(txBytes, &tx)
 	if err != nil {
 		return nil, err

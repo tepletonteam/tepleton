@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/tepleton/go-crypto/keys"
 
 	"github.com/tepleton/tepleton-sdk/client/context"
 	sdk "github.com/tepleton/tepleton-sdk/types"
@@ -13,15 +14,13 @@ import (
 	"github.com/tepleton/tepleton-sdk/x/stake"
 )
 
-func registerQueryRoutes(ctx context.CoreContext, r *mux.Router, cdc *wire.Codec) {
-	r.HandleFunc(
-		"/stake/{delegator}/bonding_status/{validator}",
-		bondingStatusHandlerFn("stake", cdc, ctx),
-	).Methods("GET")
+// RegisterRoutes - Central function to define routes that get registered by the main application
+func RegisterRoutes(ctx context.CoreContext, r *mux.Router, cdc *wire.Codec, kb keys.Keybase) {
+	r.HandleFunc("/stake/{delegator}/bonding_status/{validator}", BondingStatusHandlerFn("stake", cdc, kb, ctx)).Methods("GET")
 }
 
-// http request handler to query delegator bonding status
-func bondingStatusHandlerFn(storeName string, cdc *wire.Codec, ctx context.CoreContext) http.HandlerFunc {
+// BondingStatusHandlerFn - http request handler to query delegator bonding status
+func BondingStatusHandlerFn(storeName string, cdc *wire.Codec, kb keys.Keybase, ctx context.CoreContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// read parameters
 		vars := mux.Vars(r)
