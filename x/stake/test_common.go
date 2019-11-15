@@ -72,7 +72,7 @@ func makeTestCodec() *wire.Codec {
 	cdc.RegisterConcrete(MsgUnbond{}, "test/stake/Unbond", nil)
 
 	// Register AppAccount
-	cdc.RegisterInterface((*auth.Account)(nil), nil)
+	cdc.RegisterInterface((*sdk.Account)(nil), nil)
 	cdc.RegisterConcrete(&auth.BaseAccount{}, "test/stake/Account", nil)
 	wire.RegisterCrypto(cdc)
 
@@ -91,8 +91,7 @@ func paramsNoInflation() Params {
 }
 
 // hogpodge of all sorts of input required for testing
-func createTestInput(t *testing.T, isCheckTx bool, initCoins int64) (sdk.Context, auth.AccountMapper, Keeper) {
-
+func createTestInput(t *testing.T, isCheckTx bool, initCoins int64) (sdk.Context, sdk.AccountMapper, Keeper) {
 	keyStake := sdk.NewKVStoreKey("stake")
 	keyAcc := sdk.NewKVStoreKey("acc")
 
@@ -112,8 +111,8 @@ func createTestInput(t *testing.T, isCheckTx bool, initCoins int64) (sdk.Context
 	)
 	ck := bank.NewKeeper(accountMapper)
 	keeper := NewKeeper(cdc, keyStake, ck, DefaultCodespace)
-	keeper.setPool(ctx, initialPool())
-	keeper.setNewParams(ctx, defaultParams())
+	keeper.setPool(ctx, InitialPool())
+	keeper.setNewParams(ctx, DefaultParams())
 
 	// fill all the addresses with some coins
 	for _, addr := range addrs {

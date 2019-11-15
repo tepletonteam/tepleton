@@ -38,7 +38,7 @@ var (
 	coins     = sdk.Coins{{"foocoin", 10}}
 	halfCoins = sdk.Coins{{"foocoin", 5}}
 	manyCoins = sdk.Coins{{"foocoin", 1}, {"barcoin", 1}}
-	fee       = auth.StdFee{
+	fee       = sdk.StdFee{
 		sdk.Coins{{"foocoin", 0}},
 		100000,
 	}
@@ -463,17 +463,17 @@ func CheckBalance(t *testing.T, gapp *GaiaApp, addr sdk.Address, balExpected str
 	assert.Equal(t, balExpected, fmt.Sprintf("%v", res2.GetCoins()))
 }
 
-func genTx(msg sdk.Msg, seq []int64, priv ...crypto.PrivKeyEd25519) auth.StdTx {
-	sigs := make([]auth.StdSignature, len(priv))
+func genTx(msg sdk.Msg, seq []int64, priv ...crypto.PrivKeyEd25519) sdk.StdTx {
+	sigs := make([]sdk.StdSignature, len(priv))
 	for i, p := range priv {
-		sigs[i] = auth.StdSignature{
+		sigs[i] = sdk.StdSignature{
 			PubKey:    p.PubKey(),
-			Signature: p.Sign(auth.StdSignBytes(chainID, seq, fee, msg)),
+			Signature: p.Sign(sdk.StdSignBytes(chainID, seq, fee, msg)),
 			Sequence:  seq[i],
 		}
 	}
 
-	return auth.NewStdTx(msg, fee, sigs)
+	return sdk.NewStdTx(msg, fee, sigs)
 
 }
 

@@ -4,7 +4,6 @@ import (
 	"bytes"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/x/auth"
 )
 
 // An sdk.Tx which is its own sdk.Msg.
@@ -35,7 +34,7 @@ func (tx kvstoreTx) GetSigners() []sdk.Address {
 	return nil
 }
 
-func (tx kvstoreTx) GetSignatures() []auth.StdSignature {
+func (tx kvstoreTx) GetSignatures() []sdk.StdSignature {
 	return nil
 }
 
