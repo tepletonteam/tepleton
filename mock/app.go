@@ -88,7 +88,7 @@ type GenesisJSON struct {
 // with key/value pairs
 func InitChainer(key sdk.StoreKey) func(sdk.Context, wrsp.RequestInitChain) wrsp.ResponseInitChain {
 	return func(ctx sdk.Context, req wrsp.RequestInitChain) wrsp.ResponseInitChain {
-		stateJSON := req.AppStateBytes
+		stateJSON := req.GenesisBytes
 
 		genesisState := new(GenesisJSON)
 		err := json.Unmarshal(stateJSON, genesisState)
