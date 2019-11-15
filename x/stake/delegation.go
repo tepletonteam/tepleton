@@ -39,7 +39,7 @@ func (b Delegation) HumanReadableString() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	bechVal, err := sdk.Bech32TepletonifyVal(b.ValidatorAddr)
+	bechVal, err := sdk.Bech32TepletonifyAcc(b.ValidatorAddr)
 	if err != nil {
 		return "", err
 	}
