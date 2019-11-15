@@ -63,7 +63,7 @@ func GetAccAddressBech32Tepleton(address string) (addr Address, err error) {
 	return Address(bz), nil
 }
 
-// create an Address from a string
+// create an Address from a hex string
 func GetValAddressHex(address string) (addr Address, err error) {
 	if len(address) == 0 {
 		return addr, errors.New("must use provide address")
@@ -75,7 +75,7 @@ func GetValAddressHex(address string) (addr Address, err error) {
 	return Address(bz), nil
 }
 
-// create an Address from a string
+// create an Address from a bech32tepleton string
 func GetValAddressBech32Tepleton(address string) (addr Address, err error) {
 	if len(address) == 0 {
 		return addr, errors.New("must use provide address")
@@ -91,4 +91,27 @@ func GetValAddressBech32Tepleton(address string) (addr Address, err error) {
 		return nil, err
 	}
 	return Address(bz), nil
+}
+
+//Decode a validator publickey into a public key
+func GetValPubKeyBech32Tepleton(pubkey string) (pk crypto.PubKey, err error) {
+	if len(pubkey) == 0 {
+		return pk, errors.New("must use provide pubkey")
+	}
+	hrp, bz, err := bech32tepleton.DecodeAndConvert(pubkey)
+
+	if hrp != "tepletonvalpub" {
+		return pk, fmt.Errorf("Invalid Validator Pubkey Prefix. Expected tepletonvalpub, Got %s", hrp)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	pk, err = crypto.PubKeyFromBytes(bz)
+	if err != nil {
+		return nil, err
+	}
+
+	return pk, nil
 }
