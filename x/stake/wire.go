@@ -10,7 +10,6 @@ func RegisterWire(cdc *wire.Codec) {
 	cdc.RegisterConcrete(MsgEditCandidacy{}, "tepleton-sdk/MsgEditCandidacy", nil)
 	cdc.RegisterConcrete(MsgDelegate{}, "tepleton-sdk/MsgDelegate", nil)
 	cdc.RegisterConcrete(MsgUnbond{}, "tepleton-sdk/MsgUnbond", nil)
-	cdc.RegisterConcrete(MsgUnrevoke{}, "tepleton-sdk/MsgUnrevoke", nil)
 }
 
 var cdcEmpty = wire.NewCodec()
