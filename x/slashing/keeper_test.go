@@ -29,7 +29,7 @@ var (
 		newPubKey("0B485CFC0EECC619440448436F8FC9DF40566F2369E72400281454CB552AFB50"),
 		newPubKey("0B485CFC0EECC619440448436F8FC9DF40566F2369E72400281454CB552AFB51"),
 	}
-	initCoins int64 = 100
+	initCoins int64 = 200
 )
 
 func createTestCodec() *wire.Codec {
@@ -59,7 +59,7 @@ func createTestInput(t *testing.T) (sdk.Context, bank.Keeper, stake.Keeper, Keep
 	ck := bank.NewKeeper(accountMapper)
 	sk := stake.NewKeeper(cdc, keyStake, ck, stake.DefaultCodespace)
 	genesis := stake.DefaultGenesisState()
-	genesis.Pool.BondedTokens = initCoins * int64(len(addrs))
+	genesis.Pool.LooseUnbondedTokens = initCoins * int64(len(addrs))
 	stake.InitGenesis(ctx, sk, genesis)
 	for _, addr := range addrs {
 		ck.AddCoins(ctx, addr, sdk.Coins{
@@ -72,7 +72,7 @@ func createTestInput(t *testing.T) (sdk.Context, bank.Keeper, stake.Keeper, Keep
 
 func TestHandleDoubleSign(t *testing.T) {
 	ctx, ck, sk, keeper := createTestInput(t)
-	addr, val, amt := addrs[0], pks[0], int64(10)
+	addr, val, amt := addrs[0], pks[0], int64(100)
 	got := stake.NewHandler(sk)(ctx, newTestMsgDeclareCandidacy(addr, val, amt))
 	require.True(t, got.IsOK())
 	_ = sk.Tick(ctx)
@@ -87,7 +87,7 @@ func TestHandleDoubleSign(t *testing.T) {
 
 func TestHandleAbsentValidator(t *testing.T) {
 	ctx, ck, sk, keeper := createTestInput(t)
-	addr, val, amt := addrs[0], pks[0], int64(10)
+	addr, val, amt := addrs[0], pks[0], int64(100)
 	sh := stake.NewHandler(sk)
 	got := sh(ctx, newTestMsgDeclareCandidacy(addr, val, amt))
 	require.True(t, got.IsOK())
@@ -120,6 +120,8 @@ func TestHandleAbsentValidator(t *testing.T) {
 	// should be bonded still
 	validator := sk.ValidatorByPubKey(ctx, val)
 	require.Equal(t, sdk.Bonded, validator.GetStatus())
+	pool := sk.GetPool(ctx)
+	require.Equal(t, int64(100), pool.BondedTokens)
 	// 51st block missed
 	ctx = ctx.WithBlockHeight(height)
 	keeper.handleValidatorSignature(ctx, val, false)
@@ -139,7 +141,8 @@ func TestHandleAbsentValidator(t *testing.T) {
 	validator = sk.ValidatorByPubKey(ctx, val)
 	require.Equal(t, sdk.Bonded, validator.GetStatus())
 	// should have been slashed
-	require.Equal(t, sdk.NewRat(amt).Mul(sdk.NewRat(99).Quo(sdk.NewRat(100))), sk.Validator(ctx, addr).GetPower())
+	pool = sk.GetPool(ctx)
+	require.Equal(t, int64(99), pool.BondedTokens)
 }
 
 func newPubKey(pk string) (res crypto.PubKey) {
