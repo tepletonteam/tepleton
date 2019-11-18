@@ -62,9 +62,9 @@
 
 [[constraint]]
   name = "github.com/tepleton/go-amino"
-  version = "~0.9.9"
+  version = "=0.9.9"
 
-[[override]]
+[[constraint]]
   name = "github.com/tepleton/iavl"
   branch = "develop"
 
