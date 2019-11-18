@@ -52,27 +52,31 @@
   name = "github.com/stretchr/testify"
   version = "~1.2.1"
 
-[[override]]
+[[constraint]]
   name = "github.com/tepleton/wrsp"
-  branch = "develop"
+  version = "~0.10.3"
 
 [[constraint]]
   name = "github.com/tepleton/go-crypto"
   version = "~0.6.2"
 
+[[override]]
+  name = "github.com/tepleton/go-wire"
+  version = "0.7.3"
+
 [[constraint]]
   name = "github.com/tepleton/go-amino"
   version = "~0.9.9"
 
-[[override]]
+[[constraint]]
   name = "github.com/tepleton/iavl"
-  branch = "develop"
-
-[[override]]
-  name = "github.com/tepleton/tepleton"
-  branch = "cwgoes/update-wrsp"
+  version = "~0.7.0"
 
 [[constraint]]
+  name = "github.com/tepleton/tepleton"
+  version = "0.19.5-rc1"
+
+[[override]]
   name = "github.com/tepleton/tmlibs"
   version = "~0.8.3-rc0"
   
@@ -80,6 +84,11 @@
 [[override]]
   name = "google.golang.org/genproto"
   revision = "7fd901a49ba6a7f87732eb344f6e3c5b19d1b200"
+
+  [[constraint]]
+  name = "github.com/tepleton/bech32tepleton"
+  branch = "master"
+  
 
 [prune]
   go-tests = true
