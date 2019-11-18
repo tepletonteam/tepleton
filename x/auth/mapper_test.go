@@ -31,7 +31,7 @@ func TestAccountMapperGetSet(t *testing.T) {
 	RegisterBaseAccount(cdc)
 
 	// make context and mapper
-	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil, log.NewNopLogger(), nil)
+	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil, log.NewNopLogger())
 	mapper := NewAccountMapper(cdc, capKey, &BaseAccount{})
 
 	addr := sdk.Address([]byte("some-address"))
