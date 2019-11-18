@@ -118,7 +118,7 @@ func MakeCodec() *wire.Codec {
 // custom logic for democoin initialization
 func (app *DemocoinApp) initChainerFn(coolKeeper cool.Keeper, powKeeper pow.Keeper) sdk.InitChainer {
 	return func(ctx sdk.Context, req wrsp.RequestInitChain) wrsp.ResponseInitChain {
-		stateJSON := req.AppStateBytes
+		stateJSON := req.GenesisBytes
 
 		genesisState := new(types.GenesisState)
 		err := app.cdc.UnmarshalJSON(stateJSON, genesisState)

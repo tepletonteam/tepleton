@@ -8,6 +8,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/bank"
 	wrsp "github.com/tepleton/wrsp/types"
+	crypto "github.com/tepleton/go-crypto"
 )
 
 // keeper of the staking store
@@ -38,6 +39,18 @@ func (k Keeper) GetValidator(ctx sdk.Context, addr sdk.Address) (validator Valid
 	return k.getValidator(store, addr)
 }
 
+// get a single validator by pubkey
+func (k Keeper) GetValidatorByPubKey(ctx sdk.Context, pubkey crypto.PubKey) (validator Validator, found bool) {
+	store := ctx.KVStore(k.storeKey)
+	b := store.Get(GetValidatorByPubKeyKey(pubkey))
+	if b == nil {
+		return validator, false
+	}
+	var addr sdk.Address
+	k.cdc.MustUnmarshalBinary(b, &addr)
+	return k.getValidator(store, addr)
+}
+
 // get a single validator (reuse store)
 func (k Keeper) getValidator(store sdk.KVStore, addr sdk.Address) (validator Validator, found bool) {
 	b := store.Get(GetValidatorKey(addr))
@@ -51,8 +64,12 @@ func (k Keeper) getValidator(store sdk.KVStore, addr sdk.Address) (validator Val
 // set the main record holding validator details
 func (k Keeper) setValidator(ctx sdk.Context, validator Validator) {
 	store := ctx.KVStore(k.storeKey)
+	// set main store
 	bz := k.cdc.MustMarshalBinary(validator)
 	store.Set(GetValidatorKey(validator.Owner), bz)
+	// set pointer by pubkey
+	bz = k.cdc.MustMarshalBinary(validator.Owner)
+	store.Set(GetValidatorByPubKeyKey(validator.PubKey), bz)
 }
 
 // Get the set of all validators with no limits, used during genesis dump
@@ -470,6 +487,7 @@ func (k Keeper) removeValidator(ctx sdk.Context, address sdk.Address) {
 	store := ctx.KVStore(k.storeKey)
 	pool := k.getPool(store)
 	store.Delete(GetValidatorKey(address))
+	store.Delete(GetValidatorByPubKeyKey(validator.PubKey))
 	store.Delete(GetValidatorsByPowerKey(validator, pool))
 
 	// delete from the current and power weighted validator groups if the validator
@@ -710,6 +728,15 @@ func (k Keeper) Validator(ctx sdk.Context, addr sdk.Address) sdk.Validator {
 	return val
 }
 
+// get the sdk.validator for a particular pubkey
+func (k Keeper) ValidatorByPubKey(ctx sdk.Context, pubkey crypto.PubKey) sdk.Validator {
+	val, found := k.GetValidatorByPubKey(ctx, pubkey)
+	if !found {
+		return nil
+	}
+	return val
+}
+
 // total power from the bond
 func (k Keeper) TotalPower(ctx sdk.Context) sdk.Rat {
 	pool := k.GetPool(ctx)
@@ -748,4 +775,47 @@ func (k Keeper) IterateDelegators(ctx sdk.Context, delAddr sdk.Address, fn func(
 		i++
 	}
 	iterator.Close()
+}
+
+// slash a validator
+func (k Keeper) Slash(ctx sdk.Context, pubkey crypto.PubKey, height int64, fraction sdk.Rat) {
+	// TODO height ignored for now, see https://github.com/tepleton/tepleton-sdk/pull/1011#issuecomment-390253957
+	logger := ctx.Logger().With("module", "x/stake")
+	val, found := k.GetValidatorByPubKey(ctx, pubkey)
+	if !found {
+		panic(fmt.Errorf("Attempted to slash a nonexistent validator with address %s", pubkey.Address()))
+	}
+	sharesToRemove := val.PoolShares.Amount.Mul(fraction)
+	pool := k.GetPool(ctx)
+	val, pool, burned := val.removePoolShares(pool, sharesToRemove)
+	k.setPool(ctx, pool)        // update the pool
+	k.updateValidator(ctx, val) // update the validator, possibly kicking it out
+	logger.Info(fmt.Sprintf("Validator %s slashed by fraction %v, removed %v shares and burned %d tokens", pubkey.Address(), fraction, sharesToRemove, burned))
+	return
+}
+
+// revoke a validator
+func (k Keeper) Revoke(ctx sdk.Context, pubkey crypto.PubKey) {
+	logger := ctx.Logger().With("module", "x/stake")
+	val, found := k.GetValidatorByPubKey(ctx, pubkey)
+	if !found {
+		panic(fmt.Errorf("Validator with pubkey %s not found, cannot revoke", pubkey))
+	}
+	val.Revoked = true
+	k.updateValidator(ctx, val) // update the validator, now revoked
+	logger.Info(fmt.Sprintf("Validator %s revoked", pubkey.Address()))
+	return
+}
+
+// unrevoke a validator
+func (k Keeper) Unrevoke(ctx sdk.Context, pubkey crypto.PubKey) {
+	logger := ctx.Logger().With("module", "x/stake")
+	val, found := k.GetValidatorByPubKey(ctx, pubkey)
+	if !found {
+		panic(fmt.Errorf("Validator with pubkey %s not found, cannot unrevoke", pubkey))
+	}
+	val.Revoked = false
+	k.updateValidator(ctx, val) // update the validator, now unrevoked
+	logger.Info(fmt.Sprintf("Validator %s unrevoked", pubkey.Address()))
+	return
 }
