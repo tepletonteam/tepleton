@@ -46,7 +46,6 @@ func NewValidator(owner sdk.Address, pubKey crypto.PubKey, description Descripti
 	return Validator{
 		Owner:                 owner,
 		PubKey:                pubKey,
-		Revoked:               false,
 		PoolShares:            NewUnbondedShares(sdk.ZeroRat()),
 		DelegatorShares:       sdk.ZeroRat(),
 		Description:           description,
@@ -152,21 +151,6 @@ func (v Validator) UpdateStatus(pool Pool, NewStatus sdk.BondStatus) (Validator,
 		pool, v.PoolShares = pool.addTokensBonded(tokens)
 	}
 	return v, pool
-}
-
-// Remove & burn pool shares, e.g. when slashing a validator
-func (v Validator) removePoolShares(pool Pool, amt sdk.Rat) (Validator, Pool, int64) {
-	var tokens int64
-	switch v.Status() {
-	case sdk.Unbonded:
-		pool, tokens = pool.removeSharesUnbonded(amt)
-	case sdk.Unbonding:
-		pool, tokens = pool.removeSharesUnbonding(amt)
-	case sdk.Bonded:
-		pool, tokens = pool.removeSharesBonded(amt)
-	}
-	v.PoolShares.Amount = v.PoolShares.Amount.Sub(amt)
-	return v, pool, tokens
 }
 
 // XXX TEST
