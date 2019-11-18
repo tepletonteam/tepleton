@@ -8,6 +8,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/bank"
 	wrsp "github.com/tepleton/wrsp/types"
+	crypto "github.com/tepleton/go-crypto"
 )
 
 // keeper of the staking store
@@ -38,6 +39,18 @@ func (k Keeper) GetValidator(ctx sdk.Context, addr sdk.Address) (validator Valid
 	return k.getValidator(store, addr)
 }
 
+// get a single validator by pubkey
+func (k Keeper) GetValidatorByPubKey(ctx sdk.Context, pubkey crypto.PubKey) (validator Validator, found bool) {
+	store := ctx.KVStore(k.storeKey)
+	b := store.Get(GetValidatorByPubKeyKey(pubkey))
+	if b == nil {
+		return validator, false
+	}
+	var addr sdk.Address
+	k.cdc.MustUnmarshalBinary(b, &addr)
+	return k.getValidator(store, addr)
+}
+
 // get a single validator (reuse store)
 func (k Keeper) getValidator(store sdk.KVStore, addr sdk.Address) (validator Validator, found bool) {
 	b := store.Get(GetValidatorKey(addr))
@@ -51,14 +64,18 @@ func (k Keeper) getValidator(store sdk.KVStore, addr sdk.Address) (validator Val
 // set the main record holding validator details
 func (k Keeper) setValidator(ctx sdk.Context, validator Validator) {
 	store := ctx.KVStore(k.storeKey)
+	// set main store
 	bz := k.cdc.MustMarshalBinary(validator)
 	store.Set(GetValidatorKey(validator.Owner), bz)
+	// set pointer by pubkey
+	bz = k.cdc.MustMarshalBinary(validator.Owner)
+	store.Set(GetValidatorByPubKeyKey(validator.PubKey), bz)
 }
 
 // Get the set of all validators with no limits, used during genesis dump
 func (k Keeper) getAllValidators(ctx sdk.Context) (validators Validators) {
 	store := ctx.KVStore(k.storeKey)
-	iterator := store.SubspaceIterator(ValidatorsKey)
+	iterator := sdk.KVStorePrefixIterator(store, ValidatorsKey)
 
 	i := 0
 	for ; ; i++ {
@@ -78,7 +95,7 @@ func (k Keeper) getAllValidators(ctx sdk.Context) (validators Validators) {
 // Get the set of all validators, retrieve a maxRetrieve number of records
 func (k Keeper) GetValidators(ctx sdk.Context, maxRetrieve int16) (validators Validators) {
 	store := ctx.KVStore(k.storeKey)
-	iterator := store.SubspaceIterator(ValidatorsKey)
+	iterator := sdk.KVStorePrefixIterator(store, ValidatorsKey)
 
 	validators = make([]Validator, maxRetrieve)
 	i := 0
@@ -106,7 +123,7 @@ func (k Keeper) GetValidatorsBonded(ctx sdk.Context) (validators []Validator) {
 	maxValidators := k.GetParams(ctx).MaxValidators
 	validators = make([]Validator, maxValidators)
 
-	iterator := store.SubspaceIterator(ValidatorsBondedKey)
+	iterator := sdk.KVStorePrefixIterator(store, ValidatorsBondedKey)
 	i := 0
 	for ; iterator.Valid(); iterator.Next() {
 
@@ -132,7 +149,7 @@ func (k Keeper) GetValidatorsByPower(ctx sdk.Context) []Validator {
 	store := ctx.KVStore(k.storeKey)
 	maxValidators := k.GetParams(ctx).MaxValidators
 	validators := make([]Validator, maxValidators)
-	iterator := store.ReverseSubspaceIterator(ValidatorsByPowerKey) // largest to smallest
+	iterator := sdk.KVStoreReversePrefixIterator(store, ValidatorsByPowerKey) // largest to smallest
 	i := 0
 	for {
 		if !iterator.Valid() || i > int(maxValidators-1) {
@@ -160,7 +177,7 @@ func (k Keeper) GetValidatorsByPower(ctx sdk.Context) []Validator {
 func (k Keeper) getTendermintUpdates(ctx sdk.Context) (updates []wrsp.Validator) {
 	store := ctx.KVStore(k.storeKey)
 
-	iterator := store.SubspaceIterator(TendermintUpdatesKey) //smallest to largest
+	iterator := sdk.KVStorePrefixIterator(store, TendermintUpdatesKey) //smallest to largest
 	for ; iterator.Valid(); iterator.Next() {
 		valBytes := iterator.Value()
 		var val wrsp.Validator
@@ -176,7 +193,7 @@ func (k Keeper) clearTendermintUpdates(ctx sdk.Context) {
 	store := ctx.KVStore(k.storeKey)
 
 	// delete subspace
-	iterator := store.SubspaceIterator(TendermintUpdatesKey)
+	iterator := sdk.KVStorePrefixIterator(store, TendermintUpdatesKey)
 	for ; iterator.Valid(); iterator.Next() {
 		store.Delete(iterator.Key())
 	}
@@ -278,7 +295,7 @@ func (k Keeper) updateBondedValidators(ctx sdk.Context, store sdk.KVStore,
 
 	// add the actual validator power sorted store
 	maxValidators := k.GetParams(ctx).MaxValidators
-	iterator := store.ReverseSubspaceIterator(ValidatorsByPowerKey) // largest to smallest
+	iterator := sdk.KVStoreReversePrefixIterator(store, ValidatorsByPowerKey) // largest to smallest
 	bondedValidatorsCount := 0
 	var validator Validator
 	for {
@@ -343,7 +360,7 @@ func (k Keeper) updateBondedValidators(ctx sdk.Context, store sdk.KVStore,
 func (k Keeper) updateBondedValidatorsFull(ctx sdk.Context, store sdk.KVStore) {
 	// clear the current validators store, add to the ToKickOut temp store
 	toKickOut := make(map[string]byte)
-	iterator := store.SubspaceIterator(ValidatorsBondedKey)
+	iterator := sdk.KVStorePrefixIterator(store, ValidatorsBondedKey)
 	for ; iterator.Valid(); iterator.Next() {
 		ownerAddr := iterator.Value()
 		toKickOut[string(ownerAddr)] = 0 // set anything
@@ -352,7 +369,7 @@ func (k Keeper) updateBondedValidatorsFull(ctx sdk.Context, store sdk.KVStore) {
 
 	// add the actual validator power sorted store
 	maxValidators := k.GetParams(ctx).MaxValidators
-	iterator = store.ReverseSubspaceIterator(ValidatorsByPowerKey) // largest to smallest
+	iterator = sdk.KVStoreReversePrefixIterator(store, ValidatorsByPowerKey) // largest to smallest
 	bondedValidatorsCount := 0
 	var validator Validator
 	for {
@@ -470,6 +487,7 @@ func (k Keeper) removeValidator(ctx sdk.Context, address sdk.Address) {
 	store := ctx.KVStore(k.storeKey)
 	pool := k.getPool(store)
 	store.Delete(GetValidatorKey(address))
+	store.Delete(GetValidatorByPubKeyKey(validator.PubKey))
 	store.Delete(GetValidatorsByPowerKey(validator, pool))
 
 	// delete from the current and power weighted validator groups if the validator
@@ -502,7 +520,7 @@ func (k Keeper) GetDelegation(ctx sdk.Context,
 // load all delegations used during genesis dump
 func (k Keeper) getAllDelegations(ctx sdk.Context) (delegations []Delegation) {
 	store := ctx.KVStore(k.storeKey)
-	iterator := store.SubspaceIterator(DelegationKey)
+	iterator := sdk.KVStorePrefixIterator(store, DelegationKey)
 
 	i := 0
 	for ; ; i++ {
@@ -523,7 +541,7 @@ func (k Keeper) getAllDelegations(ctx sdk.Context) (delegations []Delegation) {
 func (k Keeper) GetDelegations(ctx sdk.Context, delegator sdk.Address, maxRetrieve int16) (bonds []Delegation) {
 	store := ctx.KVStore(k.storeKey)
 	delegatorPrefixKey := GetDelegationsKey(delegator, k.cdc)
-	iterator := store.SubspaceIterator(delegatorPrefixKey) //smallest to largest
+	iterator := sdk.KVStorePrefixIterator(store, delegatorPrefixKey) //smallest to largest
 
 	bonds = make([]Delegation, maxRetrieve)
 	i := 0
@@ -665,7 +683,7 @@ var _ sdk.ValidatorSet = Keeper{}
 // iterate through the active validator set and perform the provided function
 func (k Keeper) IterateValidators(ctx sdk.Context, fn func(index int64, validator sdk.Validator) (stop bool)) {
 	store := ctx.KVStore(k.storeKey)
-	iterator := store.SubspaceIterator(ValidatorsKey)
+	iterator := sdk.KVStorePrefixIterator(store, ValidatorsKey)
 	i := int64(0)
 	for ; iterator.Valid(); iterator.Next() {
 		bz := iterator.Value()
@@ -683,7 +701,7 @@ func (k Keeper) IterateValidators(ctx sdk.Context, fn func(index int64, validato
 // iterate through the active validator set and perform the provided function
 func (k Keeper) IterateValidatorsBonded(ctx sdk.Context, fn func(index int64, validator sdk.Validator) (stop bool)) {
 	store := ctx.KVStore(k.storeKey)
-	iterator := store.SubspaceIterator(ValidatorsBondedKey)
+	iterator := sdk.KVStorePrefixIterator(store, ValidatorsBondedKey)
 	i := int64(0)
 	for ; iterator.Valid(); iterator.Next() {
 		address := iterator.Value()
@@ -704,6 +722,15 @@ func (k Keeper) IterateValidatorsBonded(ctx sdk.Context, fn func(index int64, va
 // get the sdk.validator for a particular address
 func (k Keeper) Validator(ctx sdk.Context, addr sdk.Address) sdk.Validator {
 	val, found := k.GetValidator(ctx, addr)
+	if !found {
+		return nil
+	}
+	return val
+}
+
+// get the sdk.validator for a particular pubkey
+func (k Keeper) ValidatorByPubKey(ctx sdk.Context, pubkey crypto.PubKey) sdk.Validator {
+	val, found := k.GetValidatorByPubKey(ctx, pubkey)
 	if !found {
 		return nil
 	}
@@ -735,7 +762,7 @@ func (k Keeper) Delegation(ctx sdk.Context, addrDel sdk.Address, addrVal sdk.Add
 func (k Keeper) IterateDelegators(ctx sdk.Context, delAddr sdk.Address, fn func(index int64, delegation sdk.Delegation) (stop bool)) {
 	store := ctx.KVStore(k.storeKey)
 	key := GetDelegationsKey(delAddr, k.cdc)
-	iterator := store.SubspaceIterator(key)
+	iterator := sdk.KVStorePrefixIterator(store, key)
 	i := int64(0)
 	for ; iterator.Valid(); iterator.Next() {
 		bz := iterator.Value()
@@ -748,4 +775,47 @@ func (k Keeper) IterateDelegators(ctx sdk.Context, delAddr sdk.Address, fn func(
 		i++
 	}
 	iterator.Close()
+}
+
+// slash a validator
+func (k Keeper) Slash(ctx sdk.Context, pubkey crypto.PubKey, height int64, fraction sdk.Rat) {
+	// TODO height ignored for now, see https://github.com/tepleton/tepleton-sdk/pull/1011#issuecomment-390253957
+	logger := ctx.Logger().With("module", "x/stake")
+	val, found := k.GetValidatorByPubKey(ctx, pubkey)
+	if !found {
+		panic(fmt.Errorf("Attempted to slash a nonexistent validator with address %s", pubkey.Address()))
+	}
+	sharesToRemove := val.PoolShares.Amount.Mul(fraction)
+	pool := k.GetPool(ctx)
+	val, pool, burned := val.removePoolShares(pool, sharesToRemove)
+	k.setPool(ctx, pool)        // update the pool
+	k.updateValidator(ctx, val) // update the validator, possibly kicking it out
+	logger.Info(fmt.Sprintf("Validator %s slashed by fraction %v, removed %v shares and burned %d tokens", pubkey.Address(), fraction, sharesToRemove, burned))
+	return
+}
+
+// revoke a validator
+func (k Keeper) Revoke(ctx sdk.Context, pubkey crypto.PubKey) {
+	logger := ctx.Logger().With("module", "x/stake")
+	val, found := k.GetValidatorByPubKey(ctx, pubkey)
+	if !found {
+		panic(fmt.Errorf("Validator with pubkey %s not found, cannot revoke", pubkey))
+	}
+	val.Revoked = true
+	k.updateValidator(ctx, val) // update the validator, now revoked
+	logger.Info(fmt.Sprintf("Validator %s revoked", pubkey.Address()))
+	return
+}
+
+// unrevoke a validator
+func (k Keeper) Unrevoke(ctx sdk.Context, pubkey crypto.PubKey) {
+	logger := ctx.Logger().With("module", "x/stake")
+	val, found := k.GetValidatorByPubKey(ctx, pubkey)
+	if !found {
+		panic(fmt.Errorf("Validator with pubkey %s not found, cannot unrevoke", pubkey))
+	}
+	val.Revoked = false
+	k.updateValidator(ctx, val) // update the validator, now unrevoked
+	logger.Info(fmt.Sprintf("Validator %s unrevoked", pubkey.Address()))
+	return
 }

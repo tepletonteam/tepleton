@@ -117,8 +117,8 @@ func (msg MsgEditCandidacy) ValidateBasic() sdk.Error {
 
 // MsgDelegate - struct for bonding transactions
 type MsgDelegate struct {
-	DelegatorAddr sdk.Address `json:"delegator_addr"`
-	ValidatorAddr sdk.Address `json:"validator_addr"`
+	DelegatorAddr sdk.Address `json:"address"`
+	ValidatorAddr sdk.Address `json:"address"`
 	Bond          sdk.Coin    `json:"bond"`
 }
 
@@ -164,8 +164,8 @@ func (msg MsgDelegate) ValidateBasic() sdk.Error {
 
 // MsgUnbond - struct for unbonding transactions
 type MsgUnbond struct {
-	DelegatorAddr sdk.Address `json:"delegator_addr"`
-	ValidatorAddr sdk.Address `json:"validator_addr"`
+	DelegatorAddr sdk.Address `json:"address"`
+	ValidatorAddr sdk.Address `json:"address"`
 	Shares        string      `json:"shares"`
 }
 

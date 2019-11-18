@@ -22,8 +22,8 @@ func NewGenesisState(pool Pool, params Params, validators []Validator, bonds []D
 // get raw genesis raw message for testing
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
-		Pool:   InitialPool(),
-		Params: DefaultParams(),
+		Pool:   initialPool(),
+		Params: defaultParams(),
 	}
 }
 
