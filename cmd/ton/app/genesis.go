@@ -74,7 +74,7 @@ func GaiaAppInit() server.AppInit {
 		FlagsAppGenState: fsAppGenState,
 		FlagsAppGenTx:    fsAppGenTx,
 		AppGenTx:         GaiaAppGenTx,
-		AppGenState:      GaiaAppGenStateJSON,
+		AppGenState:      GaiaAppGenState,
 	}
 }
 
@@ -85,31 +85,19 @@ type GaiaGenTx struct {
 	PubKey  crypto.PubKey `json:"pub_key"`
 }
 
-// Generate a ton genesis transaction with flags
+// Generate a ton genesis transaction
 func GaiaAppGenTx(cdc *wire.Codec, pk crypto.PubKey) (
 	appGenTx, cliPrint json.RawMessage, validator tmtypes.GenesisValidator, err error) {
+
+	var addr sdk.Address
+	var secret string
 	clientRoot := viper.GetString(flagClientHome)
 	overwrite := viper.GetBool(flagOWK)
 	name := viper.GetString(flagName)
-	var addr sdk.Address
-	var secret string
 	addr, secret, err = server.GenerateSaveCoinKey(clientRoot, name, "1234567890", overwrite)
 	if err != nil {
 		return
 	}
-	mm := map[string]string{"secret": secret}
-	var bz []byte
-	bz, err = cdc.MarshalJSON(mm)
-	if err != nil {
-		return
-	}
-	cliPrint = json.RawMessage(bz)
-	return GaiaAppGenTxNF(cdc, pk, addr, name, overwrite)
-}
-
-// Generate a ton genesis transaction without flags
-func GaiaAppGenTxNF(cdc *wire.Codec, pk crypto.PubKey, addr sdk.Address, name string, overwrite bool) (
-	appGenTx, cliPrint json.RawMessage, validator tmtypes.GenesisValidator, err error) {
 
 	var bz []byte
 	tonGenTx := GaiaGenTx{
@@ -123,6 +111,13 @@ func GaiaAppGenTxNF(cdc *wire.Codec, pk crypto.PubKey, addr sdk.Address, name st
 	}
 	appGenTx = json.RawMessage(bz)
 
+	mm := map[string]string{"secret": secret}
+	bz, err = cdc.MarshalJSON(mm)
+	if err != nil {
+		return
+	}
+	cliPrint = json.RawMessage(bz)
+
 	validator = tmtypes.GenesisValidator{
 		PubKey: pk,
 		Power:  freeFermionVal,
@@ -132,7 +127,7 @@ func GaiaAppGenTxNF(cdc *wire.Codec, pk crypto.PubKey, addr sdk.Address, name st
 
 // Create the core parameters for genesis initialization for ton
 // note that the pubkey input is this machines pubkey
-func GaiaAppGenState(cdc *wire.Codec, appGenTxs []json.RawMessage) (genesisState GenesisState, err error) {
+func GaiaAppGenState(cdc *wire.Codec, appGenTxs []json.RawMessage) (appState json.RawMessage, err error) {
 
 	if len(appGenTxs) == 0 {
 		err = errors.New("must provide at least genesis transaction")
@@ -176,20 +171,9 @@ func GaiaAppGenState(cdc *wire.Codec, appGenTxs []json.RawMessage) (genesisState
 	}
 
 	// create the final app state
-	genesisState = GenesisState{
+	genesisState := GenesisState{
 		Accounts:  genaccs,
 		StakeData: stakeData,
-	}
-	return
-}
-
-// GaiaAppGenState but with JSON
-func GaiaAppGenStateJSON(cdc *wire.Codec, appGenTxs []json.RawMessage) (appState json.RawMessage, err error) {
-
-	// create the final app state
-	genesisState, err := GaiaAppGenState(cdc, appGenTxs)
-	if err != nil {
-		return nil, err
 	}
 	appState, err = wire.MarshalJSONIndent(cdc, genesisState)
 	return
