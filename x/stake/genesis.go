@@ -22,8 +22,8 @@ func NewGenesisState(pool Pool, params Params, validators []Validator, bonds []D
 // get raw genesis raw message for testing
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
-		Pool:   initialPool(),
-		Params: defaultParams(),
+		Pool:   InitialPool(),
+		Params: DefaultParams(),
 	}
 }
 
@@ -32,16 +32,11 @@ func InitGenesis(ctx sdk.Context, k Keeper, data GenesisState) {
 	k.setPool(ctx, data.Pool)
 	k.setNewParams(ctx, data.Params)
 	for _, validator := range data.Validators {
-		// Staking assumes bonded validators are already stored, need to force update
-		validator.PoolShares.Status = sdk.Unbonded
-		k.setValidator(ctx, validator)
 		k.updateValidator(ctx, validator)
 	}
 	for _, bond := range data.Bonds {
 		k.setDelegation(ctx, bond)
 	}
-	store := ctx.KVStore(k.storeKey)
-	k.updateBondedValidatorsFull(ctx, store)
 }
 
 // WriteGenesis - output genesis parameters

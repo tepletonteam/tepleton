@@ -47,10 +47,8 @@ func NewMsgDeclareCandidacy(validatorAddr sdk.Address, pubkey crypto.PubKey,
 }
 
 //nolint
-func (msg MsgDeclareCandidacy) Type() string { return MsgType } //TODO update "stake/declarecandidacy"
-func (msg MsgDeclareCandidacy) GetSigners() []sdk.Address {
-	return []sdk.Address{msg.ValidatorAddr}
-}
+func (msg MsgDeclareCandidacy) Type() string              { return MsgType } //TODO update "stake/declarecandidacy"
+func (msg MsgDeclareCandidacy) GetSigners() []sdk.Address { return []sdk.Address{msg.ValidatorAddr} }
 
 // get the bytes for the message signer to sign on
 func (msg MsgDeclareCandidacy) GetSignBytes() []byte {
@@ -91,10 +89,8 @@ func NewMsgEditCandidacy(validatorAddr sdk.Address, description Description) Msg
 }
 
 //nolint
-func (msg MsgEditCandidacy) Type() string { return MsgType } //TODO update "stake/msgeditcandidacy"
-func (msg MsgEditCandidacy) GetSigners() []sdk.Address {
-	return []sdk.Address{msg.ValidatorAddr}
-}
+func (msg MsgEditCandidacy) Type() string              { return MsgType } //TODO update "stake/msgeditcandidacy"
+func (msg MsgEditCandidacy) GetSigners() []sdk.Address { return []sdk.Address{msg.ValidatorAddr} }
 
 // get the bytes for the message signer to sign on
 func (msg MsgEditCandidacy) GetSignBytes() []byte {
@@ -121,8 +117,8 @@ func (msg MsgEditCandidacy) ValidateBasic() sdk.Error {
 
 // MsgDelegate - struct for bonding transactions
 type MsgDelegate struct {
-	DelegatorAddr sdk.Address `json:"address"`
-	ValidatorAddr sdk.Address `json:"address"`
+	DelegatorAddr sdk.Address `json:"delegator_addr"`
+	ValidatorAddr sdk.Address `json:"validator_addr"`
 	Bond          sdk.Coin    `json:"bond"`
 }
 
@@ -135,10 +131,8 @@ func NewMsgDelegate(delegatorAddr, validatorAddr sdk.Address, bond sdk.Coin) Msg
 }
 
 //nolint
-func (msg MsgDelegate) Type() string { return MsgType } //TODO update "stake/msgeditcandidacy"
-func (msg MsgDelegate) GetSigners() []sdk.Address {
-	return []sdk.Address{msg.DelegatorAddr}
-}
+func (msg MsgDelegate) Type() string              { return MsgType } //TODO update "stake/msgeditcandidacy"
+func (msg MsgDelegate) GetSigners() []sdk.Address { return []sdk.Address{msg.DelegatorAddr} }
 
 // get the bytes for the message signer to sign on
 func (msg MsgDelegate) GetSignBytes() []byte {
@@ -170,8 +164,8 @@ func (msg MsgDelegate) ValidateBasic() sdk.Error {
 
 // MsgUnbond - struct for unbonding transactions
 type MsgUnbond struct {
-	DelegatorAddr sdk.Address `json:"address"`
-	ValidatorAddr sdk.Address `json:"address"`
+	DelegatorAddr sdk.Address `json:"delegator_addr"`
+	ValidatorAddr sdk.Address `json:"validator_addr"`
 	Shares        string      `json:"shares"`
 }
 

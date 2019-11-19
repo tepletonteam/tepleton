@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -39,11 +40,11 @@ func GetAccountCmd(storeName string, cdc *wire.Codec, decoder auth.AccountDecode
 
 			// find the key to look up the account
 			addr := args[0]
-
-			key, err := sdk.GetAccAddressBech32Tepleton(addr)
+			bz, err := hex.DecodeString(addr)
 			if err != nil {
 				return err
 			}
+			key := sdk.Address(bz)
 
 			// perform query
 			ctx := context.NewCoreContextFromViper()
