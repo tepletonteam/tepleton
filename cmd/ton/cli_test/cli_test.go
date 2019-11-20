@@ -108,7 +108,7 @@ func TestGaiaCLICreateValidator(t *testing.T) {
 	// create validator
 	cvStr := fmt.Sprintf("toncli create-validator %v", flags)
 	cvStr += fmt.Sprintf(" --name=%v", "bar")
-	cvStr += fmt.Sprintf(" --validator-address=%v", barCech)
+	cvStr += fmt.Sprintf(" --address-validator=%v", barCech)
 	cvStr += fmt.Sprintf(" --pubkey=%v", barCeshPubKey)
 	cvStr += fmt.Sprintf(" --amount=%v", "3steak")
 	cvStr += fmt.Sprintf(" --moniker=%v", "bar-vally")
@@ -117,7 +117,7 @@ func TestGaiaCLICreateValidator(t *testing.T) {
 	time.Sleep(time.Second * 5) // waiting for some blocks to pass
 
 	barAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barCech, flags))
-	assert.Equal(t, int64(7), barAcc.GetCoins().AmountOf("steak"))
+	require.Equal(t, int64(7), barAcc.GetCoins().AmountOf("steak"), "%v", barAcc)
 
 	validator := executeGetValidator(t, fmt.Sprintf("toncli validator %v %v", barCech, flags))
 	assert.Equal(t, validator.Owner.String(), barCech)
