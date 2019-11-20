@@ -33,13 +33,9 @@ func InitGenesis(ctx sdk.Context, k Keeper, data GenesisState) {
 	k.setPool(ctx, data.Pool)
 	k.setNewParams(ctx, data.Params)
 	for _, validator := range data.Validators {
-
-		// set validator
-		k.setValidator(ctx, validator)
-
-		// manually set indexes for the first time
+		k.updateValidator(ctx, validator)
 		k.setValidatorByPubKeyIndex(ctx, validator)
-		k.setValidatorByPowerIndex(ctx, validator, data.Pool)
+		// manually set validator to bonded if necessary
 		if validator.Status() == sdk.Bonded {
 			store.Set(GetValidatorsBondedKey(validator.PubKey), validator.Owner)
 		}
