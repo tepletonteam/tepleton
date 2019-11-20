@@ -14,6 +14,7 @@ import (
 	authcmd "github.com/tepleton/tepleton-sdk/x/auth/client/cli"
 	bankcmd "github.com/tepleton/tepleton-sdk/x/bank/client/cli"
 	ibccmd "github.com/tepleton/tepleton-sdk/x/ibc/client/cli"
+	slashingcmd "github.com/tepleton/tepleton-sdk/x/slashing/client/cli"
 	stakecmd "github.com/tepleton/tepleton-sdk/x/stake/client/cli"
 
 	"github.com/tepleton/tepleton-sdk/cmd/ton/app"
@@ -59,6 +60,7 @@ func main() {
 			stakecmd.GetCmdEditValidator(cdc),
 			stakecmd.GetCmdDelegate(cdc),
 			stakecmd.GetCmdUnbond(cdc),
+			slashingcmd.GetCmdUnrevoke(cdc),
 		)...)
 
 	// add proxy, version and key info
