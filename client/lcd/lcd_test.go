@@ -34,6 +34,7 @@ import (
 	client "github.com/tepleton/tepleton-sdk/client"
 	keys "github.com/tepleton/tepleton-sdk/client/keys"
 	gapp "github.com/tepleton/tepleton-sdk/cmd/ton/app"
+	"github.com/tepleton/tepleton-sdk/server"
 	tests "github.com/tepleton/tepleton-sdk/tests"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
@@ -51,7 +52,7 @@ var (
 	// XXX bad globals
 	name     = "test"
 	password = "0123456789"
-	port     string // XXX: but it's the int ...
+	port     string
 	seed     string
 	sendAddr string
 )
@@ -456,8 +457,11 @@ func startTMAndLCD() (*nm.Node, net.Listener, error) {
 	genDoc.AppStateJSON = appState
 
 	// LCD listen address
-	port = fmt.Sprintf("%d", 17377)                       // XXX
-	listenAddr := fmt.Sprintf("tcp://localhost:%s", port) // XXX
+	var listenAddr string
+	listenAddr, port, err = server.FreeTCPAddr()
+	if err != nil {
+		return nil, nil, err
+	}
 
 	// XXX: need to set this so LCD knows the tepleton node address!
 	viper.Set(client.FlagNode, config.RPC.ListenAddress)

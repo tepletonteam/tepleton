@@ -21,6 +21,7 @@ import (
 )
 
 func TestGaiaCLISend(t *testing.T) {
+	fmt.Println("wackydebugoutput TestGaiaCLISend 0")
 
 	tests.ExecuteT(t, "tond unsafe_reset_all")
 	pass := "1234567890"
@@ -30,13 +31,14 @@ func TestGaiaCLISend(t *testing.T) {
 	executeWrite(t, "toncli keys add bar", pass)
 
 	// get a free port, also setup some common flags
-	servAddr := server.FreeTCPAddr(t)
+	servAddr, port, err := server.FreeTCPAddr()
+	require.NoError(t, err)
 	flags := fmt.Sprintf("--node=%v --chain-id=%v", servAddr, chainID)
 
 	// start tond server
 	proc := tests.GoExecuteT(t, fmt.Sprintf("tond start --rpc.laddr=%v", servAddr))
 	defer proc.Stop(false)
-	time.Sleep(time.Second * 5) // Wait for RPC server to start.
+	tests.WaitForStart(port)
 
 	fooAddr, _ := executeGetAddrPK(t, "toncli keys show foo --output=json")
 	fooCech, err := sdk.Bech32TepletonifyAcc(fooAddr)
@@ -49,6 +51,8 @@ func TestGaiaCLISend(t *testing.T) {
 	assert.Equal(t, int64(50), fooAcc.GetCoins().AmountOf("steak"))
 
 	executeWrite(t, fmt.Sprintf("toncli send %v --amount=10steak --to=%v --name=foo", flags, barCech), pass)
+	fmt.Println("wackydebugoutput TestGaiaCLISend 1")
+	fmt.Println("wackydebugoutput TestGaiaCLISend 2")
 	time.Sleep(time.Second * 2) // waiting for some blocks to pass
 
 	barAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barCech, flags))
@@ -76,13 +80,14 @@ func TestGaiaCLICreateValidator(t *testing.T) {
 	executeWrite(t, "toncli keys add bar", pass)
 
 	// get a free port, also setup some common flags
-	servAddr := server.FreeTCPAddr(t)
+	servAddr, port, err := server.FreeTCPAddr()
+	require.NoError(t, err)
 	flags := fmt.Sprintf("--node=%v --chain-id=%v", servAddr, chainID)
 
 	// start tond server
 	proc := tests.GoExecuteT(t, fmt.Sprintf("tond start --rpc.laddr=%v", servAddr))
 	defer proc.Stop(false)
-	time.Sleep(time.Second * 5) // Wait for RPC server to start.
+	tests.WaitForStart(port)
 
 	fooAddr, _ := executeGetAddrPK(t, "toncli keys show foo --output=json")
 	fooCech, err := sdk.Bech32TepletonifyAcc(fooAddr)
@@ -101,43 +106,40 @@ func TestGaiaCLICreateValidator(t *testing.T) {
 	fooAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooCech, flags))
 	assert.Equal(t, int64(40), fooAcc.GetCoins().AmountOf("steak"))
 
-	//valPrivkey := crypto.GenPrivKeyEd25519()
-	//valAddr := sdk.Address((valPrivkey.PubKey().Address()))
-	//bechVal, err := sdk.Bech32TepletonifyVal(valAddr)
-
 	// create validator
 	cvStr := fmt.Sprintf("toncli create-validator %v", flags)
 	cvStr += fmt.Sprintf(" --name=%v", "bar")
 	cvStr += fmt.Sprintf(" --address-validator=%v", barCech)
 	cvStr += fmt.Sprintf(" --pubkey=%v", barCeshPubKey)
-	cvStr += fmt.Sprintf(" --amount=%v", "1steak")
+	cvStr += fmt.Sprintf(" --amount=%v", "2steak")
 	cvStr += fmt.Sprintf(" --moniker=%v", "bar-vally")
 
 	executeWrite(t, cvStr, pass)
 	time.Sleep(time.Second * 3) // waiting for some blocks to pass
 
 	barAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barCech, flags))
-	require.Equal(t, int64(9), barAcc.GetCoins().AmountOf("steak"), "%v", barAcc)
+	require.Equal(t, int64(8), barAcc.GetCoins().AmountOf("steak"), "%v", barAcc)
 
-	validator := executeGetValidator(t, fmt.Sprintf("toncli validator --output=json %v %v", barCech, flags))
+	validator := executeGetValidator(t, fmt.Sprintf("toncli validator %v --output=json %v", barCech, flags))
 	assert.Equal(t, validator.Owner, barAddr)
-	assert.Equal(t, "1/1", validator.PoolShares.Amount.String())
+	assert.Equal(t, "2/1", validator.PoolShares.Amount.String())
 
-	// TODO timeout issues if not connected to the internet
 	// unbond a single share
-	//unbondStr := fmt.Sprintf("toncli unbond %v", flags)
-	//unbondStr += fmt.Sprintf(" --name=%v", "bar")
-	//unbondStr += fmt.Sprintf(" --address-validator=%v", barCech)
-	//unbondStr += fmt.Sprintf(" --address-delegator=%v", barCech)
-	//unbondStr += fmt.Sprintf(" --shares=%v", "1")
-	//unbondStr += fmt.Sprintf(" --sequence=%v", "1")
-	//t.Log(fmt.Sprintf("debug unbondStr: %v\n", unbondStr))
-	//executeWrite(t, unbondStr, pass)
-	//time.Sleep(time.Second * 3) // waiting for some blocks to pass
-	//barAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barCech, flags))
-	//assert.Equal(t, int64(99998), barAcc.GetCoins().AmountOf("steak"))
-	//validator = executeGetValidator(t, fmt.Sprintf("toncli validator %v --address-validator=%v", flags, barCech))
-	//assert.Equal(t, int64(2), validator.BondedShares.Evaluate())
+	unbondStr := fmt.Sprintf("toncli unbond %v", flags)
+	unbondStr += fmt.Sprintf(" --name=%v", "bar")
+	unbondStr += fmt.Sprintf(" --address-validator=%v", barCech)
+	unbondStr += fmt.Sprintf(" --address-delegator=%v", barCech)
+	unbondStr += fmt.Sprintf(" --shares=%v", "1")
+	unbondStr += fmt.Sprintf(" --sequence=%v", "1")
+	t.Log(fmt.Sprintf("debug unbondStr: %v\n", unbondStr))
+
+	executeWrite(t, unbondStr, pass)
+	time.Sleep(time.Second * 3) // waiting for some blocks to pass
+
+	barAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barCech, flags))
+	require.Equal(t, int64(9), barAcc.GetCoins().AmountOf("steak"), "%v", barAcc)
+	validator = executeGetValidator(t, fmt.Sprintf("toncli validator %v --output=json %v", barCech, flags))
+	assert.Equal(t, "1/1", validator.PoolShares.Amount.String())
 }
 
 //___________________________________________________________________________________
