@@ -1,10 +1,7 @@
 package stake
 
 import (
-	"encoding/json"
-
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/wire"
 	crypto "github.com/tepleton/go-crypto"
 )
 
@@ -19,12 +16,6 @@ const StakingToken = "steak"
 
 //Verify interface at compile time
 var _, _, _, _ sdk.Msg = &MsgDeclareCandidacy{}, &MsgEditCandidacy{}, &MsgDelegate{}, &MsgUnbond{}
-
-var msgCdc = wire.NewCodec()
-
-func init() {
-	wire.RegisterCrypto(msgCdc)
-}
 
 //______________________________________________________________________
 
@@ -47,10 +38,8 @@ func NewMsgDeclareCandidacy(validatorAddr sdk.Address, pubkey crypto.PubKey,
 }
 
 //nolint
-func (msg MsgDeclareCandidacy) Type() string { return MsgType } //TODO update "stake/declarecandidacy"
-func (msg MsgDeclareCandidacy) GetSigners() []sdk.Address {
-	return []sdk.Address{msg.ValidatorAddr}
-}
+func (msg MsgDeclareCandidacy) Type() string              { return MsgType } //TODO update "stake/declarecandidacy"
+func (msg MsgDeclareCandidacy) GetSigners() []sdk.Address { return []sdk.Address{msg.ValidatorAddr} }
 
 // get the bytes for the message signer to sign on
 func (msg MsgDeclareCandidacy) GetSignBytes() []byte {
@@ -91,14 +80,12 @@ func NewMsgEditCandidacy(validatorAddr sdk.Address, description Description) Msg
 }
 
 //nolint
-func (msg MsgEditCandidacy) Type() string { return MsgType } //TODO update "stake/msgeditcandidacy"
-func (msg MsgEditCandidacy) GetSigners() []sdk.Address {
-	return []sdk.Address{msg.ValidatorAddr}
-}
+func (msg MsgEditCandidacy) Type() string              { return MsgType } //TODO update "stake/msgeditcandidacy"
+func (msg MsgEditCandidacy) GetSigners() []sdk.Address { return []sdk.Address{msg.ValidatorAddr} }
 
 // get the bytes for the message signer to sign on
 func (msg MsgEditCandidacy) GetSignBytes() []byte {
-	b, err := json.Marshal(msg)
+	b, err := msgCdc.MarshalJSON(msg)
 	if err != nil {
 		panic(err)
 	}
@@ -135,14 +122,12 @@ func NewMsgDelegate(delegatorAddr, validatorAddr sdk.Address, bond sdk.Coin) Msg
 }
 
 //nolint
-func (msg MsgDelegate) Type() string { return MsgType } //TODO update "stake/msgeditcandidacy"
-func (msg MsgDelegate) GetSigners() []sdk.Address {
-	return []sdk.Address{msg.DelegatorAddr}
-}
+func (msg MsgDelegate) Type() string              { return MsgType } //TODO update "stake/msgeditcandidacy"
+func (msg MsgDelegate) GetSigners() []sdk.Address { return []sdk.Address{msg.DelegatorAddr} }
 
 // get the bytes for the message signer to sign on
 func (msg MsgDelegate) GetSignBytes() []byte {
-	b, err := json.Marshal(msg)
+	b, err := msgCdc.MarshalJSON(msg)
 	if err != nil {
 		panic(err)
 	}
@@ -189,7 +174,7 @@ func (msg MsgUnbond) GetSigners() []sdk.Address { return []sdk.Address{msg.Deleg
 
 // get the bytes for the message signer to sign on
 func (msg MsgUnbond) GetSignBytes() []byte {
-	b, err := json.Marshal(msg)
+	b, err := msgCdc.MarshalJSON(msg)
 	if err != nil {
 		panic(err)
 	}

@@ -13,11 +13,9 @@ import (
 	"github.com/tepleton/tepleton-sdk/cmd/ton/app"
 	"github.com/tepleton/tepleton-sdk/server"
 	"github.com/tepleton/tepleton-sdk/tests"
-	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/stake"
-	crypto "github.com/tepleton/go-crypto"
 )
 
 func TestGaiaCLISend(t *testing.T) {
@@ -40,32 +38,24 @@ func TestGaiaCLISend(t *testing.T) {
 	fooAddr, _ := executeGetAddrPK(t, "toncli keys show foo --output=json")
 	barAddr, _ := executeGetAddrPK(t, "toncli keys show bar --output=json")
 
-	fooBech, err := sdk.Bech32TepletonifyAcc(fooAddr)
-	if err != nil {
-		t.Error(err)
-	}
-	barBech, err := sdk.Bech32TepletonifyAcc(barAddr)
-	if err != nil {
-		t.Error(err)
-	}
-	fooAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooBech, flags))
+	fooAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooAddr, flags))
 	assert.Equal(t, int64(50), fooAcc.GetCoins().AmountOf("steak"))
 
 	executeWrite(t, fmt.Sprintf("toncli send %v --amount=10steak --to=%v --name=foo", flags, barAddr), pass)
 	time.Sleep(time.Second * 3) // waiting for some blocks to pass
 
-	barAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barBech, flags))
+	barAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barAddr, flags))
 	assert.Equal(t, int64(10), barAcc.GetCoins().AmountOf("steak"))
-	fooAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooBech, flags))
+	fooAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooAddr, flags))
 	assert.Equal(t, int64(40), fooAcc.GetCoins().AmountOf("steak"))
 
 	// test autosequencing
 	executeWrite(t, fmt.Sprintf("toncli send %v --amount=10steak --to=%v --name=foo", flags, barAddr), pass)
 	time.Sleep(time.Second * 3) // waiting for some blocks to pass
 
-	barAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barBech, flags))
+	barAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barAddr, flags))
 	assert.Equal(t, int64(20), barAcc.GetCoins().AmountOf("steak"))
-	fooAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooBech, flags))
+	fooAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooAddr, flags))
 	assert.Equal(t, int64(30), fooAcc.GetCoins().AmountOf("steak"))
 }
 
@@ -87,32 +77,21 @@ func TestGaiaCLIDeclareCandidacy(t *testing.T) {
 	defer cmd.Process.Kill()
 
 	fooAddr, _ := executeGetAddrPK(t, "toncli keys show foo --output=json")
-	barAddr, _ := executeGetAddrPK(t, "toncli keys show bar --output=json")
+	barAddr, barPubKey := executeGetAddrPK(t, "toncli keys show bar --output=json")
 
-	fooBech, err := sdk.Bech32TepletonifyAcc(fooAddr)
-	if err != nil {
-		t.Error(err)
-	}
-	barBech, err := sdk.Bech32TepletonifyAcc(barAddr)
-	if err != nil {
-		t.Error(err)
-	}
-	valPrivkey := crypto.GenPrivKeyEd25519()
-	valAddr := sdk.Address((valPrivkey.PubKey().Address()))
-	bechVal, err := sdk.Bech32TepletonifyVal(valAddr)
-
-	executeWrite(t, fmt.Sprintf("toncli send %v --amount=10steak --to=%v --name=foo", flags, barBech), pass)
+	executeWrite(t, fmt.Sprintf("toncli send %v --amount=10steak --to=%v --name=foo", flags, barAddr), pass)
 	time.Sleep(time.Second * 3) // waiting for some blocks to pass
 
-	fooAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooBech, flags))
+	fooAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooAddr, flags))
 	assert.Equal(t, int64(40), fooAcc.GetCoins().AmountOf("steak"))
-	barAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barBech, flags))
+	barAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barAddr, flags))
 	assert.Equal(t, int64(10), barAcc.GetCoins().AmountOf("steak"))
 
 	// declare candidacy
-	declStr := fmt.Sprintf("toncli create-validator %v", flags)
+	declStr := fmt.Sprintf("toncli declare-candidacy %v", flags)
 	declStr += fmt.Sprintf(" --name=%v", "bar")
-	declStr += fmt.Sprintf(" --validator-address=%v", bechVal)
+	declStr += fmt.Sprintf(" --address-candidate=%v", barAddr)
+	declStr += fmt.Sprintf(" --pubkey=%v", barPubKey)
 	declStr += fmt.Sprintf(" --amount=%v", "3steak")
 	declStr += fmt.Sprintf(" --moniker=%v", "bar-vally")
 	fmt.Printf("debug declStr: %v\n", declStr)
@@ -121,8 +100,8 @@ func TestGaiaCLIDeclareCandidacy(t *testing.T) {
 	barAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barAddr, flags))
 	assert.Equal(t, int64(7), barAcc.GetCoins().AmountOf("steak"))
 	candidate := executeGetCandidate(t, fmt.Sprintf("toncli candidate %v --address-candidate=%v", flags, barAddr))
-	assert.Equal(t, candidate.Owner.String(), barAddr)
-	assert.Equal(t, int64(3), candidate.PoolShares)
+	assert.Equal(t, candidate.Address.String(), barAddr)
+	assert.Equal(t, int64(3), candidate.BondedShares.Evaluate())
 
 	// TODO timeout issues if not connected to the internet
 	// unbond a single share
@@ -146,9 +125,6 @@ func executeWrite(t *testing.T, cmdStr string, writes ...string) {
 
 	for _, write := range writes {
 		_, err := wc.Write([]byte(write + "\n"))
-		if err != nil {
-			fmt.Println(err)
-		}
 		require.NoError(t, err)
 	}
 	fmt.Printf("debug waiting cmdStr: %v\n", cmdStr)
@@ -183,7 +159,7 @@ func executeInit(t *testing.T, cmdStr string) (chainID string) {
 	return
 }
 
-func executeGetAddrPK(t *testing.T, cmdStr string) (sdk.Address, crypto.PubKey) {
+func executeGetAddrPK(t *testing.T, cmdStr string) (addr, pubKey string) {
 	out := tests.ExecuteT(t, cmdStr)
 	var ko keys.KeyOutput
 	keys.UnmarshalJSON([]byte(out), &ko)
@@ -204,9 +180,9 @@ func executeGetAccount(t *testing.T, cmdStr string) auth.BaseAccount {
 	return acc
 }
 
-func executeGetCandidate(t *testing.T, cmdStr string) stake.Validator {
+func executeGetCandidate(t *testing.T, cmdStr string) stake.Candidate {
 	out := tests.ExecuteT(t, cmdStr)
-	var candidate stake.Validator
+	var candidate stake.Candidate
 	cdc := app.MakeCodec()
 	err := cdc.UnmarshalJSON([]byte(out), &candidate)
 	require.NoError(t, err, "out %v, err %v", out, err)

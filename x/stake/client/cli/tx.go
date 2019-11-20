@@ -1,10 +1,13 @@
 package cli
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	crypto "github.com/tepleton/go-crypto"
 
 	"github.com/tepleton/tepleton-sdk/client/context"
 	sdk "github.com/tepleton/tepleton-sdk/types"
@@ -25,7 +28,7 @@ func GetCmdDeclareCandidacy(cdc *wire.Codec) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			validatorAddr, err := sdk.GetAccAddressBech32Tepleton(viper.GetString(FlagAddressValidator))
+			validatorAddr, err := sdk.GetAddress(viper.GetString(FlagAddressValidator))
 			if err != nil {
 				return err
 			}
@@ -34,10 +37,15 @@ func GetCmdDeclareCandidacy(cdc *wire.Codec) *cobra.Command {
 			if len(pkStr) == 0 {
 				return fmt.Errorf("must use --pubkey flag")
 			}
-			pk, err := sdk.GetValPubKeyBech32Tepleton(pkStr)
+			pkBytes, err := hex.DecodeString(pkStr)
 			if err != nil {
 				return err
 			}
+			pk, err := crypto.PubKeyFromBytes(pkBytes)
+			if err != nil {
+				return err
+			}
+
 			if viper.GetString(FlagMoniker) == "" {
 				return fmt.Errorf("please enter a moniker for the validator using --moniker")
 			}
@@ -74,7 +82,7 @@ func GetCmdEditCandidacy(cdc *wire.Codec) *cobra.Command {
 		Short: "edit and existing validator account",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			validatorAddr, err := sdk.GetAccAddressBech32Tepleton(viper.GetString(FlagAddressValidator))
+			validatorAddr, err := sdk.GetAddress(viper.GetString(FlagAddressValidator))
 			if err != nil {
 				return err
 			}
@@ -115,8 +123,8 @@ func GetCmdDelegate(cdc *wire.Codec) *cobra.Command {
 				return err
 			}
 
-			delegatorAddr, err := sdk.GetAccAddressBech32Tepleton(viper.GetString(FlagAddressDelegator))
-			validatorAddr, err := sdk.GetAccAddressBech32Tepleton(viper.GetString(FlagAddressValidator))
+			delegatorAddr, err := sdk.GetAddress(viper.GetString(FlagAddressDelegator))
+			validatorAddr, err := sdk.GetAddress(viper.GetString(FlagAddressValidator))
 			if err != nil {
 				return err
 			}
@@ -163,8 +171,8 @@ func GetCmdUnbond(cdc *wire.Codec) *cobra.Command {
 				}
 			}
 
-			delegatorAddr, err := sdk.GetAccAddressBech32Tepleton(viper.GetString(FlagAddressDelegator))
-			validatorAddr, err := sdk.GetAccAddressBech32Tepleton(viper.GetString(FlagAddressValidator))
+			delegatorAddr, err := sdk.GetAddress(viper.GetString(FlagAddressDelegator))
+			validatorAddr, err := sdk.GetAddress(viper.GetString(FlagAddressValidator))
 			if err != nil {
 				return err
 			}

@@ -16,7 +16,6 @@ const (
 	CodeInvalidValidator CodeType = 201
 	CodeInvalidBond      CodeType = 202
 	CodeInvalidInput     CodeType = 203
-	CodeValidatorJailed  CodeType = 204
 	CodeUnauthorized     CodeType = sdk.CodeUnauthorized
 	CodeInternal         CodeType = sdk.CodeInternal
 	CodeUnknownRequest   CodeType = sdk.CodeUnknownRequest
