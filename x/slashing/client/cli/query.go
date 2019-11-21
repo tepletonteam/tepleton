@@ -16,12 +16,12 @@ import (
 // get the command to query signing info
 func GetCmdQuerySigningInfo(storeName string, cdc *wire.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "signing_info [owner-addr]",
+		Use:   "signing_info [validator-pubkey]",
 		Short: "Query a validator's signing information",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			pk, err := sdk.GetValPubKeyBech32Tepleton(args[0])
+			pk, err := sdk.GetValPubKeyBech32(args[0])
 			if err != nil {
 				return err
 			}

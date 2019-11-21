@@ -14,6 +14,7 @@ import (
 	authcmd "github.com/tepleton/tepleton-sdk/x/auth/client/cli"
 	bankcmd "github.com/tepleton/tepleton-sdk/x/bank/client/cli"
 	ibccmd "github.com/tepleton/tepleton-sdk/x/ibc/client/cli"
+	slashingcmd "github.com/tepleton/tepleton-sdk/x/slashing/client/cli"
 	stakecmd "github.com/tepleton/tepleton-sdk/x/stake/client/cli"
 
 	"github.com/tepleton/tepleton-sdk/cmd/ton/app"
@@ -86,6 +87,7 @@ func main() {
 			stakecmd.GetCmdQueryValidators("stake", cdc),
 			stakecmd.GetCmdQueryDelegation("stake", cdc),
 			stakecmd.GetCmdQueryDelegations("stake", cdc),
+			slashingcmd.GetCmdQuerySigningInfo("slashing", cdc),
 		)...)
 	stakeCmd.AddCommand(
 		client.PostCommands(
@@ -93,6 +95,7 @@ func main() {
 			stakecmd.GetCmdEditValidator(cdc),
 			stakecmd.GetCmdDelegate(cdc),
 			stakecmd.GetCmdUnbond(cdc),
+			slashingcmd.GetCmdUnrevoke(cdc),
 		)...)
 	rootCmd.AddCommand(
 		stakeCmd,
