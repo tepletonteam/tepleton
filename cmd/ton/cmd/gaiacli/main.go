@@ -39,15 +39,15 @@ func main() {
 	rpc.AddCommands(rootCmd)
 
 	//Add state commands
-	stateCmd := &cobra.Command{
-		Use:   "state",
-		Short: "State querying subcommands (validators, blocks, transactions)",
+	tepletonCmd := &cobra.Command{
+		Use:   "tepleton",
+		Short: "Tendermint state querying subcommands",
 	}
-	stateCmd.AddCommand(
+	tepletonCmd.AddCommand(
 		rpc.BlockCommand(),
 		rpc.ValidatorCommand(),
 	)
-	tx.AddCommands(stateCmd, cdc)
+	tx.AddCommands(tepletonCmd, cdc)
 
 	//Add IBC commands
 	ibcCmd := &cobra.Command{
@@ -66,7 +66,7 @@ func main() {
 	}
 
 	advancedCmd.AddCommand(
-		stateCmd,
+		tepletonCmd,
 		ibcCmd,
 		lcd.ServeCommand(cdc),
 	)
