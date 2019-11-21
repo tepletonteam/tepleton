@@ -70,7 +70,7 @@ get_vendor_deps:
 draw_deps:
 	@# requires brew install graphviz or apt-get install graphviz
 	go get github.com/RobotsAndPencils/goviz
-	@goviz -i github.com/tepleton/tepleton/cmd/tepleton -d 3 | dot -Tpng -o dependency-graph.png
+	@goviz -i github.com/tepleton/tepleton-sdk/cmd/ton/cmd/tond -d 2 | dot -Tpng -o dependency-graph.png
 
 
 ########################################
