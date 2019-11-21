@@ -125,6 +125,16 @@ func (st *iavlStore) ReverseIterator(start, end []byte) Iterator {
 	return newIAVLIterator(st.tree.Tree(), start, end, false)
 }
 
+// Implements KVStore.
+func (st *iavlStore) SubspaceIterator(prefix []byte) Iterator {
+	return st.Iterator(prefix, sdk.PrefixEndBytes(prefix))
+}
+
+// Implements KVStore.
+func (st *iavlStore) ReverseSubspaceIterator(prefix []byte) Iterator {
+	return st.ReverseIterator(prefix, sdk.PrefixEndBytes(prefix))
+}
+
 // Query implements WRSP interface, allows queries
 //
 // by default we will return from (latest height -1),
@@ -170,7 +180,7 @@ func (st *iavlStore) Query(req wrsp.RequestQuery) (res wrsp.ResponseQuery) {
 		subspace := req.Data
 		res.Key = subspace
 		var KVs []KVPair
-		iterator := sdk.KVStorePrefixIterator(st, subspace)
+		iterator := st.SubspaceIterator(subspace)
 		for ; iterator.Valid(); iterator.Next() {
 			KVs = append(KVs, KVPair{iterator.Key(), iterator.Value()})
 		}

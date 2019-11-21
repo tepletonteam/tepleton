@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -8,7 +9,6 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/context"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
-	"github.com/tepleton/tepleton-sdk/x/auth"
 )
 
 // GetAccountCmd for the auth.BaseAccount type
@@ -17,8 +17,8 @@ func GetAccountCmdDefault(storeName string, cdc *wire.Codec) *cobra.Command {
 }
 
 // Get account decoder for auth.DefaultAccount
-func GetAccountDecoder(cdc *wire.Codec) auth.AccountDecoder {
-	return func(accBytes []byte) (acct auth.Account, err error) {
+func GetAccountDecoder(cdc *wire.Codec) sdk.AccountDecoder {
+	return func(accBytes []byte) (acct sdk.Account, err error) {
 		// acct := new(auth.BaseAccount)
 		err = cdc.UnmarshalBinaryBare(accBytes, &acct)
 		if err != nil {
@@ -30,7 +30,7 @@ func GetAccountDecoder(cdc *wire.Codec) auth.AccountDecoder {
 
 // GetAccountCmd returns a query account that will display the
 // state of the account at a given address
-func GetAccountCmd(storeName string, cdc *wire.Codec, decoder auth.AccountDecoder) *cobra.Command {
+func GetAccountCmd(storeName string, cdc *wire.Codec, decoder sdk.AccountDecoder) *cobra.Command {
 	return &cobra.Command{
 		Use:   "account [address]",
 		Short: "Query account balance",
@@ -39,11 +39,11 @@ func GetAccountCmd(storeName string, cdc *wire.Codec, decoder auth.AccountDecode
 
 			// find the key to look up the account
 			addr := args[0]
-
-			key, err := sdk.GetAccAddressBech32(addr)
+			bz, err := hex.DecodeString(addr)
 			if err != nil {
 				return err
 			}
+			key := sdk.Address(bz)
 
 			// perform query
 			ctx := context.NewCoreContextFromViper()

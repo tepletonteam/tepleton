@@ -186,14 +186,8 @@ func TestMsgSendGetSignBytes(t *testing.T) {
 		Outputs: []Output{NewOutput(addr2, coins)},
 	}
 	res := msg.GetSignBytes()
-
-	unmarshaledMsg := &MsgSend{}
-	msgCdc.UnmarshalJSON(res, unmarshaledMsg)
-	assert.Equal(t, &msg, unmarshaledMsg)
-
 	// TODO bad results
-	expected := `{"type":"EAFDE32A2C87F8","value":{"inputs":[{"address":"696E707574","coins":[{"denom":"atom","amount":10}]}],"outputs":[{"address":"6F7574707574","coins":[{"denom":"atom","amount":10}]}]}}`
-	assert.Equal(t, expected, string(res))
+	assert.Equal(t, string(res), `{"inputs":[{"address":"696E707574","coins":[{"denom":"atom","amount":10}]}],"outputs":[{"address":"6F7574707574","coins":[{"denom":"atom","amount":10}]}]}`)
 }
 
 func TestMsgSendGetSigners(t *testing.T) {
@@ -261,14 +255,8 @@ func TestMsgIssueGetSignBytes(t *testing.T) {
 		Outputs: []Output{NewOutput(addr, coins)},
 	}
 	res := msg.GetSignBytes()
-
-	unmarshaledMsg := &MsgIssue{}
-	msgCdc.UnmarshalJSON(res, unmarshaledMsg)
-	assert.Equal(t, &msg, unmarshaledMsg)
-
 	// TODO bad results
-	expected := `{"type":"72E617C06ABAD0","value":{"banker":"696E707574","outputs":[{"address":"6C6F616E2D66726F6D2D62616E6B","coins":[{"denom":"atom","amount":10}]}]}}`
-	assert.Equal(t, expected, string(res))
+	assert.Equal(t, string(res), `{"banker":"696E707574","outputs":[{"address":"6C6F616E2D66726F6D2D62616E6B","coins":[{"denom":"atom","amount":10}]}]}`)
 }
 
 func TestMsgIssueGetSigners(t *testing.T) {

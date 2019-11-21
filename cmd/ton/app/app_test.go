@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
@@ -37,7 +38,7 @@ var (
 	coins     = sdk.Coins{{"foocoin", 10}}
 	halfCoins = sdk.Coins{{"foocoin", 5}}
 	manyCoins = sdk.Coins{{"foocoin", 1}, {"barcoin", 1}}
-	fee       = auth.StdFee{
+	fee       = sdk.StdFee{
 		sdk.Coins{{"foocoin", 0}},
 		100000,
 	}
@@ -138,6 +139,30 @@ func TestMsgs(t *testing.T) {
 	}
 }
 
+func setGenesisAccounts(gapp *GaiaApp, accs ...*auth.BaseAccount) error {
+	genaccs := make([]GenesisAccount, len(accs))
+	for i, acc := range accs {
+		genaccs[i] = NewGenesisAccount(acc)
+	}
+
+	genesisState := GenesisState{
+		Accounts:  genaccs,
+		StakeData: stake.DefaultGenesisState(),
+	}
+
+	stateBytes, err := json.MarshalIndent(genesisState, "", "\t")
+	if err != nil {
+		return err
+	}
+
+	// Initialize the chain
+	vals := []wrsp.Validator{}
+	gapp.InitChain(wrsp.RequestInitChain{vals, stateBytes})
+	gapp.Commit()
+
+	return nil
+}
+
 func TestGenesis(t *testing.T) {
 	logger, dbs := loggerAndDB()
 	gapp := NewGaiaApp(logger, dbs)
@@ -153,7 +178,7 @@ func TestGenesis(t *testing.T) {
 	}
 
 	err = setGenesis(gapp, baseAcc)
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	// A checkTx context
 	ctx := gapp.BaseApp.NewContext(true, wrsp.Header{})
@@ -369,13 +394,13 @@ func TestStakeMsgs(t *testing.T) {
 	require.Equal(t, acc1, res1)
 	require.Equal(t, acc2, res2)
 
-	// Create Validator
+	// Declare Candidacy
 
 	description := stake.NewDescription("foo_moniker", "", "", "")
-	createValidatorMsg := stake.NewMsgCreateValidator(
+	declareCandidacyMsg := stake.NewMsgDeclareCandidacy(
 		addr1, priv1.PubKey(), bondCoin, description,
 	)
-	SignCheckDeliver(t, gapp, createValidatorMsg, []int64{0}, true, priv1)
+	SignCheckDeliver(t, gapp, declareCandidacyMsg, []int64{0}, true, priv1)
 
 	ctxDeliver := gapp.BaseApp.NewContext(false, wrsp.Header{})
 	res1 = gapp.accountMapper.GetAccount(ctxDeliver, addr1)
@@ -390,13 +415,13 @@ func TestStakeMsgs(t *testing.T) {
 	bond, found := gapp.stakeKeeper.GetDelegation(ctxDeliver, addr1, addr1)
 	require.True(sdk.RatEq(t, sdk.NewRat(10), bond.Shares))
 
-	// Edit Validator
+	// Edit Candidacy
 
 	description = stake.NewDescription("bar_moniker", "", "", "")
-	editValidatorMsg := stake.NewMsgEditValidator(
+	editCandidacyMsg := stake.NewMsgEditCandidacy(
 		addr1, description,
 	)
-	SignDeliver(t, gapp, editValidatorMsg, []int64{1}, true, priv1)
+	SignDeliver(t, gapp, editCandidacyMsg, []int64{1}, true, priv1)
 
 	validator, found = gapp.stakeKeeper.GetValidator(ctxDeliver, addr1)
 	require.True(t, found)
@@ -438,17 +463,17 @@ func CheckBalance(t *testing.T, gapp *GaiaApp, addr sdk.Address, balExpected str
 	assert.Equal(t, balExpected, fmt.Sprintf("%v", res2.GetCoins()))
 }
 
-func genTx(msg sdk.Msg, seq []int64, priv ...crypto.PrivKeyEd25519) auth.StdTx {
-	sigs := make([]auth.StdSignature, len(priv))
+func genTx(msg sdk.Msg, seq []int64, priv ...crypto.PrivKeyEd25519) sdk.StdTx {
+	sigs := make([]sdk.StdSignature, len(priv))
 	for i, p := range priv {
-		sigs[i] = auth.StdSignature{
+		sigs[i] = sdk.StdSignature{
 			PubKey:    p.PubKey(),
-			Signature: p.Sign(auth.StdSignBytes(chainID, seq, fee, msg)),
+			Signature: p.Sign(sdk.StdSignBytes(chainID, seq, fee, msg)),
 			Sequence:  seq[i],
 		}
 	}
 
-	return auth.NewStdTx(msg, fee, sigs)
+	return sdk.NewStdTx(msg, fee, sigs)
 
 }
 

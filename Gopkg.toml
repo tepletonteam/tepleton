@@ -54,28 +54,32 @@
 
 [[constraint]]
   name = "github.com/tepleton/wrsp"
-  version = "0.11.0-rc0"
+  version = "~0.10.3"
 
 [[constraint]]
   name = "github.com/tepleton/go-crypto"
   version = "~0.6.2"
 
+[[override]]
+  name = "github.com/tepleton/go-wire"
+  version = "0.7.3"
+
 [[constraint]]
   name = "github.com/tepleton/go-amino"
-  version = "=0.9.9"
+  version = "~0.9.9"
 
 [[constraint]]
   name = "github.com/tepleton/iavl"
-  version = "0.8.0-rc0"
+  version = "~0.7.0"
 
 [[constraint]]
   name = "github.com/tepleton/tepleton"
-  version = "0.20.0-rc0"
+  version = "0.19.5-rc1"
 
 [[override]]
   name = "github.com/tepleton/tmlibs"
-  branch = "develop"
-
+  version = "~0.8.3-rc0"
+  
 # this got updated and broke, so locked to an old working commit ...
 [[override]]
   name = "google.golang.org/genproto"
@@ -84,3 +88,4 @@
 [prune]
   go-tests = true
   unused-packages = true
+

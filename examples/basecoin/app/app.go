@@ -14,7 +14,6 @@ import (
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/bank"
 	"github.com/tepleton/tepleton-sdk/x/ibc"
-	"github.com/tepleton/tepleton-sdk/x/slashing"
 	"github.com/tepleton/tepleton-sdk/x/stake"
 
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/types"
@@ -30,19 +29,16 @@ type BasecoinApp struct {
 	cdc *wire.Codec
 
 	// keys to access the substores
-	keyMain     *sdk.KVStoreKey
-	keyAccount  *sdk.KVStoreKey
-	keyIBC      *sdk.KVStoreKey
-	keyStake    *sdk.KVStoreKey
-	keySlashing *sdk.KVStoreKey
+	keyMain    *sdk.KVStoreKey
+	keyAccount *sdk.KVStoreKey
+	keyIBC     *sdk.KVStoreKey
+	keyStake   *sdk.KVStoreKey
 
 	// Manage getting and setting accounts
-	accountMapper       auth.AccountMapper
-	feeCollectionKeeper auth.FeeCollectionKeeper
-	coinKeeper          bank.Keeper
-	ibcMapper           ibc.Mapper
-	stakeKeeper         stake.Keeper
-	slashingKeeper      slashing.Keeper
+	accountMapper sdk.AccountMapper
+	coinKeeper    bank.Keeper
+	ibcMapper     ibc.Mapper
+	stakeKeeper   stake.Keeper
 }
 
 func NewBasecoinApp(logger log.Logger, db dbm.DB) *BasecoinApp {
@@ -52,13 +48,12 @@ func NewBasecoinApp(logger log.Logger, db dbm.DB) *BasecoinApp {
 
 	// Create your application object.
 	var app = &BasecoinApp{
-		BaseApp:     bam.NewBaseApp(appName, cdc, logger, db),
-		cdc:         cdc,
-		keyMain:     sdk.NewKVStoreKey("main"),
-		keyAccount:  sdk.NewKVStoreKey("acc"),
-		keyIBC:      sdk.NewKVStoreKey("ibc"),
-		keyStake:    sdk.NewKVStoreKey("stake"),
-		keySlashing: sdk.NewKVStoreKey("slashing"),
+		BaseApp:    bam.NewBaseApp(appName, cdc, logger, db),
+		cdc:        cdc,
+		keyMain:    sdk.NewKVStoreKey("main"),
+		keyAccount: sdk.NewKVStoreKey("acc"),
+		keyIBC:     sdk.NewKVStoreKey("ibc"),
+		keyStake:   sdk.NewKVStoreKey("stake"),
 	}
 
 	// Define the accountMapper.
@@ -72,21 +67,18 @@ func NewBasecoinApp(logger log.Logger, db dbm.DB) *BasecoinApp {
 	app.coinKeeper = bank.NewKeeper(app.accountMapper)
 	app.ibcMapper = ibc.NewMapper(app.cdc, app.keyIBC, app.RegisterCodespace(ibc.DefaultCodespace))
 	app.stakeKeeper = stake.NewKeeper(app.cdc, app.keyStake, app.coinKeeper, app.RegisterCodespace(stake.DefaultCodespace))
-	app.slashingKeeper = slashing.NewKeeper(app.cdc, app.keySlashing, app.stakeKeeper, app.RegisterCodespace(slashing.DefaultCodespace))
 
 	// register message routes
 	app.Router().
-		AddRoute("auth", auth.NewHandler(app.accountMapper)).
+		AddRoute("auth", auth.NewHandler(app.accountMapper.(auth.AccountMapper))).
 		AddRoute("bank", bank.NewHandler(app.coinKeeper)).
 		AddRoute("ibc", ibc.NewHandler(app.ibcMapper, app.coinKeeper)).
 		AddRoute("stake", stake.NewHandler(app.stakeKeeper))
 
 	// Initialize BaseApp.
 	app.SetInitChainer(app.initChainer)
-	app.SetBeginBlocker(app.BeginBlocker)
-	app.SetEndBlocker(app.EndBlocker)
-	app.SetAnteHandler(auth.NewAnteHandler(app.accountMapper, app.feeCollectionKeeper))
-	app.MountStoresIAVL(app.keyMain, app.keyAccount, app.keyIBC, app.keyStake, app.keySlashing)
+	app.MountStoresIAVL(app.keyMain, app.keyAccount, app.keyIBC, app.keyStake)
+	app.SetAnteHandler(auth.NewAnteHandler(app.accountMapper, auth.BurnFeeHandler))
 	err := app.LoadLatestVersion(app.keyMain)
 	if err != nil {
 		cmn.Exit(err.Error())
@@ -101,36 +93,17 @@ func MakeCodec() *wire.Codec {
 	sdk.RegisterWire(cdc)    // Register Msgs
 	bank.RegisterWire(cdc)
 	stake.RegisterWire(cdc)
-	slashing.RegisterWire(cdc)
 	ibc.RegisterWire(cdc)
 
 	// register custom AppAccount
-	cdc.RegisterInterface((*auth.Account)(nil), nil)
+	cdc.RegisterInterface((*sdk.Account)(nil), nil)
 	cdc.RegisterConcrete(&types.AppAccount{}, "basecoin/Account", nil)
 	return cdc
 }
 
-// application updates every end block
-func (app *BasecoinApp) BeginBlocker(ctx sdk.Context, req wrsp.RequestBeginBlock) wrsp.ResponseBeginBlock {
-	tags := slashing.BeginBlocker(ctx, req, app.slashingKeeper)
-
-	return wrsp.ResponseBeginBlock{
-		Tags: tags.ToKVPairs(),
-	}
-}
-
-// application updates every end block
-func (app *BasecoinApp) EndBlocker(ctx sdk.Context, req wrsp.RequestEndBlock) wrsp.ResponseEndBlock {
-	validatorUpdates := stake.EndBlocker(ctx, app.stakeKeeper)
-
-	return wrsp.ResponseEndBlock{
-		ValidatorUpdates: validatorUpdates,
-	}
-}
-
 // Custom logic for basecoin initialization
 func (app *BasecoinApp) initChainer(ctx sdk.Context, req wrsp.RequestInitChain) wrsp.ResponseInitChain {
-	stateJSON := req.GenesisBytes
+	stateJSON := req.AppStateBytes
 
 	genesisState := new(types.GenesisState)
 	err := app.cdc.UnmarshalJSON(stateJSON, genesisState)
@@ -147,10 +120,6 @@ func (app *BasecoinApp) initChainer(ctx sdk.Context, req wrsp.RequestInitChain) 
 		}
 		app.accountMapper.SetAccount(ctx, acc)
 	}
-
-	// load the initial stake information
-	stake.InitGenesis(ctx, app.stakeKeeper, genesisState.StakeData)
-
 	return wrsp.ResponseInitChain{}
 }
 
@@ -160,7 +129,7 @@ func (app *BasecoinApp) ExportAppStateJSON() (appState json.RawMessage, err erro
 
 	// iterate to get the accounts
 	accounts := []*types.GenesisAccount{}
-	appendAccount := func(acc auth.Account) (stop bool) {
+	appendAccount := func(acc sdk.Account) (stop bool) {
 		account := &types.GenesisAccount{
 			Address: acc.GetAddress(),
 			Coins:   acc.GetCoins(),

@@ -39,15 +39,14 @@ type DemocoinApp struct {
 	capKeyStakingStore *sdk.KVStoreKey
 
 	// keepers
-	feeCollectionKeeper auth.FeeCollectionKeeper
-	coinKeeper          bank.Keeper
-	coolKeeper          cool.Keeper
-	powKeeper           pow.Keeper
-	ibcMapper           ibc.Mapper
-	stakeKeeper         simplestake.Keeper
+	coinKeeper  bank.Keeper
+	coolKeeper  cool.Keeper
+	powKeeper   pow.Keeper
+	ibcMapper   ibc.Mapper
+	stakeKeeper simplestake.Keeper
 
 	// Manage getting and setting accounts
-	accountMapper auth.AccountMapper
+	accountMapper sdk.AccountMapper
 }
 
 func NewDemocoinApp(logger log.Logger, db dbm.DB) *DemocoinApp {
@@ -90,7 +89,7 @@ func NewDemocoinApp(logger log.Logger, db dbm.DB) *DemocoinApp {
 	// Initialize BaseApp.
 	app.SetInitChainer(app.initChainerFn(app.coolKeeper, app.powKeeper))
 	app.MountStoresIAVL(app.capKeyMainStore, app.capKeyAccountStore, app.capKeyPowStore, app.capKeyIBCStore, app.capKeyStakingStore)
-	app.SetAnteHandler(auth.NewAnteHandler(app.accountMapper, app.feeCollectionKeeper))
+	app.SetAnteHandler(auth.NewAnteHandler(app.accountMapper, auth.BurnFeeHandler))
 	err := app.LoadLatestVersion(app.capKeyMainStore)
 	if err != nil {
 		cmn.Exit(err.Error())
@@ -110,7 +109,7 @@ func MakeCodec() *wire.Codec {
 	simplestake.RegisterWire(cdc)
 
 	// Register AppAccount
-	cdc.RegisterInterface((*auth.Account)(nil), nil)
+	cdc.RegisterInterface((*sdk.Account)(nil), nil)
 	cdc.RegisterConcrete(&types.AppAccount{}, "democoin/Account", nil)
 	return cdc
 }
@@ -118,7 +117,7 @@ func MakeCodec() *wire.Codec {
 // custom logic for democoin initialization
 func (app *DemocoinApp) initChainerFn(coolKeeper cool.Keeper, powKeeper pow.Keeper) sdk.InitChainer {
 	return func(ctx sdk.Context, req wrsp.RequestInitChain) wrsp.ResponseInitChain {
-		stateJSON := req.GenesisBytes
+		stateJSON := req.AppStateBytes
 
 		genesisState := new(types.GenesisState)
 		err := app.cdc.UnmarshalJSON(stateJSON, genesisState)
@@ -159,7 +158,7 @@ func (app *DemocoinApp) ExportAppStateJSON() (appState json.RawMessage, err erro
 
 	// iterate to get the accounts
 	accounts := []*types.GenesisAccount{}
-	appendAccount := func(acc auth.Account) (stop bool) {
+	appendAccount := func(acc sdk.Account) (stop bool) {
 		account := &types.GenesisAccount{
 			Address: acc.GetAddress(),
 			Coins:   acc.GetCoins(),

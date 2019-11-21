@@ -17,8 +17,8 @@ func newTestMsg(addrs ...sdk.Address) *sdk.TestMsg {
 	return sdk.NewTestMsg(addrs...)
 }
 
-func newStdFee() StdFee {
-	return NewStdFee(100,
+func newStdFee() sdk.StdFee {
+	return sdk.NewStdFee(100,
 		sdk.Coin{"atom", 150},
 	)
 }
@@ -52,29 +52,28 @@ func checkInvalidTx(t *testing.T, anteHandler sdk.AnteHandler, ctx sdk.Context, 
 	assert.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, code), result.Code)
 }
 
-func newTestTx(ctx sdk.Context, msg sdk.Msg, privs []crypto.PrivKey, seqs []int64, fee StdFee) sdk.Tx {
-	signBytes := StdSignBytes(ctx.ChainID(), seqs, fee, msg)
+func newTestTx(ctx sdk.Context, msg sdk.Msg, privs []crypto.PrivKey, seqs []int64, fee sdk.StdFee) sdk.Tx {
+	signBytes := sdk.StdSignBytes(ctx.ChainID(), seqs, fee, msg)
 	return newTestTxWithSignBytes(msg, privs, seqs, fee, signBytes)
 }
 
-func newTestTxWithSignBytes(msg sdk.Msg, privs []crypto.PrivKey, seqs []int64, fee StdFee, signBytes []byte) sdk.Tx {
-	sigs := make([]StdSignature, len(privs))
+func newTestTxWithSignBytes(msg sdk.Msg, privs []crypto.PrivKey, seqs []int64, fee sdk.StdFee, signBytes []byte) sdk.Tx {
+	sigs := make([]sdk.StdSignature, len(privs))
 	for i, priv := range privs {
-		sigs[i] = StdSignature{PubKey: priv.PubKey(), Signature: priv.Sign(signBytes), Sequence: seqs[i]}
+		sigs[i] = sdk.StdSignature{PubKey: priv.PubKey(), Signature: priv.Sign(signBytes), Sequence: seqs[i]}
 	}
-	tx := NewStdTx(msg, fee, sigs)
+	tx := sdk.NewStdTx(msg, fee, sigs)
 	return tx
 }
 
 // Test various error cases in the AnteHandler control flow.
 func TestAnteHandlerSigErrors(t *testing.T) {
 	// setup
-	ms, capKey, capKey2 := setupMultiStore()
+	ms, capKey := setupMultiStore()
 	cdc := wire.NewCodec()
 	RegisterBaseAccount(cdc)
 	mapper := NewAccountMapper(cdc, capKey, &BaseAccount{})
-	feeCollector := NewFeeCollectionKeeper(cdc, capKey2)
-	anteHandler := NewAnteHandler(mapper, feeCollector)
+	anteHandler := NewAnteHandler(mapper, BurnFeeHandler)
 	ctx := sdk.NewContext(ms, wrsp.Header{ChainID: "mychainid"}, false, nil, log.NewNopLogger())
 
 	// keys and addresses
@@ -111,12 +110,11 @@ func TestAnteHandlerSigErrors(t *testing.T) {
 // Test logic around sequence checking with one signer and many signers.
 func TestAnteHandlerSequences(t *testing.T) {
 	// setup
-	ms, capKey, capKey2 := setupMultiStore()
+	ms, capKey := setupMultiStore()
 	cdc := wire.NewCodec()
 	RegisterBaseAccount(cdc)
 	mapper := NewAccountMapper(cdc, capKey, &BaseAccount{})
-	feeCollector := NewFeeCollectionKeeper(cdc, capKey2)
-	anteHandler := NewAnteHandler(mapper, feeCollector)
+	anteHandler := NewAnteHandler(mapper, BurnFeeHandler)
 	ctx := sdk.NewContext(ms, wrsp.Header{ChainID: "mychainid"}, false, nil, log.NewNopLogger())
 
 	// keys and addresses
@@ -178,12 +176,11 @@ func TestAnteHandlerSequences(t *testing.T) {
 // Test logic around fee deduction.
 func TestAnteHandlerFees(t *testing.T) {
 	// setup
-	ms, capKey, capKey2 := setupMultiStore()
+	ms, capKey := setupMultiStore()
 	cdc := wire.NewCodec()
 	RegisterBaseAccount(cdc)
 	mapper := NewAccountMapper(cdc, capKey, &BaseAccount{})
-	feeCollector := NewFeeCollectionKeeper(cdc, capKey2)
-	anteHandler := NewAnteHandler(mapper, feeCollector)
+	anteHandler := NewAnteHandler(mapper, BurnFeeHandler)
 	ctx := sdk.NewContext(ms, wrsp.Header{ChainID: "mychainid"}, false, nil, log.NewNopLogger())
 
 	// keys and addresses
@@ -197,7 +194,7 @@ func TestAnteHandlerFees(t *testing.T) {
 	var tx sdk.Tx
 	msg := newTestMsg(addr1)
 	privs, seqs := []crypto.PrivKey{priv1}, []int64{0}
-	fee := NewStdFee(100,
+	fee := sdk.NewStdFee(100,
 		sdk.Coin{"atom", 150},
 	)
 
@@ -209,23 +206,18 @@ func TestAnteHandlerFees(t *testing.T) {
 	mapper.SetAccount(ctx, acc1)
 	checkInvalidTx(t, anteHandler, ctx, tx, sdk.CodeInsufficientFunds)
 
-	assert.True(t, feeCollector.GetCollectedFees(ctx).IsEqual(emptyCoins))
-
 	acc1.SetCoins(sdk.Coins{{"atom", 150}})
 	mapper.SetAccount(ctx, acc1)
 	checkValidTx(t, anteHandler, ctx, tx)
-
-	assert.True(t, feeCollector.GetCollectedFees(ctx).IsEqual(sdk.Coins{{"atom", 150}}))
 }
 
 func TestAnteHandlerBadSignBytes(t *testing.T) {
 	// setup
-	ms, capKey, capKey2 := setupMultiStore()
+	ms, capKey := setupMultiStore()
 	cdc := wire.NewCodec()
 	RegisterBaseAccount(cdc)
 	mapper := NewAccountMapper(cdc, capKey, &BaseAccount{})
-	feeCollector := NewFeeCollectionKeeper(cdc, capKey2)
-	anteHandler := NewAnteHandler(mapper, feeCollector)
+	anteHandler := NewAnteHandler(mapper, BurnFeeHandler)
 	ctx := sdk.NewContext(ms, wrsp.Header{ChainID: "mychainid"}, false, nil, log.NewNopLogger())
 
 	// keys and addresses
@@ -260,7 +252,7 @@ func TestAnteHandlerBadSignBytes(t *testing.T) {
 	cases := []struct {
 		chainID string
 		seqs    []int64
-		fee     StdFee
+		fee     sdk.StdFee
 		msg     sdk.Msg
 		code    sdk.CodeType
 	}{
@@ -276,7 +268,7 @@ func TestAnteHandlerBadSignBytes(t *testing.T) {
 	for _, cs := range cases {
 		tx := newTestTxWithSignBytes(
 			msg, privs, seqs, fee,
-			StdSignBytes(cs.chainID, cs.seqs, cs.fee, cs.msg),
+			sdk.StdSignBytes(cs.chainID, cs.seqs, cs.fee, cs.msg),
 		)
 		checkInvalidTx(t, anteHandler, ctx, tx, cs.code)
 	}
@@ -296,12 +288,11 @@ func TestAnteHandlerBadSignBytes(t *testing.T) {
 
 func TestAnteHandlerSetPubKey(t *testing.T) {
 	// setup
-	ms, capKey, capKey2 := setupMultiStore()
+	ms, capKey := setupMultiStore()
 	cdc := wire.NewCodec()
 	RegisterBaseAccount(cdc)
 	mapper := NewAccountMapper(cdc, capKey, &BaseAccount{})
-	feeCollector := NewFeeCollectionKeeper(cdc, capKey2)
-	anteHandler := NewAnteHandler(mapper, feeCollector)
+	anteHandler := NewAnteHandler(mapper, BurnFeeHandler)
 	ctx := sdk.NewContext(ms, wrsp.Header{ChainID: "mychainid"}, false, nil, log.NewNopLogger())
 
 	// keys and addresses
@@ -331,7 +322,7 @@ func TestAnteHandlerSetPubKey(t *testing.T) {
 	// test public key not found
 	msg = newTestMsg(addr2)
 	tx = newTestTx(ctx, msg, privs, seqs, fee)
-	sigs := tx.(StdTx).GetSignatures()
+	sigs := tx.GetSignatures()
 	sigs[0].PubKey = nil
 	checkInvalidTx(t, anteHandler, ctx, tx, sdk.CodeInvalidPubKey)
 
