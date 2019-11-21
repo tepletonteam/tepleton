@@ -12,6 +12,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/context"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	wire "github.com/tepleton/tepleton-sdk/wire"
+	"github.com/tepleton/tepleton-sdk/x/auth"
 	authcmd "github.com/tepleton/tepleton-sdk/x/auth/client/cli"
 	"github.com/tepleton/tepleton-sdk/x/ibc"
 )
@@ -27,7 +28,7 @@ const (
 type relayCommander struct {
 	cdc       *wire.Codec
 	address   sdk.Address
-	decoder   sdk.AccountDecoder
+	decoder   auth.AccountDecoder
 	mainStore string
 	ibcStore  string
 	accStore  string
