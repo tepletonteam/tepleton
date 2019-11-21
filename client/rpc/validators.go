@@ -18,7 +18,7 @@ import (
 func ValidatorCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "validatorset [height]",
-		Short: "Get the full validator set at given height",
+		Short: "Get the full tepleton validator set at given height",
 		Args:  cobra.MaximumNArgs(1),
 		RunE:  printValidators,
 	}
