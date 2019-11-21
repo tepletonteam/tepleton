@@ -89,7 +89,6 @@ func AddCommands(
 		StartCmd(ctx, appCreator),
 		client.LineBreak,
 		tepletonCmd,
-		client.LineBreak,
 		ExportCmd(ctx, cdc, appExport),
 		client.LineBreak,
 		version.VersionCmd,
