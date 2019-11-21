@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/tepleton/tepleton-sdk/client"
 	"github.com/tepleton/tepleton-sdk/version"
 	"github.com/tepleton/tepleton-sdk/wire"
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
@@ -72,13 +73,24 @@ func AddCommands(
 
 	rootCmd.PersistentFlags().String("log_level", ctx.Config.LogLevel, "Log level")
 
+	tepletonCmd := &cobra.Command{
+		Use:   "tepleton",
+		Short: "Tendermint subcommands",
+	}
+
+	tepletonCmd.AddCommand(
+		ShowNodeIDCmd(ctx),
+		ShowValidatorCmd(ctx),
+	)
+
 	rootCmd.AddCommand(
 		InitCmd(ctx, cdc, appInit),
 		StartCmd(ctx, appCreator),
 		UnsafeResetAllCmd(ctx),
-		ShowNodeIDCmd(ctx),
-		ShowValidatorCmd(ctx),
+		client.LineBreak,
+		tepletonCmd,
 		ExportCmd(ctx, cdc, appExport),
+		client.LineBreak,
 		version.VersionCmd,
 	)
 }

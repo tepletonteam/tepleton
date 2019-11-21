@@ -3,7 +3,6 @@ package stake
 import (
 	"bytes"
 	"encoding/hex"
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -22,8 +21,33 @@ import (
 
 // dummy addresses used for testing
 var (
-	addrs       = createTestAddrs(100)
-	pks         = createTestPubKeys(100)
+	addrs = []sdk.Address{
+		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6160", "tepletonaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ctqyxjnwh"),
+		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6161", "tepletonaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ctpesxxn9"),
+		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6162", "tepletonaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ctzhrnsa6"),
+		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6163", "tepletonaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ctr2489qg"),
+		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6164", "tepletonaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ctytvs4pd"),
+		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6165", "tepletonaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ct9k6yqul"),
+		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6166", "tepletonaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ctxcf3kjq"),
+		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6167", "tepletonaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ct89l9r0j"),
+		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6168", "tepletonaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ctg6jkls2"),
+		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6169", "tepletonaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ctf8yz2dc"),
+	}
+
+	// dummy pubkeys used for testing
+	pks = []crypto.PubKey{
+		newPubKey("0B485CFC0EECC619440448436F8FC9DF40566F2369E72400281454CB552AFB50"),
+		newPubKey("0B485CFC0EECC619440448436F8FC9DF40566F2369E72400281454CB552AFB51"),
+		newPubKey("0B485CFC0EECC619440448436F8FC9DF40566F2369E72400281454CB552AFB52"),
+		newPubKey("0B485CFC0EECC619440448436F8FC9DF40566F2369E72400281454CB552AFB53"),
+		newPubKey("0B485CFC0EECC619440448436F8FC9DF40566F2369E72400281454CB552AFB54"),
+		newPubKey("0B485CFC0EECC619440448436F8FC9DF40566F2369E72400281454CB552AFB55"),
+		newPubKey("0B485CFC0EECC619440448436F8FC9DF40566F2369E72400281454CB552AFB56"),
+		newPubKey("0B485CFC0EECC619440448436F8FC9DF40566F2369E72400281454CB552AFB57"),
+		newPubKey("0B485CFC0EECC619440448436F8FC9DF40566F2369E72400281454CB552AFB58"),
+		newPubKey("0B485CFC0EECC619440448436F8FC9DF40566F2369E72400281454CB552AFB59"),
+	}
+
 	emptyAddr   sdk.Address
 	emptyPubkey crypto.PubKey
 )
@@ -44,8 +68,8 @@ func makeTestCodec() *wire.Codec {
 	cdc.RegisterInterface((*sdk.Msg)(nil), nil)
 	cdc.RegisterConcrete(bank.MsgSend{}, "test/stake/Send", nil)
 	cdc.RegisterConcrete(bank.MsgIssue{}, "test/stake/Issue", nil)
-	cdc.RegisterConcrete(MsgDeclareCandidacy{}, "test/stake/DeclareCandidacy", nil)
-	cdc.RegisterConcrete(MsgEditCandidacy{}, "test/stake/EditCandidacy", nil)
+	cdc.RegisterConcrete(MsgCreateValidator{}, "test/stake/CreateValidator", nil)
+	cdc.RegisterConcrete(MsgEditValidator{}, "test/stake/EditValidator", nil)
 	cdc.RegisterConcrete(MsgUnbond{}, "test/stake/Unbond", nil)
 
 	// Register AppAccount
@@ -89,8 +113,8 @@ func createTestInput(t *testing.T, isCheckTx bool, initCoins int64) (sdk.Context
 	)
 	ck := bank.NewKeeper(accountMapper)
 	keeper := NewKeeper(cdc, keyStake, ck, DefaultCodespace)
-	keeper.setPool(ctx, initialPool())
-	keeper.setNewParams(ctx, defaultParams())
+	keeper.setPool(ctx, InitialPool())
+	keeper.setNewParams(ctx, DefaultParams())
 
 	// fill all the addresses with some coins
 	for _, addr := range addrs {
@@ -120,7 +144,7 @@ func testAddr(addr string, bech string) sdk.Address {
 	if err != nil {
 		panic(err)
 	}
-	bechexpected, err := sdk.Bech32TepletonifyAcc(res)
+	bechexpected, err := sdk.Bech32ifyAcc(res)
 	if err != nil {
 		panic(err)
 	}
@@ -128,7 +152,7 @@ func testAddr(addr string, bech string) sdk.Address {
 		panic("Bech encoding doesn't match reference")
 	}
 
-	bechres, err := sdk.GetAccAddressBech32Tepleton(bech)
+	bechres, err := sdk.GetAccAddressBech32(bech)
 	if err != nil {
 		panic(err)
 	}
@@ -137,37 +161,4 @@ func testAddr(addr string, bech string) sdk.Address {
 	}
 
 	return res
-}
-
-func createTestAddrs(numAddrs int) []sdk.Address {
-	var addresses []sdk.Address
-	var buffer bytes.Buffer
-
-	// start at 100 so we can make up to 999 test addresses with valid test addresses
-	for i := 100; i < (numAddrs + 100); i++ {
-		numString := strconv.Itoa(i)
-		buffer.WriteString("A58856F0FD53BF058B4909A21AEC019107BA6") //base address string
-
-		buffer.WriteString(numString) //adding on final two digits to make addresses unique
-		res, _ := sdk.GetAccAddressHex(buffer.String())
-		bech, _ := sdk.Bech32TepletonifyAcc(res)
-		addresses = append(addresses, testAddr(buffer.String(), bech))
-		buffer.Reset()
-	}
-	return addresses
-}
-
-func createTestPubKeys(numPubKeys int) []crypto.PubKey {
-	var publicKeys []crypto.PubKey
-	var buffer bytes.Buffer
-
-	//start at 10 to avoid changing 1 to 01, 2 to 02, etc
-	for i := 100; i < (numPubKeys + 100); i++ {
-		numString := strconv.Itoa(i)
-		buffer.WriteString("0B485CFC0EECC619440448436F8FC9DF40566F2369E72400281454CB552AF") //base pubkey string
-		buffer.WriteString(numString)                                                       //adding on final two digits to make pubkeys unique
-		publicKeys = append(publicKeys, newPubKey(buffer.String()))
-		buffer.Reset()
-	}
-	return publicKeys
 }
