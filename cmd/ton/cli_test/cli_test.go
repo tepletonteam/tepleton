@@ -96,7 +96,7 @@ func TestGaiaCLICreateValidator(t *testing.T) {
 	require.NoError(t, err)
 
 	executeWrite(t, fmt.Sprintf("toncli send %v --amount=10steak --to=%v --name=foo", flags, barCech), pass)
-	time.Sleep(time.Second * 2) // waiting for some blocks to pass
+	time.Sleep(time.Second * 3) // waiting for some blocks to pass
 
 	barAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barCech, flags))
 	assert.Equal(t, int64(10), barAcc.GetCoins().AmountOf("steak"))
