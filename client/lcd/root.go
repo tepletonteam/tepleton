@@ -22,7 +22,6 @@ import (
 	auth "github.com/tepleton/tepleton-sdk/x/auth/client/rest"
 	bank "github.com/tepleton/tepleton-sdk/x/bank/client/rest"
 	ibc "github.com/tepleton/tepleton-sdk/x/ibc/client/rest"
-	stake "github.com/tepleton/tepleton-sdk/x/stake/client/rest"
 )
 
 const (
@@ -56,7 +55,6 @@ func startRESTServerFn(cdc *wire.Codec) func(cmd *cobra.Command, args []string) 
 		if err != nil {
 			return err
 		}
-		logger.Info("REST server started")
 
 		// Wait forever and cleanup
 		cmn.TrapSignal(func() {
@@ -85,6 +83,5 @@ func createHandler(cdc *wire.Codec) http.Handler {
 	auth.RegisterRoutes(ctx, r, cdc, "acc")
 	bank.RegisterRoutes(ctx, r, cdc, kb)
 	ibc.RegisterRoutes(ctx, r, cdc, kb)
-	stake.RegisterRoutes(ctx, r, cdc, kb)
 	return r
 }

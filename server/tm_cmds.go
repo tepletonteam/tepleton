@@ -1,13 +1,14 @@
 package server
 
 import (
+	"encoding/hex"
 	"fmt"
+	"strings"
 
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	sdk "github.com/tepleton/tepleton-sdk/types"
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 	"github.com/tepleton/tepleton/p2p"
 	pvm "github.com/tepleton/tepleton/types/priv_validator"
@@ -40,24 +41,21 @@ func ShowValidatorCmd(ctx *Context) *cobra.Command {
 
 			cfg := ctx.Config
 			privValidator := pvm.LoadOrGenFilePV(cfg.PrivValidatorFile())
-			valPubKey := privValidator.PubKey
+			pubKey := privValidator.PubKey
 
 			if viper.GetBool(flagJSON) {
 
 				cdc := wire.NewCodec()
 				wire.RegisterCrypto(cdc)
-				pubKeyJSONBytes, err := cdc.MarshalJSON(valPubKey)
+				pubKeyJSONBytes, err := cdc.MarshalJSON(pubKey)
 				if err != nil {
 					return err
 				}
 				fmt.Println(string(pubKeyJSONBytes))
 				return nil
 			}
-			pubkey, err := sdk.Bech32ifyValPub(valPubKey)
-			if err != nil {
-				return err
-			}
-			fmt.Println(pubkey)
+			pubKeyHex := strings.ToUpper(hex.EncodeToString(pubKey.Bytes()))
+			fmt.Println(pubKeyHex)
 			return nil
 		},
 	}

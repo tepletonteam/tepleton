@@ -31,13 +31,10 @@ func setupMultiStore() (sdk.MultiStore, *sdk.KVStoreKey, *sdk.KVStoreKey) {
 }
 
 func TestKeeperGetSet(t *testing.T) {
-	ms, authKey, capKey := setupMultiStore()
-	cdc := wire.NewCodec()
-	auth.RegisterBaseAccount(cdc)
+	ms, _, capKey := setupMultiStore()
 
-	accountMapper := auth.NewAccountMapper(cdc, authKey, &auth.BaseAccount{})
-	stakeKeeper := NewKeeper(capKey, bank.NewKeeper(accountMapper), DefaultCodespace)
 	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil, log.NewNopLogger())
+	stakeKeeper := NewKeeper(capKey, bank.NewKeeper(nil), DefaultCodespace)
 	addr := sdk.Address([]byte("some-address"))
 
 	bi := stakeKeeper.getBondInfo(ctx, addr)
