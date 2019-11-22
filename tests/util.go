@@ -11,22 +11,16 @@ import (
 	rpcclient "github.com/tepleton/tepleton/rpc/lib/client"
 )
 
+// TODO: these functions just print to Stdout.
+// consider using the logger.
+
 // Uses localhost
 func WaitForHeight(height int64, port string) {
 	for {
+		var resultBlock ctypes.ResultBlock
 
-		url := fmt.Sprintf("http://localhost:%v/blocks/latest", port)
-
-		// get url, try a few times
-		var res *http.Response
-		var err error
-		for i := 0; i < 5; i++ {
-			res, err = http.Get(url)
-			if err == nil {
-				break
-			}
-			time.Sleep(time.Second)
-		}
+		url := fmt.Sprintf("http://localhost:%v%v", port, "/blocks/latest")
+		res, err := http.Get(url)
 		if err != nil {
 			panic(err)
 		}
@@ -37,7 +31,6 @@ func WaitForHeight(height int64, port string) {
 		}
 		res.Body.Close()
 
-		var resultBlock ctypes.ResultBlock
 		err = cdc.UnmarshalJSON([]byte(body), &resultBlock)
 		if err != nil {
 			fmt.Println("RES", res)
@@ -52,34 +45,44 @@ func WaitForHeight(height int64, port string) {
 	}
 }
 
-// wait for tepleton to start
+// wait for 2 blocks.
+// uses localhost
 func WaitForStart(port string) {
-	var err error
-	for i := 0; i < 5; i++ {
+	waitHeight := int64(2)
+	for {
 		time.Sleep(time.Second)
 
-		url := fmt.Sprintf("http://localhost:%v/blocks/latest", port)
-
-		// get url, try a few times
-		var res *http.Response
-		res, err = http.Get(url)
-		if err == nil || res == nil {
-			continue
+		url := fmt.Sprintf("http://localhost:%v%v", port, "/blocks/latest")
+		res, err := http.Get(url)
+		if err != nil {
+			panic(err)
 		}
 
 		// waiting for server to start ...
 		if res.StatusCode != http.StatusOK {
 			res.Body.Close()
+			continue
+		}
+
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			panic(err)
+		}
+		res.Body.Close()
+
+		resultBlock := new(ctypes.ResultBlock)
+		err = cdc.UnmarshalJSON([]byte(body), &resultBlock)
+		if err != nil {
+			fmt.Println("RES", res)
+			fmt.Println("BODY", string(body))
+			panic(err)
+		}
+
+		if resultBlock.Block.Height >= waitHeight {
 			return
 		}
 	}
-	if err != nil {
-		panic(err)
-	}
 }
-
-// TODO: these functions just print to Stdout.
-// consider using the logger.
 
 // Wait for the RPC server to respond to /status
 func WaitForRPC(laddr string) {

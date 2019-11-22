@@ -17,7 +17,6 @@ import (
 func main() {
 	cdc := app.MakeCodec()
 	ctx := server.NewDefaultContext()
-	cobra.EnableCommandSorting = false
 	rootCmd := &cobra.Command{
 		Use:               "tond",
 		Short:             "Gaia Daemon (server)",

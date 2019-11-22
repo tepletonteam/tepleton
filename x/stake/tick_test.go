@@ -61,7 +61,7 @@ func TestGetInflation(t *testing.T) {
 
 func TestProcessProvisions(t *testing.T) {
 	ctx, _, keeper := createTestInput(t, false, 0)
-	params := DefaultParams()
+	params := defaultParams()
 	params.MaxValidators = 2
 	keeper.setParams(ctx, params)
 	pool := keeper.GetPool(ctx)
@@ -112,7 +112,7 @@ func TestProcessProvisions(t *testing.T) {
 	// process the provisions a year
 	for hr := 0; hr < 8766; hr++ {
 		pool := keeper.GetPool(ctx)
-		expInflation := keeper.nextInflation(ctx).Round(1000000000)
+		expInflation := keeper.nextInflation(ctx)
 		expProvisions := (expInflation.Mul(sdk.NewRat(pool.TokenSupply())).Quo(hrsPerYrRat)).Evaluate()
 		startBondedTokens := pool.BondedTokens
 		startTotalSupply := pool.TokenSupply()

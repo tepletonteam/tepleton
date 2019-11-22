@@ -1,6 +1,7 @@
 package keys
 
 import (
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 
@@ -75,7 +76,7 @@ func printInfo(info keys.Info) {
 		fmt.Printf("NAME:\tADDRESS:\t\t\t\t\t\tPUBKEY:\n")
 		printKeyOutput(ko)
 	case "json":
-		out, err := MarshalJSON(ko)
+		out, err := json.MarshalIndent(ko, "", "\t")
 		if err != nil {
 			panic(err)
 		}
@@ -92,7 +93,7 @@ func printInfos(infos []keys.Info) {
 			printKeyOutput(ko)
 		}
 	case "json":
-		out, err := MarshalJSON(kos)
+		out, err := json.MarshalIndent(kos, "", "\t")
 		if err != nil {
 			panic(err)
 		}

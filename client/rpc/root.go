@@ -26,6 +26,8 @@ func AddCommands(cmd *cobra.Command) {
 	cmd.AddCommand(
 		initClientCommand(),
 		statusCommand(),
+		blockCommand(),
+		validatorCommand(),
 	)
 }
 

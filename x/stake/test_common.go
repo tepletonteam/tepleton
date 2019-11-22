@@ -3,6 +3,7 @@ package stake
 import (
 	"bytes"
 	"encoding/hex"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -68,8 +69,8 @@ func makeTestCodec() *wire.Codec {
 	cdc.RegisterInterface((*sdk.Msg)(nil), nil)
 	cdc.RegisterConcrete(bank.MsgSend{}, "test/stake/Send", nil)
 	cdc.RegisterConcrete(bank.MsgIssue{}, "test/stake/Issue", nil)
-	cdc.RegisterConcrete(MsgCreateValidator{}, "test/stake/CreateValidator", nil)
-	cdc.RegisterConcrete(MsgEditValidator{}, "test/stake/EditValidator", nil)
+	cdc.RegisterConcrete(MsgDeclareCandidacy{}, "test/stake/DeclareCandidacy", nil)
+	cdc.RegisterConcrete(MsgEditCandidacy{}, "test/stake/EditCandidacy", nil)
 	cdc.RegisterConcrete(MsgUnbond{}, "test/stake/Unbond", nil)
 
 	// Register AppAccount
@@ -113,8 +114,8 @@ func createTestInput(t *testing.T, isCheckTx bool, initCoins int64) (sdk.Context
 	)
 	ck := bank.NewKeeper(accountMapper)
 	keeper := NewKeeper(cdc, keyStake, ck, DefaultCodespace)
-	keeper.setPool(ctx, InitialPool())
-	keeper.setNewParams(ctx, DefaultParams())
+	keeper.setPool(ctx, initialPool())
+	keeper.setNewParams(ctx, defaultParams())
 
 	// fill all the addresses with some coins
 	for _, addr := range addrs {
@@ -161,4 +162,37 @@ func testAddr(addr string, bech string) sdk.Address {
 	}
 
 	return res
+}
+
+func createTestAddrs(numAddrs int) []sdk.Address {
+	var addresses []sdk.Address
+	var buffer bytes.Buffer
+
+	//start at 10 to avoid changing 1 to 01, 2 to 02, etc
+	for i := 10; i < numAddrs; i++ {
+		numString := strconv.Itoa(i)
+		buffer.WriteString("A58856F0FD53BF058B4909A21AEC019107BA61") //base address string
+
+		buffer.WriteString(numString) //adding on final two digits to make addresses unique
+		res, _ := sdk.GetAccAddressHex(buffer.String())
+		bech, _ := sdk.Bech32TepletonifyAcc(res)
+		addresses = append(addresses, testAddr(buffer.String(), bech))
+		buffer.Reset()
+	}
+	return addresses
+}
+
+func createTestPubKeys(numPubKeys int) []crypto.PubKey {
+	var publicKeys []crypto.PubKey
+	var buffer bytes.Buffer
+
+	//start at 10 to avoid changing 1 to 01, 2 to 02, etc
+	for i := 10; i < numPubKeys; i++ {
+		numString := strconv.Itoa(i)
+		buffer.WriteString("0B485CFC0EECC619440448436F8FC9DF40566F2369E72400281454CB552AFB") //base pubkey string
+		buffer.WriteString(numString)                                                        //adding on final two digits to make pubkeys unique
+		publicKeys = append(publicKeys, newPubKey(buffer.String()))
+		buffer.Reset()
+	}
+	return publicKeys
 }

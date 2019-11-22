@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"encoding/json"
+
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	crypto "github.com/tepleton/go-crypto"
 )
@@ -68,7 +70,7 @@ func (fee StdFee) Bytes() []byte {
 	if len(fee.Amount) == 0 {
 		fee.Amount = sdk.Coins{}
 	}
-	bz, err := msgCdc.MarshalJSON(fee) // TODO
+	bz, err := json.Marshal(fee) // TODO
 	if err != nil {
 		panic(err)
 	}
@@ -93,7 +95,7 @@ type StdSignDoc struct {
 // StdSignBytes returns the bytes to sign for a transaction.
 // TODO: change the API to just take a chainID and StdTx ?
 func StdSignBytes(chainID string, sequences []int64, fee StdFee, msg sdk.Msg) []byte {
-	bz, err := msgCdc.MarshalJSON(StdSignDoc{
+	bz, err := json.Marshal(StdSignDoc{
 		ChainID:   chainID,
 		Sequences: sequences,
 		FeeBytes:  fee.Bytes(),

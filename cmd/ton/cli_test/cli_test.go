@@ -30,44 +30,46 @@ func TestGaiaCLISend(t *testing.T) {
 	executeWrite(t, "toncli keys add bar", pass)
 
 	// get a free port, also setup some common flags
-	servAddr, port, err := server.FreeTCPAddr()
-	require.NoError(t, err)
+	servAddr := server.FreeTCPAddr(t)
 	flags := fmt.Sprintf("--node=%v --chain-id=%v", servAddr, chainID)
 
 	// start tond server
-	proc := tests.GoExecuteT(t, fmt.Sprintf("tond start --rpc.laddr=%v", servAddr))
-	defer proc.Stop(false)
-	tests.WaitForStart(port)
+	cmd, _, _ := tests.GoExecuteT(t, fmt.Sprintf("tond start --rpc.laddr=%v", servAddr))
+	defer cmd.Process.Kill()
 
 	fooAddr, _ := executeGetAddrPK(t, "toncli keys show foo --output=json")
-	fooCech, err := sdk.Bech32TepletonifyAcc(fooAddr)
-	require.NoError(t, err)
 	barAddr, _ := executeGetAddrPK(t, "toncli keys show bar --output=json")
-	barCech, err := sdk.Bech32TepletonifyAcc(barAddr)
-	require.NoError(t, err)
 
-	fooAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooCech, flags))
+	fooBech, err := sdk.Bech32TepletonifyAcc(fooAddr)
+	if err != nil {
+		t.Error(err)
+	}
+	barBech, err := sdk.Bech32TepletonifyAcc(barAddr)
+	if err != nil {
+		t.Error(err)
+	}
+	fooAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooBech, flags))
 	assert.Equal(t, int64(50), fooAcc.GetCoins().AmountOf("steak"))
 
-	executeWrite(t, fmt.Sprintf("toncli send %v --amount=10steak --to=%v --name=foo", flags, barCech), pass)
-	time.Sleep(time.Second * 2) // waiting for some blocks to pass
+	executeWrite(t, fmt.Sprintf("toncli send %v --amount=10steak --to=%v --name=foo", flags, barAddr), pass)
+	time.Sleep(time.Second * 3) // waiting for some blocks to pass
 
-	barAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barCech, flags))
+	barAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barBech, flags))
 	assert.Equal(t, int64(10), barAcc.GetCoins().AmountOf("steak"))
-	fooAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooCech, flags))
+	fooAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooBech, flags))
 	assert.Equal(t, int64(40), fooAcc.GetCoins().AmountOf("steak"))
 
 	// test autosequencing
-	executeWrite(t, fmt.Sprintf("toncli send %v --amount=10steak --to=%v --name=foo", flags, barCech), pass)
-	time.Sleep(time.Second * 2) // waiting for some blocks to pass
+	executeWrite(t, fmt.Sprintf("toncli send %v --amount=10steak --to=%v --name=foo", flags, barAddr), pass)
+	time.Sleep(time.Second * 3) // waiting for some blocks to pass
 
-	barAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barCech, flags))
+	barAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barBech, flags))
 	assert.Equal(t, int64(20), barAcc.GetCoins().AmountOf("steak"))
-	fooAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooCech, flags))
+	fooAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooBech, flags))
 	assert.Equal(t, int64(30), fooAcc.GetCoins().AmountOf("steak"))
 }
 
-func TestGaiaCLICreateValidator(t *testing.T) {
+func TestGaiaCLIDeclareCandidacy(t *testing.T) {
 
 	tests.ExecuteT(t, "tond unsafe_reset_all")
 	pass := "1234567890"
@@ -77,79 +79,95 @@ func TestGaiaCLICreateValidator(t *testing.T) {
 	executeWrite(t, "toncli keys add bar", pass)
 
 	// get a free port, also setup some common flags
-	servAddr, port, err := server.FreeTCPAddr()
-	require.NoError(t, err)
+	servAddr := server.FreeTCPAddr(t)
 	flags := fmt.Sprintf("--node=%v --chain-id=%v", servAddr, chainID)
 
 	// start tond server
-	proc := tests.GoExecuteT(t, fmt.Sprintf("tond start --rpc.laddr=%v", servAddr))
-	defer proc.Stop(false)
-	tests.WaitForStart(port)
+	cmd, _, _ := tests.GoExecuteT(t, fmt.Sprintf("tond start --rpc.laddr=%v", servAddr))
+	defer cmd.Process.Kill()
 
 	fooAddr, _ := executeGetAddrPK(t, "toncli keys show foo --output=json")
-	fooCech, err := sdk.Bech32TepletonifyAcc(fooAddr)
-	require.NoError(t, err)
-	barAddr, barPubKey := executeGetAddrPK(t, "toncli keys show bar --output=json")
-	barCech, err := sdk.Bech32TepletonifyAcc(barAddr)
-	require.NoError(t, err)
-	barCeshPubKey, err := sdk.Bech32TepletonifyValPub(barPubKey)
-	require.NoError(t, err)
+	barAddr, _ := executeGetAddrPK(t, "toncli keys show bar --output=json")
 
-	executeWrite(t, fmt.Sprintf("toncli send %v --amount=10steak --to=%v --name=foo", flags, barCech), pass)
+	fooBech, err := sdk.Bech32TepletonifyAcc(fooAddr)
+	if err != nil {
+		t.Error(err)
+	}
+	barBech, err := sdk.Bech32TepletonifyAcc(barAddr)
+	if err != nil {
+		t.Error(err)
+	}
+	valPrivkey := crypto.GenPrivKeyEd25519()
+	valAddr := sdk.Address((valPrivkey.PubKey().Address()))
+	bechVal, err := sdk.Bech32TepletonifyVal(valAddr)
+
+	executeWrite(t, fmt.Sprintf("toncli send %v --amount=10steak --to=%v --name=foo", flags, barBech), pass)
 	time.Sleep(time.Second * 3) // waiting for some blocks to pass
 
-	barAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barCech, flags))
-	assert.Equal(t, int64(10), barAcc.GetCoins().AmountOf("steak"))
-	fooAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooCech, flags))
+	fooAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooBech, flags))
 	assert.Equal(t, int64(40), fooAcc.GetCoins().AmountOf("steak"))
+	barAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barBech, flags))
+	assert.Equal(t, int64(10), barAcc.GetCoins().AmountOf("steak"))
 
-	// create validator
-	cvStr := fmt.Sprintf("toncli stake create-validator %v", flags)
-	cvStr += fmt.Sprintf(" --name=%v", "bar")
-	cvStr += fmt.Sprintf(" --address-validator=%v", barCech)
-	cvStr += fmt.Sprintf(" --pubkey=%v", barCeshPubKey)
-	cvStr += fmt.Sprintf(" --amount=%v", "2steak")
-	cvStr += fmt.Sprintf(" --moniker=%v", "bar-vally")
+	// declare candidacy
+	declStr := fmt.Sprintf("toncli create-validator %v", flags)
+	declStr += fmt.Sprintf(" --name=%v", "bar")
+	declStr += fmt.Sprintf(" --validator-address=%v", bechVal)
+	declStr += fmt.Sprintf(" --amount=%v", "3steak")
+	declStr += fmt.Sprintf(" --moniker=%v", "bar-vally")
+	fmt.Printf("debug declStr: %v\n", declStr)
+	executeWrite(t, declStr, pass)
+	time.Sleep(time.Second) // waiting for some blocks to pass
+	barAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barAddr, flags))
+	assert.Equal(t, int64(7), barAcc.GetCoins().AmountOf("steak"))
+	candidate := executeGetCandidate(t, fmt.Sprintf("toncli candidate %v --address-candidate=%v", flags, barAddr))
+	assert.Equal(t, candidate.Owner.String(), barAddr)
+	assert.Equal(t, int64(3), candidate.PoolShares)
 
-	executeWrite(t, cvStr, pass)
-	time.Sleep(time.Second * 3) // waiting for some blocks to pass
-
-	barAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barCech, flags))
-	require.Equal(t, int64(8), barAcc.GetCoins().AmountOf("steak"), "%v", barAcc)
-
-	validator := executeGetValidator(t, fmt.Sprintf("toncli stake validator %v --output=json %v", barCech, flags))
-	assert.Equal(t, validator.Owner, barAddr)
-	assert.Equal(t, "2/1", validator.PoolShares.Amount.String())
-
+	// TODO timeout issues if not connected to the internet
 	// unbond a single share
-	unbondStr := fmt.Sprintf("toncli stake unbond %v", flags)
-	unbondStr += fmt.Sprintf(" --name=%v", "bar")
-	unbondStr += fmt.Sprintf(" --address-validator=%v", barCech)
-	unbondStr += fmt.Sprintf(" --address-delegator=%v", barCech)
-	unbondStr += fmt.Sprintf(" --shares=%v", "1")
-	unbondStr += fmt.Sprintf(" --sequence=%v", "1")
-	t.Log(fmt.Sprintf("debug unbondStr: %v\n", unbondStr))
-
-	executeWrite(t, unbondStr, pass)
-	time.Sleep(time.Second * 3) // waiting for some blocks to pass
-
-	barAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barCech, flags))
-	require.Equal(t, int64(9), barAcc.GetCoins().AmountOf("steak"), "%v", barAcc)
-	validator = executeGetValidator(t, fmt.Sprintf("toncli stake validator %v --output=json %v", barCech, flags))
-	assert.Equal(t, "1/1", validator.PoolShares.Amount.String())
+	//unbondStr := fmt.Sprintf("toncli unbond %v", flags)
+	//unbondStr += fmt.Sprintf(" --name=%v", "bar")
+	//unbondStr += fmt.Sprintf(" --address-candidate=%v", barAddr)
+	//unbondStr += fmt.Sprintf(" --address-delegator=%v", barAddr)
+	//unbondStr += fmt.Sprintf(" --shares=%v", "1")
+	//unbondStr += fmt.Sprintf(" --sequence=%v", "1")
+	//fmt.Printf("debug unbondStr: %v\n", unbondStr)
+	//executeWrite(t, unbondStr, pass)
+	//time.Sleep(time.Second * 3) // waiting for some blocks to pass
+	//barAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barAddr, flags))
+	//assert.Equal(t, int64(99998), barAcc.GetCoins().AmountOf("steak"))
+	//candidate = executeGetCandidate(t, fmt.Sprintf("toncli candidate %v --address-candidate=%v", flags, barAddr))
+	//assert.Equal(t, int64(2), candidate.BondedShares.Evaluate())
 }
 
-//___________________________________________________________________________________
-// executors
-
 func executeWrite(t *testing.T, cmdStr string, writes ...string) {
-	proc := tests.GoExecuteT(t, cmdStr)
+	cmd, wc, _ := tests.GoExecuteT(t, cmdStr)
 
 	for _, write := range writes {
-		_, err := proc.StdinPipe.Write([]byte(write + "\n"))
+		_, err := wc.Write([]byte(write + "\n"))
+		if err != nil {
+			fmt.Println(err)
+		}
 		require.NoError(t, err)
 	}
-	proc.Wait()
+	fmt.Printf("debug waiting cmdStr: %v\n", cmdStr)
+	cmd.Wait()
+}
+
+func executeWritePrint(t *testing.T, cmdStr string, writes ...string) {
+	cmd, wc, rc := tests.GoExecuteT(t, cmdStr)
+
+	for _, write := range writes {
+		_, err := wc.Write([]byte(write + "\n"))
+		require.NoError(t, err)
+	}
+	fmt.Printf("debug waiting cmdStr: %v\n", cmdStr)
+	cmd.Wait()
+
+	bz := make([]byte, 100000)
+	rc.Read(bz)
+	fmt.Printf("debug read: %v\n", string(bz))
 }
 
 func executeInit(t *testing.T, cmdStr string) (chainID string) {
@@ -169,7 +187,6 @@ func executeGetAddrPK(t *testing.T, cmdStr string) (sdk.Address, crypto.PubKey) 
 	out := tests.ExecuteT(t, cmdStr)
 	var ko keys.KeyOutput
 	keys.UnmarshalJSON([]byte(out), &ko)
-
 	return ko.Address, ko.PubKey
 }
 
@@ -187,11 +204,11 @@ func executeGetAccount(t *testing.T, cmdStr string) auth.BaseAccount {
 	return acc
 }
 
-func executeGetValidator(t *testing.T, cmdStr string) stake.Validator {
+func executeGetCandidate(t *testing.T, cmdStr string) stake.Validator {
 	out := tests.ExecuteT(t, cmdStr)
-	var validator stake.Validator
+	var candidate stake.Validator
 	cdc := app.MakeCodec()
-	err := cdc.UnmarshalJSON([]byte(out), &validator)
-	require.NoError(t, err, "out %v\n, err %v", out, err)
-	return validator
+	err := cdc.UnmarshalJSON([]byte(out), &candidate)
+	require.NoError(t, err, "out %v, err %v", out, err)
+	return candidate
 }

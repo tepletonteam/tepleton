@@ -115,8 +115,8 @@ func TestValidatorBasics(t *testing.T) {
 
 	resVals = keeper.GetValidatorsBonded(ctx)
 	require.Equal(t, 3, len(resVals))
-	assert.True(ValEq(t, validators[0], resVals[2])) // order doesn't matter here
-	assert.True(ValEq(t, validators[1], resVals[0]))
+	assert.True(ValEq(t, validators[0], resVals[0])) // order doesn't matter here
+	assert.True(ValEq(t, validators[1], resVals[2]))
 	assert.True(ValEq(t, validators[2], resVals[1]))
 
 	// remove a record
@@ -586,7 +586,7 @@ func TestGetTendermintUpdatesInserted(t *testing.T) {
 
 func TestGetTendermintUpdatesNotValidatorCliff(t *testing.T) {
 	ctx, _, keeper := createTestInput(t, false, 0)
-	params := DefaultParams()
+	params := defaultParams()
 	params.MaxValidators = 2
 	keeper.setParams(ctx, params)
 
@@ -721,7 +721,7 @@ func TestBond(t *testing.T) {
 
 func TestParams(t *testing.T) {
 	ctx, _, keeper := createTestInput(t, false, 0)
-	expParams := DefaultParams()
+	expParams := defaultParams()
 
 	//check that the empty keeper loads the default
 	resParams := keeper.GetParams(ctx)
@@ -736,7 +736,7 @@ func TestParams(t *testing.T) {
 
 func TestPool(t *testing.T) {
 	ctx, _, keeper := createTestInput(t, false, 0)
-	expPool := InitialPool()
+	expPool := initialPool()
 
 	//check that the empty keeper loads the default
 	resPool := keeper.GetPool(ctx)
