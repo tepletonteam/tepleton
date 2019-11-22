@@ -2,11 +2,13 @@ package stake
 
 import (
 	"bytes"
+	"fmt"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 	wrsp "github.com/tepleton/wrsp/types"
 	crypto "github.com/tepleton/go-crypto"
+	tmtypes "github.com/tepleton/tepleton/types"
 )
 
 // Validator defines the total amount of bond shares and their exchange rate to
@@ -46,6 +48,7 @@ func NewValidator(owner sdk.Address, pubKey crypto.PubKey, description Descripti
 	return Validator{
 		Owner:                 owner,
 		PubKey:                pubKey,
+		Revoked:               false,
 		PoolShares:            NewUnbondedShares(sdk.ZeroRat()),
 		DelegatorShares:       sdk.ZeroRat(),
 		Description:           description,
@@ -99,7 +102,7 @@ func NewDescription(moniker, identity, website, details string) Description {
 // wrsp validator from stake validator type
 func (v Validator) wrspValidator(cdc *wire.Codec) wrsp.Validator {
 	return wrsp.Validator{
-		PubKey: v.PubKey.Bytes(),
+		PubKey: tmtypes.TM2PB.PubKey(v.PubKey),
 		Power:  v.PoolShares.Bonded().Evaluate(),
 	}
 }
@@ -108,7 +111,7 @@ func (v Validator) wrspValidator(cdc *wire.Codec) wrsp.Validator {
 // with zero power used for validator updates
 func (v Validator) wrspValidatorZero(cdc *wire.Codec) wrsp.Validator {
 	return wrsp.Validator{
-		PubKey: v.PubKey.Bytes(),
+		PubKey: tmtypes.TM2PB.PubKey(v.PubKey),
 		Power:  0,
 	}
 }
@@ -151,6 +154,23 @@ func (v Validator) UpdateStatus(pool Pool, NewStatus sdk.BondStatus) (Validator,
 		pool, v.PoolShares = pool.addTokensBonded(tokens)
 	}
 	return v, pool
+}
+
+// Remove pool shares
+// Returns corresponding tokens, which could be burned (e.g. when slashing
+// a validator) or redistributed elsewhere
+func (v Validator) removePoolShares(pool Pool, poolShares sdk.Rat) (Validator, Pool, int64) {
+	var tokens int64
+	switch v.Status() {
+	case sdk.Unbonded:
+		pool, tokens = pool.removeSharesUnbonded(poolShares)
+	case sdk.Unbonding:
+		pool, tokens = pool.removeSharesUnbonding(poolShares)
+	case sdk.Bonded:
+		pool, tokens = pool.removeSharesBonded(poolShares)
+	}
+	v.PoolShares.Amount = v.PoolShares.Amount.Sub(poolShares)
+	return v, pool, tokens
 }
 
 // XXX TEST
@@ -236,3 +256,30 @@ func (v Validator) GetOwner() sdk.Address     { return v.Owner }
 func (v Validator) GetPubKey() crypto.PubKey  { return v.PubKey }
 func (v Validator) GetPower() sdk.Rat         { return v.PoolShares.Bonded() }
 func (v Validator) GetBondHeight() int64      { return v.BondHeight }
+
+//Human Friendly pretty printer
+func (v Validator) HumanReadableString() (string, error) {
+	bechOwner, err := sdk.Bech32ifyAcc(v.Owner)
+	if err != nil {
+		return "", err
+	}
+	bechVal, err := sdk.Bech32ifyValPub(v.PubKey)
+	if err != nil {
+		return "", err
+	}
+	resp := "Validator \n"
+	resp += fmt.Sprintf("Owner: %s\n", bechOwner)
+	resp += fmt.Sprintf("Validator: %s\n", bechVal)
+	resp += fmt.Sprintf("Shares: Status %s,  Amount: %s\n", sdk.BondStatusToString(v.PoolShares.Status), v.PoolShares.Amount.String())
+	resp += fmt.Sprintf("Delegator Shares: %s\n", v.DelegatorShares.String())
+	resp += fmt.Sprintf("Description: %s\n", v.Description)
+	resp += fmt.Sprintf("Bond Height: %d\n", v.BondHeight)
+	resp += fmt.Sprintf("Proposer Reward Pool: %s\n", v.ProposerRewardPool.String())
+	resp += fmt.Sprintf("Commission: %s\n", v.Commission.String())
+	resp += fmt.Sprintf("Max Commission Rate: %s\n", v.CommissionMax.String())
+	resp += fmt.Sprintf("Comission Change Rate: %s\n", v.CommissionChangeRate.String())
+	resp += fmt.Sprintf("Commission Change Today: %s\n", v.CommissionChangeToday.String())
+	resp += fmt.Sprintf("Previously Bonded Stares: %s\n", v.PrevBondedShares.String())
+
+	return resp, nil
+}
