@@ -22,7 +22,7 @@ import (
 
 func TestGaiaCLISend(t *testing.T) {
 
-	tests.ExecuteT(t, "tond tepleton unsafe_reset_all")
+	tests.ExecuteT(t, "tond unsafe_reset_all")
 	pass := "1234567890"
 	executeWrite(t, "toncli keys delete foo", pass)
 	executeWrite(t, "toncli keys delete bar", pass)
@@ -69,7 +69,7 @@ func TestGaiaCLISend(t *testing.T) {
 
 func TestGaiaCLICreateValidator(t *testing.T) {
 
-	tests.ExecuteT(t, "tond tepleton unsafe_reset_all")
+	tests.ExecuteT(t, "tond unsafe_reset_all")
 	pass := "1234567890"
 	executeWrite(t, "toncli keys delete foo", pass)
 	executeWrite(t, "toncli keys delete bar", pass)
