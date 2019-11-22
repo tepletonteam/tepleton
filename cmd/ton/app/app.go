@@ -130,7 +130,7 @@ func (app *GaiaApp) EndBlocker(ctx sdk.Context, req wrsp.RequestEndBlock) wrsp.R
 
 // custom logic for ton initialization
 func (app *GaiaApp) initChainer(ctx sdk.Context, req wrsp.RequestInitChain) wrsp.ResponseInitChain {
-	stateJSON := req.GenesisBytes
+	stateJSON := req.AppStateBytes
 	// TODO is this now the whole genesis file?
 
 	var genesisState GenesisState

@@ -26,7 +26,7 @@ func TestInitApp(t *testing.T) {
 
 	//TODO test validators in the init chain?
 	req := wrsp.RequestInitChain{
-		GenesisBytes: appState,
+		AppStateBytes: appState,
 	}
 	app.InitChain(req)
 	app.Commit()

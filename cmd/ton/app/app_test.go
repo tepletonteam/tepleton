@@ -114,7 +114,7 @@ func setGenesis(gapp *GaiaApp, accs ...*auth.BaseAccount) error {
 
 	// Initialize the chain
 	vals := []wrsp.Validator{}
-	gapp.InitChain(wrsp.RequestInitChain{vals, stateBytes})
+	gapp.InitChain(wrsp.RequestInitChain{Validators: vals, AppStateBytes: stateBytes})
 	gapp.Commit()
 
 	return nil

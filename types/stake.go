@@ -3,6 +3,7 @@ package types
 import (
 	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/go-crypto"
+	tmtypes "github.com/tepleton/tepleton/types"
 )
 
 // status of a validator
@@ -41,7 +42,7 @@ type Validator interface {
 // validator which fulfills wrsp validator interface for use in Tendermint
 func WRSPValidator(v Validator) wrsp.Validator {
 	return wrsp.Validator{
-		PubKey: v.GetPubKey().Bytes(),
+		PubKey: tmtypes.TM2PB.PubKey(v.GetPubKey()),
 		Power:  v.GetPower().Evaluate(),
 	}
 }

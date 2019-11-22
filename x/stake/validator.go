@@ -8,6 +8,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/wire"
 	wrsp "github.com/tepleton/wrsp/types"
 	crypto "github.com/tepleton/go-crypto"
+	tmtypes "github.com/tepleton/tepleton/types"
 )
 
 // Validator defines the total amount of bond shares and their exchange rate to
@@ -101,7 +102,7 @@ func NewDescription(moniker, identity, website, details string) Description {
 // wrsp validator from stake validator type
 func (v Validator) wrspValidator(cdc *wire.Codec) wrsp.Validator {
 	return wrsp.Validator{
-		PubKey: v.PubKey.Bytes(),
+		PubKey: tmtypes.TM2PB.PubKey(v.PubKey),
 		Power:  v.PoolShares.Bonded().Evaluate(),
 	}
 }
@@ -110,7 +111,7 @@ func (v Validator) wrspValidator(cdc *wire.Codec) wrsp.Validator {
 // with zero power used for validator updates
 func (v Validator) wrspValidatorZero(cdc *wire.Codec) wrsp.Validator {
 	return wrsp.Validator{
-		PubKey: v.PubKey.Bytes(),
+		PubKey: tmtypes.TM2PB.PubKey(v.PubKey),
 		Power:  0,
 	}
 }
