@@ -142,7 +142,7 @@ func TestGenesis(t *testing.T) {
 	stateBytes, err := json.MarshalIndent(genesisState, "", "\t")
 
 	vals := []wrsp.Validator{}
-	bapp.InitChain(wrsp.RequestInitChain{Validators: vals, AppStateBytes: stateBytes})
+	bapp.InitChain(wrsp.RequestInitChain{vals, stateBytes})
 	bapp.Commit()
 
 	// A checkTx context
@@ -184,7 +184,7 @@ func TestMsgSendWithAccounts(t *testing.T) {
 
 	// Initialize the chain
 	vals := []wrsp.Validator{}
-	bapp.InitChain(wrsp.RequestInitChain{Validators: vals, AppStateBytes: stateBytes})
+	bapp.InitChain(wrsp.RequestInitChain{vals, stateBytes})
 	bapp.Commit()
 
 	// A checkTx context (true)
@@ -262,7 +262,7 @@ func TestMsgMine(t *testing.T) {
 
 	// Initialize the chain (nil)
 	vals := []wrsp.Validator{}
-	bapp.InitChain(wrsp.RequestInitChain{Validators: vals, AppStateBytes: stateBytes})
+	bapp.InitChain(wrsp.RequestInitChain{vals, stateBytes})
 	bapp.Commit()
 
 	// A checkTx context (true)
@@ -309,7 +309,7 @@ func TestMsgQuiz(t *testing.T) {
 
 	// Initialize the chain (nil)
 	vals := []wrsp.Validator{}
-	bapp.InitChain(wrsp.RequestInitChain{Validators: vals, AppStateBytes: stateBytes})
+	bapp.InitChain(wrsp.RequestInitChain{vals, stateBytes})
 	bapp.Commit()
 
 	// A checkTx context (true)
@@ -356,7 +356,7 @@ func TestHandler(t *testing.T) {
 	}
 	stateBytes, err := json.MarshalIndent(genesisState, "", "\t")
 	require.Nil(t, err)
-	bapp.InitChain(wrsp.RequestInitChain{Validators: vals, AppStateBytes: stateBytes})
+	bapp.InitChain(wrsp.RequestInitChain{vals, stateBytes})
 	bapp.Commit()
 
 	// A checkTx context (true)

@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	tmtypes "github.com/tepleton/tepleton/types"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -117,8 +116,8 @@ func TestValidatorBasics(t *testing.T) {
 	resVals = keeper.GetValidatorsBonded(ctx)
 	require.Equal(t, 3, len(resVals))
 	assert.True(ValEq(t, validators[0], resVals[2])) // order doesn't matter here
-	assert.True(ValEq(t, validators[1], resVals[0]))
-	assert.True(ValEq(t, validators[2], resVals[1]))
+	assert.True(ValEq(t, validators[1], resVals[1]))
+	assert.True(ValEq(t, validators[2], resVals[0]))
 
 	// remove a record
 	keeper.removeValidator(ctx, validators[1].Owner)
@@ -464,8 +463,8 @@ func TestGetTendermintUpdatesAllNone(t *testing.T) {
 
 	updates = keeper.getTendermintUpdates(ctx)
 	require.Equal(t, 2, len(updates))
-	assert.Equal(t, tmtypes.TM2PB.PubKey(validators[0].PubKey), updates[0].PubKey)
-	assert.Equal(t, tmtypes.TM2PB.PubKey(validators[1].PubKey), updates[1].PubKey)
+	assert.Equal(t, validators[0].PubKey.Bytes(), updates[0].PubKey)
+	assert.Equal(t, validators[1].PubKey.Bytes(), updates[1].PubKey)
 	assert.Equal(t, int64(0), updates[0].Power)
 	assert.Equal(t, int64(0), updates[1].Power)
 }
@@ -587,7 +586,7 @@ func TestGetTendermintUpdatesInserted(t *testing.T) {
 
 func TestGetTendermintUpdatesNotValidatorCliff(t *testing.T) {
 	ctx, _, keeper := createTestInput(t, false, 0)
-	params := DefaultParams()
+	params := defaultParams()
 	params.MaxValidators = 2
 	keeper.setParams(ctx, params)
 
@@ -722,7 +721,7 @@ func TestBond(t *testing.T) {
 
 func TestParams(t *testing.T) {
 	ctx, _, keeper := createTestInput(t, false, 0)
-	expParams := DefaultParams()
+	expParams := defaultParams()
 
 	//check that the empty keeper loads the default
 	resParams := keeper.GetParams(ctx)
@@ -737,7 +736,7 @@ func TestParams(t *testing.T) {
 
 func TestPool(t *testing.T) {
 	ctx, _, keeper := createTestInput(t, false, 0)
-	expPool := InitialPool()
+	expPool := initialPool()
 
 	//check that the empty keeper loads the default
 	resPool := keeper.GetPool(ctx)

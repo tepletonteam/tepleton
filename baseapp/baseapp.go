@@ -65,10 +65,9 @@ type BaseApp struct {
 	// See methods setCheckState and setDeliverState.
 	// .valUpdates accumulate in DeliverTx and are reset in BeginBlock.
 	// QUESTION: should we put valUpdates in the deliverState.ctx?
-	checkState       *state                  // for CheckTx
-	deliverState     *state                  // for DeliverTx
-	valUpdates       []wrsp.Validator        // cached validator changes from DeliverTx
-	signedValidators []wrsp.SigningValidator // absent validators from begin block
+	checkState   *state           // for CheckTx
+	deliverState *state           // for DeliverTx
+	valUpdates   []wrsp.Validator // cached validator changes from DeliverTx
 }
 
 var _ wrsp.Application = (*BaseApp)(nil)
@@ -385,8 +384,6 @@ func (app *BaseApp) BeginBlock(req wrsp.RequestBeginBlock) (res wrsp.ResponseBeg
 	if app.beginBlocker != nil {
 		res = app.beginBlocker(app.deliverState.ctx, req)
 	}
-	// set the signed validators for addition to context in deliverTx
-	app.signedValidators = req.Validators
 	return
 }
 
@@ -496,7 +493,6 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (result sdk
 		ctx = app.checkState.ctx.WithTxBytes(txBytes)
 	} else {
 		ctx = app.deliverState.ctx.WithTxBytes(txBytes)
-		ctx = ctx.WithSigningValidators(app.signedValidators)
 	}
 
 	// Simulate a DeliverTx for gas calculation

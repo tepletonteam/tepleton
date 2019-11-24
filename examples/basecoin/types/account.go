@@ -4,7 +4,6 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
-	"github.com/tepleton/tepleton-sdk/x/stake"
 )
 
 var _ auth.Account = (*AppAccount)(nil)
@@ -42,8 +41,7 @@ func GetAccountDecoder(cdc *wire.Codec) auth.AccountDecoder {
 
 // State to Unmarshal
 type GenesisState struct {
-	Accounts  []*GenesisAccount  `json:"accounts"`
-	StakeData stake.GenesisState `json:"stake"`
+	Accounts []*GenesisAccount `json:"accounts"`
 }
 
 // GenesisAccount doesn't need pubkey or sequence

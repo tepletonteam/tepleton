@@ -3,7 +3,6 @@ package types
 import (
 	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/go-crypto"
-	tmtypes "github.com/tepleton/tepleton/types"
 )
 
 // status of a validator
@@ -42,7 +41,7 @@ type Validator interface {
 // validator which fulfills wrsp validator interface for use in Tendermint
 func WRSPValidator(v Validator) wrsp.Validator {
 	return wrsp.Validator{
-		PubKey: tmtypes.TM2PB.PubKey(v.GetPubKey()),
+		PubKey: v.GetPubKey().Bytes(),
 		Power:  v.GetPower().Evaluate(),
 	}
 }
@@ -57,11 +56,8 @@ type ValidatorSet interface {
 	IterateValidatorsBonded(Context,
 		func(index int64, validator Validator) (stop bool))
 
-	Validator(Context, Address) Validator     // get a particular validator by owner address
-	TotalPower(Context) Rat                   // total power of the validator set
-	Slash(Context, crypto.PubKey, int64, Rat) // slash the validator and delegators of the validator, specifying offence height & slash fraction
-	Revoke(Context, crypto.PubKey)            // revoke a validator
-	Unrevoke(Context, crypto.PubKey)          // unrevoke a validator
+	Validator(Context, Address) Validator // get a particular validator by owner address
+	TotalPower(Context) Rat               // total power of the validator set
 }
 
 //_______________________________________________________________________________

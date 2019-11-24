@@ -10,6 +10,7 @@ import (
 // Delegation represents the bond with tokens held by an account.  It is
 // owned by one delegator, and is associated with the voting power of one
 // pubKey.
+// TODO better way of managing space
 type Delegation struct {
 	DelegatorAddr sdk.Address `json:"delegator_addr"`
 	ValidatorAddr sdk.Address `json:"validator_addr"`
@@ -34,11 +35,11 @@ func (b Delegation) GetBondShares() sdk.Rat    { return b.Shares }
 
 //Human Friendly pretty printer
 func (b Delegation) HumanReadableString() (string, error) {
-	bechAcc, err := sdk.Bech32ifyAcc(b.DelegatorAddr)
+	bechAcc, err := sdk.Bech32TepletonifyAcc(b.DelegatorAddr)
 	if err != nil {
 		return "", err
 	}
-	bechVal, err := sdk.Bech32ifyAcc(b.ValidatorAddr)
+	bechVal, err := sdk.Bech32TepletonifyAcc(b.ValidatorAddr)
 	if err != nil {
 		return "", err
 	}
@@ -49,4 +50,5 @@ func (b Delegation) HumanReadableString() (string, error) {
 	resp += fmt.Sprintf("Height: %d", b.Height)
 
 	return resp, nil
+
 }

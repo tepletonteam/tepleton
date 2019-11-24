@@ -8,7 +8,6 @@ import (
 	"github.com/tepleton/tepleton-sdk/wire"
 	wrsp "github.com/tepleton/wrsp/types"
 	crypto "github.com/tepleton/go-crypto"
-	tmtypes "github.com/tepleton/tepleton/types"
 )
 
 // Validator defines the total amount of bond shares and their exchange rate to
@@ -48,7 +47,6 @@ func NewValidator(owner sdk.Address, pubKey crypto.PubKey, description Descripti
 	return Validator{
 		Owner:                 owner,
 		PubKey:                pubKey,
-		Revoked:               false,
 		PoolShares:            NewUnbondedShares(sdk.ZeroRat()),
 		DelegatorShares:       sdk.ZeroRat(),
 		Description:           description,
@@ -82,10 +80,10 @@ func (v Validator) equal(c2 Validator) bool {
 
 // Description - description fields for a validator
 type Description struct {
-	Moniker  string `json:"moniker"`  // name
-	Identity string `json:"identity"` // optional identity signature (ex. UPort or Keybase)
-	Website  string `json:"website"`  // optional website link
-	Details  string `json:"details"`  // optional details
+	Moniker  string `json:"moniker"`
+	Identity string `json:"identity"`
+	Website  string `json:"website"`
+	Details  string `json:"details"`
 }
 
 func NewDescription(moniker, identity, website, details string) Description {
@@ -102,7 +100,7 @@ func NewDescription(moniker, identity, website, details string) Description {
 // wrsp validator from stake validator type
 func (v Validator) wrspValidator(cdc *wire.Codec) wrsp.Validator {
 	return wrsp.Validator{
-		PubKey: tmtypes.TM2PB.PubKey(v.PubKey),
+		PubKey: v.PubKey.Bytes(),
 		Power:  v.PoolShares.Bonded().Evaluate(),
 	}
 }
@@ -111,7 +109,7 @@ func (v Validator) wrspValidator(cdc *wire.Codec) wrsp.Validator {
 // with zero power used for validator updates
 func (v Validator) wrspValidatorZero(cdc *wire.Codec) wrsp.Validator {
 	return wrsp.Validator{
-		PubKey: tmtypes.TM2PB.PubKey(v.PubKey),
+		PubKey: v.PubKey.Bytes(),
 		Power:  0,
 	}
 }
@@ -154,23 +152,6 @@ func (v Validator) UpdateStatus(pool Pool, NewStatus sdk.BondStatus) (Validator,
 		pool, v.PoolShares = pool.addTokensBonded(tokens)
 	}
 	return v, pool
-}
-
-// Remove pool shares
-// Returns corresponding tokens, which could be burned (e.g. when slashing
-// a validator) or redistributed elsewhere
-func (v Validator) removePoolShares(pool Pool, poolShares sdk.Rat) (Validator, Pool, int64) {
-	var tokens int64
-	switch v.Status() {
-	case sdk.Unbonded:
-		pool, tokens = pool.removeSharesUnbonded(poolShares)
-	case sdk.Unbonding:
-		pool, tokens = pool.removeSharesUnbonding(poolShares)
-	case sdk.Bonded:
-		pool, tokens = pool.removeSharesBonded(poolShares)
-	}
-	v.PoolShares.Amount = v.PoolShares.Amount.Sub(poolShares)
-	return v, pool, tokens
 }
 
 // XXX TEST
@@ -259,11 +240,11 @@ func (v Validator) GetBondHeight() int64      { return v.BondHeight }
 
 //Human Friendly pretty printer
 func (v Validator) HumanReadableString() (string, error) {
-	bechOwner, err := sdk.Bech32ifyAcc(v.Owner)
+	bechOwner, err := sdk.Bech32TepletonifyAcc(v.Owner)
 	if err != nil {
 		return "", err
 	}
-	bechVal, err := sdk.Bech32ifyValPub(v.PubKey)
+	bechVal, err := sdk.Bech32TepletonifyValPub(v.PubKey)
 	if err != nil {
 		return "", err
 	}

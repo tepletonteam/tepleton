@@ -8,7 +8,6 @@ import (
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/bank"
 	wrsp "github.com/tepleton/wrsp/types"
-	crypto "github.com/tepleton/go-crypto"
 )
 
 // keeper of the staking store
@@ -39,16 +38,6 @@ func (k Keeper) GetValidator(ctx sdk.Context, addr sdk.Address) (validator Valid
 	return k.getValidator(store, addr)
 }
 
-// get a single validator by pubkey
-func (k Keeper) GetValidatorByPubKey(ctx sdk.Context, pubkey crypto.PubKey) (validator Validator, found bool) {
-	store := ctx.KVStore(k.storeKey)
-	addr := store.Get(GetValidatorByPubKeyIndexKey(pubkey))
-	if addr == nil {
-		return validator, false
-	}
-	return k.getValidator(store, addr)
-}
-
 // get a single validator (reuse store)
 func (k Keeper) getValidator(store sdk.KVStore, addr sdk.Address) (validator Validator, found bool) {
 	b := store.Get(GetValidatorKey(addr))
@@ -62,20 +51,8 @@ func (k Keeper) getValidator(store sdk.KVStore, addr sdk.Address) (validator Val
 // set the main record holding validator details
 func (k Keeper) setValidator(ctx sdk.Context, validator Validator) {
 	store := ctx.KVStore(k.storeKey)
-	// set main store
 	bz := k.cdc.MustMarshalBinary(validator)
 	store.Set(GetValidatorKey(validator.Owner), bz)
-}
-
-func (k Keeper) setValidatorByPubKeyIndex(ctx sdk.Context, validator Validator) {
-	store := ctx.KVStore(k.storeKey)
-	// set pointer by pubkey
-	store.Set(GetValidatorByPubKeyIndexKey(validator.PubKey), validator.Owner)
-}
-
-func (k Keeper) setValidatorByPowerIndex(ctx sdk.Context, validator Validator, pool Pool) {
-	store := ctx.KVStore(k.storeKey)
-	store.Set(GetValidatorsByPowerKey(validator, pool), validator.Owner)
 }
 
 // Get the set of all validators with no limits, used during genesis dump
@@ -226,12 +203,8 @@ func (k Keeper) updateValidator(ctx sdk.Context, validator Validator) Validator 
 	oldValidator, oldFound := k.GetValidator(ctx, ownerAddr)
 
 	if validator.Revoked && oldValidator.Status() == sdk.Bonded {
-		validator = k.unbondValidator(ctx, store, validator)
-
-		// need to also clear the cliff validator spot because the revoke has
-		// opened up a new spot which will be filled when
-		// updateValidatorsBonded is called
-		k.clearCliffValidator(ctx)
+		validator, pool = validator.UpdateStatus(pool, sdk.Unbonded)
+		k.setPool(ctx, pool)
 	}
 
 	powerIncreasing := false
@@ -282,14 +255,16 @@ func (k Keeper) updateValidator(ctx sdk.Context, validator Validator) Validator 
 	return validator
 }
 
+// XXX TODO build in consideration for revoked
+//
 // Update the validator group and kick out any old validators. In addition this
 // function adds (or doesn't add) a validator which has updated its bonded
 // tokens to the validator group. -> this validator is specified through the
 // updatedValidatorAddr term.
 //
 // The correct subset is retrieved by iterating through an index of the
-// validators sorted by power, stored using the ValidatorsByPowerKey.
-// Simultaneously the current validator records are updated in store with the
+// validators sorted by power, stored using the ValidatorsByPowerKey. Simultaniously
+// the current validator records are updated in store with the
 // ValidatorsBondedKey. This store is used to determine if a validator is a
 // validator without needing to iterate over the subspace as we do in
 // GetValidators.
@@ -317,10 +292,10 @@ func (k Keeper) updateBondedValidators(ctx sdk.Context, store sdk.KVStore,
 			break
 		}
 
-		// either retrieve the original validator from the store, or under the
-		// situation that this is the "new validator" just use the validator
-		// provided because it has not yet been updated in the main validator
-		// store
+		// either retrieve the original validator from the store,
+		// or under the situation that this is the "new validator" just
+		// use the validator provided because it has not yet been updated
+		// in the main validator store
 		ownerAddr := iterator.Value()
 		if bytes.Equal(ownerAddr, newValidator.Owner) {
 			validator = newValidator
@@ -434,7 +409,7 @@ func (k Keeper) updateBondedValidatorsFull(ctx sdk.Context, store sdk.KVStore) {
 }
 
 // perform all the store operations for when a validator status becomes unbonded
-func (k Keeper) unbondValidator(ctx sdk.Context, store sdk.KVStore, validator Validator) Validator {
+func (k Keeper) unbondValidator(ctx sdk.Context, store sdk.KVStore, validator Validator) {
 	pool := k.GetPool(ctx)
 
 	// sanity check
@@ -456,7 +431,6 @@ func (k Keeper) unbondValidator(ctx sdk.Context, store sdk.KVStore, validator Va
 
 	// also remove from the Bonded Validators Store
 	store.Delete(GetValidatorsBondedKey(validator.PubKey))
-	return validator
 }
 
 // perform all the store operations for when a validator status becomes bonded
@@ -496,7 +470,6 @@ func (k Keeper) removeValidator(ctx sdk.Context, address sdk.Address) {
 	store := ctx.KVStore(k.storeKey)
 	pool := k.getPool(store)
 	store.Delete(GetValidatorKey(address))
-	store.Delete(GetValidatorByPubKeyIndexKey(validator.PubKey))
 	store.Delete(GetValidatorsByPowerKey(validator, pool))
 
 	// delete from the current and power weighted validator groups if the validator
@@ -634,9 +607,9 @@ func (k Keeper) getPool(store sdk.KVStore) (pool Pool) {
 	return
 }
 
-func (k Keeper) setPool(ctx sdk.Context, pool Pool) {
+func (k Keeper) setPool(ctx sdk.Context, p Pool) {
 	store := ctx.KVStore(k.storeKey)
-	b := k.cdc.MustMarshalBinary(pool)
+	b := k.cdc.MustMarshalBinary(p)
 	store.Set(PoolKey, b)
 }
 
@@ -681,13 +654,6 @@ func (k Keeper) setCliffValidator(ctx sdk.Context, validator Validator, pool Poo
 	bz := GetValidatorsByPowerKey(validator, pool)
 	store.Set(ValidatorPowerCliffKey, bz)
 	store.Set(ValidatorCliffKey, validator.Owner)
-}
-
-// clear the current validator and power of the validator on the cliff
-func (k Keeper) clearCliffValidator(ctx sdk.Context) {
-	store := ctx.KVStore(k.storeKey)
-	store.Delete(ValidatorPowerCliffKey)
-	store.Delete(ValidatorCliffKey)
 }
 
 //__________________________________________________________________________
@@ -782,47 +748,4 @@ func (k Keeper) IterateDelegators(ctx sdk.Context, delAddr sdk.Address, fn func(
 		i++
 	}
 	iterator.Close()
-}
-
-// slash a validator
-func (k Keeper) Slash(ctx sdk.Context, pubkey crypto.PubKey, height int64, fraction sdk.Rat) {
-	// TODO height ignored for now, see https://github.com/tepleton/tepleton-sdk/pull/1011#issuecomment-390253957
-	logger := ctx.Logger().With("module", "x/stake")
-	val, found := k.GetValidatorByPubKey(ctx, pubkey)
-	if !found {
-		panic(fmt.Errorf("Attempted to slash a nonexistent validator with address %s", pubkey.Address()))
-	}
-	sharesToRemove := val.PoolShares.Amount.Mul(fraction)
-	pool := k.GetPool(ctx)
-	val, pool, burned := val.removePoolShares(pool, sharesToRemove)
-	k.setPool(ctx, pool)        // update the pool
-	k.updateValidator(ctx, val) // update the validator, possibly kicking it out
-	logger.Info(fmt.Sprintf("Validator %s slashed by fraction %v, removed %v shares and burned %d tokens", pubkey.Address(), fraction, sharesToRemove, burned))
-	return
-}
-
-// revoke a validator
-func (k Keeper) Revoke(ctx sdk.Context, pubkey crypto.PubKey) {
-	logger := ctx.Logger().With("module", "x/stake")
-	val, found := k.GetValidatorByPubKey(ctx, pubkey)
-	if !found {
-		panic(fmt.Errorf("Validator with pubkey %s not found, cannot revoke", pubkey))
-	}
-	val.Revoked = true
-	k.updateValidator(ctx, val) // update the validator, now revoked
-	logger.Info(fmt.Sprintf("Validator %s revoked", pubkey.Address()))
-	return
-}
-
-// unrevoke a validator
-func (k Keeper) Unrevoke(ctx sdk.Context, pubkey crypto.PubKey) {
-	logger := ctx.Logger().With("module", "x/stake")
-	val, found := k.GetValidatorByPubKey(ctx, pubkey)
-	if !found {
-		panic(fmt.Errorf("Validator with pubkey %s not found, cannot unrevoke", pubkey))
-	}
-	val.Revoked = false
-	k.updateValidator(ctx, val) // update the validator, now unrevoked
-	logger.Info(fmt.Sprintf("Validator %s unrevoked", pubkey.Address()))
-	return
 }
