@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"encoding/hex"
 	"fmt"
 	"net/http"
 
@@ -9,32 +10,32 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/context"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
-	"github.com/tepleton/tepleton-sdk/x/auth"
-	authcmd "github.com/tepleton/tepleton-sdk/x/auth/client/cli"
+	auth "github.com/tepleton/tepleton-sdk/x/auth/client/cli"
 )
 
 // register REST routes
 func RegisterRoutes(ctx context.CoreContext, r *mux.Router, cdc *wire.Codec, storeName string) {
 	r.HandleFunc(
 		"/accounts/{address}",
-		QueryAccountRequestHandlerFn(storeName, cdc, authcmd.GetAccountDecoder(cdc), ctx),
+		QueryAccountRequestHandlerFn(storeName, cdc, auth.GetAccountDecoder(cdc), ctx),
 	).Methods("GET")
 }
 
 // query accountREST Handler
-func QueryAccountRequestHandlerFn(storeName string, cdc *wire.Codec, decoder auth.AccountDecoder, ctx context.CoreContext) http.HandlerFunc {
+func QueryAccountRequestHandlerFn(storeName string, cdc *wire.Codec, decoder sdk.AccountDecoder, ctx context.CoreContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		bech32addr := vars["address"]
+		addr := vars["address"]
 
-		addr, err := sdk.GetAccAddressBech32(bech32addr)
+		bz, err := hex.DecodeString(addr)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(err.Error()))
 			return
 		}
+		key := sdk.Address(bz)
 
-		res, err := ctx.Query(addr, storeName)
+		res, err := ctx.Query(key, storeName)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(fmt.Sprintf("Could't query account. Error: %s", err.Error())))

@@ -3,7 +3,7 @@ package context
 import (
 	rpcclient "github.com/tepleton/tepleton/rpc/client"
 
-	"github.com/tepleton/tepleton-sdk/x/auth"
+	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
 // typical context created in sdk modules for transactions/queries
@@ -15,7 +15,7 @@ type CoreContext struct {
 	FromAddressName string
 	Sequence        int64
 	Client          rpcclient.Client
-	Decoder         auth.AccountDecoder
+	Decoder         sdk.AccountDecoder
 	AccountStore    string
 }
 
@@ -63,7 +63,7 @@ func (c CoreContext) WithClient(client rpcclient.Client) CoreContext {
 }
 
 // WithDecoder - return a copy of the context with an updated Decoder
-func (c CoreContext) WithDecoder(decoder auth.AccountDecoder) CoreContext {
+func (c CoreContext) WithDecoder(decoder sdk.AccountDecoder) CoreContext {
 	c.Decoder = decoder
 	return c
 }

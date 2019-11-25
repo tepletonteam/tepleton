@@ -18,8 +18,8 @@ var (
 	coinNegNotAtoms  = sdk.Coin{"foo", -10000}
 )
 
-// test ValidateBasic for MsgCreateValidator
-func TestMsgCreateValidator(t *testing.T) {
+// test ValidateBasic for MsgDeclareCandidacy
+func TestMsgDeclareCandidacy(t *testing.T) {
 	tests := []struct {
 		name, moniker, identity, website, details string
 		validatorAddr                             sdk.Address
@@ -40,7 +40,7 @@ func TestMsgCreateValidator(t *testing.T) {
 
 	for _, tc := range tests {
 		description := NewDescription(tc.moniker, tc.identity, tc.website, tc.details)
-		msg := NewMsgCreateValidator(tc.validatorAddr, tc.pubkey, tc.bond, description)
+		msg := NewMsgDeclareCandidacy(tc.validatorAddr, tc.pubkey, tc.bond, description)
 		if tc.expectPass {
 			assert.Nil(t, msg.ValidateBasic(), "test: %v", tc.name)
 		} else {
@@ -49,8 +49,8 @@ func TestMsgCreateValidator(t *testing.T) {
 	}
 }
 
-// test ValidateBasic for MsgEditValidator
-func TestMsgEditValidator(t *testing.T) {
+// test ValidateBasic for MsgEditCandidacy
+func TestMsgEditCandidacy(t *testing.T) {
 	tests := []struct {
 		name, moniker, identity, website, details string
 		validatorAddr                             sdk.Address
@@ -64,7 +64,7 @@ func TestMsgEditValidator(t *testing.T) {
 
 	for _, tc := range tests {
 		description := NewDescription(tc.moniker, tc.identity, tc.website, tc.details)
-		msg := NewMsgEditValidator(tc.validatorAddr, description)
+		msg := NewMsgEditCandidacy(tc.validatorAddr, description)
 		if tc.expectPass {
 			assert.Nil(t, msg.ValidateBasic(), "test: %v", tc.name)
 		} else {
@@ -139,8 +139,8 @@ func TestMsgUnbond(t *testing.T) {
 //tests := []struct {
 //tx sdk.Msg
 //}{
-//{NewMsgCreateValidator(addrs[0], pks[0], bond, Description{})},
-//{NewMsgEditValidator(addrs[0], Description{})},
+//{NewMsgDeclareCandidacy(addrs[0], pks[0], bond, Description{})},
+//{NewMsgEditCandidacy(addrs[0], Description{})},
 //{NewMsgDelegate(addrs[0], addrs[1], bond)},
 //{NewMsgUnbond(addrs[0], addrs[1], strconv.Itoa(bondAmt))},
 //}

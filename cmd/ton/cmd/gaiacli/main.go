@@ -14,7 +14,6 @@ import (
 	authcmd "github.com/tepleton/tepleton-sdk/x/auth/client/cli"
 	bankcmd "github.com/tepleton/tepleton-sdk/x/bank/client/cli"
 	ibccmd "github.com/tepleton/tepleton-sdk/x/ibc/client/cli"
-	slashingcmd "github.com/tepleton/tepleton-sdk/x/slashing/client/cli"
 	stakecmd "github.com/tepleton/tepleton-sdk/x/stake/client/cli"
 
 	"github.com/tepleton/tepleton-sdk/cmd/ton/app"
@@ -36,83 +35,36 @@ func main() {
 	// the below functions and eliminate global vars, like we do
 	// with the cdc
 
-	// add standard rpc commands
+	// add standard rpc, and tx commands
 	rpc.AddCommands(rootCmd)
+	rootCmd.AddCommand(client.LineBreak)
+	tx.AddCommands(rootCmd, cdc)
+	rootCmd.AddCommand(client.LineBreak)
 
-	//Add state commands
-	tepletonCmd := &cobra.Command{
-		Use:   "tepleton",
-		Short: "Tendermint state querying subcommands",
-	}
-	tepletonCmd.AddCommand(
-		rpc.BlockCommand(),
-		rpc.ValidatorCommand(),
-	)
-	tx.AddCommands(tepletonCmd, cdc)
-
-	//Add IBC commands
-	ibcCmd := &cobra.Command{
-		Use:   "ibc",
-		Short: "Inter-Blockchain Communication subcommands",
-	}
-	ibcCmd.AddCommand(
-		client.PostCommands(
-			ibccmd.IBCTransferCmd(cdc),
-			ibccmd.IBCRelayCmd(cdc),
-		)...)
-
-	advancedCmd := &cobra.Command{
-		Use:   "advanced",
-		Short: "Advanced subcommands",
-	}
-
-	advancedCmd.AddCommand(
-		tepletonCmd,
-		ibcCmd,
-		lcd.ServeCommand(cdc),
-	)
+	// add query/post commands (custom to binary)
 	rootCmd.AddCommand(
-		advancedCmd,
-		client.LineBreak,
-	)
-
-	//Add stake commands
-	stakeCmd := &cobra.Command{
-		Use:   "stake",
-		Short: "Stake and validation subcommands",
-	}
-	stakeCmd.AddCommand(
 		client.GetCommands(
+			authcmd.GetAccountCmd("acc", cdc, authcmd.GetAccountDecoder(cdc)),
 			stakecmd.GetCmdQueryValidator("stake", cdc),
 			stakecmd.GetCmdQueryValidators("stake", cdc),
 			stakecmd.GetCmdQueryDelegation("stake", cdc),
 			stakecmd.GetCmdQueryDelegations("stake", cdc),
-			slashingcmd.GetCmdQuerySigningInfo("slashing", cdc),
-		)...)
-	stakeCmd.AddCommand(
-		client.PostCommands(
-			stakecmd.GetCmdCreateValidator(cdc),
-			stakecmd.GetCmdEditValidator(cdc),
-			stakecmd.GetCmdDelegate(cdc),
-			stakecmd.GetCmdUnbond(cdc),
-			slashingcmd.GetCmdUnrevoke(cdc),
-		)...)
-	rootCmd.AddCommand(
-		stakeCmd,
-	)
-
-	//Add auth and bank commands
-	rootCmd.AddCommand(
-		client.GetCommands(
-			authcmd.GetAccountCmd("acc", cdc, authcmd.GetAccountDecoder(cdc)),
 		)...)
 	rootCmd.AddCommand(
 		client.PostCommands(
 			bankcmd.SendTxCmd(cdc),
+			ibccmd.IBCTransferCmd(cdc),
+			ibccmd.IBCRelayCmd(cdc),
+			stakecmd.GetCmdDeclareCandidacy(cdc),
+			stakecmd.GetCmdEditCandidacy(cdc),
+			stakecmd.GetCmdDelegate(cdc),
+			stakecmd.GetCmdUnbond(cdc),
 		)...)
 
 	// add proxy, version and key info
 	rootCmd.AddCommand(
+		client.LineBreak,
+		lcd.ServeCommand(cdc),
 		keys.Commands(),
 		client.LineBreak,
 		version.VersionCmd,

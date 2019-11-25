@@ -50,12 +50,7 @@ func GetKeyRequestHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	keyOutput, err := Bech32KeyOutput(info)
-	if err != nil {
-		w.WriteHeader(500)
-		w.Write([]byte(err.Error()))
-		return
-	}
+	keyOutput := KeyOutput{Name: info.Name, Address: info.PubKey.Address().String()}
 	output, err := json.MarshalIndent(keyOutput, "", "  ")
 	if err != nil {
 		w.WriteHeader(500)
