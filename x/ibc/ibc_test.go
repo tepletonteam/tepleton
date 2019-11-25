@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	wrsp "github.com/tepleton/wrsp/types"
-	"github.com/tepleton/go-crypto"
+	crypto "github.com/tepleton/go-crypto"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
 
@@ -49,7 +49,7 @@ func makeCodec() *wire.Codec {
 	cdc.RegisterConcrete(IBCReceiveMsg{}, "test/ibc/IBCReceiveMsg", nil)
 
 	// Register AppAccount
-	cdc.RegisterInterface((*sdk.Account)(nil), nil)
+	cdc.RegisterInterface((*auth.Account)(nil), nil)
 	cdc.RegisterConcrete(&auth.BaseAccount{}, "test/ibc/Account", nil)
 	wire.RegisterCrypto(cdc)
 

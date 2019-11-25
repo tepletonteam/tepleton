@@ -2,6 +2,7 @@ package simplestake
 
 import (
 	wrsp "github.com/tepleton/wrsp/types"
+	tmtypes "github.com/tepleton/tepleton/types"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
@@ -27,7 +28,7 @@ func handleMsgBond(ctx sdk.Context, k Keeper, msg MsgBond) sdk.Result {
 	}
 
 	valSet := wrsp.Validator{
-		PubKey: msg.PubKey.Bytes(),
+		PubKey: tmtypes.TM2PB.PubKey(msg.PubKey),
 		Power:  power,
 	}
 
@@ -44,7 +45,7 @@ func handleMsgUnbond(ctx sdk.Context, k Keeper, msg MsgUnbond) sdk.Result {
 	}
 
 	valSet := wrsp.Validator{
-		PubKey: pubKey.Bytes(),
+		PubKey: tmtypes.TM2PB.PubKey(pubKey),
 		Power:  int64(0),
 	}
 

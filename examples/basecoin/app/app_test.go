@@ -11,9 +11,11 @@ import (
 
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/types"
 	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/bank"
 	"github.com/tepleton/tepleton-sdk/x/ibc"
+	"github.com/tepleton/tepleton-sdk/x/stake"
 
 	wrsp "github.com/tepleton/wrsp/types"
 	crypto "github.com/tepleton/go-crypto"
@@ -37,7 +39,7 @@ var (
 	coins     = sdk.Coins{{"foocoin", 10}}
 	halfCoins = sdk.Coins{{"foocoin", 5}}
 	manyCoins = sdk.Coins{{"foocoin", 1}, {"barcoin", 1}}
-	fee       = sdk.StdFee{
+	fee       = auth.StdFee{
 		sdk.Coins{{"foocoin", 0}},
 		100000,
 	}
@@ -85,6 +87,30 @@ var (
 	}
 )
 
+func setGenesis(bapp *BasecoinApp, accs ...auth.BaseAccount) error {
+	genaccs := make([]*types.GenesisAccount, len(accs))
+	for i, acc := range accs {
+		genaccs[i] = types.NewGenesisAccount(&types.AppAccount{acc, accName})
+	}
+
+	genesisState := types.GenesisState{
+		Accounts:  genaccs,
+		StakeData: stake.DefaultGenesisState(),
+	}
+
+	stateBytes, err := wire.MarshalJSONIndent(bapp.cdc, genesisState)
+	if err != nil {
+		return err
+	}
+
+	// Initialize the chain
+	vals := []wrsp.Validator{}
+	bapp.InitChain(wrsp.RequestInitChain{Validators: vals, AppStateBytes: stateBytes})
+	bapp.Commit()
+
+	return nil
+}
+
 func loggerAndDB() (log.Logger, dbm.DB) {
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "sdk/app")
 	db := dbm.NewMemDB()
@@ -96,33 +122,11 @@ func newBasecoinApp() *BasecoinApp {
 	return NewBasecoinApp(logger, db)
 }
 
-func setGenesisAccounts(bapp *BasecoinApp, accs ...auth.BaseAccount) error {
-	genaccs := make([]*types.GenesisAccount, len(accs))
-	for i, acc := range accs {
-		genaccs[i] = types.NewGenesisAccount(&types.AppAccount{acc, accName})
-	}
-
-	genesisState := types.GenesisState{
-		Accounts: genaccs,
-	}
-
-	stateBytes, err := json.MarshalIndent(genesisState, "", "\t")
-	if err != nil {
-		return err
-	}
-
-	// Initialize the chain
-	vals := []wrsp.Validator{}
-	bapp.InitChain(wrsp.RequestInitChain{vals, stateBytes})
-	bapp.Commit()
-
-	return nil
-}
-
 //_______________________________________________________________________
 
 func TestMsgs(t *testing.T) {
 	bapp := newBasecoinApp()
+	require.Nil(t, setGenesis(bapp))
 
 	msgs := []struct {
 		msg sdk.Msg
@@ -161,7 +165,7 @@ func TestSortGenesis(t *testing.T) {
 
 	// Initialize the chain
 	vals := []wrsp.Validator{}
-	bapp.InitChain(wrsp.RequestInitChain{vals, []byte(genState)})
+	bapp.InitChain(wrsp.RequestInitChain{Validators: vals, AppStateBytes: []byte(genState)})
 	bapp.Commit()
 
 	// Unsorted coins means invalid
@@ -193,8 +197,8 @@ func TestGenesis(t *testing.T) {
 	}
 	acc := &types.AppAccount{baseAcc, "foobart"}
 
-	err = setGenesisAccounts(bapp, baseAcc)
-	assert.Nil(t, err)
+	err = setGenesis(bapp, baseAcc)
+	require.Nil(t, err)
 
 	// A checkTx context
 	ctx := bapp.BaseApp.NewContext(true, wrsp.Header{})
@@ -222,8 +226,9 @@ func TestMsgChangePubKey(t *testing.T) {
 	}
 
 	// Construct genesis state
-	err = setGenesisAccounts(bapp, baseAcc)
-	assert.Nil(t, err)
+	err = setGenesis(bapp, baseAcc)
+	require.Nil(t, err)
+
 	// A checkTx context (true)
 	ctxCheck := bapp.BaseApp.NewContext(true, wrsp.Header{})
 	res1 := bapp.accountMapper.GetAccount(ctxCheck, addr1)
@@ -276,8 +281,9 @@ func TestMsgSendWithAccounts(t *testing.T) {
 	}
 
 	// Construct genesis state
-	err = setGenesisAccounts(bapp, baseAcc)
-	assert.Nil(t, err)
+	err = setGenesis(bapp, baseAcc)
+	require.Nil(t, err)
+
 	// A checkTx context (true)
 	ctxCheck := bapp.BaseApp.NewContext(true, wrsp.Header{})
 	res1 := bapp.accountMapper.GetAccount(ctxCheck, addr1)
@@ -320,8 +326,9 @@ func TestMsgSendMultipleOut(t *testing.T) {
 		Coins:   genCoins,
 	}
 
-	err = setGenesisAccounts(bapp, acc1, acc2)
-	assert.Nil(t, err)
+	// Construct genesis state
+	err = setGenesis(bapp, acc1, acc2)
+	require.Nil(t, err)
 
 	// Simulate a Block
 	SignCheckDeliver(t, bapp, sendMsg2, []int64{0}, true, priv1)
@@ -353,7 +360,7 @@ func TestSengMsgMultipleInOut(t *testing.T) {
 		Coins:   genCoins,
 	}
 
-	err = setGenesisAccounts(bapp, acc1, acc2, acc4)
+	err = setGenesis(bapp, acc1, acc2, acc4)
 	assert.Nil(t, err)
 
 	// CheckDeliver
@@ -377,7 +384,11 @@ func TestMsgSendDependent(t *testing.T) {
 		Coins:   genCoins,
 	}
 
-	err = setGenesisAccounts(bapp, acc1)
+	// Construct genesis state
+	err = setGenesis(bapp, acc1)
+	require.Nil(t, err)
+
+	err = setGenesis(bapp, acc1)
 	assert.Nil(t, err)
 
 	// CheckDeliver
@@ -416,7 +427,7 @@ func TestMsgQuiz(t *testing.T) {
 
 	// Initialize the chain (nil)
 	vals := []wrsp.Validator{}
-	bapp.InitChain(wrsp.RequestInitChain{vals, stateBytes})
+	bapp.InitChain(wrsp.RequestInitChain{Validators: vals, AppStateBytes: stateBytes})
 	bapp.Commit()
 
 	// A checkTx context (true)
@@ -438,8 +449,9 @@ func TestIBCMsgs(t *testing.T) {
 	}
 	acc1 := &types.AppAccount{baseAcc, "foobart"}
 
-	err := setGenesisAccounts(bapp, baseAcc)
+	err := setGenesis(bapp, baseAcc)
 	assert.Nil(t, err)
+
 	// A checkTx context (true)
 	ctxCheck := bapp.BaseApp.NewContext(true, wrsp.Header{})
 	res1 := bapp.accountMapper.GetAccount(ctxCheck, addr1)
@@ -471,17 +483,17 @@ func TestIBCMsgs(t *testing.T) {
 	SignCheckDeliver(t, bapp, receiveMsg, []int64{3}, false, priv1)
 }
 
-func genTx(msg sdk.Msg, seq []int64, priv ...crypto.PrivKeyEd25519) sdk.StdTx {
-	sigs := make([]sdk.StdSignature, len(priv))
+func genTx(msg sdk.Msg, seq []int64, priv ...crypto.PrivKeyEd25519) auth.StdTx {
+	sigs := make([]auth.StdSignature, len(priv))
 	for i, p := range priv {
-		sigs[i] = sdk.StdSignature{
+		sigs[i] = auth.StdSignature{
 			PubKey:    p.PubKey(),
-			Signature: p.Sign(sdk.StdSignBytes(chainID, seq, fee, msg)),
+			Signature: p.Sign(auth.StdSignBytes(chainID, seq, fee, msg)),
 			Sequence:  seq[i],
 		}
 	}
 
-	return sdk.NewStdTx(msg, fee, sigs)
+	return auth.NewStdTx(msg, fee, sigs)
 
 }
 
