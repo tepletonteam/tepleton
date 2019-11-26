@@ -22,11 +22,11 @@ import (
 	tmcfg "github.com/tepleton/tepleton/config"
 	nm "github.com/tepleton/tepleton/node"
 	p2p "github.com/tepleton/tepleton/p2p"
+	pvm "github.com/tepleton/tepleton/privval"
 	"github.com/tepleton/tepleton/proxy"
 	ctypes "github.com/tepleton/tepleton/rpc/core/types"
 	tmrpc "github.com/tepleton/tepleton/rpc/lib/server"
 	tmtypes "github.com/tepleton/tepleton/types"
-	pvm "github.com/tepleton/tepleton/privval"
 	"github.com/tepleton/tmlibs/cli"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
@@ -392,6 +392,7 @@ func startTMAndLCD() (*nm.Node, net.Listener, error) {
 		return nil, nil, err
 	}
 	viper.Set(cli.HomeFlag, dir)
+	viper.Set(client.FlagGas, 200000)
 	kb, err := keys.GetKeyBase() // dbm.NewMemDB()) // :(
 	if err != nil {
 		return nil, nil, err
