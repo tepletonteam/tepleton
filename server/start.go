@@ -10,7 +10,7 @@ import (
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 	"github.com/tepleton/tepleton/node"
 	"github.com/tepleton/tepleton/proxy"
-	pvm "github.com/tepleton/tepleton/types/priv_validator"
+	pvm "github.com/tepleton/tepleton/privval"
 	cmn "github.com/tepleton/tmlibs/common"
 )
 

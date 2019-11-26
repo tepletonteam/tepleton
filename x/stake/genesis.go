@@ -1,10 +1,6 @@
 package stake
 
-import (
-	tmtypes "github.com/tepleton/tepleton/types"
-
-	sdk "github.com/tepleton/tepleton-sdk/types"
-)
+import sdk "github.com/tepleton/tepleton-sdk/types"
 
 // GenesisState - all staking state that must be provided at genesis
 type GenesisState struct {
@@ -66,17 +62,4 @@ func WriteGenesis(ctx sdk.Context, k Keeper) GenesisState {
 		validators,
 		bonds,
 	}
-}
-
-// WriteValidators - output current validator set
-func WriteValidators(ctx sdk.Context, k Keeper) (vals []tmtypes.GenesisValidator) {
-	k.IterateValidatorsBonded(ctx, func(_ int64, validator sdk.Validator) (stop bool) {
-		vals = append(vals, tmtypes.GenesisValidator{
-			PubKey: validator.GetPubKey(),
-			Power:  validator.GetPower().Evaluate(),
-			Name:   validator.GetMoniker(),
-		})
-		return false
-	})
-	return
 }

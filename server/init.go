@@ -20,7 +20,7 @@ import (
 	cfg "github.com/tepleton/tepleton/config"
 	"github.com/tepleton/tepleton/p2p"
 	tmtypes "github.com/tepleton/tepleton/types"
-	pvm "github.com/tepleton/tepleton/types/priv_validator"
+	pvm "github.com/tepleton/tepleton/privval"
 	tmcli "github.com/tepleton/tmlibs/cli"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"

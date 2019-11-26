@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/spf13/cobra"
 )
 
@@ -53,11 +54,9 @@ func QueryKeysRequestHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("[]"))
 		return
 	}
-	keysOutput, err := Bech32KeysOutput(infos)
-	if err != nil {
-		w.WriteHeader(500)
-		w.Write([]byte(err.Error()))
-		return
+	keysOutput := make([]KeyOutput, len(infos))
+	for i, info := range infos {
+		keysOutput[i] = KeyOutput{Name: info.Name, Address: sdk.Address(info.PubKey.Address().Bytes())}
 	}
 	output, err := json.MarshalIndent(keysOutput, "", "  ")
 	if err != nil {

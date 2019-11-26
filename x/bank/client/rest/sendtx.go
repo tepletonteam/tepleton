@@ -41,14 +41,7 @@ func SendRequestHandlerFn(cdc *wire.Codec, kb keys.Keybase, ctx context.CoreCont
 	return func(w http.ResponseWriter, r *http.Request) {
 		// collect data
 		vars := mux.Vars(r)
-		bech32addr := vars["address"]
-
-		address, err := sdk.GetAccAddressBech32(bech32addr)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(err.Error()))
-			return
-		}
+		address := vars["address"]
 
 		var m sendBody
 		body, err := ioutil.ReadAll(r.Body)
@@ -71,7 +64,7 @@ func SendRequestHandlerFn(cdc *wire.Codec, kb keys.Keybase, ctx context.CoreCont
 			return
 		}
 
-		to, err := sdk.GetAccAddressHex(address.String())
+		to, err := sdk.GetAccAddressHex(address)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(err.Error()))
