@@ -187,7 +187,12 @@ func TestMsgSendGetSignBytes(t *testing.T) {
 	}
 	res := msg.GetSignBytes()
 
-	expected := `{"inputs":[{"address":"tepletonaccaddr1d9h8qat5e4ehc5","coins":[{"denom":"atom","amount":10}]}],"outputs":[{"address":"tepletonaccaddr1da6hgur4wse3jx32","coins":[{"denom":"atom","amount":10}]}]}`
+	unmarshaledMsg := &MsgSend{}
+	msgCdc.UnmarshalJSON(res, unmarshaledMsg)
+	assert.Equal(t, &msg, unmarshaledMsg)
+
+	// TODO bad results
+	expected := `{"type":"EAFDE32A2C87F8","value":{"inputs":[{"address":"696E707574","coins":[{"denom":"atom","amount":10}]}],"outputs":[{"address":"6F7574707574","coins":[{"denom":"atom","amount":10}]}]}}`
 	assert.Equal(t, expected, string(res))
 }
 
@@ -257,7 +262,12 @@ func TestMsgIssueGetSignBytes(t *testing.T) {
 	}
 	res := msg.GetSignBytes()
 
-	expected := `{"banker":"tepletonaccaddr1d9h8qat5e4ehc5","outputs":[{"address":"tepletonaccaddr1d3hkzm3dveex7mfdvfsku6cwsauqd","coins":[{"denom":"atom","amount":10}]}]}`
+	unmarshaledMsg := &MsgIssue{}
+	msgCdc.UnmarshalJSON(res, unmarshaledMsg)
+	assert.Equal(t, &msg, unmarshaledMsg)
+
+	// TODO bad results
+	expected := `{"type":"72E617C06ABAD0","value":{"banker":"696E707574","outputs":[{"address":"6C6F616E2D66726F6D2D62616E6B","coins":[{"denom":"atom","amount":10}]}]}}`
 	assert.Equal(t, expected, string(res))
 }
 
