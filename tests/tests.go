@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tepleton/tepleton-sdk/server"
+	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,7 +37,7 @@ var (
 )
 
 func gopath() string {
-	return filepath.Join(os.Getenv("GOPATH"), "src", "github.com", "tepleton", "tepleton-sdk")
+	return filepath.Join(os.Getenv("GOPATH"), "src", "github.com", "cosmos", "cosmos-sdk")
 }
 
 func whereIsBasecoind() string {
@@ -296,7 +296,7 @@ func runTests() {
 
 func initServer() error {
 	serveDir := filepath.Join(testDir, "server")
-	//serverLog := filepath.Join(testDir, "ton-node.log")
+	//serverLog := filepath.Join(testDir, "gaia-node.log")
 
 	// get RICH
 	keyOut, err := exec.Command(GAIA, CLIENT_EXE, "keys", "get", "alice").Output()

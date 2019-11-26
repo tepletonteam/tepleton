@@ -3,9 +3,9 @@ package store
 import (
 	"testing"
 
-	sdk "github.com/tepleton/tepleton-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
-	dbm "github.com/tepleton/tmlibs/db"
+	dbm "github.com/tendermint/tmlibs/db"
 )
 
 func newGasKVStore() KVStore {

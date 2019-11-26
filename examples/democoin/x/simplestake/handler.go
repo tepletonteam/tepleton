@@ -1,10 +1,10 @@
 package simplestake
 
 import (
-	wrsp "github.com/tepleton/wrsp/types"
-	tmtypes "github.com/tepleton/tepleton/types"
+	abci "github.com/tendermint/abci/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 
-	sdk "github.com/tepleton/tepleton-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // NewHandler returns a handler for "simplestake" type messages.
@@ -27,14 +27,14 @@ func handleMsgBond(ctx sdk.Context, k Keeper, msg MsgBond) sdk.Result {
 		return err.Result()
 	}
 
-	valSet := wrsp.Validator{
+	valSet := abci.Validator{
 		PubKey: tmtypes.TM2PB.PubKey(msg.PubKey),
 		Power:  power,
 	}
 
 	return sdk.Result{
-		Code:             sdk.WRSPCodeOK,
-		ValidatorUpdates: wrsp.Validators{valSet},
+		Code:             sdk.ABCICodeOK,
+		ValidatorUpdates: abci.Validators{valSet},
 	}
 }
 
@@ -44,13 +44,13 @@ func handleMsgUnbond(ctx sdk.Context, k Keeper, msg MsgUnbond) sdk.Result {
 		return err.Result()
 	}
 
-	valSet := wrsp.Validator{
+	valSet := abci.Validator{
 		PubKey: tmtypes.TM2PB.PubKey(pubKey),
 		Power:  int64(0),
 	}
 
 	return sdk.Result{
-		Code:             sdk.WRSPCodeOK,
-		ValidatorUpdates: wrsp.Validators{valSet},
+		Code:             sdk.ABCICodeOK,
+		ValidatorUpdates: abci.Validators{valSet},
 	}
 }

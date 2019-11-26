@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	crypto "github.com/tepleton/go-crypto"
+	crypto "github.com/tendermint/go-crypto"
 
-	sdk "github.com/tepleton/tepleton-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 func TestNewMsgChangeKey(t *testing.T) {}

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	keybase "github.com/tepleton/tepleton-sdk/client/keys"
-	keys "github.com/tepleton/go-crypto/keys"
+	keybase "github.com/cosmos/cosmos-sdk/client/keys"
+	keys "github.com/tendermint/go-crypto/keys"
 )
 
 // REST request body

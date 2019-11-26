@@ -6,8 +6,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	wrsp "github.com/tepleton/wrsp/types"
-	"github.com/tepleton/tmlibs/log"
+	abci "github.com/tendermint/abci/types"
+	"github.com/tendermint/tmlibs/log"
 )
 
 /*
@@ -30,7 +30,7 @@ type Context struct {
 }
 
 // create a new context
-func NewContext(ms MultiStore, header wrsp.Header, isCheckTx bool, txBytes []byte, logger log.Logger) Context {
+func NewContext(ms MultiStore, header abci.Header, isCheckTx bool, txBytes []byte, logger log.Logger) Context {
 
 	c := Context{
 		Context: context.Background(),
@@ -142,8 +142,8 @@ func (c Context) multiStore() MultiStore {
 }
 
 // nolint
-func (c Context) BlockHeader() wrsp.Header {
-	return c.Value(contextKeyBlockHeader).(wrsp.Header)
+func (c Context) BlockHeader() abci.Header {
+	return c.Value(contextKeyBlockHeader).(abci.Header)
 }
 func (c Context) BlockHeight() int64 {
 	return c.Value(contextKeyBlockHeight).(int64)
@@ -160,8 +160,8 @@ func (c Context) TxBytes() []byte {
 func (c Context) Logger() log.Logger {
 	return c.Value(contextKeyLogger).(log.Logger)
 }
-func (c Context) SigningValidators() []wrsp.SigningValidator {
-	return c.Value(contextKeySigningValidators).([]wrsp.SigningValidator)
+func (c Context) SigningValidators() []abci.SigningValidator {
+	return c.Value(contextKeySigningValidators).([]abci.SigningValidator)
 }
 func (c Context) GasMeter() GasMeter {
 	return c.Value(contextKeyGasMeter).(GasMeter)
@@ -169,7 +169,7 @@ func (c Context) GasMeter() GasMeter {
 func (c Context) WithMultiStore(ms MultiStore) Context {
 	return c.withValue(contextKeyMultiStore, ms)
 }
-func (c Context) WithBlockHeader(header wrsp.Header) Context {
+func (c Context) WithBlockHeader(header abci.Header) Context {
 	var _ proto.Message = &header // for cloning.
 	return c.withValue(contextKeyBlockHeader, header)
 }
@@ -188,7 +188,7 @@ func (c Context) WithTxBytes(txBytes []byte) Context {
 func (c Context) WithLogger(logger log.Logger) Context {
 	return c.withValue(contextKeyLogger, logger)
 }
-func (c Context) WithSigningValidators(SigningValidators []wrsp.SigningValidator) Context {
+func (c Context) WithSigningValidators(SigningValidators []abci.SigningValidator) Context {
 	return c.withValue(contextKeySigningValidators, SigningValidators)
 }
 func (c Context) WithGasMeter(meter GasMeter) Context {

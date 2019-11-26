@@ -4,8 +4,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 
-	"github.com/tepleton/tepleton-sdk/client/context"
-	"github.com/tepleton/tepleton-sdk/wire"
+	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/wire"
 )
 
 // AddCommands adds a number of tx-query related subcommands

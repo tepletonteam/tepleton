@@ -1,8 +1,8 @@
 package store
 
 import (
-	sdk "github.com/tepleton/tepleton-sdk/types"
-	dbm "github.com/tepleton/tmlibs/db"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	dbm "github.com/tendermint/tmlibs/db"
 )
 
 type dbStoreAdapter struct {

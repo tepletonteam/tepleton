@@ -1,6 +1,6 @@
 package types
 
-import wire "github.com/tepleton/tepleton-sdk/wire"
+import wire "github.com/cosmos/cosmos-sdk/wire"
 
 // Register the sdk message type
 func RegisterWire(cdc *wire.Codec) {

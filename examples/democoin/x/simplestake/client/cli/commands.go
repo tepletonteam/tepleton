@@ -7,14 +7,14 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	crypto "github.com/tepleton/go-crypto"
+	crypto "github.com/tendermint/go-crypto"
 
-	"github.com/tepleton/tepleton-sdk/client/context"
-	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/wire"
-	authcmd "github.com/tepleton/tepleton-sdk/x/auth/client/cli"
+	"github.com/cosmos/cosmos-sdk/client/context"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/wire"
+	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 
-	"github.com/tepleton/tepleton-sdk/examples/democoin/x/simplestake"
+	"github.com/cosmos/cosmos-sdk/examples/democoin/x/simplestake"
 )
 
 const (

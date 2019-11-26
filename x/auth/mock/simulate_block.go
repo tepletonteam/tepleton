@@ -3,14 +3,14 @@ package mock
 import (
 	"testing"
 
-	"github.com/tepleton/tepleton-sdk/baseapp"
-	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/baseapp"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	crypto "github.com/tepleton/go-crypto"
+	crypto "github.com/tendermint/go-crypto"
 
-	wrsp "github.com/tepleton/wrsp/types"
+	abci "github.com/tendermint/abci/types"
 )
 
 var chainID = "" // TODO
@@ -21,13 +21,13 @@ func SetGenesis(app *App, accs []auth.Account) {
 	// pass the accounts in via the application (lazy) instead of through RequestInitChain
 	app.GenesisAccounts = accs
 
-	app.InitChain(wrsp.RequestInitChain{})
+	app.InitChain(abci.RequestInitChain{})
 	app.Commit()
 }
 
 // check an account balance
 func CheckBalance(t *testing.T, app *App, addr sdk.Address, exp sdk.Coins) {
-	ctxDeliver := app.BaseApp.NewContext(false, wrsp.Header{})
+	ctxDeliver := app.BaseApp.NewContext(false, abci.Header{})
 	res := app.AccountMapper.GetAccount(ctxDeliver, addr)
 	assert.Equal(t, exp, res.GetCoins())
 }
@@ -61,20 +61,20 @@ func SignCheckDeliver(t *testing.T, app *baseapp.BaseApp, msg sdk.Msg, seq []int
 	// Run a Check
 	res := app.Check(tx)
 	if expPass {
-		require.Equal(t, sdk.WRSPCodeOK, res.Code, res.Log)
+		require.Equal(t, sdk.ABCICodeOK, res.Code, res.Log)
 	} else {
-		require.NotEqual(t, sdk.WRSPCodeOK, res.Code, res.Log)
+		require.NotEqual(t, sdk.ABCICodeOK, res.Code, res.Log)
 	}
 
 	// Simulate a Block
-	app.BeginBlock(wrsp.RequestBeginBlock{})
+	app.BeginBlock(abci.RequestBeginBlock{})
 	res = app.Deliver(tx)
 	if expPass {
-		require.Equal(t, sdk.WRSPCodeOK, res.Code, res.Log)
+		require.Equal(t, sdk.ABCICodeOK, res.Code, res.Log)
 	} else {
-		require.NotEqual(t, sdk.WRSPCodeOK, res.Code, res.Log)
+		require.NotEqual(t, sdk.ABCICodeOK, res.Code, res.Log)
 	}
-	app.EndBlock(wrsp.RequestEndBlock{})
+	app.EndBlock(abci.RequestEndBlock{})
 
 	// XXX fix code or add explaination as to why using commit breaks a bunch of these tests
 	//app.Commit()
@@ -90,12 +90,12 @@ func SignDeliver(t *testing.T, app *baseapp.BaseApp, msg sdk.Msg, seq []int64, e
 	tx := GenTx(msg, seq, priv...)
 
 	// Simulate a Block
-	app.BeginBlock(wrsp.RequestBeginBlock{})
+	app.BeginBlock(abci.RequestBeginBlock{})
 	res := app.Deliver(tx)
 	if expPass {
-		require.Equal(t, sdk.WRSPCodeOK, res.Code, res.Log)
+		require.Equal(t, sdk.ABCICodeOK, res.Code, res.Log)
 	} else {
-		require.NotEqual(t, sdk.WRSPCodeOK, res.Code, res.Log)
+		require.NotEqual(t, sdk.ABCICodeOK, res.Code, res.Log)
 	}
-	app.EndBlock(wrsp.RequestEndBlock{})
+	app.EndBlock(abci.RequestEndBlock{})
 }

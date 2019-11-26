@@ -6,11 +6,11 @@ import (
 
 	"golang.org/x/crypto/ripemd160"
 
-	wrsp "github.com/tepleton/wrsp/types"
-	dbm "github.com/tepleton/tmlibs/db"
-	"github.com/tepleton/tmlibs/merkle"
+	abci "github.com/tendermint/abci/types"
+	dbm "github.com/tendermint/tmlibs/db"
+	"github.com/tendermint/tmlibs/merkle"
 
-	sdk "github.com/tepleton/tepleton-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 const (
@@ -207,7 +207,7 @@ func (rs *rootMultiStore) getStoreByName(name string) Store {
 // modified to remove the substore prefix.
 // Ie. `req.Path` here is `/<substore>/<path>`, and trimmed to `/<path>` for the substore.
 // TODO: add proof for `multistore -> substore`.
-func (rs *rootMultiStore) Query(req wrsp.RequestQuery) wrsp.ResponseQuery {
+func (rs *rootMultiStore) Query(req abci.RequestQuery) abci.ResponseQuery {
 	// Query just routes this to a substore.
 	path := req.Path
 	storeName, subpath, err := parsePath(path)

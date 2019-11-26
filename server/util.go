@@ -9,14 +9,14 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/tepleton/tepleton-sdk/client"
-	"github.com/tepleton/tepleton-sdk/version"
-	"github.com/tepleton/tepleton-sdk/wire"
-	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
-	cfg "github.com/tepleton/tepleton/config"
-	"github.com/tepleton/tmlibs/cli"
-	tmflags "github.com/tepleton/tmlibs/cli/flags"
-	"github.com/tepleton/tmlibs/log"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/version"
+	"github.com/cosmos/cosmos-sdk/wire"
+	tcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
+	cfg "github.com/tendermint/tendermint/config"
+	"github.com/tendermint/tmlibs/cli"
+	tmflags "github.com/tendermint/tmlibs/cli/flags"
+	"github.com/tendermint/tmlibs/log"
 )
 
 // server context
@@ -73,12 +73,12 @@ func AddCommands(
 
 	rootCmd.PersistentFlags().String("log_level", ctx.Config.LogLevel, "Log level")
 
-	tepletonCmd := &cobra.Command{
-		Use:   "tepleton",
+	tendermintCmd := &cobra.Command{
+		Use:   "tendermint",
 		Short: "Tendermint subcommands",
 	}
 
-	tepletonCmd.AddCommand(
+	tendermintCmd.AddCommand(
 		ShowNodeIDCmd(ctx),
 		ShowValidatorCmd(ctx),
 	)
@@ -88,7 +88,7 @@ func AddCommands(
 		StartCmd(ctx, appCreator),
 		UnsafeResetAllCmd(ctx),
 		client.LineBreak,
-		tepletonCmd,
+		tendermintCmd,
 		ExportCmd(ctx, cdc, appExport),
 		client.LineBreak,
 		version.VersionCmd,

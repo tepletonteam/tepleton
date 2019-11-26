@@ -7,7 +7,7 @@
   any_errors_fatal: true
   gather_facts: no
   vars:
-    - service: tond
+    - service: gaiad
     - JOURNALBEAT_BINARY: "{{lookup('env', 'GOPATH')}}/bin/journalbeat"
   roles:
     - logzio

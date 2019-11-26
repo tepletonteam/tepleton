@@ -5,12 +5,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	wrsp "github.com/tepleton/wrsp/types"
-	crypto "github.com/tepleton/go-crypto"
-	"github.com/tepleton/tmlibs/log"
+	abci "github.com/tendermint/abci/types"
+	crypto "github.com/tendermint/go-crypto"
+	"github.com/tendermint/tmlibs/log"
 
-	sdk "github.com/tepleton/tepleton-sdk/types"
-	wire "github.com/tepleton/tepleton-sdk/wire"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	wire "github.com/cosmos/cosmos-sdk/wire"
 )
 
 func newTestMsg(addrs ...sdk.Address) *sdk.TestMsg {
@@ -41,7 +41,7 @@ func privAndAddr() (crypto.PrivKey, sdk.Address) {
 func checkValidTx(t *testing.T, anteHandler sdk.AnteHandler, ctx sdk.Context, tx sdk.Tx) {
 	_, result, abort := anteHandler(ctx, tx)
 	assert.False(t, abort)
-	assert.Equal(t, sdk.WRSPCodeOK, result.Code)
+	assert.Equal(t, sdk.ABCICodeOK, result.Code)
 	assert.True(t, result.IsOK())
 }
 
@@ -49,7 +49,7 @@ func checkValidTx(t *testing.T, anteHandler sdk.AnteHandler, ctx sdk.Context, tx
 func checkInvalidTx(t *testing.T, anteHandler sdk.AnteHandler, ctx sdk.Context, tx sdk.Tx, code sdk.CodeType) {
 	_, result, abort := anteHandler(ctx, tx)
 	assert.True(t, abort)
-	assert.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, code), result.Code)
+	assert.Equal(t, sdk.ToABCICode(sdk.CodespaceRoot, code), result.Code)
 }
 
 func newTestTx(ctx sdk.Context, msg sdk.Msg, privs []crypto.PrivKey, seqs []int64, fee StdFee) sdk.Tx {
@@ -75,7 +75,7 @@ func TestAnteHandlerSigErrors(t *testing.T) {
 	mapper := NewAccountMapper(cdc, capKey, &BaseAccount{})
 	feeCollector := NewFeeCollectionKeeper(cdc, capKey2)
 	anteHandler := NewAnteHandler(mapper, feeCollector)
-	ctx := sdk.NewContext(ms, wrsp.Header{ChainID: "mychainid"}, false, nil, log.NewNopLogger())
+	ctx := sdk.NewContext(ms, abci.Header{ChainID: "mychainid"}, false, nil, log.NewNopLogger())
 
 	// keys and addresses
 	priv1, addr1 := privAndAddr()
@@ -117,7 +117,7 @@ func TestAnteHandlerSequences(t *testing.T) {
 	mapper := NewAccountMapper(cdc, capKey, &BaseAccount{})
 	feeCollector := NewFeeCollectionKeeper(cdc, capKey2)
 	anteHandler := NewAnteHandler(mapper, feeCollector)
-	ctx := sdk.NewContext(ms, wrsp.Header{ChainID: "mychainid"}, false, nil, log.NewNopLogger())
+	ctx := sdk.NewContext(ms, abci.Header{ChainID: "mychainid"}, false, nil, log.NewNopLogger())
 
 	// keys and addresses
 	priv1, addr1 := privAndAddr()
@@ -184,7 +184,7 @@ func TestAnteHandlerFees(t *testing.T) {
 	mapper := NewAccountMapper(cdc, capKey, &BaseAccount{})
 	feeCollector := NewFeeCollectionKeeper(cdc, capKey2)
 	anteHandler := NewAnteHandler(mapper, feeCollector)
-	ctx := sdk.NewContext(ms, wrsp.Header{ChainID: "mychainid"}, false, nil, log.NewNopLogger())
+	ctx := sdk.NewContext(ms, abci.Header{ChainID: "mychainid"}, false, nil, log.NewNopLogger())
 
 	// keys and addresses
 	priv1, addr1 := privAndAddr()
@@ -226,7 +226,7 @@ func TestAnteHandlerBadSignBytes(t *testing.T) {
 	mapper := NewAccountMapper(cdc, capKey, &BaseAccount{})
 	feeCollector := NewFeeCollectionKeeper(cdc, capKey2)
 	anteHandler := NewAnteHandler(mapper, feeCollector)
-	ctx := sdk.NewContext(ms, wrsp.Header{ChainID: "mychainid"}, false, nil, log.NewNopLogger())
+	ctx := sdk.NewContext(ms, abci.Header{ChainID: "mychainid"}, false, nil, log.NewNopLogger())
 
 	// keys and addresses
 	priv1, addr1 := privAndAddr()
@@ -302,7 +302,7 @@ func TestAnteHandlerSetPubKey(t *testing.T) {
 	mapper := NewAccountMapper(cdc, capKey, &BaseAccount{})
 	feeCollector := NewFeeCollectionKeeper(cdc, capKey2)
 	anteHandler := NewAnteHandler(mapper, feeCollector)
-	ctx := sdk.NewContext(ms, wrsp.Header{ChainID: "mychainid"}, false, nil, log.NewNopLogger())
+	ctx := sdk.NewContext(ms, abci.Header{ChainID: "mychainid"}, false, nil, log.NewNopLogger())
 
 	// keys and addresses
 	priv1, addr1 := privAndAddr()

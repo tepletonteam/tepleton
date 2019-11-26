@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	crypto "github.com/tepleton/go-crypto"
-	"github.com/tepleton/tmlibs/bech32"
-	cmn "github.com/tepleton/tmlibs/common"
+	crypto "github.com/tendermint/go-crypto"
+	"github.com/tendermint/tmlibs/bech32"
+	cmn "github.com/tendermint/tmlibs/common"
 )
 
 //Address is a go crypto-style Address
@@ -15,10 +15,10 @@ type Address = cmn.HexBytes
 
 // Bech32 prefixes
 const (
-	Bech32PrefixAccAddr = "tepletonaccaddr"
-	Bech32PrefixAccPub  = "tepletonaccpub"
-	Bech32PrefixValAddr = "tepletonvaladdr"
-	Bech32PrefixValPub  = "tepletonvalpub"
+	Bech32PrefixAccAddr = "cosmosaccaddr"
+	Bech32PrefixAccPub  = "cosmosaccpub"
+	Bech32PrefixValAddr = "cosmosvaladdr"
+	Bech32PrefixValPub  = "cosmosvalpub"
 )
 
 // Bech32ifyAcc takes Address and returns the bech32 encoded string

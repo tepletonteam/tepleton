@@ -5,14 +5,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	dbm "github.com/tepleton/tmlibs/db"
-	"github.com/tepleton/tmlibs/log"
+	dbm "github.com/tendermint/tmlibs/db"
+	"github.com/tendermint/tmlibs/log"
 
-	wrsp "github.com/tepleton/wrsp/types"
+	abci "github.com/tendermint/abci/types"
 
-	"github.com/tepleton/tepleton-sdk/store"
-	sdk "github.com/tepleton/tepleton-sdk/types"
-	wire "github.com/tepleton/tepleton-sdk/wire"
+	"github.com/cosmos/cosmos-sdk/store"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	wire "github.com/cosmos/cosmos-sdk/wire"
 )
 
 type S struct {
@@ -25,7 +25,7 @@ func defaultComponents(key sdk.StoreKey) (sdk.Context, *wire.Codec) {
 	cms := store.NewCommitMultiStore(db)
 	cms.MountStoreWithDB(key, sdk.StoreTypeIAVL, db)
 	cms.LoadLatestVersion()
-	ctx := sdk.NewContext(cms, wrsp.Header{}, false, nil, log.NewNopLogger())
+	ctx := sdk.NewContext(cms, abci.Header{}, false, nil, log.NewNopLogger())
 	cdc := wire.NewCodec()
 	return ctx, cdc
 }

@@ -3,7 +3,7 @@ package auth
 import (
 	"reflect"
 
-	sdk "github.com/tepleton/tepleton-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // NewHandler returns a handler for "baseaccount" type messages.

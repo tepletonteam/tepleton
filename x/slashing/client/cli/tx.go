@@ -5,11 +5,11 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/tepleton/tepleton-sdk/client/context"
-	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/wire"
-	authcmd "github.com/tepleton/tepleton-sdk/x/auth/client/cli"
-	"github.com/tepleton/tepleton-sdk/x/slashing"
+	"github.com/cosmos/cosmos-sdk/client/context"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/wire"
+	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
+	"github.com/cosmos/cosmos-sdk/x/slashing"
 )
 
 // create unrevoke command

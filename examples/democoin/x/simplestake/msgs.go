@@ -3,9 +3,9 @@ package simplestake
 import (
 	"encoding/json"
 
-	crypto "github.com/tepleton/go-crypto"
+	crypto "github.com/tendermint/go-crypto"
 
-	sdk "github.com/tepleton/tepleton-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 //_________________________________________________________----

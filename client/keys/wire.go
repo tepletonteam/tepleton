@@ -1,7 +1,7 @@
 package keys
 
 import (
-	"github.com/tepleton/tepleton-sdk/wire"
+	"github.com/cosmos/cosmos-sdk/wire"
 )
 
 var cdc *wire.Codec

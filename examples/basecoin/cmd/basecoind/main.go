@@ -6,14 +6,14 @@ import (
 
 	"github.com/spf13/cobra"
 
-	wrsp "github.com/tepleton/wrsp/types"
-	tmtypes "github.com/tepleton/tepleton/types"
-	"github.com/tepleton/tmlibs/cli"
-	dbm "github.com/tepleton/tmlibs/db"
-	"github.com/tepleton/tmlibs/log"
+	abci "github.com/tendermint/abci/types"
+	tmtypes "github.com/tendermint/tendermint/types"
+	"github.com/tendermint/tmlibs/cli"
+	dbm "github.com/tendermint/tmlibs/db"
+	"github.com/tendermint/tmlibs/log"
 
-	"github.com/tepleton/tepleton-sdk/examples/basecoin/app"
-	"github.com/tepleton/tepleton-sdk/server"
+	"github.com/cosmos/cosmos-sdk/examples/basecoin/app"
+	"github.com/cosmos/cosmos-sdk/server"
 )
 
 func main() {
@@ -36,7 +36,7 @@ func main() {
 	executor.Execute()
 }
 
-func newApp(logger log.Logger, db dbm.DB) wrsp.Application {
+func newApp(logger log.Logger, db dbm.DB) abci.Application {
 	return app.NewBasecoinApp(logger, db)
 }
 

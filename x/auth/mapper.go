@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"reflect"
 
-	sdk "github.com/tepleton/tepleton-sdk/types"
-	wire "github.com/tepleton/tepleton-sdk/wire"
-	crypto "github.com/tepleton/go-crypto"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	wire "github.com/cosmos/cosmos-sdk/wire"
+	crypto "github.com/tendermint/go-crypto"
 )
 
 // This AccountMapper encodes/decodes accounts using the

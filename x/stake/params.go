@@ -3,7 +3,7 @@ package stake
 import (
 	"bytes"
 
-	sdk "github.com/tepleton/tepleton-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // Params defines the high level settings for staking

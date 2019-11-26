@@ -4,11 +4,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	wrsp "github.com/tepleton/wrsp/types"
-	dbm "github.com/tepleton/tmlibs/db"
-	"github.com/tepleton/tmlibs/merkle"
+	abci "github.com/tendermint/abci/types"
+	dbm "github.com/tendermint/tmlibs/db"
+	"github.com/tendermint/tmlibs/merkle"
 
-	sdk "github.com/tepleton/tepleton-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 const useDebugDB = false
@@ -126,36 +126,36 @@ func TestMultiStoreQuery(t *testing.T) {
 	ver := cid.Version
 
 	// Test bad path.
-	query := wrsp.RequestQuery{Path: "/key", Data: k, Height: ver}
+	query := abci.RequestQuery{Path: "/key", Data: k, Height: ver}
 	qres := multi.Query(query)
-	assert.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeUnknownRequest), sdk.WRSPCodeType(qres.Code))
+	assert.Equal(t, sdk.ToABCICode(sdk.CodespaceRoot, sdk.CodeUnknownRequest), sdk.ABCICodeType(qres.Code))
 
 	query.Path = "h897fy32890rf63296r92"
 	qres = multi.Query(query)
-	assert.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeUnknownRequest), sdk.WRSPCodeType(qres.Code))
+	assert.Equal(t, sdk.ToABCICode(sdk.CodespaceRoot, sdk.CodeUnknownRequest), sdk.ABCICodeType(qres.Code))
 
 	// Test invalid store name.
 	query.Path = "/garbage/key"
 	qres = multi.Query(query)
-	assert.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeUnknownRequest), sdk.WRSPCodeType(qres.Code))
+	assert.Equal(t, sdk.ToABCICode(sdk.CodespaceRoot, sdk.CodeUnknownRequest), sdk.ABCICodeType(qres.Code))
 
 	// Test valid query with data.
 	query.Path = "/store1/key"
 	qres = multi.Query(query)
-	assert.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeOK), sdk.WRSPCodeType(qres.Code))
+	assert.Equal(t, sdk.ToABCICode(sdk.CodespaceRoot, sdk.CodeOK), sdk.ABCICodeType(qres.Code))
 	assert.Equal(t, v, qres.Value)
 
 	// Test valid but empty query.
 	query.Path = "/store2/key"
 	query.Prove = true
 	qres = multi.Query(query)
-	assert.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeOK), sdk.WRSPCodeType(qres.Code))
+	assert.Equal(t, sdk.ToABCICode(sdk.CodespaceRoot, sdk.CodeOK), sdk.ABCICodeType(qres.Code))
 	assert.Nil(t, qres.Value)
 
 	// Test store2 data.
 	query.Data = k2
 	qres = multi.Query(query)
-	assert.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeOK), sdk.WRSPCodeType(qres.Code))
+	assert.Equal(t, sdk.ToABCICode(sdk.CodespaceRoot, sdk.CodeOK), sdk.ABCICodeType(qres.Code))
 	assert.Equal(t, v2, qres.Value)
 }
 

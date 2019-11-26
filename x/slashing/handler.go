@@ -1,7 +1,7 @@
 package slashing
 
 import (
-	sdk "github.com/tepleton/tepleton-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 func NewHandler(k Keeper) sdk.Handler {

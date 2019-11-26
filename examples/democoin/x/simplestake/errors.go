@@ -1,7 +1,7 @@
 package simplestake
 
 import (
-	sdk "github.com/tepleton/tepleton-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // simple stake errors reserve 300 ~ 399.

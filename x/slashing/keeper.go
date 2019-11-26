@@ -3,9 +3,9 @@ package slashing
 import (
 	"fmt"
 
-	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/wire"
-	crypto "github.com/tepleton/go-crypto"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/wire"
+	crypto "github.com/tendermint/go-crypto"
 )
 
 // Keeper of the slashing store

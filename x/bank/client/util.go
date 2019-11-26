@@ -1,8 +1,8 @@
 package client
 
 import (
-	sdk "github.com/tepleton/tepleton-sdk/types"
-	bank "github.com/tepleton/tepleton-sdk/x/bank"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	bank "github.com/cosmos/cosmos-sdk/x/bank"
 )
 
 // build the sendTx msg

@@ -1,8 +1,8 @@
 package auth
 
 import (
-	sdk "github.com/tepleton/tepleton-sdk/types"
-	crypto "github.com/tepleton/go-crypto"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	crypto "github.com/tendermint/go-crypto"
 )
 
 var _ sdk.Tx = (*StdTx)(nil)

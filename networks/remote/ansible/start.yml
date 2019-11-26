@@ -5,7 +5,7 @@
   any_errors_fatal: true
   gather_facts: no
   vars:
-    - service: tond
+    - service: gaiad
   roles:
     - start
 

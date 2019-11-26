@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	nm "github.com/tepleton/tepleton/node"
+	nm "github.com/tendermint/tendermint/node"
 )
 
 var node *nm.Node

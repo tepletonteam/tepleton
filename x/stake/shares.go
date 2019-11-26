@@ -1,7 +1,7 @@
 package stake
 
 import (
-	sdk "github.com/tepleton/tepleton-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // kind of shares

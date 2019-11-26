@@ -1,7 +1,7 @@
 PACKAGES=$(shell go list ./... | grep -v '/vendor/')
-PACKAGES_NOCLITEST=$(shell go list ./... | grep -v '/vendor/' | grep -v github.com/tepleton/tepleton-sdk/cmd/ton/cli_test)
+PACKAGES_NOCLITEST=$(shell go list ./... | grep -v '/vendor/' | grep -v github.com/cosmos/cosmos-sdk/cmd/gaia/cli_test)
 COMMIT_HASH := $(shell git rev-parse --short HEAD)
-BUILD_FLAGS = -ldflags "-X github.com/tepleton/tepleton-sdk/version.GitCommit=${COMMIT_HASH}"
+BUILD_FLAGS = -ldflags "-X github.com/cosmos/cosmos-sdk/version.GitCommit=${COMMIT_HASH}"
 
 all: check_tools get_vendor_deps install install_examples test_lint test
 
@@ -16,11 +16,11 @@ ci: get_tools get_vendor_deps install test_cover test_lint test
 # This can be unified later, here for easy demos
 build:
 ifeq ($(OS),Windows_NT)
-	go build $(BUILD_FLAGS) -o build/tond.exe ./cmd/ton/cmd/tond
-	go build $(BUILD_FLAGS) -o build/toncli.exe ./cmd/ton/cmd/toncli
+	go build $(BUILD_FLAGS) -o build/gaiad.exe ./cmd/gaia/cmd/gaiad
+	go build $(BUILD_FLAGS) -o build/gaiacli.exe ./cmd/gaia/cmd/gaiacli
 else
-	go build $(BUILD_FLAGS) -o build/tond ./cmd/ton/cmd/tond
-	go build $(BUILD_FLAGS) -o build/toncli ./cmd/ton/cmd/toncli
+	go build $(BUILD_FLAGS) -o build/gaiad ./cmd/gaia/cmd/gaiad
+	go build $(BUILD_FLAGS) -o build/gaiacli ./cmd/gaia/cmd/gaiacli
 endif
 
 build_examples:
@@ -37,8 +37,8 @@ else
 endif
 
 install: 
-	go install $(BUILD_FLAGS) ./cmd/ton/cmd/tond
-	go install $(BUILD_FLAGS) ./cmd/ton/cmd/toncli
+	go install $(BUILD_FLAGS) ./cmd/gaia/cmd/gaiad
+	go install $(BUILD_FLAGS) ./cmd/gaia/cmd/gaiacli
 
 install_examples: 
 	go install $(BUILD_FLAGS) ./examples/basecoin/cmd/basecoind
@@ -70,14 +70,14 @@ get_vendor_deps:
 draw_deps:
 	@# requires brew install graphviz or apt-get install graphviz
 	go get github.com/RobotsAndPencils/goviz
-	@goviz -i github.com/tepleton/tepleton-sdk/cmd/ton/cmd/tond -d 2 | dot -Tpng -o dependency-graph.png
+	@goviz -i github.com/cosmos/cosmos-sdk/cmd/gaia/cmd/gaiad -d 2 | dot -Tpng -o dependency-graph.png
 
 
 ########################################
 ### Documentation
 
 godocs:
-	@echo "--> Wait a few seconds and visit http://localhost:6060/pkg/github.com/tepleton/tepleton-sdk/types"
+	@echo "--> Wait a few seconds and visit http://localhost:6060/pkg/github.com/cosmos/cosmos-sdk/types"
 	godoc -http=:6060
 
 
@@ -87,7 +87,7 @@ godocs:
 test: test_unit
 
 test_cli: 
-	@go test -count 1 -p 1 `go list github.com/tepleton/tepleton-sdk/cmd/ton/cli_test`
+	@go test -count 1 -p 1 `go list github.com/cosmos/cosmos-sdk/cmd/gaia/cli_test`
 
 test_unit:
 	@go test $(PACKAGES_NOCLITEST)
@@ -108,12 +108,12 @@ benchmark:
 DEVDOC_SAVE = docker commit `docker ps -a -n 1 -q` devdoc:local
 
 devdoc_init:
-	docker run -it -v "$(CURDIR):/go/src/github.com/tepleton/tepleton-sdk" -w "/go/src/github.com/tepleton/tepleton-sdk" tepleton/devdoc echo
+	docker run -it -v "$(CURDIR):/go/src/github.com/cosmos/cosmos-sdk" -w "/go/src/github.com/cosmos/cosmos-sdk" tendermint/devdoc echo
 	# TODO make this safer
 	$(call DEVDOC_SAVE)
 
 devdoc:
-	docker run -it -v "$(CURDIR):/go/src/github.com/tepleton/tepleton-sdk" -w "/go/src/github.com/tepleton/tepleton-sdk" devdoc:local bash
+	docker run -it -v "$(CURDIR):/go/src/github.com/cosmos/cosmos-sdk" -w "/go/src/github.com/cosmos/cosmos-sdk" devdoc:local bash
 
 devdoc_save:
 	# TODO make this safer
@@ -123,7 +123,7 @@ devdoc_clean:
 	docker rmi -f $$(docker images -f "dangling=true" -q)
 
 devdoc_update:
-	docker pull tepleton/devdoc
+	docker pull tendermint/devdoc
 
 
 ########################################
@@ -135,7 +135,7 @@ build-linux:
 
 TESTNET_NAME?=remotenet
 SERVERS?=4
-BINARY=$(CURDIR)/build/tond
+BINARY=$(CURDIR)/build/gaiad
 remotenet-start:
 	@if [ -z "$(DO_API_TOKEN)" ]; then echo "DO_API_TOKEN environment variable not set." ; false ; fi
 	@if ! [ -f $(HOME)/.ssh/id_rsa.pub ]; then ssh-keygen ; fi

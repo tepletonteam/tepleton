@@ -5,14 +5,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	wrsp "github.com/tepleton/wrsp/types"
-	dbm "github.com/tepleton/tmlibs/db"
+	abci "github.com/tendermint/abci/types"
+	dbm "github.com/tendermint/tmlibs/db"
 
-	"github.com/tepleton/tepleton-sdk/store"
-	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/wire"
-	auth "github.com/tepleton/tepleton-sdk/x/auth"
-	bank "github.com/tepleton/tepleton-sdk/x/bank"
+	"github.com/cosmos/cosmos-sdk/store"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/wire"
+	auth "github.com/cosmos/cosmos-sdk/x/auth"
+	bank "github.com/cosmos/cosmos-sdk/x/bank"
 )
 
 func setupMultiStore() (sdk.MultiStore, *sdk.KVStoreKey) {
@@ -30,7 +30,7 @@ func TestCoolKeeper(t *testing.T) {
 	auth.RegisterBaseAccount(cdc)
 
 	am := auth.NewAccountMapper(cdc, capKey, &auth.BaseAccount{})
-	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil, nil)
+	ctx := sdk.NewContext(ms, abci.Header{}, false, nil, nil)
 	ck := bank.NewKeeper(am)
 	keeper := NewKeeper(capKey, ck, DefaultCodespace)
 

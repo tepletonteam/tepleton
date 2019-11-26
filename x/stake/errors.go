@@ -4,7 +4,7 @@ package stake
 import (
 	"fmt"
 
-	sdk "github.com/tepleton/tepleton-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 type CodeType = sdk.CodeType

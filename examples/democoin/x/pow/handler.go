@@ -3,7 +3,7 @@ package pow
 import (
 	"reflect"
 
-	sdk "github.com/tepleton/tepleton-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // POW handler

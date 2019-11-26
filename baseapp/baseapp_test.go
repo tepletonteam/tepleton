@@ -9,16 +9,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	wrsp "github.com/tepleton/wrsp/types"
-	crypto "github.com/tepleton/go-crypto"
-	tmtypes "github.com/tepleton/tepleton/types"
-	cmn "github.com/tepleton/tmlibs/common"
-	dbm "github.com/tepleton/tmlibs/db"
-	"github.com/tepleton/tmlibs/log"
+	abci "github.com/tendermint/abci/types"
+	crypto "github.com/tendermint/go-crypto"
+	tmtypes "github.com/tendermint/tendermint/types"
+	cmn "github.com/tendermint/tmlibs/common"
+	dbm "github.com/tendermint/tmlibs/db"
+	"github.com/tendermint/tmlibs/log"
 
-	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/wire"
-	"github.com/tepleton/tepleton-sdk/x/auth"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/wire"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 )
 
 func defaultLogger() log.Logger {
@@ -80,12 +80,12 @@ func TestLoadVersion(t *testing.T) {
 	assert.Equal(t, emptyCommitID, lastID)
 
 	// execute some blocks
-	header := wrsp.Header{Height: 1}
-	app.BeginBlock(wrsp.RequestBeginBlock{Header: header})
+	header := abci.Header{Height: 1}
+	app.BeginBlock(abci.RequestBeginBlock{Header: header})
 	res := app.Commit()
 	commitID1 := sdk.CommitID{1, res.Data}
-	header = wrsp.Header{Height: 2}
-	app.BeginBlock(wrsp.RequestBeginBlock{Header: header})
+	header = abci.Header{Height: 2}
+	app.BeginBlock(abci.RequestBeginBlock{Header: header})
 	res = app.Commit()
 	commitID2 := sdk.CommitID{2, res.Data}
 
@@ -103,7 +103,7 @@ func TestLoadVersion(t *testing.T) {
 	err = app.LoadVersion(1, capKey)
 	assert.Nil(t, err)
 	testLoadVersionHelper(t, app, int64(1), commitID1)
-	app.BeginBlock(wrsp.RequestBeginBlock{Header: header})
+	app.BeginBlock(abci.RequestBeginBlock{Header: header})
 	app.Commit()
 	testLoadVersionHelper(t, app, int64(2), commitID2)
 }
@@ -116,7 +116,7 @@ func testLoadVersionHelper(t *testing.T, app *BaseApp, expectedHeight int64, exp
 }
 
 // Test that the app hash is static
-// TODO: https://github.com/tepleton/tepleton-sdk/issues/520
+// TODO: https://github.com/cosmos/cosmos-sdk/issues/520
 /*func TestStaticAppHash(t *testing.T) {
 	app := newBaseApp(t.Name())
 
@@ -127,13 +127,13 @@ func testLoadVersionHelper(t *testing.T, app *BaseApp, expectedHeight int64, exp
 	assert.Nil(t, err)
 
 	// execute some blocks
-	header := wrsp.Header{Height: 1}
-	app.BeginBlock(wrsp.RequestBeginBlock{Header: header})
+	header := abci.Header{Height: 1}
+	app.BeginBlock(abci.RequestBeginBlock{Header: header})
 	res := app.Commit()
 	commitID1 := sdk.CommitID{1, res.Data}
 
-	header = wrsp.Header{Height: 2}
-	app.BeginBlock(wrsp.RequestBeginBlock{Header: header})
+	header = abci.Header{Height: 2}
+	app.BeginBlock(abci.RequestBeginBlock{Header: header})
 	res = app.Commit()
 	commitID2 := sdk.CommitID{2, res.Data}
 
@@ -152,7 +152,7 @@ func TestInfo(t *testing.T) {
 	app := newBaseApp(t.Name())
 
 	// ----- test an empty response -------
-	reqInfo := wrsp.RequestInfo{}
+	reqInfo := abci.RequestInfo{}
 	res := app.Info(reqInfo)
 
 	// should be empty
@@ -173,7 +173,7 @@ func TestInitChainer(t *testing.T) {
 	app := NewBaseApp(name, nil, logger, db)
 	// make cap keys and mount the stores
 	// NOTE/TODO: mounting multiple stores is broken
-	// see https://github.com/tepleton/tepleton-sdk/issues/532
+	// see https://github.com/cosmos/cosmos-sdk/issues/532
 	capKey := sdk.NewKVStoreKey("main")
 	capKey2 := sdk.NewKVStoreKey("key2")
 	app.MountStoresIAVL(capKey, capKey2)
@@ -183,25 +183,25 @@ func TestInitChainer(t *testing.T) {
 	key, value := []byte("hello"), []byte("goodbye")
 
 	// initChainer sets a value in the store
-	var initChainer sdk.InitChainer = func(ctx sdk.Context, req wrsp.RequestInitChain) wrsp.ResponseInitChain {
+	var initChainer sdk.InitChainer = func(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 		store := ctx.KVStore(capKey)
 		store.Set(key, value)
-		return wrsp.ResponseInitChain{}
+		return abci.ResponseInitChain{}
 	}
 
-	query := wrsp.RequestQuery{
+	query := abci.RequestQuery{
 		Path: "/store/main/key",
 		Data: key,
 	}
 
 	// initChainer is nil - nothing happens
-	app.InitChain(wrsp.RequestInitChain{})
+	app.InitChain(abci.RequestInitChain{})
 	res := app.Query(query)
 	assert.Equal(t, 0, len(res.Value))
 
 	// set initChainer and try again - should see the value
 	app.SetInitChainer(initChainer)
-	app.InitChain(wrsp.RequestInitChain{AppStateBytes: []byte("{}")}) // must have valid JSON genesis file, even if empty
+	app.InitChain(abci.RequestInitChain{AppStateBytes: []byte("{}")}) // must have valid JSON genesis file, even if empty
 	app.Commit()
 	res = app.Query(query)
 	assert.Equal(t, value, res.Value)
@@ -218,7 +218,7 @@ func TestInitChainer(t *testing.T) {
 	assert.Equal(t, value, res.Value)
 
 	// commit and ensure we can still query
-	app.BeginBlock(wrsp.RequestBeginBlock{})
+	app.BeginBlock(abci.RequestBeginBlock{})
 	app.Commit()
 	res = app.Query(query)
 	assert.Equal(t, value, res.Value)
@@ -296,12 +296,12 @@ func TestCheckTx(t *testing.T) {
 	// If it gets to this point, then successive CheckTx's can see the effects of
 	// other CheckTx's on the block. The following checks that if another block
 	// is committed, the CheckTx State will reset.
-	app.BeginBlock(wrsp.RequestBeginBlock{})
+	app.BeginBlock(abci.RequestBeginBlock{})
 	tx2 := testTx{}
 	for i := 0; i < txPerHeight; i++ {
 		app.Deliver(tx2)
 	}
-	app.EndBlock(wrsp.RequestEndBlock{})
+	app.EndBlock(abci.RequestEndBlock{})
 	app.Commit()
 
 	checkStateStore := app.checkState.ctx.KVStore(capKey)
@@ -327,17 +327,17 @@ func TestDeliverTx(t *testing.T) {
 	app.Router().AddRoute(msgType, getStateCheckingHandler(t, capKey, txPerHeight, true))
 
 	tx := testUpdatePowerTx{} // doesn't matter
-	header := wrsp.Header{AppHash: []byte("apphash")}
+	header := abci.Header{AppHash: []byte("apphash")}
 
 	nBlocks := 3
 	for blockN := 0; blockN < nBlocks; blockN++ {
 		// block1
 		header.Height = int64(blockN + 1)
-		app.BeginBlock(wrsp.RequestBeginBlock{Header: header})
+		app.BeginBlock(abci.RequestBeginBlock{Header: header})
 		for i := 0; i < txPerHeight; i++ {
 			app.Deliver(tx)
 		}
-		app.EndBlock(wrsp.RequestEndBlock{})
+		app.EndBlock(abci.RequestEndBlock{})
 		app.Commit()
 	}
 }
@@ -368,7 +368,7 @@ func TestSimulateTx(t *testing.T) {
 	})
 
 	tx := testUpdatePowerTx{} // doesn't matter
-	header := wrsp.Header{AppHash: []byte("apphash")}
+	header := abci.Header{AppHash: []byte("apphash")}
 
 	app.SetTxDecoder(func(txBytes []byte) (sdk.Tx, sdk.Error) {
 		var ttx testUpdatePowerTx
@@ -380,24 +380,24 @@ func TestSimulateTx(t *testing.T) {
 	for blockN := 0; blockN < nBlocks; blockN++ {
 		// block1
 		header.Height = int64(blockN + 1)
-		app.BeginBlock(wrsp.RequestBeginBlock{Header: header})
+		app.BeginBlock(abci.RequestBeginBlock{Header: header})
 		result := app.Simulate(tx)
-		require.Equal(t, result.Code, sdk.WRSPCodeOK)
+		require.Equal(t, result.Code, sdk.ABCICodeOK)
 		require.Equal(t, int64(80), result.GasUsed)
 		counter--
 		encoded, err := json.Marshal(tx)
 		require.Nil(t, err)
-		query := wrsp.RequestQuery{
+		query := abci.RequestQuery{
 			Path: "/app/simulate",
 			Data: encoded,
 		}
 		queryResult := app.Query(query)
-		require.Equal(t, queryResult.Code, uint32(sdk.WRSPCodeOK))
+		require.Equal(t, queryResult.Code, uint32(sdk.ABCICodeOK))
 		var res sdk.Result
 		app.cdc.MustUnmarshalBinary(queryResult.Value, &res)
-		require.Equal(t, sdk.WRSPCodeOK, res.Code)
+		require.Equal(t, sdk.ABCICodeOK, res.Code)
 		require.Equal(t, int64(160), res.GasUsed)
-		app.EndBlock(wrsp.RequestEndBlock{})
+		app.EndBlock(abci.RequestEndBlock{})
 		app.Commit()
 	}
 }
@@ -412,15 +412,15 @@ func TestRunInvalidTransaction(t *testing.T) {
 	assert.Nil(t, err)
 	app.SetAnteHandler(func(ctx sdk.Context, tx sdk.Tx) (newCtx sdk.Context, res sdk.Result, abort bool) { return })
 	app.Router().AddRoute(msgType2, func(ctx sdk.Context, msg sdk.Msg) (res sdk.Result) { return })
-	app.BeginBlock(wrsp.RequestBeginBlock{})
+	app.BeginBlock(abci.RequestBeginBlock{})
 	// Transaction where validate fails
 	invalidTx := testTx{-1}
 	err1 := app.Deliver(invalidTx)
-	assert.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeTxDecode), err1.Code)
+	assert.Equal(t, sdk.ToABCICode(sdk.CodespaceRoot, sdk.CodeTxDecode), err1.Code)
 	// Transaction with no known route
 	unknownRouteTx := testUpdatePowerTx{}
 	err2 := app.Deliver(unknownRouteTx)
-	assert.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeUnknownRequest), err2.Code)
+	assert.Equal(t, sdk.ToABCICode(sdk.CodespaceRoot, sdk.CodeUnknownRequest), err2.Code)
 }
 
 // Test that transactions exceeding gas limits fail
@@ -445,12 +445,12 @@ func TestTxGasLimits(t *testing.T) {
 	})
 
 	tx := testUpdatePowerTx{} // doesn't matter
-	header := wrsp.Header{AppHash: []byte("apphash")}
+	header := abci.Header{AppHash: []byte("apphash")}
 
-	app.BeginBlock(wrsp.RequestBeginBlock{Header: header})
+	app.BeginBlock(abci.RequestBeginBlock{Header: header})
 	res := app.Deliver(tx)
-	assert.Equal(t, res.Code, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeOutOfGas), "Expected transaction to run out of gas")
-	app.EndBlock(wrsp.RequestEndBlock{})
+	assert.Equal(t, res.Code, sdk.ToABCICode(sdk.CodespaceRoot, sdk.CodeOutOfGas), "Expected transaction to run out of gas")
+	app.EndBlock(abci.RequestEndBlock{})
 	app.Commit()
 }
 
@@ -473,7 +473,7 @@ func TestQuery(t *testing.T) {
 		return sdk.Result{}
 	})
 
-	query := wrsp.RequestQuery{
+	query := abci.RequestQuery{
 		Path: "/store/main/key",
 		Data: key,
 	}
@@ -490,7 +490,7 @@ func TestQuery(t *testing.T) {
 	assert.Equal(t, 0, len(res.Value))
 
 	// query is still empty after a DeliverTx before we commit
-	app.BeginBlock(wrsp.RequestBeginBlock{})
+	app.BeginBlock(abci.RequestBeginBlock{})
 	app.Deliver(tx)
 	res = app.Query(query)
 	assert.Equal(t, 0, len(res.Value))
@@ -511,23 +511,23 @@ func TestP2PQuery(t *testing.T) {
 	err := app.LoadLatestVersion(capKey) // needed to make stores non-nil
 	assert.Nil(t, err)
 
-	app.SetAddrPeerFilter(func(addrport string) wrsp.ResponseQuery {
+	app.SetAddrPeerFilter(func(addrport string) abci.ResponseQuery {
 		require.Equal(t, "1.1.1.1:8000", addrport)
-		return wrsp.ResponseQuery{Code: uint32(3)}
+		return abci.ResponseQuery{Code: uint32(3)}
 	})
 
-	app.SetPubKeyPeerFilter(func(pubkey string) wrsp.ResponseQuery {
+	app.SetPubKeyPeerFilter(func(pubkey string) abci.ResponseQuery {
 		require.Equal(t, "testpubkey", pubkey)
-		return wrsp.ResponseQuery{Code: uint32(4)}
+		return abci.ResponseQuery{Code: uint32(4)}
 	})
 
-	addrQuery := wrsp.RequestQuery{
+	addrQuery := abci.RequestQuery{
 		Path: "/p2p/filter/addr/1.1.1.1:8000",
 	}
 	res := app.Query(addrQuery)
 	require.Equal(t, uint32(3), res.Code)
 
-	pubkeyQuery := wrsp.RequestQuery{
+	pubkeyQuery := abci.RequestQuery{
 		Path: "/p2p/filter/pubkey/testpubkey",
 	}
 	res = app.Query(pubkeyQuery)
@@ -577,18 +577,18 @@ func TestValidatorChange(t *testing.T) {
 
 	// Create the validators
 	var numVals = 3
-	var valSet = make([]wrsp.Validator, numVals)
+	var valSet = make([]abci.Validator, numVals)
 	for i := 0; i < numVals; i++ {
 		valSet[i] = makeVal(secret(i))
 	}
 
 	// Initialize the chain
-	app.InitChain(wrsp.RequestInitChain{
+	app.InitChain(abci.RequestInitChain{
 		Validators: valSet,
 	})
 
 	// Simulate the start of a block.
-	app.BeginBlock(wrsp.RequestBeginBlock{})
+	app.BeginBlock(abci.RequestBeginBlock{})
 
 	// Add 1 to each validator's voting power.
 	for i, val := range valSet {
@@ -598,12 +598,12 @@ func TestValidatorChange(t *testing.T) {
 		}
 		txBytes := toJSON(tx)
 		res := app.DeliverTx(txBytes)
-		assert.True(t, res.IsOK(), "%#v\nWRSP log: %s", res, res.Log)
+		assert.True(t, res.IsOK(), "%#v\nABCI log: %s", res, res.Log)
 	}
 
 	// Simulate the end of a block.
 	// Get the summary of validator updates.
-	res := app.EndBlock(wrsp.RequestEndBlock{})
+	res := app.EndBlock(abci.RequestEndBlock{})
 	valUpdates := res.ValidatorUpdates
 
 	// Assert that validator updates are correct.
@@ -642,8 +642,8 @@ func randPower() int64 {
 	return cmn.RandInt64()
 }
 
-func makeVal(secret string) wrsp.Validator {
-	return wrsp.Validator{
+func makeVal(secret string) abci.Validator {
+	return abci.Validator{
 		PubKey: tmtypes.TM2PB.PubKey(makePubKey(secret)),
 		Power:  randPower(),
 	}
@@ -662,7 +662,7 @@ func secret(index int) string {
 	return fmt.Sprintf("secret%d", index)
 }
 
-func copyVal(val wrsp.Validator) wrsp.Validator {
+func copyVal(val abci.Validator) abci.Validator {
 	// val2 := *val
 	// return &val2
 	return val

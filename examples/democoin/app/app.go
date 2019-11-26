@@ -3,31 +3,31 @@ package app
 import (
 	"encoding/json"
 
-	wrsp "github.com/tepleton/wrsp/types"
-	tmtypes "github.com/tepleton/tepleton/types"
-	cmn "github.com/tepleton/tmlibs/common"
-	dbm "github.com/tepleton/tmlibs/db"
-	"github.com/tepleton/tmlibs/log"
+	abci "github.com/tendermint/abci/types"
+	tmtypes "github.com/tendermint/tendermint/types"
+	cmn "github.com/tendermint/tmlibs/common"
+	dbm "github.com/tendermint/tmlibs/db"
+	"github.com/tendermint/tmlibs/log"
 
-	bam "github.com/tepleton/tepleton-sdk/baseapp"
-	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/wire"
-	"github.com/tepleton/tepleton-sdk/x/auth"
-	"github.com/tepleton/tepleton-sdk/x/bank"
-	"github.com/tepleton/tepleton-sdk/x/ibc"
+	bam "github.com/cosmos/cosmos-sdk/baseapp"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/wire"
+	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/bank"
+	"github.com/cosmos/cosmos-sdk/x/ibc"
 
-	"github.com/tepleton/tepleton-sdk/examples/democoin/types"
-	"github.com/tepleton/tepleton-sdk/examples/democoin/x/cool"
-	"github.com/tepleton/tepleton-sdk/examples/democoin/x/pow"
-	"github.com/tepleton/tepleton-sdk/examples/democoin/x/simplestake"
-	"github.com/tepleton/tepleton-sdk/examples/democoin/x/sketchy"
+	"github.com/cosmos/cosmos-sdk/examples/democoin/types"
+	"github.com/cosmos/cosmos-sdk/examples/democoin/x/cool"
+	"github.com/cosmos/cosmos-sdk/examples/democoin/x/pow"
+	"github.com/cosmos/cosmos-sdk/examples/democoin/x/simplestake"
+	"github.com/cosmos/cosmos-sdk/examples/democoin/x/sketchy"
 )
 
 const (
 	appName = "DemocoinApp"
 )
 
-// Extended WRSP application
+// Extended ABCI application
 type DemocoinApp struct {
 	*bam.BaseApp
 	cdc *wire.Codec
@@ -118,20 +118,20 @@ func MakeCodec() *wire.Codec {
 
 // custom logic for democoin initialization
 func (app *DemocoinApp) initChainerFn(coolKeeper cool.Keeper, powKeeper pow.Keeper) sdk.InitChainer {
-	return func(ctx sdk.Context, req wrsp.RequestInitChain) wrsp.ResponseInitChain {
+	return func(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 		stateJSON := req.AppStateBytes
 
 		genesisState := new(types.GenesisState)
 		err := app.cdc.UnmarshalJSON(stateJSON, genesisState)
 		if err != nil {
-			panic(err) // TODO https://github.com/tepleton/tepleton-sdk/issues/468
+			panic(err) // TODO https://github.com/cosmos/cosmos-sdk/issues/468
 			// return sdk.ErrGenesisParse("").TraceCause(err, "")
 		}
 
 		for _, gacc := range genesisState.Accounts {
 			acc, err := gacc.ToAppAccount()
 			if err != nil {
-				panic(err) // TODO https://github.com/tepleton/tepleton-sdk/issues/468
+				panic(err) // TODO https://github.com/cosmos/cosmos-sdk/issues/468
 				//	return sdk.ErrGenesisParse("").TraceCause(err, "")
 			}
 			app.accountMapper.SetAccount(ctx, acc)
@@ -140,23 +140,23 @@ func (app *DemocoinApp) initChainerFn(coolKeeper cool.Keeper, powKeeper pow.Keep
 		// Application specific genesis handling
 		err = cool.InitGenesis(ctx, app.coolKeeper, genesisState.CoolGenesis)
 		if err != nil {
-			panic(err) // TODO https://github.com/tepleton/tepleton-sdk/issues/468
+			panic(err) // TODO https://github.com/cosmos/cosmos-sdk/issues/468
 			//	return sdk.ErrGenesisParse("").TraceCause(err, "")
 		}
 
 		err = pow.InitGenesis(ctx, app.powKeeper, genesisState.POWGenesis)
 		if err != nil {
-			panic(err) // TODO https://github.com/tepleton/tepleton-sdk/issues/468
+			panic(err) // TODO https://github.com/cosmos/cosmos-sdk/issues/468
 			//	return sdk.ErrGenesisParse("").TraceCause(err, "")
 		}
 
-		return wrsp.ResponseInitChain{}
+		return abci.ResponseInitChain{}
 	}
 }
 
 // Custom logic for state export
 func (app *DemocoinApp) ExportAppStateAndValidators() (appState json.RawMessage, validators []tmtypes.GenesisValidator, err error) {
-	ctx := app.NewContext(true, wrsp.Header{})
+	ctx := app.NewContext(true, abci.Header{})
 
 	// iterate to get the accounts
 	accounts := []*types.GenesisAccount{}

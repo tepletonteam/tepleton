@@ -1,7 +1,7 @@
 package keys
 
 import (
-	"github.com/tepleton/tepleton-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 )
@@ -12,7 +12,7 @@ func Commands() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "keys",
 		Short: "Add or view local private keys",
-		Long: `Keys allows you to manage your local keystore for tepleton.
+		Long: `Keys allows you to manage your local keystore for tendermint.
 
     These keys may be in any format supported by go-crypto and can be
     used by light-clients, full nodes, or any other application that

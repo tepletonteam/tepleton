@@ -8,10 +8,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 
-	"github.com/tepleton/tepleton-sdk/client"
-	"github.com/tepleton/tepleton-sdk/client/context"
-	sdk "github.com/tepleton/tepleton-sdk/types"
-	tmtypes "github.com/tepleton/tepleton/types"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/context"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 // TODO these next two functions feel kinda hacky based on their placement
@@ -20,7 +20,7 @@ import (
 func ValidatorCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "validator-set [height]",
-		Short: "Get the full tepleton validator set at given height",
+		Short: "Get the full tendermint validator set at given height",
 		Args:  cobra.MaximumNArgs(1),
 		RunE:  printValidators,
 	}

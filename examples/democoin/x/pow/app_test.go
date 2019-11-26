@@ -5,13 +5,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/x/auth"
-	"github.com/tepleton/tepleton-sdk/x/auth/mock"
-	"github.com/tepleton/tepleton-sdk/x/bank"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/auth/mock"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 
-	wrsp "github.com/tepleton/wrsp/types"
-	crypto "github.com/tepleton/go-crypto"
+	abci "github.com/tendermint/abci/types"
+	crypto "github.com/tendermint/go-crypto"
 )
 
 var (
@@ -38,7 +38,7 @@ func getMockApp(t *testing.T) *mock.App {
 
 // overwrite the mock init chainer
 func getInitChainer(mapp *mock.App, keeper Keeper) sdk.InitChainer {
-	return func(ctx sdk.Context, req wrsp.RequestInitChain) wrsp.ResponseInitChain {
+	return func(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 		mapp.InitChainer(ctx, req)
 
 		genesis := Genesis{
@@ -47,7 +47,7 @@ func getInitChainer(mapp *mock.App, keeper Keeper) sdk.InitChainer {
 		}
 		InitGenesis(ctx, keeper, genesis)
 
-		return wrsp.ResponseInitChain{}
+		return abci.ResponseInitChain{}
 	}
 }
 
@@ -65,7 +65,7 @@ func TestMsgMine(t *testing.T) {
 	mock.SetGenesis(mapp, accs)
 
 	// A checkTx context (true)
-	ctxCheck := mapp.BaseApp.NewContext(true, wrsp.Header{})
+	ctxCheck := mapp.BaseApp.NewContext(true, abci.Header{})
 	res1 := mapp.AccountMapper.GetAccount(ctxCheck, addr1)
 	assert.Equal(t, acc1, res1)
 

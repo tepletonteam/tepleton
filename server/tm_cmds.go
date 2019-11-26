@@ -3,14 +3,14 @@ package server
 import (
 	"fmt"
 
-	"github.com/tepleton/tepleton-sdk/wire"
+	"github.com/cosmos/cosmos-sdk/wire"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	sdk "github.com/tepleton/tepleton-sdk/types"
-	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
-	"github.com/tepleton/tepleton/p2p"
-	pvm "github.com/tepleton/tepleton/types/priv_validator"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	tcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
+	"github.com/tendermint/tendermint/p2p"
+	pvm "github.com/tendermint/tendermint/types/priv_validator"
 )
 
 // ShowNodeIDCmd - ported from Tendermint, dump node ID to stdout
@@ -35,7 +35,7 @@ func ShowValidatorCmd(ctx *Context) *cobra.Command {
 	flagJSON := "json"
 	cmd := cobra.Command{
 		Use:   "show_validator",
-		Short: "Show this node's tepleton validator info",
+		Short: "Show this node's tendermint validator info",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cfg := ctx.Config
@@ -65,7 +65,7 @@ func ShowValidatorCmd(ctx *Context) *cobra.Command {
 	return &cmd
 }
 
-// UnsafeResetAllCmd - extension of the tepleton command, resets initialization
+// UnsafeResetAllCmd - extension of the tendermint command, resets initialization
 func UnsafeResetAllCmd(ctx *Context) *cobra.Command {
 	return &cobra.Command{
 		Use:   "unsafe_reset_all",

@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	amino "github.com/tepleton/go-amino"
-	ctypes "github.com/tepleton/tepleton/rpc/core/types"
-	rpcclient "github.com/tepleton/tepleton/rpc/lib/client"
+	amino "github.com/tendermint/go-amino"
+	ctypes "github.com/tendermint/tendermint/rpc/core/types"
+	rpcclient "github.com/tendermint/tendermint/rpc/lib/client"
 )
 
 // Uses localhost
@@ -52,7 +52,7 @@ func WaitForHeight(height int64, port string) {
 	}
 }
 
-// wait for tepleton to start
+// wait for tendermint to start
 func WaitForStart(port string) {
 	var err error
 	for i := 0; i < 5; i++ {

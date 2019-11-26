@@ -1,9 +1,9 @@
 package ibc
 
 import (
-	sdk "github.com/tepleton/tepleton-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	wire "github.com/tepleton/tepleton-sdk/wire"
+	wire "github.com/cosmos/cosmos-sdk/wire"
 )
 
 // ------------------------------

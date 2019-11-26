@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"github.com/tepleton/tepleton-sdk/wire"
+	"github.com/cosmos/cosmos-sdk/wire"
 )
 
 // Register concrete types on wire codec for default AppAccount

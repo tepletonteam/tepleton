@@ -3,7 +3,7 @@ package stake
 import (
 	"bytes"
 
-	sdk "github.com/tepleton/tepleton-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // Pool - dynamic parameters of the current state

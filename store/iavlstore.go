@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"sync"
 
-	wrsp "github.com/tepleton/wrsp/types"
-	"github.com/tepleton/iavl"
-	cmn "github.com/tepleton/tmlibs/common"
-	dbm "github.com/tepleton/tmlibs/db"
+	abci "github.com/tendermint/abci/types"
+	"github.com/tendermint/iavl"
+	cmn "github.com/tendermint/tmlibs/common"
+	dbm "github.com/tendermint/tmlibs/db"
 
-	sdk "github.com/tepleton/tepleton-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 const (
@@ -125,14 +125,14 @@ func (st *iavlStore) ReverseIterator(start, end []byte) Iterator {
 	return newIAVLIterator(st.tree.Tree(), start, end, false)
 }
 
-// Query implements WRSP interface, allows queries
+// Query implements ABCI interface, allows queries
 //
 // by default we will return from (latest height -1),
 // as we will have merkle proofs immediately (header height = data height + 1)
 // If latest-1 is not present, use latest (which must be present)
 // if you care to have the latest data to see a tx results, you must
 // explicitly set the height you want to see
-func (st *iavlStore) Query(req wrsp.RequestQuery) (res wrsp.ResponseQuery) {
+func (st *iavlStore) Query(req abci.RequestQuery) (res abci.ResponseQuery) {
 	if len(req.Data) == 0 {
 		msg := "Query cannot be zero length"
 		return sdk.ErrTxDecode(msg).QueryResult()

@@ -5,11 +5,11 @@ import (
 
 	"github.com/spf13/viper"
 
-	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
-	rpcclient "github.com/tepleton/tepleton/rpc/client"
-	tmtypes "github.com/tepleton/tepleton/types"
+	tcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
+	rpcclient "github.com/tendermint/tendermint/rpc/client"
+	tmtypes "github.com/tendermint/tendermint/types"
 
-	"github.com/tepleton/tepleton-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client"
 )
 
 // NewCoreContextFromViper - return a new context with parameters from the command line

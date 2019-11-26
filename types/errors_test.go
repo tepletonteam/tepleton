@@ -32,7 +32,7 @@ var errFns = []errFn{
 }
 
 func TestCodeType(t *testing.T) {
-	assert.True(t, WRSPCodeOK.IsOK())
+	assert.True(t, ABCICodeOK.IsOK())
 
 	for _, c := range codeTypes {
 		msg := CodeToDefaultMsg(c)
@@ -45,6 +45,6 @@ func TestErrFn(t *testing.T) {
 		err := errFn("")
 		codeType := codeTypes[i]
 		assert.Equal(t, err.Code(), codeType)
-		assert.Equal(t, err.Result().Code, ToWRSPCode(CodespaceRoot, codeType))
+		assert.Equal(t, err.Result().Code, ToABCICode(CodespaceRoot, codeType))
 	}
 }

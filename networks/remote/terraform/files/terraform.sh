@@ -3,17 +3,17 @@
 
 #Usage: terraform.sh <testnet_name> <testnet_node_number>
 
-#Add tond node number for remote identification
-echo "$2" > /etc/tond-nodeid
+#Add gaiad node number for remote identification
+echo "$2" > /etc/gaiad-nodeid
 
-#Create tond user
-useradd -m -s /bin/bash tond
-#cp -r /root/.ssh /home/tond/.ssh
-#chown -R tond.tond /home/tond/.ssh
-#chmod -R 700 /home/tond/.ssh
+#Create gaiad user
+useradd -m -s /bin/bash gaiad
+#cp -r /root/.ssh /home/gaiad/.ssh
+#chown -R gaiad.gaiad /home/gaiad/.ssh
+#chmod -R 700 /home/gaiad/.ssh
 
-#Reload services to enable the tond service (note that the tond binary is not available yet)
+#Reload services to enable the gaiad service (note that the gaiad binary is not available yet)
 systemctl daemon-reload
-systemctl enable tond
+systemctl enable gaiad
 
 

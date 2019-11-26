@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	sdk "github.com/tepleton/tepleton-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // Stored by *validator* address (not owner address)

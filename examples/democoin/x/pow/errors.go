@@ -1,7 +1,7 @@
 package pow
 
 import (
-	sdk "github.com/tepleton/tepleton-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // TODO remove, seems hacky

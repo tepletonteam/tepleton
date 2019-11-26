@@ -5,11 +5,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	wrsp "github.com/tepleton/wrsp/types"
-	tmtypes "github.com/tepleton/tepleton/types"
+	abci "github.com/tendermint/abci/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 
-	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/x/stake"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/stake"
 )
 
 func TestBeginBlocker(t *testing.T) {
@@ -23,14 +23,14 @@ func TestBeginBlocker(t *testing.T) {
 	require.Equal(t, ck.GetCoins(ctx, addr), sdk.Coins{{sk.GetParams(ctx).BondDenom, initCoins - amt}})
 	require.Equal(t, sdk.NewRat(amt), sk.Validator(ctx, addr).GetPower())
 
-	val := wrsp.Validator{
+	val := abci.Validator{
 		PubKey: tmtypes.TM2PB.PubKey(pk),
 		Power:  amt,
 	}
 
 	// mark the validator as having signed
-	req := wrsp.RequestBeginBlock{
-		Validators: []wrsp.SigningValidator{{
+	req := abci.RequestBeginBlock{
+		Validators: []abci.SigningValidator{{
 			Validator:       val,
 			SignedLastBlock: true,
 		}},
@@ -49,8 +49,8 @@ func TestBeginBlocker(t *testing.T) {
 	// for 50 blocks, mark the validator as having signed
 	for ; height < 50; height++ {
 		ctx = ctx.WithBlockHeight(height)
-		req = wrsp.RequestBeginBlock{
-			Validators: []wrsp.SigningValidator{{
+		req = abci.RequestBeginBlock{
+			Validators: []abci.SigningValidator{{
 				Validator:       val,
 				SignedLastBlock: true,
 			}},
@@ -61,8 +61,8 @@ func TestBeginBlocker(t *testing.T) {
 	// for 51 blocks, mark the validator as having not signed
 	for ; height < 102; height++ {
 		ctx = ctx.WithBlockHeight(height)
-		req = wrsp.RequestBeginBlock{
-			Validators: []wrsp.SigningValidator{{
+		req = abci.RequestBeginBlock{
+			Validators: []abci.SigningValidator{{
 				Validator:       val,
 				SignedLastBlock: false,
 			}},

@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"fmt"
 
-	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/wire"
-	"github.com/tepleton/tepleton-sdk/x/bank"
-	wrsp "github.com/tepleton/wrsp/types"
-	crypto "github.com/tepleton/go-crypto"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/wire"
+	"github.com/cosmos/cosmos-sdk/x/bank"
+	abci "github.com/tendermint/abci/types"
+	crypto "github.com/tendermint/go-crypto"
 )
 
 // keeper of the staking store
@@ -183,16 +183,16 @@ func (k Keeper) GetValidatorsByPower(ctx sdk.Context) []Validator {
 }
 
 //_________________________________________________________________________
-// Accumulated updates to the active/bonded validator set for tepleton
+// Accumulated updates to the active/bonded validator set for tendermint
 
 // get the most recently updated validators
-func (k Keeper) getTendermintUpdates(ctx sdk.Context) (updates []wrsp.Validator) {
+func (k Keeper) getTendermintUpdates(ctx sdk.Context) (updates []abci.Validator) {
 	store := ctx.KVStore(k.storeKey)
 
 	iterator := sdk.KVStorePrefixIterator(store, TendermintUpdatesKey) //smallest to largest
 	for ; iterator.Valid(); iterator.Next() {
 		valBytes := iterator.Value()
-		var val wrsp.Validator
+		var val abci.Validator
 		k.cdc.MustUnmarshalBinary(valBytes, &val)
 		updates = append(updates, val)
 	}
@@ -215,7 +215,7 @@ func (k Keeper) clearTendermintUpdates(ctx sdk.Context) {
 //___________________________________________________________________________
 
 // perfom all the nessisary steps for when a validator changes its power
-// updates all validator stores as well as tepleton update store
+// updates all validator stores as well as tendermint update store
 // may kick out validators if new validator is entering the bonded validator group
 func (k Keeper) updateValidator(ctx sdk.Context, validator Validator) Validator {
 	store := ctx.KVStore(k.storeKey)
@@ -264,9 +264,9 @@ func (k Keeper) updateValidator(ctx sdk.Context, validator Validator) Validator 
 	store.Set(valPower, validator.Owner)
 
 	// efficiency case:
-	// if already bonded and power increasing only need to update tepleton
+	// if already bonded and power increasing only need to update tendermint
 	if powerIncreasing && !validator.Revoked && oldValidator.Status() == sdk.Bonded {
-		bz := k.cdc.MustMarshalBinary(validator.wrspValidator(k.cdc))
+		bz := k.cdc.MustMarshalBinary(validator.abciValidator(k.cdc))
 		store.Set(GetTendermintUpdatesKey(ownerAddr), bz)
 		return validator
 	}
@@ -458,9 +458,9 @@ func (k Keeper) unbondValidator(ctx sdk.Context, store sdk.KVStore, validator Va
 	bzVal := k.cdc.MustMarshalBinary(validator)
 	store.Set(GetValidatorKey(validator.Owner), bzVal)
 
-	// add to accumulated changes for tepleton
-	bzWRSP := k.cdc.MustMarshalBinary(validator.wrspValidatorZero(k.cdc))
-	store.Set(GetTendermintUpdatesKey(validator.Owner), bzWRSP)
+	// add to accumulated changes for tendermint
+	bzABCI := k.cdc.MustMarshalBinary(validator.abciValidatorZero(k.cdc))
+	store.Set(GetTendermintUpdatesKey(validator.Owner), bzABCI)
 
 	// also remove from the Bonded Validators Store
 	store.Delete(GetValidatorsBondedKey(validator.PubKey))
@@ -485,9 +485,9 @@ func (k Keeper) bondValidator(ctx sdk.Context, store sdk.KVStore, validator Vali
 	store.Set(GetValidatorKey(validator.Owner), bzVal)
 	store.Set(GetValidatorsBondedKey(validator.PubKey), validator.Owner)
 
-	// add to accumulated changes for tepleton
-	bzWRSP := k.cdc.MustMarshalBinary(validator.wrspValidator(k.cdc))
-	store.Set(GetTendermintUpdatesKey(validator.Owner), bzWRSP)
+	// add to accumulated changes for tendermint
+	bzABCI := k.cdc.MustMarshalBinary(validator.abciValidator(k.cdc))
+	store.Set(GetTendermintUpdatesKey(validator.Owner), bzABCI)
 
 	return validator
 }
@@ -514,7 +514,7 @@ func (k Keeper) removeValidator(ctx sdk.Context, address sdk.Address) {
 	}
 	store.Delete(GetValidatorsBondedKey(validator.PubKey))
 
-	bz := k.cdc.MustMarshalBinary(validator.wrspValidatorZero(k.cdc))
+	bz := k.cdc.MustMarshalBinary(validator.abciValidatorZero(k.cdc))
 	store.Set(GetTendermintUpdatesKey(address), bz)
 }
 
@@ -794,7 +794,7 @@ func (k Keeper) IterateDelegators(ctx sdk.Context, delAddr sdk.Address, fn func(
 
 // slash a validator
 func (k Keeper) Slash(ctx sdk.Context, pubkey crypto.PubKey, height int64, fraction sdk.Rat) {
-	// TODO height ignored for now, see https://github.com/tepleton/tepleton-sdk/pull/1011#issuecomment-390253957
+	// TODO height ignored for now, see https://github.com/cosmos/cosmos-sdk/pull/1011#issuecomment-390253957
 	logger := ctx.Logger().With("module", "x/stake")
 	val, found := k.GetValidatorByPubKey(ctx, pubkey)
 	if !found {

@@ -1,9 +1,9 @@
 package context
 
 import (
-	rpcclient "github.com/tepleton/tepleton/rpc/client"
+	rpcclient "github.com/tendermint/tendermint/rpc/client"
 
-	"github.com/tepleton/tepleton-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 )
 
 // typical context created in sdk modules for transactions/queries

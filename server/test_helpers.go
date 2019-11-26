@@ -11,10 +11,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
-	"github.com/tepleton/tmlibs/cli"
+	"github.com/tendermint/tmlibs/cli"
 )
 
-// Get a free address for a test tepleton server
+// Get a free address for a test tendermint server
 // protocol is either tcp, http, etc
 func FreeTCPAddr() (addr, port string, err error) {
 	l, err := net.Listen("tcp", "0.0.0.0:0")

@@ -1,14 +1,14 @@
 [Unit]
-Description=tond
+Description=gaiad
 Requires=network-online.target
 After=network-online.target
 
 [Service]
 Restart=on-failure
-User=tond
-Group=tond
+User=gaiad
+Group=gaiad
 PermissionsStartOnly=true
-ExecStart=/usr/bin/tond start
+ExecStart=/usr/bin/gaiad start
 ExecReload=/bin/kill -HUP $MAINPID
 KillSignal=SIGTERM
 

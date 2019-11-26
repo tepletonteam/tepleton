@@ -3,7 +3,7 @@ package cool
 import (
 	"fmt"
 
-	sdk "github.com/tepleton/tepleton-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // Cool errors reserve 400 ~ 499.

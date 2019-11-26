@@ -31,8 +31,8 @@ resource "digitalocean_droplet" "cluster" {
   }
 
   provisioner "file" {
-    source = "files/tond.service"
-    destination = "/etc/systemd/system/tond.service"
+    source = "files/gaiad.service"
+    destination = "/etc/systemd/system/gaiad.service"
   }
 
   provisioner "remote-exec" {

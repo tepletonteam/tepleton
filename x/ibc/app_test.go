@@ -5,13 +5,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/tepleton/tepleton-sdk/x/auth/mock"
-	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/x/auth"
-	"github.com/tepleton/tepleton-sdk/x/bank"
+	"github.com/cosmos/cosmos-sdk/x/auth/mock"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 
-	wrsp "github.com/tepleton/wrsp/types"
-	crypto "github.com/tepleton/go-crypto"
+	abci "github.com/tendermint/abci/types"
+	crypto "github.com/tendermint/go-crypto"
 )
 
 // initialize the mock application for this module
@@ -48,7 +48,7 @@ func TestIBCMsgs(t *testing.T) {
 	mock.SetGenesis(mapp, accs)
 
 	// A checkTx context (true)
-	ctxCheck := mapp.BaseApp.NewContext(true, wrsp.Header{})
+	ctxCheck := mapp.BaseApp.NewContext(true, abci.Header{})
 	res1 := mapp.AccountMapper.GetAccount(ctxCheck, addr1)
 	assert.Equal(t, acc, res1)
 
