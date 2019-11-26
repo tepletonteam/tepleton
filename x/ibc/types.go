@@ -1,19 +1,10 @@
 package ibc
 
 import (
-	"encoding/json"
-
 	sdk "github.com/tepleton/tepleton-sdk/types"
+
 	wire "github.com/tepleton/tepleton-sdk/wire"
 )
-
-var (
-	msgCdc *wire.Codec
-)
-
-func init() {
-	msgCdc = wire.NewCodec()
-}
 
 // ------------------------------
 // IBCPacket
@@ -41,33 +32,12 @@ func NewIBCPacket(srcAddr sdk.Address, destAddr sdk.Address, coins sdk.Coins,
 	}
 }
 
-//nolint
-func (p IBCPacket) GetSignBytes() []byte {
-	b, err := msgCdc.MarshalJSON(struct {
-		SrcAddr   string
-		DestAddr  string
-		Coins     sdk.Coins
-		SrcChain  string
-		DestChain string
-	}{
-		SrcAddr:   sdk.MustBech32ifyAcc(p.SrcAddr),
-		DestAddr:  sdk.MustBech32ifyAcc(p.DestAddr),
-		Coins:     p.Coins,
-		SrcChain:  p.SrcChain,
-		DestChain: p.DestChain,
-	})
-	if err != nil {
-		panic(err)
-	}
-	return b
-}
-
 // validator the ibc packey
-func (p IBCPacket) ValidateBasic() sdk.Error {
-	if p.SrcChain == p.DestChain {
+func (ibcp IBCPacket) ValidateBasic() sdk.Error {
+	if ibcp.SrcChain == ibcp.DestChain {
 		return ErrIdenticalChains(DefaultCodespace).Trace("")
 	}
-	if !p.Coins.IsValid() {
+	if !ibcp.Coins.IsValid() {
 		return sdk.ErrInvalidCoins("")
 	}
 	return nil
@@ -90,7 +60,12 @@ func (msg IBCTransferMsg) GetSigners() []sdk.Address { return []sdk.Address{msg.
 
 // get the sign bytes for ibc transfer message
 func (msg IBCTransferMsg) GetSignBytes() []byte {
-	return msg.IBCPacket.GetSignBytes()
+	cdc := wire.NewCodec()
+	bz, err := cdc.MarshalBinary(msg)
+	if err != nil {
+		panic(err)
+	}
+	return bz
 }
 
 // validate ibc transfer message
@@ -119,17 +94,10 @@ func (msg IBCReceiveMsg) GetSigners() []sdk.Address { return []sdk.Address{msg.R
 
 // get the sign bytes for ibc receive message
 func (msg IBCReceiveMsg) GetSignBytes() []byte {
-	b, err := msgCdc.MarshalJSON(struct {
-		IBCPacket json.RawMessage
-		Relayer   string
-		Sequence  int64
-	}{
-		IBCPacket: json.RawMessage(msg.IBCPacket.GetSignBytes()),
-		Relayer:   sdk.MustBech32ifyAcc(msg.Relayer),
-		Sequence:  msg.Sequence,
-	})
+	cdc := wire.NewCodec()
+	bz, err := cdc.MarshalBinary(msg)
 	if err != nil {
 		panic(err)
 	}
-	return b
+	return bz
 }
