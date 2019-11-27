@@ -123,6 +123,24 @@ type Input struct {
 	Coins   sdk.Coins   `json:"coins"`
 }
 
+<<<<<<< HEAD
+=======
+// Return bytes to sign for Input
+func (in Input) GetSignBytes() []byte {
+	bin, err := msgCdc.MarshalJSON(struct {
+		Address string    `json:"address"`
+		Coins   sdk.Coins `json:"coins"`
+	}{
+		Address: sdk.MustBech32ifyAcc(in.Address),
+		Coins:   in.Coins,
+	})
+	if err != nil {
+		panic(err)
+	}
+	return bin
+}
+
+>>>>>>> dev
 // ValidateBasic - validate transaction input
 func (in Input) ValidateBasic() sdk.Error {
 	if len(in.Address) == 0 {
@@ -155,6 +173,24 @@ type Output struct {
 	Coins   sdk.Coins   `json:"coins"`
 }
 
+<<<<<<< HEAD
+=======
+// Return bytes to sign for Output
+func (out Output) GetSignBytes() []byte {
+	bin, err := msgCdc.MarshalJSON(struct {
+		Address string    `json:"address"`
+		Coins   sdk.Coins `json:"coins"`
+	}{
+		Address: sdk.MustBech32ifyAcc(out.Address),
+		Coins:   out.Coins,
+	})
+	if err != nil {
+		panic(err)
+	}
+	return bin
+}
+
+>>>>>>> dev
 // ValidateBasic - validate transaction output
 func (out Output) ValidateBasic() sdk.Error {
 	if len(out.Address) == 0 {

@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"os"
 	"testing"
 
@@ -11,8 +10,6 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
-	"github.com/tepleton/tepleton-sdk/x/bank"
-	"github.com/tepleton/tepleton-sdk/x/ibc"
 	"github.com/tepleton/tepleton-sdk/x/stake"
 
 	wrsp "github.com/tepleton/wrsp/types"
@@ -20,81 +17,6 @@ import (
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
 )
-
-// Construct some global addrs and txs for tests.
-var (
-	chainID = "" // TODO
-
-	accName = "foobart"
-
-	priv1     = crypto.GenPrivKeyEd25519()
-	addr1     = priv1.PubKey().Address()
-	priv2     = crypto.GenPrivKeyEd25519()
-	addr2     = priv2.PubKey().Address()
-	addr3     = crypto.GenPrivKeyEd25519().PubKey().Address()
-	priv4     = crypto.GenPrivKeyEd25519()
-	addr4     = priv4.PubKey().Address()
-	coins     = sdk.Coins{{"foocoin", 10}}
-	halfCoins = sdk.Coins{{"foocoin", 5}}
-	manyCoins = sdk.Coins{{"foocoin", 1}, {"barcoin", 1}}
-	fee       = auth.StdFee{
-		sdk.Coins{{"foocoin", 0}},
-		100000,
-	}
-
-	sendMsg1 = bank.MsgSend{
-		Inputs:  []bank.Input{bank.NewInput(addr1, coins)},
-		Outputs: []bank.Output{bank.NewOutput(addr2, coins)},
-	}
-
-	sendMsg2 = bank.MsgSend{
-		Inputs: []bank.Input{bank.NewInput(addr1, coins)},
-		Outputs: []bank.Output{
-			bank.NewOutput(addr2, halfCoins),
-			bank.NewOutput(addr3, halfCoins),
-		},
-	}
-
-	sendMsg3 = bank.MsgSend{
-		Inputs: []bank.Input{
-			bank.NewInput(addr1, coins),
-			bank.NewInput(addr4, coins),
-		},
-		Outputs: []bank.Output{
-			bank.NewOutput(addr2, coins),
-			bank.NewOutput(addr3, coins),
-		},
-	}
-
-	sendMsg4 = bank.MsgSend{
-		Inputs: []bank.Input{
-			bank.NewInput(addr2, coins),
-		},
-		Outputs: []bank.Output{
-			bank.NewOutput(addr1, coins),
-		},
-	}
-
-	sendMsg5 = bank.MsgSend{
-		Inputs: []bank.Input{
-			bank.NewInput(addr1, manyCoins),
-		},
-		Outputs: []bank.Output{
-			bank.NewOutput(addr2, manyCoins),
-		},
-	}
-)
-
-func loggerAndDB() (log.Logger, dbm.DB) {
-	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "sdk/app")
-	db := dbm.NewMemDB()
-	return logger, db
-}
-
-func newGaiaApp() *GaiaApp {
-	logger, db := loggerAndDB()
-	return NewGaiaApp(logger, db)
-}
 
 func setGenesis(gapp *GaiaApp, accs ...*auth.BaseAccount) error {
 	genaccs := make([]GenesisAccount, len(accs))
@@ -120,27 +42,10 @@ func setGenesis(gapp *GaiaApp, accs ...*auth.BaseAccount) error {
 	return nil
 }
 
-//_______________________________________________________________________
-
-func TestMsgs(t *testing.T) {
-	gapp := newGaiaApp()
-	require.Nil(t, setGenesis(gapp))
-
-	msgs := []struct {
-		msg sdk.Msg
-	}{
-		{sendMsg1},
-	}
-
-	for i, m := range msgs {
-		// Run a CheckDeliver
-		SignCheckDeliver(t, gapp, m.msg, []int64{int64(i)}, false, priv1)
-	}
-}
-
 func TestGenesis(t *testing.T) {
-	logger, dbs := loggerAndDB()
-	gapp := NewGaiaApp(logger, dbs)
+	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "sdk/app")
+	db := dbm.NewMemDB()
+	gapp := NewGaiaApp(logger, db)
 
 	// Construct some genesis bytes to reflect GaiaAccount
 	pk := crypto.GenPrivKeyEd25519().PubKey()
@@ -161,11 +66,12 @@ func TestGenesis(t *testing.T) {
 	assert.Equal(t, baseAcc, res1)
 
 	// reload app and ensure the account is still there
-	gapp = NewGaiaApp(logger, dbs)
+	gapp = NewGaiaApp(logger, db)
 	ctx = gapp.BaseApp.NewContext(true, wrsp.Header{})
 	res1 = gapp.accountMapper.GetAccount(ctx, baseAcc.Address)
 	assert.Equal(t, baseAcc, res1)
 }
+<<<<<<< HEAD
 
 func TestMsgSendWithAccounts(t *testing.T) {
 	gapp := newGaiaApp()
@@ -498,3 +404,5 @@ func SignDeliver(t *testing.T, gapp *GaiaApp, msg sdk.Msg, seq []int64, expPass 
 	}
 	gapp.EndBlock(wrsp.RequestEndBlock{})
 }
+=======
+>>>>>>> dev
