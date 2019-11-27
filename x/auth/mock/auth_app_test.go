@@ -72,6 +72,7 @@ func TestMsgChangePubKey(t *testing.T) {
 		NewPubKey: priv2.PubKey(),
 	}
 
+	mapp.BeginBlock(wrsp.RequestBeginBlock{})
 	ctxDeliver := mapp.BaseApp.NewContext(false, wrsp.Header{})
 	acc2 := mapp.AccountMapper.GetAccount(ctxDeliver, addr1)
 
@@ -82,6 +83,7 @@ func TestMsgChangePubKey(t *testing.T) {
 	assert.True(t, priv2.PubKey().Equals(acc2.GetPubKey()))
 
 	// signing a SendMsg with the old privKey should be an auth error
+	mapp.BeginBlock(wrsp.RequestBeginBlock{})
 	tx := GenTx(sendMsg1, []int64{2}, priv1)
 	res := mapp.Deliver(tx)
 	assert.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeUnauthorized), res.Code, res.Log)
