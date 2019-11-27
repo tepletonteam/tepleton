@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	wrsp "github.com/tepleton/wrsp/types"
+	tmtypes "github.com/tepleton/tepleton/types"
 	"github.com/tepleton/tmlibs/cli"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
@@ -46,9 +47,9 @@ func newApp(logger log.Logger, db dbm.DB) wrsp.Application {
 	return app.NewDemocoinApp(logger, db)
 }
 
-func exportAppState(logger log.Logger, db dbm.DB) (json.RawMessage, error) {
+func exportAppStateAndTMValidators(logger log.Logger, db dbm.DB) (json.RawMessage, []tmtypes.GenesisValidator, error) {
 	dapp := app.NewDemocoinApp(logger, db)
-	return dapp.ExportAppStateJSON()
+	return dapp.ExportAppStateAndValidators()
 }
 
 func main() {
@@ -63,7 +64,7 @@ func main() {
 
 	server.AddCommands(ctx, cdc, rootCmd, CoolAppInit,
 		server.ConstructAppCreator(newApp, "democoin"),
-		server.ConstructAppExporter(exportAppState, "democoin"))
+		server.ConstructAppExporter(exportAppStateAndTMValidators, "democoin"))
 
 	// prepare and add flags
 	rootDir := os.ExpandEnv("$HOME/.democoind")
