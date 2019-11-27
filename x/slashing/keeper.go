@@ -55,12 +55,8 @@ func (k Keeper) handleValidatorSignature(ctx sdk.Context, pubkey crypto.PubKey, 
 	address := pubkey.Address()
 
 	// Local index, so counts blocks validator *should* have signed
-	// Will use the 0-value default signing info if not present, except for start height
-	signInfo, found := k.getValidatorSigningInfo(ctx, address)
-	if !found {
-		// If this validator has never been seen before, construct a new SigningInfo with the correct start height
-		signInfo = NewValidatorSigningInfo(height, 0, 0, 0)
-	}
+	// Will use the 0-value default signing info if not present
+	signInfo, _ := k.getValidatorSigningInfo(ctx, address)
 	index := signInfo.IndexOffset % SignedBlocksWindow
 	signInfo.IndexOffset++
 
