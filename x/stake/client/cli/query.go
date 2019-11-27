@@ -5,12 +5,12 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/tendermint/tmlibs/cli"
+	"github.com/tepleton/tmlibs/cli"
 
-	"github.com/cosmos/cosmos-sdk/client/context"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/wire" // XXX fix
-	"github.com/cosmos/cosmos-sdk/x/stake"
+	"github.com/tepleton/tepleton-sdk/client/context"
+	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/wire" // XXX fix
+	"github.com/tepleton/tepleton-sdk/x/stake"
 )
 
 // get the command to query a validator

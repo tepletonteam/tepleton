@@ -1,9 +1,9 @@
 package types
 
 import (
-	abci "github.com/tendermint/abci/types"
-	"github.com/tendermint/go-crypto"
-	tmtypes "github.com/tendermint/tendermint/types"
+	wrsp "github.com/tepleton/wrsp/types"
+	"github.com/tepleton/go-crypto"
+	tmtypes "github.com/tepleton/tepleton/types"
 )
 
 // status of a validator
@@ -40,9 +40,9 @@ type Validator interface {
 	GetBondHeight() int64     // height in which the validator became active
 }
 
-// validator which fulfills abci validator interface for use in Tendermint
-func ABCIValidator(v Validator) abci.Validator {
-	return abci.Validator{
+// validator which fulfills wrsp validator interface for use in Tendermint
+func WRSPValidator(v Validator) wrsp.Validator {
+	return wrsp.Validator{
 		PubKey: tmtypes.TM2PB.PubKey(v.GetPubKey()),
 		Power:  v.GetPower().Evaluate(),
 	}

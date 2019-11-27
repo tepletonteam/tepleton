@@ -39,13 +39,13 @@ Vagrant.configure("2") do |config|
     echo 'export LC_ALL=en_US.UTF-8' >> /home/vagrant/.bash_profile
 
     mkdir -p /home/vagrant/go/bin
-    mkdir -p /home/vagrant/go/src/github.com/cosmos
-    ln -s /vagrant /home/vagrant/go/src/github.com/cosmos/cosmos-sdk
+    mkdir -p /home/vagrant/go/src/github.com/tepleton
+    ln -s /vagrant /home/vagrant/go/src/github.com/tepleton/tepleton-sdk
 
     chown -R vagrant:vagrant /home/vagrant/go
     chown vagrant:vagrant /home/vagrant/.bash_profile
 
     su - vagrant -c 'source /home/vagrant/.bash_profile'
-    su - vagrant -c 'cd /home/vagrant/go/src/github.com/cosmos/cosmos-sdk && make get_tools'
+    su - vagrant -c 'cd /home/vagrant/go/src/github.com/tepleton/tepleton-sdk && make get_tools'
   SHELL
 end

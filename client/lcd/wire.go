@@ -1,8 +1,8 @@
 package lcd
 
 import (
-	amino "github.com/tendermint/go-amino"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
+	amino "github.com/tepleton/go-amino"
+	ctypes "github.com/tepleton/tepleton/rpc/core/types"
 )
 
 var cdc = amino.NewCodec()

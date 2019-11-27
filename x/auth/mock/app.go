@@ -6,17 +6,17 @@ import (
 	"os"
 
 	"github.com/stretchr/testify/require"
-	abci "github.com/tendermint/abci/types"
-	dbm "github.com/tendermint/tmlibs/db"
-	"github.com/tendermint/tmlibs/log"
+	wrsp "github.com/tepleton/wrsp/types"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
-	bam "github.com/cosmos/cosmos-sdk/baseapp"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/wire"
-	"github.com/cosmos/cosmos-sdk/x/auth"
+	bam "github.com/tepleton/tepleton-sdk/baseapp"
+	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/wire"
+	"github.com/tepleton/tepleton-sdk/x/auth"
 )
 
-// Extended ABCI application
+// Extended WRSP application
 type App struct {
 	*bam.BaseApp
 	Cdc        *wire.Codec // public since the codec is passed into the module anyways.
@@ -75,12 +75,12 @@ func (app *App) CompleteSetup(t *testing.T, newKeys []*sdk.KVStoreKey) {
 }
 
 // custom logic for initialization
-func (app *App) InitChainer(ctx sdk.Context, _ abci.RequestInitChain) abci.ResponseInitChain {
+func (app *App) InitChainer(ctx sdk.Context, _ wrsp.RequestInitChain) wrsp.ResponseInitChain {
 
 	// load the accounts
 	for _, acc := range app.GenesisAccounts {
 		app.AccountMapper.SetAccount(ctx, acc)
 	}
 
-	return abci.ResponseInitChain{}
+	return wrsp.ResponseInitChain{}
 }

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
 // This is just an example to demonstrate a functional custom module

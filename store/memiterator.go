@@ -3,8 +3,8 @@ package store
 import (
 	"bytes"
 
-	cmn "github.com/tendermint/tmlibs/common"
-	dbm "github.com/tendermint/tmlibs/db"
+	cmn "github.com/tepleton/tmlibs/common"
+	dbm "github.com/tepleton/tmlibs/db"
 )
 
 // Iterates over iterKVCache items.

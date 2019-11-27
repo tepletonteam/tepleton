@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/tepleton/tepleton-sdk/client/context"
 )
 
 // Tx Broadcast Body

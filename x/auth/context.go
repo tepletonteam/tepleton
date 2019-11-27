@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"github.com/cosmos/cosmos-sdk/types"
+	"github.com/tepleton/tepleton-sdk/types"
 )
 
 /*

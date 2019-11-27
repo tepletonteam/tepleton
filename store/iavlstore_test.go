@@ -5,12 +5,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	abci "github.com/tendermint/abci/types"
-	"github.com/tendermint/iavl"
-	cmn "github.com/tendermint/tmlibs/common"
-	dbm "github.com/tendermint/tmlibs/db"
+	wrsp "github.com/tepleton/wrsp/types"
+	"github.com/tepleton/iavl"
+	cmn "github.com/tepleton/tmlibs/common"
+	dbm "github.com/tepleton/tmlibs/db"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
 var (
@@ -283,8 +283,8 @@ func TestIAVLStoreQuery(t *testing.T) {
 
 	cid := iavlStore.Commit()
 	ver := cid.Version
-	query := abci.RequestQuery{Path: "/key", Data: k1, Height: ver}
-	querySub := abci.RequestQuery{Path: "/subspace", Data: ksub, Height: ver}
+	query := wrsp.RequestQuery{Path: "/key", Data: k1, Height: ver}
+	querySub := wrsp.RequestQuery{Path: "/subspace", Data: ksub, Height: ver}
 
 	// query subspace before anything set
 	qres := iavlStore.Query(querySub)
@@ -331,7 +331,7 @@ func TestIAVLStoreQuery(t *testing.T) {
 	qres = iavlStore.Query(query)
 	assert.Equal(t, uint32(sdk.CodeOK), qres.Code)
 	assert.Equal(t, v3, qres.Value)
-	query2 := abci.RequestQuery{Path: "/key", Data: k2, Height: cid.Version}
+	query2 := wrsp.RequestQuery{Path: "/key", Data: k2, Height: cid.Version}
 	qres = iavlStore.Query(query2)
 	assert.Equal(t, uint32(sdk.CodeOK), qres.Code)
 	assert.Equal(t, v2, qres.Value)
@@ -341,7 +341,7 @@ func TestIAVLStoreQuery(t *testing.T) {
 	assert.Equal(t, valExpSub2, qres.Value)
 
 	// default (height 0) will show latest -1
-	query0 := abci.RequestQuery{Path: "/store", Data: k1}
+	query0 := wrsp.RequestQuery{Path: "/store", Data: k1}
 	qres = iavlStore.Query(query0)
 	assert.Equal(t, uint32(sdk.CodeOK), qres.Code)
 	assert.Equal(t, v1, qres.Value)

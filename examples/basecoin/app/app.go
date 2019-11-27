@@ -3,29 +3,29 @@ package app
 import (
 	"encoding/json"
 
-	abci "github.com/tendermint/abci/types"
-	tmtypes "github.com/tendermint/tendermint/types"
-	cmn "github.com/tendermint/tmlibs/common"
-	dbm "github.com/tendermint/tmlibs/db"
-	"github.com/tendermint/tmlibs/log"
+	wrsp "github.com/tepleton/wrsp/types"
+	tmtypes "github.com/tepleton/tepleton/types"
+	cmn "github.com/tepleton/tmlibs/common"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
-	bam "github.com/cosmos/cosmos-sdk/baseapp"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/wire"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/bank"
-	"github.com/cosmos/cosmos-sdk/x/ibc"
-	"github.com/cosmos/cosmos-sdk/x/slashing"
-	"github.com/cosmos/cosmos-sdk/x/stake"
+	bam "github.com/tepleton/tepleton-sdk/baseapp"
+	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/wire"
+	"github.com/tepleton/tepleton-sdk/x/auth"
+	"github.com/tepleton/tepleton-sdk/x/bank"
+	"github.com/tepleton/tepleton-sdk/x/ibc"
+	"github.com/tepleton/tepleton-sdk/x/slashing"
+	"github.com/tepleton/tepleton-sdk/x/stake"
 
-	"github.com/cosmos/cosmos-sdk/examples/basecoin/types"
+	"github.com/tepleton/tepleton-sdk/examples/basecoin/types"
 )
 
 const (
 	appName = "BasecoinApp"
 )
 
-// Extended ABCI application
+// Extended WRSP application
 type BasecoinApp struct {
 	*bam.BaseApp
 	cdc *wire.Codec
@@ -112,38 +112,38 @@ func MakeCodec() *wire.Codec {
 }
 
 // application updates every end block
-func (app *BasecoinApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
+func (app *BasecoinApp) BeginBlocker(ctx sdk.Context, req wrsp.RequestBeginBlock) wrsp.ResponseBeginBlock {
 	tags := slashing.BeginBlocker(ctx, req, app.slashingKeeper)
 
-	return abci.ResponseBeginBlock{
+	return wrsp.ResponseBeginBlock{
 		Tags: tags.ToKVPairs(),
 	}
 }
 
 // application updates every end block
-func (app *BasecoinApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
+func (app *BasecoinApp) EndBlocker(ctx sdk.Context, req wrsp.RequestEndBlock) wrsp.ResponseEndBlock {
 	validatorUpdates := stake.EndBlocker(ctx, app.stakeKeeper)
 
-	return abci.ResponseEndBlock{
+	return wrsp.ResponseEndBlock{
 		ValidatorUpdates: validatorUpdates,
 	}
 }
 
 // Custom logic for basecoin initialization
-func (app *BasecoinApp) initChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
+func (app *BasecoinApp) initChainer(ctx sdk.Context, req wrsp.RequestInitChain) wrsp.ResponseInitChain {
 	stateJSON := req.AppStateBytes
 
 	genesisState := new(types.GenesisState)
 	err := app.cdc.UnmarshalJSON(stateJSON, genesisState)
 	if err != nil {
-		panic(err) // TODO https://github.com/cosmos/cosmos-sdk/issues/468
+		panic(err) // TODO https://github.com/tepleton/tepleton-sdk/issues/468
 		// return sdk.ErrGenesisParse("").TraceCause(err, "")
 	}
 
 	for _, gacc := range genesisState.Accounts {
 		acc, err := gacc.ToAppAccount()
 		if err != nil {
-			panic(err) // TODO https://github.com/cosmos/cosmos-sdk/issues/468
+			panic(err) // TODO https://github.com/tepleton/tepleton-sdk/issues/468
 			//	return sdk.ErrGenesisParse("").TraceCause(err, "")
 		}
 		app.accountMapper.SetAccount(ctx, acc)
@@ -152,12 +152,12 @@ func (app *BasecoinApp) initChainer(ctx sdk.Context, req abci.RequestInitChain) 
 	// load the initial stake information
 	stake.InitGenesis(ctx, app.stakeKeeper, genesisState.StakeData)
 
-	return abci.ResponseInitChain{}
+	return wrsp.ResponseInitChain{}
 }
 
 // Custom logic for state export
 func (app *BasecoinApp) ExportAppStateAndValidators() (appState json.RawMessage, validators []tmtypes.GenesisValidator, err error) {
-	ctx := app.NewContext(true, abci.Header{})
+	ctx := app.NewContext(true, wrsp.Header{})
 
 	// iterate to get the accounts
 	accounts := []*types.GenesisAccount{}

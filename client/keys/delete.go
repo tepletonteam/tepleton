@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/tepleton/tepleton-sdk/client"
 	"github.com/gorilla/mux"
-	keys "github.com/tendermint/go-crypto/keys"
+	keys "github.com/tepleton/go-crypto/keys"
 
 	"github.com/spf13/cobra"
 )

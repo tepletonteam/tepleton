@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
 // a really cool msg type, these fields are can be entirely arbitrary and

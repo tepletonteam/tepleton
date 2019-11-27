@@ -6,7 +6,7 @@ package baseapp
 
 	if len(reqQuery.Data) == 0 {
 		resQuery.Log = "Query cannot be zero length"
-		resQuery.Code = abci.CodeType_EncodingError
+		resQuery.Code = wrsp.CodeType_EncodingError
 		return
 	}
 
@@ -47,7 +47,7 @@ package baseapp
 		}
 
 	default:
-		resQuery.Code = abci.CodeType_UnknownRequest
+		resQuery.Code = wrsp.CodeType_UnknownRequest
 		resQuery.Log = cmn.Fmt("Unexpected Query path: %v", reqQuery.Path)
 	}
 	return

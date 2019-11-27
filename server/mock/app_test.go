@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	abci "github.com/tendermint/abci/types"
+	wrsp "github.com/tepleton/wrsp/types"
 )
 
 // TestInitApp makes sure we can initialize this thing without an error
@@ -25,14 +25,14 @@ func TestInitApp(t *testing.T) {
 	require.NoError(t, err)
 
 	//TODO test validators in the init chain?
-	req := abci.RequestInitChain{
+	req := wrsp.RequestInitChain{
 		AppStateBytes: appState,
 	}
 	app.InitChain(req)
 	app.Commit()
 
 	// make sure we can query these values
-	query := abci.RequestQuery{
+	query := wrsp.RequestQuery{
 		Path: "/store/main/key",
 		Data: []byte("foo"),
 	}
@@ -56,19 +56,19 @@ func TestDeliverTx(t *testing.T) {
 	tx := NewTx(key, value)
 	txBytes := tx.GetSignBytes()
 
-	header := abci.Header{
+	header := wrsp.Header{
 		AppHash: []byte("apphash"),
 		Height:  1,
 	}
-	app.BeginBlock(abci.RequestBeginBlock{Header: header})
+	app.BeginBlock(wrsp.RequestBeginBlock{Header: header})
 	dres := app.DeliverTx(txBytes)
 	require.Equal(t, uint32(0), dres.Code, dres.Log)
-	app.EndBlock(abci.RequestEndBlock{})
+	app.EndBlock(wrsp.RequestEndBlock{})
 	cres := app.Commit()
 	require.NotEmpty(t, cres.Data)
 
 	// make sure we can query these values
-	query := abci.RequestQuery{
+	query := wrsp.RequestQuery{
 		Path: "/store/main/key",
 		Data: []byte(key),
 	}

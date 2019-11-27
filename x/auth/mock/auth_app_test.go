@@ -6,12 +6,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/bank"
+	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/x/auth"
+	"github.com/tepleton/tepleton-sdk/x/bank"
 
-	abci "github.com/tendermint/abci/types"
-	crypto "github.com/tendermint/go-crypto"
+	wrsp "github.com/tepleton/wrsp/types"
+	crypto "github.com/tepleton/go-crypto"
 )
 
 // test auth module messages
@@ -61,7 +61,7 @@ func TestMsgChangePubKey(t *testing.T) {
 	SetGenesis(mapp, accs)
 
 	// A checkTx context (true)
-	ctxCheck := mapp.BaseApp.NewContext(true, abci.Header{})
+	ctxCheck := mapp.BaseApp.NewContext(true, wrsp.Header{})
 	fmt.Println("wackydebugoutput TestMsgChangePubKey 5")
 	res1 := mapp.AccountMapper.GetAccount(ctxCheck, addr1)
 	assert.Equal(t, acc1, res1.(*auth.BaseAccount))
@@ -82,7 +82,7 @@ func TestMsgChangePubKey(t *testing.T) {
 	}
 	fmt.Println("wackydebugoutput TestMsgChangePubKey 10")
 
-	ctxDeliver := mapp.BaseApp.NewContext(false, abci.Header{})
+	ctxDeliver := mapp.BaseApp.NewContext(false, wrsp.Header{})
 	fmt.Println("wackydebugoutput TestMsgChangePubKey 11")
 	acc2 := mapp.AccountMapper.GetAccount(ctxDeliver, addr1)
 
@@ -97,7 +97,7 @@ func TestMsgChangePubKey(t *testing.T) {
 	tx := GenTx(sendMsg1, []int64{2}, priv1)
 	fmt.Println("wackydebugoutput TestMsgChangePubKey 13")
 	res := mapp.Deliver(tx)
-	assert.Equal(t, sdk.ToABCICode(sdk.CodespaceRoot, sdk.CodeUnauthorized), res.Code, res.Log)
+	assert.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeUnauthorized), res.Code, res.Log)
 
 	// resigning the tx with the new correct priv key should work
 	SignCheckDeliver(t, mapp.BaseApp, sendMsg1, []int64{2}, true, priv2)

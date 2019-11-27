@@ -5,15 +5,15 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/cosmos/cosmos-sdk/wire"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	rpcclient "github.com/tendermint/tendermint/rpc/client"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
-	cmn "github.com/tendermint/tmlibs/common"
+	"github.com/tepleton/tepleton-sdk/wire"
+	"github.com/tepleton/tepleton-sdk/x/auth"
+	rpcclient "github.com/tepleton/tepleton/rpc/client"
+	ctypes "github.com/tepleton/tepleton/rpc/core/types"
+	cmn "github.com/tepleton/tmlibs/common"
 
-	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/keys"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/tepleton/tepleton-sdk/client"
+	"github.com/tepleton/tepleton-sdk/client/keys"
+	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
 // Broadcast the transaction bytes to Tendermint
@@ -65,11 +65,11 @@ func (ctx CoreContext) query(key cmn.HexBytes, storeName, endPath string) (res [
 		return res, err
 	}
 
-	opts := rpcclient.ABCIQueryOptions{
+	opts := rpcclient.WRSPQueryOptions{
 		Height:  ctx.Height,
 		Trusted: ctx.TrustNode,
 	}
-	result, err := node.ABCIQueryWithOptions(path, key, opts)
+	result, err := node.WRSPQueryWithOptions(path, key, opts)
 	if err != nil {
 		return res, err
 	}

@@ -4,22 +4,22 @@ import (
 	"encoding/json"
 	"path/filepath"
 
-	abci "github.com/tendermint/abci/types"
-	tmtypes "github.com/tendermint/tendermint/types"
-	dbm "github.com/tendermint/tmlibs/db"
-	"github.com/tendermint/tmlibs/log"
+	wrsp "github.com/tepleton/wrsp/types"
+	tmtypes "github.com/tepleton/tepleton/types"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 )
 
 // AppCreator lets us lazily initialize app, using home dir
 // and other flags (?) to start
-type AppCreator func(string, log.Logger) (abci.Application, error)
+type AppCreator func(string, log.Logger) (wrsp.Application, error)
 
 // AppExporter dumps all app state to JSON-serializable structure and returns the current validator set
 type AppExporter func(home string, log log.Logger) (json.RawMessage, []tmtypes.GenesisValidator, error)
 
 // ConstructAppCreator returns an application generation function
-func ConstructAppCreator(appFn func(log.Logger, dbm.DB) abci.Application, name string) AppCreator {
-	return func(rootDir string, logger log.Logger) (abci.Application, error) {
+func ConstructAppCreator(appFn func(log.Logger, dbm.DB) wrsp.Application, name string) AppCreator {
+	return func(rootDir string, logger log.Logger) (wrsp.Application, error) {
 		dataDir := filepath.Join(rootDir, "data")
 		db, err := dbm.NewGoLevelDB(name, dataDir)
 		if err != nil {

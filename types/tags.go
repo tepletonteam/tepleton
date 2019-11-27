@@ -1,7 +1,7 @@
 package types
 
 import (
-	cmn "github.com/tendermint/tmlibs/common"
+	cmn "github.com/tepleton/tmlibs/common"
 )
 
 // Type synonym for convenience

@@ -27,7 +27,7 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/ebuchman/fail-test"
+  name = "github.com/tepleton/fail-test"
   packages = ["."]
   revision = "95f809107225be108efcf10a3509e4ea6ceef3c4"
 
@@ -259,7 +259,7 @@
   revision = "5d6fca44a948d2be89a9702de7717f0168403d3d"
 
 [[projects]]
-  name = "github.com/tendermint/abci"
+  name = "github.com/tepleton/wrsp"
   packages = [
     "client",
     "example/code",
@@ -272,7 +272,7 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/tendermint/ed25519"
+  name = "github.com/tepleton/ed25519"
   packages = [
     ".",
     "edwards25519",
@@ -281,13 +281,13 @@
   revision = "d8387025d2b9d158cf4efb07e7ebf814bcce2057"
 
 [[projects]]
-  name = "github.com/tendermint/go-amino"
+  name = "github.com/tepleton/go-amino"
   packages = ["."]
   revision = "ed62928576cfcaf887209dc96142cd79cdfff389"
   version = "0.9.9"
 
 [[projects]]
-  name = "github.com/tendermint/go-crypto"
+  name = "github.com/tepleton/go-crypto"
   packages = [
     ".",
     "keys",
@@ -299,7 +299,7 @@
   version = "v0.6.2"
 
 [[projects]]
-  name = "github.com/tendermint/iavl"
+  name = "github.com/tepleton/iavl"
   packages = [
     ".",
     "sha256truncated"
@@ -308,10 +308,10 @@
   version = "v0.8.0-rc0"
 
 [[projects]]
-  name = "github.com/tendermint/tendermint"
+  name = "github.com/tepleton/tepleton"
   packages = [
     "blockchain",
-    "cmd/tendermint/commands",
+    "cmd/tepleton/commands",
     "config",
     "consensus",
     "consensus/types",
@@ -352,7 +352,7 @@
 
 [[projects]]
   branch = "develop"
-  name = "github.com/tendermint/tmlibs"
+  name = "github.com/tepleton/tmlibs"
   packages = [
     "autofile",
     "bech32",

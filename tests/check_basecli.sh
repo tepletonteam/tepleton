@@ -12,7 +12,7 @@
 
 # WARNING!!!
 rm -rf ~/.basecoind ~/.basecli
-cd $GOPATH/src/github.com/cosmos/cosmos-sdk
+cd $GOPATH/src/github.com/tepleton/tepleton-sdk
 # make get_vendor_deps
 make build
 

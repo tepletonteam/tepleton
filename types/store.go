@@ -3,12 +3,12 @@ package types
 import (
 	"fmt"
 
-	abci "github.com/tendermint/abci/types"
-	cmn "github.com/tendermint/tmlibs/common"
-	dbm "github.com/tendermint/tmlibs/db"
+	wrsp "github.com/tepleton/wrsp/types"
+	cmn "github.com/tepleton/tmlibs/common"
+	dbm "github.com/tepleton/tmlibs/db"
 )
 
-// NOTE: These are implemented in cosmos-sdk/store.
+// NOTE: These are implemented in tepleton-sdk/store.
 
 type Store interface { //nolint
 	GetStoreType() StoreType
@@ -27,12 +27,12 @@ type CommitStore interface {
 	Store
 }
 
-// Queryable allows a Store to expose internal state to the abci.Query
+// Queryable allows a Store to expose internal state to the wrsp.Query
 // interface. Multistore can route requests to the proper Store.
 //
 // This is an optional, but useful extension to any CommitStore
 type Queryable interface {
-	Query(abci.RequestQuery) abci.ResponseQuery
+	Query(wrsp.RequestQuery) wrsp.ResponseQuery
 }
 
 //----------------------------------------

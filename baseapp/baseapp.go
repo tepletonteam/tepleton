@@ -7,15 +7,15 @@ import (
 
 	"github.com/pkg/errors"
 
-	abci "github.com/tendermint/abci/types"
-	cmn "github.com/tendermint/tmlibs/common"
-	dbm "github.com/tendermint/tmlibs/db"
-	"github.com/tendermint/tmlibs/log"
+	wrsp "github.com/tepleton/wrsp/types"
+	cmn "github.com/tepleton/tmlibs/common"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
-	"github.com/cosmos/cosmos-sdk/store"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/wire"
-	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/tepleton/tepleton-sdk/store"
+	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/wire"
+	"github.com/tepleton/tepleton-sdk/x/auth"
 )
 
 // Key to store the header in the DB itself.
@@ -36,11 +36,11 @@ const (
 	runTxModeDeliver runTxMode = iota
 )
 
-// The ABCI application
+// The WRSP application
 type BaseApp struct {
 	// initialized on creation
 	Logger     log.Logger
-	name       string               // application name from abci.Info
+	name       string               // application name from wrsp.Info
 	cdc        *wire.Codec          // Amino codec
 	db         dbm.DB               // common DB backend
 	cms        sdk.CommitMultiStore // Main (uncached) state
@@ -67,11 +67,11 @@ type BaseApp struct {
 	// QUESTION: should we put valUpdates in the deliverState.ctx?
 	checkState       *state                  // for CheckTx
 	deliverState     *state                  // for DeliverTx
-	valUpdates       []abci.Validator        // cached validator changes from DeliverTx
-	signedValidators []abci.SigningValidator // absent validators from begin block
+	valUpdates       []wrsp.Validator        // cached validator changes from DeliverTx
+	signedValidators []wrsp.SigningValidator // absent validators from begin block
 }
 
-var _ abci.Application = (*BaseApp)(nil)
+var _ wrsp.Application = (*BaseApp)(nil)
 
 // Create and name new BaseApp
 // NOTE: The db is used to store the version number for now.
@@ -206,7 +206,7 @@ func (app *BaseApp) initFromStore(mainKey sdk.StoreKey) error {
 	// if we've committed before, we expect <dbHeaderKey> to exist in the db
 	/*
 		var lastCommitID = app.cms.LastCommitID()
-		var header abci.Header
+		var header wrsp.Header
 
 		if !lastCommitID.IsZero() {
 			headerBytes := app.db.Get(dbHeaderKey)
@@ -227,13 +227,13 @@ func (app *BaseApp) initFromStore(mainKey sdk.StoreKey) error {
 	*/
 
 	// initialize Check state
-	app.setCheckState(abci.Header{})
+	app.setCheckState(wrsp.Header{})
 
 	return nil
 }
 
 // NewContext returns a new Context with the correct store, the given header, and nil txBytes.
-func (app *BaseApp) NewContext(isCheckTx bool, header abci.Header) sdk.Context {
+func (app *BaseApp) NewContext(isCheckTx bool, header wrsp.Header) sdk.Context {
 	if isCheckTx {
 		return sdk.NewContext(app.checkState.ms, header, true, nil, app.Logger)
 	}
@@ -249,7 +249,7 @@ func (st *state) CacheMultiStore() sdk.CacheMultiStore {
 	return st.ms.CacheMultiStore()
 }
 
-func (app *BaseApp) setCheckState(header abci.Header) {
+func (app *BaseApp) setCheckState(header wrsp.Header) {
 	ms := app.cms.CacheMultiStore()
 	app.checkState = &state{
 		ms:  ms,
@@ -257,7 +257,7 @@ func (app *BaseApp) setCheckState(header abci.Header) {
 	}
 }
 
-func (app *BaseApp) setDeliverState(header abci.Header) {
+func (app *BaseApp) setDeliverState(header wrsp.Header) {
 	ms := app.cms.CacheMultiStore()
 	app.deliverState = &state{
 		ms:  ms,
@@ -267,34 +267,34 @@ func (app *BaseApp) setDeliverState(header abci.Header) {
 
 //______________________________________________________________________________
 
-// ABCI
+// WRSP
 
-// Implements ABCI
-func (app *BaseApp) Info(req abci.RequestInfo) abci.ResponseInfo {
+// Implements WRSP
+func (app *BaseApp) Info(req wrsp.RequestInfo) wrsp.ResponseInfo {
 	lastCommitID := app.cms.LastCommitID()
 
-	return abci.ResponseInfo{
+	return wrsp.ResponseInfo{
 		Data:             app.name,
 		LastBlockHeight:  lastCommitID.Version,
 		LastBlockAppHash: lastCommitID.Hash,
 	}
 }
 
-// Implements ABCI
-func (app *BaseApp) SetOption(req abci.RequestSetOption) (res abci.ResponseSetOption) {
+// Implements WRSP
+func (app *BaseApp) SetOption(req wrsp.RequestSetOption) (res wrsp.ResponseSetOption) {
 	// TODO: Implement
 	return
 }
 
-// Implements ABCI
+// Implements WRSP
 // InitChain runs the initialization logic directly on the CommitMultiStore and commits it.
-func (app *BaseApp) InitChain(req abci.RequestInitChain) (res abci.ResponseInitChain) {
+func (app *BaseApp) InitChain(req wrsp.RequestInitChain) (res wrsp.ResponseInitChain) {
 	if app.initChainer == nil {
 		return
 	}
 
 	// Initialize the deliver state and run initChain
-	app.setDeliverState(abci.Header{})
+	app.setDeliverState(wrsp.Header{})
 	app.initChainer(app.deliverState.ctx, req) // no error
 
 	// NOTE: we don't commit, but BeginBlock for block 1
@@ -303,24 +303,24 @@ func (app *BaseApp) InitChain(req abci.RequestInitChain) (res abci.ResponseInitC
 }
 
 // Filter peers by address / port
-func (app *BaseApp) FilterPeerByAddrPort(info string) abci.ResponseQuery {
+func (app *BaseApp) FilterPeerByAddrPort(info string) wrsp.ResponseQuery {
 	if app.addrPeerFilter != nil {
 		return app.addrPeerFilter(info)
 	}
-	return abci.ResponseQuery{}
+	return wrsp.ResponseQuery{}
 }
 
 // Filter peers by public key
-func (app *BaseApp) FilterPeerByPubKey(info string) abci.ResponseQuery {
+func (app *BaseApp) FilterPeerByPubKey(info string) wrsp.ResponseQuery {
 	if app.pubkeyPeerFilter != nil {
 		return app.pubkeyPeerFilter(info)
 	}
-	return abci.ResponseQuery{}
+	return wrsp.ResponseQuery{}
 }
 
-// Implements ABCI.
+// Implements WRSP.
 // Delegates to CommitMultiStore if it implements Queryable
-func (app *BaseApp) Query(req abci.RequestQuery) (res abci.ResponseQuery) {
+func (app *BaseApp) Query(req wrsp.RequestQuery) (res wrsp.ResponseQuery) {
 	path := strings.Split(req.Path, "/")
 	// first element is empty string
 	if len(path) > 0 && path[0] == "" {
@@ -342,8 +342,8 @@ func (app *BaseApp) Query(req abci.RequestQuery) (res abci.ResponseQuery) {
 			result = sdk.ErrUnknownRequest(fmt.Sprintf("Unknown query: %s", path)).Result()
 		}
 		value := app.cdc.MustMarshalBinary(result)
-		return abci.ResponseQuery{
-			Code:  uint32(sdk.ABCICodeOK),
+		return wrsp.ResponseQuery{
+			Code:  uint32(sdk.WRSPCodeOK),
 			Value: value,
 		}
 	}
@@ -372,8 +372,8 @@ func (app *BaseApp) Query(req abci.RequestQuery) (res abci.ResponseQuery) {
 	return sdk.ErrUnknownRequest(msg).QueryResult()
 }
 
-// Implements ABCI
-func (app *BaseApp) BeginBlock(req abci.RequestBeginBlock) (res abci.ResponseBeginBlock) {
+// Implements WRSP
+func (app *BaseApp) BeginBlock(req wrsp.RequestBeginBlock) (res wrsp.ResponseBeginBlock) {
 	// Initialize the DeliverTx state.
 	// If this is the first block, it should already
 	// be initialized in InitChain. It may also be nil
@@ -390,8 +390,8 @@ func (app *BaseApp) BeginBlock(req abci.RequestBeginBlock) (res abci.ResponseBeg
 	return
 }
 
-// Implements ABCI
-func (app *BaseApp) CheckTx(txBytes []byte) (res abci.ResponseCheckTx) {
+// Implements WRSP
+func (app *BaseApp) CheckTx(txBytes []byte) (res wrsp.ResponseCheckTx) {
 	// Decode the Tx.
 	var result sdk.Result
 	var tx, err = app.txDecoder(txBytes)
@@ -401,7 +401,7 @@ func (app *BaseApp) CheckTx(txBytes []byte) (res abci.ResponseCheckTx) {
 		result = app.runTx(runTxModeCheck, txBytes, tx)
 	}
 
-	return abci.ResponseCheckTx{
+	return wrsp.ResponseCheckTx{
 		Code:      uint32(result.Code),
 		Data:      result.Data,
 		Log:       result.Log,
@@ -415,8 +415,8 @@ func (app *BaseApp) CheckTx(txBytes []byte) (res abci.ResponseCheckTx) {
 	}
 }
 
-// Implements ABCI
-func (app *BaseApp) DeliverTx(txBytes []byte) (res abci.ResponseDeliverTx) {
+// Implements WRSP
+func (app *BaseApp) DeliverTx(txBytes []byte) (res wrsp.ResponseDeliverTx) {
 	// Decode the Tx.
 	var result sdk.Result
 	var tx, err = app.txDecoder(txBytes)
@@ -435,7 +435,7 @@ func (app *BaseApp) DeliverTx(txBytes []byte) (res abci.ResponseDeliverTx) {
 	}
 
 	// Tell the blockchain engine (i.e. Tendermint).
-	return abci.ResponseDeliverTx{
+	return wrsp.ResponseDeliverTx{
 		Code:      uint32(result.Code),
 		Data:      result.Data,
 		Log:       result.Log,
@@ -547,8 +547,8 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (result sdk
 	return result
 }
 
-// Implements ABCI
-func (app *BaseApp) EndBlock(req abci.RequestEndBlock) (res abci.ResponseEndBlock) {
+// Implements WRSP
+func (app *BaseApp) EndBlock(req wrsp.RequestEndBlock) (res wrsp.ResponseEndBlock) {
 	if app.endBlocker != nil {
 		res = app.endBlocker(app.deliverState.ctx, req)
 	} else {
@@ -557,8 +557,8 @@ func (app *BaseApp) EndBlock(req abci.RequestEndBlock) (res abci.ResponseEndBloc
 	return
 }
 
-// Implements ABCI
-func (app *BaseApp) Commit() (res abci.ResponseCommit) {
+// Implements WRSP
+func (app *BaseApp) Commit() (res wrsp.ResponseCommit) {
 	header := app.deliverState.ctx.BlockHeader()
 	/*
 		// Write the latest Header to the store
@@ -584,7 +584,7 @@ func (app *BaseApp) Commit() (res abci.ResponseCommit) {
 	// Empty the Deliver state
 	app.deliverState = nil
 
-	return abci.ResponseCommit{
+	return wrsp.ResponseCommit{
 		Data: commitID.Hash,
 	}
 }

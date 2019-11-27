@@ -1,14 +1,14 @@
 package types
 
 import (
-	abci "github.com/tendermint/abci/types"
+	wrsp "github.com/tepleton/wrsp/types"
 )
 
 // Result is the union of ResponseDeliverTx and ResponseCheckTx.
 type Result struct {
 
 	// Code is the response code, is stored back on the chain.
-	Code ABCICodeType
+	Code WRSPCodeType
 
 	// Data is any data returned from the app.
 	Data []byte
@@ -27,7 +27,7 @@ type Result struct {
 	FeeDenom  string
 
 	// Changes to the validator set.
-	ValidatorUpdates []abci.Validator
+	ValidatorUpdates []wrsp.Validator
 
 	// Tags are used for transaction indexing and pubsub.
 	Tags Tags

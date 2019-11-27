@@ -1,8 +1,8 @@
 package auth
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	wire "github.com/cosmos/cosmos-sdk/wire"
+	sdk "github.com/tepleton/tepleton-sdk/types"
+	wire "github.com/tepleton/tepleton-sdk/wire"
 )
 
 var (

@@ -1,7 +1,7 @@
 package simplestake
 
 import (
-	"github.com/cosmos/cosmos-sdk/wire"
+	"github.com/tepleton/tepleton-sdk/wire"
 )
 
 // Register concrete types on wire codec

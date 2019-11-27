@@ -3,8 +3,8 @@ package stake
 import (
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	tmtypes "github.com/tendermint/tendermint/types"
+	sdk "github.com/tepleton/tepleton-sdk/types"
+	tmtypes "github.com/tepleton/tepleton/types"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -58,7 +58,7 @@ func TestSetValidator(t *testing.T) {
 
 	updates := keeper.getTendermintUpdates(ctx)
 	require.Equal(t, 1, len(updates))
-	assert.Equal(t, validator.abciValidator(keeper.cdc), updates[0])
+	assert.Equal(t, validator.wrspValidator(keeper.cdc), updates[0])
 
 }
 
@@ -444,18 +444,18 @@ func TestGetTendermintUpdatesAllNone(t *testing.T) {
 	}
 
 	// test from nothing to something
-	//  tendermintUpdate set: {} -> {c1, c3}
+	//  tepletonUpdate set: {} -> {c1, c3}
 	assert.Equal(t, 0, len(keeper.getTendermintUpdates(ctx)))
 	validators[0] = keeper.updateValidator(ctx, validators[0])
 	validators[1] = keeper.updateValidator(ctx, validators[1])
 
 	updates := keeper.getTendermintUpdates(ctx)
 	require.Equal(t, 2, len(updates))
-	assert.Equal(t, validators[0].abciValidator(keeper.cdc), updates[0])
-	assert.Equal(t, validators[1].abciValidator(keeper.cdc), updates[1])
+	assert.Equal(t, validators[0].wrspValidator(keeper.cdc), updates[0])
+	assert.Equal(t, validators[1].wrspValidator(keeper.cdc), updates[1])
 
 	// test from something to nothing
-	//  tendermintUpdate set: {} -> {c1, c2, c3, c4}
+	//  tepletonUpdate set: {} -> {c1, c2, c3, c4}
 	keeper.clearTendermintUpdates(ctx)
 	assert.Equal(t, 0, len(keeper.getTendermintUpdates(ctx)))
 
@@ -486,7 +486,7 @@ func TestGetTendermintUpdatesIdentical(t *testing.T) {
 	assert.Equal(t, 0, len(keeper.getTendermintUpdates(ctx)))
 
 	// test identical,
-	//  tendermintUpdate set: {} -> {}
+	//  tepletonUpdate set: {} -> {}
 	validators[0] = keeper.updateValidator(ctx, validators[0])
 	validators[1] = keeper.updateValidator(ctx, validators[1])
 	assert.Equal(t, 0, len(keeper.getTendermintUpdates(ctx)))
@@ -508,14 +508,14 @@ func TestGetTendermintUpdatesSingleValueChange(t *testing.T) {
 	assert.Equal(t, 0, len(keeper.getTendermintUpdates(ctx)))
 
 	// test single value change
-	//  tendermintUpdate set: {} -> {c1'}
+	//  tepletonUpdate set: {} -> {c1'}
 	validators[0].PoolShares = NewBondedShares(sdk.NewRat(600))
 	validators[0] = keeper.updateValidator(ctx, validators[0])
 
 	updates := keeper.getTendermintUpdates(ctx)
 
 	require.Equal(t, 1, len(updates))
-	assert.Equal(t, validators[0].abciValidator(keeper.cdc), updates[0])
+	assert.Equal(t, validators[0].wrspValidator(keeper.cdc), updates[0])
 }
 
 func TestGetTendermintUpdatesMultipleValueChange(t *testing.T) {
@@ -534,7 +534,7 @@ func TestGetTendermintUpdatesMultipleValueChange(t *testing.T) {
 	assert.Equal(t, 0, len(keeper.getTendermintUpdates(ctx)))
 
 	// test multiple value change
-	//  tendermintUpdate set: {c1, c3} -> {c1', c3'}
+	//  tepletonUpdate set: {c1, c3} -> {c1', c3'}
 	validators[0].PoolShares = NewBondedShares(sdk.NewRat(200))
 	validators[1].PoolShares = NewBondedShares(sdk.NewRat(100))
 	validators[0] = keeper.updateValidator(ctx, validators[0])
@@ -542,8 +542,8 @@ func TestGetTendermintUpdatesMultipleValueChange(t *testing.T) {
 
 	updates := keeper.getTendermintUpdates(ctx)
 	require.Equal(t, 2, len(updates))
-	require.Equal(t, validators[0].abciValidator(keeper.cdc), updates[0])
-	require.Equal(t, validators[1].abciValidator(keeper.cdc), updates[1])
+	require.Equal(t, validators[0].wrspValidator(keeper.cdc), updates[0])
+	require.Equal(t, validators[1].wrspValidator(keeper.cdc), updates[1])
 }
 
 func TestGetTendermintUpdatesInserted(t *testing.T) {
@@ -562,27 +562,27 @@ func TestGetTendermintUpdatesInserted(t *testing.T) {
 	assert.Equal(t, 0, len(keeper.getTendermintUpdates(ctx)))
 
 	// test validtor added at the beginning
-	//  tendermintUpdate set: {} -> {c0}
+	//  tepletonUpdate set: {} -> {c0}
 	validators[2] = keeper.updateValidator(ctx, validators[2])
 	updates := keeper.getTendermintUpdates(ctx)
 	require.Equal(t, 1, len(updates))
-	require.Equal(t, validators[2].abciValidator(keeper.cdc), updates[0])
+	require.Equal(t, validators[2].wrspValidator(keeper.cdc), updates[0])
 
 	// test validtor added at the beginning
-	//  tendermintUpdate set: {} -> {c0}
+	//  tepletonUpdate set: {} -> {c0}
 	keeper.clearTendermintUpdates(ctx)
 	validators[3] = keeper.updateValidator(ctx, validators[3])
 	updates = keeper.getTendermintUpdates(ctx)
 	require.Equal(t, 1, len(updates))
-	require.Equal(t, validators[3].abciValidator(keeper.cdc), updates[0])
+	require.Equal(t, validators[3].wrspValidator(keeper.cdc), updates[0])
 
 	// test validtor added at the end
-	//  tendermintUpdate set: {} -> {c0}
+	//  tepletonUpdate set: {} -> {c0}
 	keeper.clearTendermintUpdates(ctx)
 	validators[4] = keeper.updateValidator(ctx, validators[4])
 	updates = keeper.getTendermintUpdates(ctx)
 	require.Equal(t, 1, len(updates))
-	require.Equal(t, validators[4].abciValidator(keeper.cdc), updates[0])
+	require.Equal(t, validators[4].wrspValidator(keeper.cdc), updates[0])
 }
 
 func TestGetTendermintUpdatesNotValidatorCliff(t *testing.T) {
@@ -604,13 +604,13 @@ func TestGetTendermintUpdatesNotValidatorCliff(t *testing.T) {
 	assert.Equal(t, 0, len(keeper.getTendermintUpdates(ctx)))
 
 	// test validator added at the end but not inserted in the valset
-	//  tendermintUpdate set: {} -> {}
+	//  tepletonUpdate set: {} -> {}
 	keeper.updateValidator(ctx, validators[2])
 	updates := keeper.getTendermintUpdates(ctx)
 	require.Equal(t, 0, len(updates))
 
 	// test validator change its power and become a gotValidator (pushing out an existing)
-	//  tendermintUpdate set: {}     -> {c0, c4}
+	//  tepletonUpdate set: {}     -> {c0, c4}
 	keeper.clearTendermintUpdates(ctx)
 	assert.Equal(t, 0, len(keeper.getTendermintUpdates(ctx)))
 
@@ -619,8 +619,8 @@ func TestGetTendermintUpdatesNotValidatorCliff(t *testing.T) {
 
 	updates = keeper.getTendermintUpdates(ctx)
 	require.Equal(t, 2, len(updates), "%v", updates)
-	require.Equal(t, validators[0].abciValidatorZero(keeper.cdc), updates[0])
-	require.Equal(t, validators[2].abciValidator(keeper.cdc), updates[1])
+	require.Equal(t, validators[0].wrspValidatorZero(keeper.cdc), updates[0])
+	require.Equal(t, validators[2].wrspValidator(keeper.cdc), updates[1])
 }
 
 // tests GetDelegation, GetDelegations, SetDelegation, removeDelegation, GetBonds

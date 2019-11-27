@@ -3,7 +3,7 @@ package baseapp
 import (
 	"regexp"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
 // Router provides handlers for each transaction type.

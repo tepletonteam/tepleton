@@ -7,8 +7,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/cosmos/cosmos-sdk/wire"
-	tmtypes "github.com/tendermint/tendermint/types"
+	"github.com/tepleton/tepleton-sdk/wire"
+	tmtypes "github.com/tepleton/tepleton/types"
 )
 
 // ExportCmd dumps app state to JSON

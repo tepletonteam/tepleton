@@ -3,9 +3,9 @@ package auth
 import (
 	"errors"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/wire"
-	crypto "github.com/tendermint/go-crypto"
+	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/wire"
+	crypto "github.com/tepleton/go-crypto"
 )
 
 // Account is a standard account using a sequence number for replay protection
@@ -101,6 +101,6 @@ func (acc *BaseAccount) SetSequence(seq int64) error {
 // Most users shouldn't use this, but this comes handy for tests.
 func RegisterBaseAccount(cdc *wire.Codec) {
 	cdc.RegisterInterface((*Account)(nil), nil)
-	cdc.RegisterConcrete(&BaseAccount{}, "cosmos-sdk/BaseAccount", nil)
+	cdc.RegisterConcrete(&BaseAccount{}, "tepleton-sdk/BaseAccount", nil)
 	wire.RegisterCrypto(cdc)
 }

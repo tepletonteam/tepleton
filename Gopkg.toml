@@ -53,27 +53,27 @@
   version = "~1.2.1"
 
 [[constraint]]
-  name = "github.com/tendermint/abci"
+  name = "github.com/tepleton/wrsp"
   version = "=0.11.0-rc4"
 
 [[constraint]]
-  name = "github.com/tendermint/go-crypto"
+  name = "github.com/tepleton/go-crypto"
   version = "~0.6.2"
 
 [[constraint]]
-  name = "github.com/tendermint/go-amino"
+  name = "github.com/tepleton/go-amino"
   version = "=0.9.9"
 
 [[constraint]]
-  name = "github.com/tendermint/iavl"
+  name = "github.com/tepleton/iavl"
   version = "0.8.0-rc0"
 
 [[constraint]]
-  name = "github.com/tendermint/tendermint"
+  name = "github.com/tepleton/tepleton"
   version = "=0.20.0-rc3"
 
 [[override]]
-  name = "github.com/tendermint/tmlibs"
+  name = "github.com/tepleton/tmlibs"
   branch = "develop"
 
 # this got updated and broke, so locked to an old working commit ...

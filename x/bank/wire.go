@@ -1,13 +1,13 @@
 package bank
 
 import (
-	"github.com/cosmos/cosmos-sdk/wire"
+	"github.com/tepleton/tepleton-sdk/wire"
 )
 
 // Register concrete types on wire codec
 func RegisterWire(cdc *wire.Codec) {
-	cdc.RegisterConcrete(MsgSend{}, "cosmos-sdk/Send", nil)
-	cdc.RegisterConcrete(MsgIssue{}, "cosmos-sdk/Issue", nil)
+	cdc.RegisterConcrete(MsgSend{}, "tepleton-sdk/Send", nil)
+	cdc.RegisterConcrete(MsgIssue{}, "tepleton-sdk/Issue", nil)
 }
 
 var msgCdc = wire.NewCodec()

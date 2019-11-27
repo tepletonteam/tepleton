@@ -6,13 +6,13 @@ import (
 
 	"github.com/spf13/viper"
 
-	keys "github.com/tendermint/go-crypto/keys"
-	"github.com/tendermint/tmlibs/cli"
-	dbm "github.com/tendermint/tmlibs/db"
+	keys "github.com/tepleton/go-crypto/keys"
+	"github.com/tepleton/tmlibs/cli"
+	dbm "github.com/tepleton/tmlibs/db"
 
-	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/tepleton/tepleton-sdk/client"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
 // KeyDBName is the directory under root where we store the keys

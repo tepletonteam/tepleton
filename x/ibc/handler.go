@@ -3,8 +3,8 @@ package ibc
 import (
 	"reflect"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/bank"
+	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/x/bank"
 )
 
 func NewHandler(ibcm Mapper, ck bank.Keeper) sdk.Handler {

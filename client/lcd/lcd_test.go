@@ -16,32 +16,32 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	abci "github.com/tendermint/abci/types"
-	crypto "github.com/tendermint/go-crypto"
-	cryptoKeys "github.com/tendermint/go-crypto/keys"
-	tmcfg "github.com/tendermint/tendermint/config"
-	nm "github.com/tendermint/tendermint/node"
-	p2p "github.com/tendermint/tendermint/p2p"
-	"github.com/tendermint/tendermint/proxy"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
-	tmrpc "github.com/tendermint/tendermint/rpc/lib/server"
-	tmtypes "github.com/tendermint/tendermint/types"
-	pvm "github.com/tendermint/tendermint/types/priv_validator"
-	"github.com/tendermint/tmlibs/cli"
-	dbm "github.com/tendermint/tmlibs/db"
-	"github.com/tendermint/tmlibs/log"
+	wrsp "github.com/tepleton/wrsp/types"
+	crypto "github.com/tepleton/go-crypto"
+	cryptoKeys "github.com/tepleton/go-crypto/keys"
+	tmcfg "github.com/tepleton/tepleton/config"
+	nm "github.com/tepleton/tepleton/node"
+	p2p "github.com/tepleton/tepleton/p2p"
+	"github.com/tepleton/tepleton/proxy"
+	ctypes "github.com/tepleton/tepleton/rpc/core/types"
+	tmrpc "github.com/tepleton/tepleton/rpc/lib/server"
+	tmtypes "github.com/tepleton/tepleton/types"
+	pvm "github.com/tepleton/tepleton/types/priv_validator"
+	"github.com/tepleton/tmlibs/cli"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
-	client "github.com/cosmos/cosmos-sdk/client"
-	keys "github.com/cosmos/cosmos-sdk/client/keys"
-	rpc "github.com/cosmos/cosmos-sdk/client/rpc"
-	gapp "github.com/cosmos/cosmos-sdk/cmd/gaia/app"
-	"github.com/cosmos/cosmos-sdk/server"
-	tests "github.com/cosmos/cosmos-sdk/tests"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/wire"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/stake"
-	stakerest "github.com/cosmos/cosmos-sdk/x/stake/client/rest"
+	client "github.com/tepleton/tepleton-sdk/client"
+	keys "github.com/tepleton/tepleton-sdk/client/keys"
+	rpc "github.com/tepleton/tepleton-sdk/client/rpc"
+	gapp "github.com/tepleton/tepleton-sdk/cmd/ton/app"
+	"github.com/tepleton/tepleton-sdk/server"
+	tests "github.com/tepleton/tepleton-sdk/tests"
+	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/wire"
+	"github.com/tepleton/tepleton-sdk/x/auth"
+	"github.com/tepleton/tepleton-sdk/x/stake"
+	stakerest "github.com/tepleton/tepleton-sdk/x/stake/client/rest"
 )
 
 var (
@@ -212,8 +212,8 @@ func TestValidators(t *testing.T) {
 
 	assert.NotEqual(t, rpc.ResultValidatorsOutput{}, resultVals)
 
-	assert.Contains(t, resultVals.Validators[0].Address, "cosmosvaladdr")
-	assert.Contains(t, resultVals.Validators[0].PubKey, "cosmosvalpub")
+	assert.Contains(t, resultVals.Validators[0].Address, "tepletonvaladdr")
+	assert.Contains(t, resultVals.Validators[0].PubKey, "tepletonvalpub")
 
 	// --
 
@@ -473,7 +473,7 @@ func startTMAndLCD() (*nm.Node, net.Listener, error) {
 		return nil, nil, err
 	}
 
-	// XXX: need to set this so LCD knows the tendermint node address!
+	// XXX: need to set this so LCD knows the tepleton node address!
 	viper.Set(client.FlagNode, config.RPC.ListenAddress)
 	viper.Set(client.FlagChainID, genDoc.ChainID)
 
@@ -491,10 +491,10 @@ func startTMAndLCD() (*nm.Node, net.Listener, error) {
 	return node, lcd, nil
 }
 
-// Create & start in-process tendermint node with memdb
-// and in-process abci application.
+// Create & start in-process tepleton node with memdb
+// and in-process wrsp application.
 // TODO: need to clean up the WAL dir or enable it to be not persistent
-func startTM(cfg *tmcfg.Config, logger log.Logger, genDoc *tmtypes.GenesisDoc, privVal tmtypes.PrivValidator, app abci.Application) (*nm.Node, error) {
+func startTM(cfg *tmcfg.Config, logger log.Logger, genDoc *tmtypes.GenesisDoc, privVal tmtypes.PrivValidator, app wrsp.Application) (*nm.Node, error) {
 	genDocProvider := func() (*tmtypes.GenesisDoc, error) { return genDoc, nil }
 	dbProvider := func(*nm.DBContext) (dbm.DB, error) { return dbm.NewMemDB(), nil }
 	n, err := nm.NewNode(cfg,

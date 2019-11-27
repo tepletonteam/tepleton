@@ -6,15 +6,15 @@ import (
 
 	"github.com/spf13/cobra"
 
-	abci "github.com/tendermint/abci/types"
-	tmtypes "github.com/tendermint/tendermint/types"
-	"github.com/tendermint/tmlibs/cli"
-	dbm "github.com/tendermint/tmlibs/db"
-	"github.com/tendermint/tmlibs/log"
+	wrsp "github.com/tepleton/wrsp/types"
+	tmtypes "github.com/tepleton/tepleton/types"
+	"github.com/tepleton/tmlibs/cli"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
-	"github.com/cosmos/cosmos-sdk/examples/democoin/app"
-	"github.com/cosmos/cosmos-sdk/server"
-	"github.com/cosmos/cosmos-sdk/wire"
+	"github.com/tepleton/tepleton-sdk/examples/democoin/app"
+	"github.com/tepleton/tepleton-sdk/server"
+	"github.com/tepleton/tepleton-sdk/wire"
 )
 
 // init parameters
@@ -43,7 +43,7 @@ func CoolAppGenState(cdc *wire.Codec, appGenTxs []json.RawMessage) (appState jso
 	return
 }
 
-func newApp(logger log.Logger, db dbm.DB) abci.Application {
+func newApp(logger log.Logger, db dbm.DB) wrsp.Application {
 	return app.NewDemocoinApp(logger, db)
 }
 

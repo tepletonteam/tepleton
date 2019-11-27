@@ -5,11 +5,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/tendermint/tmlibs/log"
+	"github.com/tepleton/tmlibs/log"
 
-	"github.com/cosmos/cosmos-sdk/server/mock"
-	"github.com/cosmos/cosmos-sdk/wire"
-	tcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
+	"github.com/tepleton/tepleton-sdk/server/mock"
+	"github.com/tepleton/tepleton-sdk/wire"
+	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 )
 
 // TODO update

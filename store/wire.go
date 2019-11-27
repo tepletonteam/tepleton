@@ -1,7 +1,7 @@
 package store
 
 import (
-	"github.com/cosmos/cosmos-sdk/wire"
+	"github.com/tepleton/tepleton-sdk/wire"
 )
 
 var cdc = wire.NewCodec()

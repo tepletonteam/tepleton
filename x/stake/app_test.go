@@ -3,14 +3,14 @@ package stake
 import (
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/auth/mock"
-	"github.com/cosmos/cosmos-sdk/x/bank"
+	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/x/auth"
+	"github.com/tepleton/tepleton-sdk/x/auth/mock"
+	"github.com/tepleton/tepleton-sdk/x/bank"
 	"github.com/stretchr/testify/require"
 
-	abci "github.com/tendermint/abci/types"
-	crypto "github.com/tendermint/go-crypto"
+	wrsp "github.com/tepleton/wrsp/types"
+	crypto "github.com/tepleton/go-crypto"
 )
 
 var (
@@ -47,9 +47,9 @@ func getMockApp(t *testing.T) (*mock.App, Keeper) {
 
 // stake endblocker
 func getEndBlocker(keeper Keeper) sdk.EndBlocker {
-	return func(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
+	return func(ctx sdk.Context, req wrsp.RequestEndBlock) wrsp.ResponseEndBlock {
 		validatorUpdates := EndBlocker(ctx, keeper)
-		return abci.ResponseEndBlock{
+		return wrsp.ResponseEndBlock{
 			ValidatorUpdates: validatorUpdates,
 		}
 	}
@@ -57,11 +57,11 @@ func getEndBlocker(keeper Keeper) sdk.EndBlocker {
 
 // overwrite the mock init chainer
 func getInitChainer(mapp *mock.App, keeper Keeper) sdk.InitChainer {
-	return func(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
+	return func(ctx sdk.Context, req wrsp.RequestInitChain) wrsp.ResponseInitChain {
 		mapp.InitChainer(ctx, req)
 		InitGenesis(ctx, keeper, DefaultGenesisState())
 
-		return abci.ResponseInitChain{}
+		return wrsp.ResponseInitChain{}
 	}
 }
 
@@ -84,7 +84,7 @@ func TestStakeMsgs(t *testing.T) {
 	mock.SetGenesis(mapp, accs)
 
 	// A checkTx context (true)
-	ctxCheck := mapp.BaseApp.NewContext(true, abci.Header{})
+	ctxCheck := mapp.BaseApp.NewContext(true, wrsp.Header{})
 	res1 := mapp.AccountMapper.GetAccount(ctxCheck, addr1)
 	res2 := mapp.AccountMapper.GetAccount(ctxCheck, addr2)
 	require.Equal(t, acc1, res1)
@@ -98,7 +98,7 @@ func TestStakeMsgs(t *testing.T) {
 	)
 	mock.SignCheckDeliver(t, mapp.BaseApp, createValidatorMsg, []int64{0}, true, priv1)
 
-	ctxDeliver := mapp.BaseApp.NewContext(false, abci.Header{})
+	ctxDeliver := mapp.BaseApp.NewContext(false, wrsp.Header{})
 	res1 = mapp.AccountMapper.GetAccount(ctxDeliver, addr1)
 	require.Equal(t, sdk.Coins{genCoin.Minus(bondCoin)}, res1.GetCoins())
 	validator, found := keeper.GetValidator(ctxDeliver, addr1)

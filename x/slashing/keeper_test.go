@@ -5,10 +5,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	abci "github.com/tendermint/abci/types"
+	wrsp "github.com/tepleton/wrsp/types"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/stake"
+	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/x/stake"
 )
 
 func TestHandleDoubleSign(t *testing.T) {
@@ -25,7 +25,7 @@ func TestHandleDoubleSign(t *testing.T) {
 	// double sign less than max age
 	keeper.handleDoubleSign(ctx, 0, 0, val)
 	require.Equal(t, sdk.NewRat(amt).Mul(sdk.NewRat(19).Quo(sdk.NewRat(20))), sk.Validator(ctx, addr).GetPower())
-	ctx = ctx.WithBlockHeader(abci.Header{Time: 300})
+	ctx = ctx.WithBlockHeader(wrsp.Header{Time: 300})
 
 	// double sign past max age
 	keeper.handleDoubleSign(ctx, 0, 0, val)
@@ -95,7 +95,7 @@ func TestHandleAbsentValidator(t *testing.T) {
 	require.False(t, got.IsOK())
 
 	// unrevocation should succeed after jail expiration
-	ctx = ctx.WithBlockHeader(abci.Header{Time: int64(86400 * 2)})
+	ctx = ctx.WithBlockHeader(wrsp.Header{Time: int64(86400 * 2)})
 	got = slh(ctx, NewMsgUnrevoke(addr))
 	require.True(t, got.IsOK())
 

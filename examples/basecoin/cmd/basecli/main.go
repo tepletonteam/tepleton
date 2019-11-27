@@ -5,22 +5,22 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/tendermint/tmlibs/cli"
+	"github.com/tepleton/tmlibs/cli"
 
-	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/keys"
-	"github.com/cosmos/cosmos-sdk/client/lcd"
-	"github.com/cosmos/cosmos-sdk/client/rpc"
-	"github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/tepleton/tepleton-sdk/client"
+	"github.com/tepleton/tepleton-sdk/client/keys"
+	"github.com/tepleton/tepleton-sdk/client/lcd"
+	"github.com/tepleton/tepleton-sdk/client/rpc"
+	"github.com/tepleton/tepleton-sdk/client/tx"
 
-	"github.com/cosmos/cosmos-sdk/version"
-	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
-	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
-	ibccmd "github.com/cosmos/cosmos-sdk/x/ibc/client/cli"
-	stakecmd "github.com/cosmos/cosmos-sdk/x/stake/client/cli"
+	"github.com/tepleton/tepleton-sdk/version"
+	authcmd "github.com/tepleton/tepleton-sdk/x/auth/client/cli"
+	bankcmd "github.com/tepleton/tepleton-sdk/x/bank/client/cli"
+	ibccmd "github.com/tepleton/tepleton-sdk/x/ibc/client/cli"
+	stakecmd "github.com/tepleton/tepleton-sdk/x/stake/client/cli"
 
-	"github.com/cosmos/cosmos-sdk/examples/basecoin/app"
-	"github.com/cosmos/cosmos-sdk/examples/basecoin/types"
+	"github.com/tepleton/tepleton-sdk/examples/basecoin/app"
+	"github.com/tepleton/tepleton-sdk/examples/basecoin/types"
 )
 
 // rootCmd is the entry point for this binary

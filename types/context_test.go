@@ -6,12 +6,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	dbm "github.com/tendermint/tmlibs/db"
-	"github.com/tendermint/tmlibs/log"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
-	"github.com/cosmos/cosmos-sdk/store"
-	"github.com/cosmos/cosmos-sdk/types"
-	abci "github.com/tendermint/abci/types"
+	"github.com/tepleton/tepleton-sdk/store"
+	"github.com/tepleton/tepleton-sdk/types"
+	wrsp "github.com/tepleton/wrsp/types"
 )
 
 type MockLogger struct {
@@ -43,7 +43,7 @@ func (l MockLogger) With(kvs ...interface{}) log.Logger {
 
 func TestContextGetOpShouldNeverPanic(t *testing.T) {
 	var ms types.MultiStore
-	ctx := types.NewContext(ms, abci.Header{}, false, nil, log.NewNopLogger())
+	ctx := types.NewContext(ms, wrsp.Header{}, false, nil, log.NewNopLogger())
 	indices := []int64{
 		-10, 1, 0, 10, 20,
 	}
@@ -58,7 +58,7 @@ func defaultContext(key types.StoreKey) types.Context {
 	cms := store.NewCommitMultiStore(db)
 	cms.MountStoreWithDB(key, types.StoreTypeIAVL, db)
 	cms.LoadLatestVersion()
-	ctx := types.NewContext(cms, abci.Header{}, false, nil, log.NewNopLogger())
+	ctx := types.NewContext(cms, wrsp.Header{}, false, nil, log.NewNopLogger())
 	return ctx
 }
 

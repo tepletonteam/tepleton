@@ -5,11 +5,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	abci "github.com/tendermint/abci/types"
-	"github.com/tendermint/tmlibs/log"
+	wrsp "github.com/tepleton/wrsp/types"
+	"github.com/tepleton/tmlibs/log"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	wire "github.com/cosmos/cosmos-sdk/wire"
+	sdk "github.com/tepleton/tepleton-sdk/types"
+	wire "github.com/tepleton/tepleton-sdk/wire"
 )
 
 var (
@@ -23,7 +23,7 @@ func TestFeeCollectionKeeperGetSet(t *testing.T) {
 	cdc := wire.NewCodec()
 
 	// make context and keeper
-	ctx := sdk.NewContext(ms, abci.Header{}, false, nil, log.NewNopLogger())
+	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil, log.NewNopLogger())
 	fck := NewFeeCollectionKeeper(cdc, capKey2)
 
 	// no coins initially
@@ -42,7 +42,7 @@ func TestFeeCollectionKeeperAdd(t *testing.T) {
 	cdc := wire.NewCodec()
 
 	// make context and keeper
-	ctx := sdk.NewContext(ms, abci.Header{}, false, nil, log.NewNopLogger())
+	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil, log.NewNopLogger())
 	fck := NewFeeCollectionKeeper(cdc, capKey2)
 
 	// no coins initially
@@ -62,7 +62,7 @@ func TestFeeCollectionKeeperClear(t *testing.T) {
 	cdc := wire.NewCodec()
 
 	// make context and keeper
-	ctx := sdk.NewContext(ms, abci.Header{}, false, nil, log.NewNopLogger())
+	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil, log.NewNopLogger())
 	fck := NewFeeCollectionKeeper(cdc, capKey2)
 
 	// set coins initially

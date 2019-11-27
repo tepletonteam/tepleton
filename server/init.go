@@ -14,20 +14,20 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	crypto "github.com/tendermint/go-crypto"
-	"github.com/tendermint/go-crypto/keys"
-	"github.com/tendermint/go-crypto/keys/words"
-	cfg "github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/p2p"
-	tmtypes "github.com/tendermint/tendermint/types"
-	pvm "github.com/tendermint/tendermint/types/priv_validator"
-	tmcli "github.com/tendermint/tmlibs/cli"
-	cmn "github.com/tendermint/tmlibs/common"
-	dbm "github.com/tendermint/tmlibs/db"
+	crypto "github.com/tepleton/go-crypto"
+	"github.com/tepleton/go-crypto/keys"
+	"github.com/tepleton/go-crypto/keys/words"
+	cfg "github.com/tepleton/tepleton/config"
+	"github.com/tepleton/tepleton/p2p"
+	tmtypes "github.com/tepleton/tepleton/types"
+	pvm "github.com/tepleton/tepleton/types/priv_validator"
+	tmcli "github.com/tepleton/tmlibs/cli"
+	cmn "github.com/tepleton/tmlibs/common"
+	dbm "github.com/tepleton/tmlibs/db"
 
-	clkeys "github.com/cosmos/cosmos-sdk/client/keys"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/wire"
+	clkeys "github.com/tepleton/tepleton-sdk/client/keys"
+	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/wire"
 )
 
 // genesis piece structure for creating combined genesis
@@ -45,7 +45,7 @@ var (
 	flagChainID   = "chain-id"
 )
 
-// get cmd to initialize all files for tendermint and application
+// get cmd to initialize all files for tepleton and application
 func GenTxCmd(ctx *Context, cdc *wire.Codec, appInit AppInit) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "gen-tx",
@@ -118,7 +118,7 @@ func GenTxCmd(ctx *Context, cdc *wire.Codec, appInit AppInit) *cobra.Command {
 	return cmd
 }
 
-// get cmd to initialize all files for tendermint and application
+// get cmd to initialize all files for tepleton and application
 func InitCmd(ctx *Context, cdc *wire.Codec, appInit AppInit) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "init",

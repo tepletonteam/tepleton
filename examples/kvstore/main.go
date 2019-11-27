@@ -7,14 +7,14 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/tendermint/abci/server"
-	"github.com/tendermint/tmlibs/cli"
-	cmn "github.com/tendermint/tmlibs/common"
-	dbm "github.com/tendermint/tmlibs/db"
-	"github.com/tendermint/tmlibs/log"
+	"github.com/tepleton/wrsp/server"
+	"github.com/tepleton/tmlibs/cli"
+	cmn "github.com/tepleton/tmlibs/common"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
-	bam "github.com/cosmos/cosmos-sdk/baseapp"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	bam "github.com/tepleton/tepleton-sdk/baseapp"
+	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
 func main() {
@@ -49,7 +49,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Start the ABCI server
+	// Start the WRSP server
 	srv, err := server.NewServer("0.0.0.0:46658", "socket", baseApp)
 	if err != nil {
 		fmt.Println(err)

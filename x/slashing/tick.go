@@ -4,13 +4,13 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	abci "github.com/tendermint/abci/types"
-	tmtypes "github.com/tendermint/tendermint/types"
+	sdk "github.com/tepleton/tepleton-sdk/types"
+	wrsp "github.com/tepleton/wrsp/types"
+	tmtypes "github.com/tepleton/tepleton/types"
 )
 
 // slashing begin block functionality
-func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, sk Keeper) (tags sdk.Tags) {
+func BeginBlocker(ctx sdk.Context, req wrsp.RequestBeginBlock, sk Keeper) (tags sdk.Tags) {
 	// Tag the height
 	heightBytes := make([]byte, 8)
 	binary.LittleEndian.PutUint64(heightBytes, uint64(req.Header.Height))
@@ -23,7 +23,7 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, sk Keeper) (tags 
 			panic(err)
 		}
 		switch string(evidence.Type) {
-		case tmtypes.ABCIEvidenceTypeDuplicateVote:
+		case tmtypes.WRSPEvidenceTypeDuplicateVote:
 			sk.handleDoubleSign(ctx, evidence.Height, evidence.Time, pk)
 		default:
 			ctx.Logger().With("module", "x/slashing").Error(fmt.Sprintf("Ignored unknown evidence type: %s", string(evidence.Type)))

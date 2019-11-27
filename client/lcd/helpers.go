@@ -1,6 +1,6 @@
 package lcd
 
-// NOTE: COPIED VERBATIM FROM tendermint/tendermint/rpc/test/helpers.go
+// NOTE: COPIED VERBATIM FROM tepleton/tepleton/rpc/test/helpers.go
 
 import (
 	"fmt"
@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	cmn "github.com/tendermint/tmlibs/common"
+	cmn "github.com/tepleton/tmlibs/common"
 
-	cfg "github.com/tendermint/tendermint/config"
+	cfg "github.com/tepleton/tepleton/config"
 )
 
 var globalConfig *cfg.Config

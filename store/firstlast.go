@@ -3,7 +3,7 @@ package store
 import (
 	"bytes"
 
-	cmn "github.com/tendermint/tmlibs/common"
+	cmn "github.com/tepleton/tmlibs/common"
 )
 
 // Gets the first item.

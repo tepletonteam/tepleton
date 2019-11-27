@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	bank "github.com/cosmos/cosmos-sdk/x/bank"
+	sdk "github.com/tepleton/tepleton-sdk/types"
+	bank "github.com/tepleton/tepleton-sdk/x/bank"
 )
 
 // module users must specify coin denomination and reward (constant) per PoW solution

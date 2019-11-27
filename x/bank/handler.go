@@ -3,7 +3,7 @@ package bank
 import (
 	"reflect"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
 // NewHandler returns a handler for "bank" type messages.

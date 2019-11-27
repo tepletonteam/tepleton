@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/wire"
-	abci "github.com/tendermint/abci/types"
-	crypto "github.com/tendermint/go-crypto"
-	tmtypes "github.com/tendermint/tendermint/types"
+	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/wire"
+	wrsp "github.com/tepleton/wrsp/types"
+	crypto "github.com/tepleton/go-crypto"
+	tmtypes "github.com/tepleton/tepleton/types"
 )
 
 // Validator defines the total amount of bond shares and their exchange rate to
@@ -99,24 +99,24 @@ func NewDescription(moniker, identity, website, details string) Description {
 
 //XXX updateDescription function which enforce limit to number of description characters
 
-// abci validator from stake validator type
-func (v Validator) abciValidator(cdc *wire.Codec) abci.Validator {
-	return abci.Validator{
+// wrsp validator from stake validator type
+func (v Validator) wrspValidator(cdc *wire.Codec) wrsp.Validator {
+	return wrsp.Validator{
 		PubKey: tmtypes.TM2PB.PubKey(v.PubKey),
 		Power:  v.PoolShares.Bonded().Evaluate(),
 	}
 }
 
-// abci validator from stake validator type
+// wrsp validator from stake validator type
 // with zero power used for validator updates
-func (v Validator) abciValidatorZero(cdc *wire.Codec) abci.Validator {
-	return abci.Validator{
+func (v Validator) wrspValidatorZero(cdc *wire.Codec) wrsp.Validator {
+	return wrsp.Validator{
 		PubKey: tmtypes.TM2PB.PubKey(v.PubKey),
 		Power:  0,
 	}
 }
 
-// abci validator from stake validator type
+// wrsp validator from stake validator type
 func (v Validator) Status() sdk.BondStatus {
 	return v.PoolShares.Status
 }

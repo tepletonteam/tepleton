@@ -6,14 +6,14 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/tepleton/tepleton-sdk/client"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/tendermint/go-crypto/keys"
-	"github.com/tendermint/tmlibs/cli"
+	"github.com/tepleton/go-crypto/keys"
+	"github.com/tepleton/tmlibs/cli"
 )
 
 const (

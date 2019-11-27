@@ -3,13 +3,13 @@ package types
 import (
 	"fmt"
 
-	cmn "github.com/tendermint/tmlibs/common"
+	cmn "github.com/tepleton/tmlibs/common"
 
-	abci "github.com/tendermint/abci/types"
+	wrsp "github.com/tepleton/wrsp/types"
 )
 
-// ABCICodeType - combined codetype / codespace
-type ABCICodeType uint32
+// WRSPCodeType - combined codetype / codespace
+type WRSPCodeType uint32
 
 // CodeType - code identifier within codespace
 type CodeType uint16
@@ -18,26 +18,26 @@ type CodeType uint16
 type CodespaceType uint16
 
 // IsOK - is everything okay?
-func (code ABCICodeType) IsOK() bool {
-	if code == ABCICodeOK {
+func (code WRSPCodeType) IsOK() bool {
+	if code == WRSPCodeOK {
 		return true
 	}
 	return false
 }
 
-// get the abci code from the local code and codespace
-func ToABCICode(space CodespaceType, code CodeType) ABCICodeType {
+// get the wrsp code from the local code and codespace
+func ToWRSPCode(space CodespaceType, code CodeType) WRSPCodeType {
 	// TODO: Make Tendermint more aware of codespaces.
 	if space == CodespaceRoot && code == CodeOK {
-		return ABCICodeOK
+		return WRSPCodeOK
 	}
-	return ABCICodeType((uint32(space) << 16) | uint32(code))
+	return WRSPCodeType((uint32(space) << 16) | uint32(code))
 }
 
 // SDK error codes
 const (
-	// ABCI error codes
-	ABCICodeOK ABCICodeType = 0
+	// WRSP error codes
+	WRSPCodeOK WRSPCodeType = 0
 
 	// Base error codes
 	CodeOK                CodeType = 0
@@ -146,13 +146,13 @@ type Error interface {
 	Error() string
 	Code() CodeType
 	Codespace() CodespaceType
-	ABCILog() string
-	ABCICode() ABCICodeType
+	WRSPLog() string
+	WRSPCode() WRSPCodeType
 	WithDefaultCodespace(codespace CodespaceType) Error
 	Trace(msg string) Error
 	T() interface{}
 	Result() Result
-	QueryResult() abci.ResponseQuery
+	QueryResult() wrsp.ResponseQuery
 }
 
 // NewError - create an error
@@ -181,14 +181,14 @@ type sdkError struct {
 	err       cmn.Error
 }
 
-// Implements ABCIError.
+// Implements WRSPError.
 func (err *sdkError) Error() string {
 	return fmt.Sprintf("Error{%d:%d,%#v}", err.codespace, err.code, err.err)
 }
 
-// Implements ABCIError.
-func (err *sdkError) ABCICode() ABCICodeType {
-	return ToABCICode(err.codespace, err.code)
+// Implements WRSPError.
+func (err *sdkError) WRSPCode() WRSPCodeType {
+	return ToWRSPCode(err.codespace, err.code)
 }
 
 // Implements Error.
@@ -201,15 +201,15 @@ func (err *sdkError) Code() CodeType {
 	return err.code
 }
 
-// Implements ABCIError.
-func (err *sdkError) ABCILog() string {
-	return fmt.Sprintf(`=== ABCI Log ===
+// Implements WRSPError.
+func (err *sdkError) WRSPLog() string {
+	return fmt.Sprintf(`=== WRSP Log ===
 Codespace: %v
 Code:      %v
-ABCICode:  %v
+WRSPCode:  %v
 Error:     %#v
-=== /ABCI Log ===
-`, err.codespace, err.code, err.ABCICode(), err.err)
+=== /WRSP Log ===
+`, err.codespace, err.code, err.WRSPCode(), err.err)
 }
 
 // Add tracing information with msg.
@@ -240,15 +240,15 @@ func (err *sdkError) T() interface{} {
 
 func (err *sdkError) Result() Result {
 	return Result{
-		Code: err.ABCICode(),
-		Log:  err.ABCILog(),
+		Code: err.WRSPCode(),
+		Log:  err.WRSPLog(),
 	}
 }
 
 // QueryResult allows us to return sdk.Error.QueryResult() in query responses
-func (err *sdkError) QueryResult() abci.ResponseQuery {
-	return abci.ResponseQuery{
-		Code: uint32(err.ABCICode()),
-		Log:  err.ABCILog(),
+func (err *sdkError) QueryResult() wrsp.ResponseQuery {
+	return wrsp.ResponseQuery{
+		Code: uint32(err.WRSPCode()),
+		Log:  err.WRSPLog(),
 	}
 }

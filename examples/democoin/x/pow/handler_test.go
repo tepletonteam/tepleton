@@ -5,13 +5,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	abci "github.com/tendermint/abci/types"
-	"github.com/tendermint/tmlibs/log"
+	wrsp "github.com/tepleton/wrsp/types"
+	"github.com/tepleton/tmlibs/log"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	wire "github.com/cosmos/cosmos-sdk/wire"
-	auth "github.com/cosmos/cosmos-sdk/x/auth"
-	bank "github.com/cosmos/cosmos-sdk/x/bank"
+	sdk "github.com/tepleton/tepleton-sdk/types"
+	wire "github.com/tepleton/tepleton-sdk/wire"
+	auth "github.com/tepleton/tepleton-sdk/x/auth"
+	bank "github.com/tepleton/tepleton-sdk/x/bank"
 )
 
 func TestPowHandler(t *testing.T) {
@@ -20,7 +20,7 @@ func TestPowHandler(t *testing.T) {
 	auth.RegisterBaseAccount(cdc)
 
 	am := auth.NewAccountMapper(cdc, capKey, &auth.BaseAccount{})
-	ctx := sdk.NewContext(ms, abci.Header{}, false, nil, log.NewNopLogger())
+	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil, log.NewNopLogger())
 	config := NewConfig("pow", int64(1))
 	ck := bank.NewKeeper(am)
 	keeper := NewKeeper(capKey, config, ck, DefaultCodespace)
@@ -48,7 +48,7 @@ func TestPowHandler(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, newCount, uint64(1))
 
-	// todo assert correct coin change, awaiting https://github.com/cosmos/cosmos-sdk/pull/691
+	// todo assert correct coin change, awaiting https://github.com/tepleton/tepleton-sdk/pull/691
 
 	difficulty = uint64(4)
 	nonce, proof = mine(addr, count, difficulty)

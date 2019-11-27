@@ -7,9 +7,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/context"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
+	"github.com/tepleton/tepleton-sdk/client"
+	"github.com/tepleton/tepleton-sdk/client/context"
+	ctypes "github.com/tepleton/tepleton/rpc/core/types"
 )
 
 func statusCommand() *cobra.Command {

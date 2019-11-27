@@ -4,13 +4,13 @@ import (
 	"io/ioutil"
 	"os"
 
-	abci "github.com/tendermint/abci/types"
-	"github.com/tendermint/tmlibs/log"
+	wrsp "github.com/tepleton/wrsp/types"
+	"github.com/tepleton/tmlibs/log"
 )
 
 // SetupApp returns an application as well as a clean-up function
 // to be used to quickly setup a test case with an app
-func SetupApp() (abci.Application, func(), error) {
+func SetupApp() (wrsp.Application, func(), error) {
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).
 		With("module", "mock")
 	rootDir, err := ioutil.TempDir("", "mock-sdk")

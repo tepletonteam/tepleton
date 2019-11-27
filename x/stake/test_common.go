@@ -7,31 +7,31 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	abci "github.com/tendermint/abci/types"
-	crypto "github.com/tendermint/go-crypto"
-	dbm "github.com/tendermint/tmlibs/db"
-	"github.com/tendermint/tmlibs/log"
+	wrsp "github.com/tepleton/wrsp/types"
+	crypto "github.com/tepleton/go-crypto"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
-	"github.com/cosmos/cosmos-sdk/store"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/wire"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/bank"
+	"github.com/tepleton/tepleton-sdk/store"
+	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/wire"
+	"github.com/tepleton/tepleton-sdk/x/auth"
+	"github.com/tepleton/tepleton-sdk/x/bank"
 )
 
 // dummy addresses used for testing
 var (
 	addrs = []sdk.Address{
-		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6160", "cosmosaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ctqyxjnwh"),
-		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6161", "cosmosaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ctpesxxn9"),
-		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6162", "cosmosaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ctzhrnsa6"),
-		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6163", "cosmosaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ctr2489qg"),
-		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6164", "cosmosaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ctytvs4pd"),
-		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6165", "cosmosaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ct9k6yqul"),
-		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6166", "cosmosaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ctxcf3kjq"),
-		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6167", "cosmosaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ct89l9r0j"),
-		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6168", "cosmosaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ctg6jkls2"),
-		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6169", "cosmosaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ctf8yz2dc"),
+		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6160", "tepletonaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ctqyxjnwh"),
+		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6161", "tepletonaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ctpesxxn9"),
+		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6162", "tepletonaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ctzhrnsa6"),
+		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6163", "tepletonaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ctr2489qg"),
+		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6164", "tepletonaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ctytvs4pd"),
+		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6165", "tepletonaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ct9k6yqul"),
+		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6166", "tepletonaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ctxcf3kjq"),
+		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6167", "tepletonaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ct89l9r0j"),
+		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6168", "tepletonaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ctg6jkls2"),
+		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6169", "tepletonaccaddr15ky9du8a2wlstz6fpx3p4mqpjyrm5ctf8yz2dc"),
 	}
 
 	// dummy pubkeys used for testing
@@ -104,7 +104,7 @@ func createTestInput(t *testing.T, isCheckTx bool, initCoins int64) (sdk.Context
 	err := ms.LoadLatestVersion()
 	require.Nil(t, err)
 
-	ctx := sdk.NewContext(ms, abci.Header{ChainID: "foochainid"}, isCheckTx, nil, log.NewNopLogger())
+	ctx := sdk.NewContext(ms, wrsp.Header{ChainID: "foochainid"}, isCheckTx, nil, log.NewNopLogger())
 	cdc := makeTestCodec()
 	accountMapper := auth.NewAccountMapper(
 		cdc,                 // amino codec

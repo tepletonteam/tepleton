@@ -1,8 +1,8 @@
 package cool
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/bank"
+	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/x/bank"
 )
 
 // Keeper - handlers sets/gets of custom variables for your module

@@ -1,9 +1,9 @@
 package mock
 
 import (
-	dbm "github.com/tendermint/tmlibs/db"
+	dbm "github.com/tepleton/tmlibs/db"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
 type multiStore struct {

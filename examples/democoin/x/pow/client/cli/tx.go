@@ -6,11 +6,11 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/tepleton/tepleton-sdk/client/context"
 
-	"github.com/cosmos/cosmos-sdk/examples/democoin/x/pow"
-	"github.com/cosmos/cosmos-sdk/wire"
-	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
+	"github.com/tepleton/tepleton-sdk/examples/democoin/x/pow"
+	"github.com/tepleton/tepleton-sdk/wire"
+	authcmd "github.com/tepleton/tepleton-sdk/x/auth/client/cli"
 )
 
 // command to mine some pow!

@@ -6,18 +6,18 @@ what is happening under the hood.
 
 ## Setup and Install
 
-You will need to have go installed on your computer. Please refer to the [cosmos testnet tutorial](https://cosmos.network/validators/tutorial), which will always have the most updated instructions on how to get setup with go and the cosmos repository. 
+You will need to have go installed on your computer. Please refer to the [tepleton testnet tutorial](https://tepleton.network/validators/tutorial), which will always have the most updated instructions on how to get setup with go and the tepleton repository. 
 
 Once you have go installed, run the command:
 
 ```
-go get github.com/cosmos/cosmos-sdk
+go get github.com/tepleton/tepleton-sdk
 ```
 
-There will be an error stating `can't load package: package github.com/cosmos/cosmos-sdk: no Go files`, however you can ignore this error, it doesn't affect us. Now change directories to:
+There will be an error stating `can't load package: package github.com/tepleton/tepleton-sdk: no Go files`, however you can ignore this error, it doesn't affect us. Now change directories to:
 
 ```
-cd $GOPATH/src/github.com/cosmos/cosmos-sdk
+cd $GOPATH/src/github.com/tepleton/tepleton-sdk
 ```
 
 And run :
@@ -65,7 +65,7 @@ This creates the `~/.basecoind folder`, which has config.toml, genesis.json, nod
 
 ## Generating keys
 
-The next thing we'll need to do is add the key from priv_validator.json to the gaiacli key manager. For this we need the 16 word seed that represents the private key, and a password. You can also get the 16 word seed from the output seen above, under `"secret"`. Then run the command:
+The next thing we'll need to do is add the key from priv_validator.json to the toncli key manager. For this we need the 16 word seed that represents the private key, and a password. You can also get the 16 word seed from the output seen above, under `"secret"`. Then run the command:
 
 ```
 basecli keys add alice --recover
@@ -131,7 +131,7 @@ Flag Descriptions:
 - `name` is the name you gave your key
 - `mycoin` is the name of the token for this basecoin demo, initialized in the genesis.json file
 - `sequence` is a tally of how many transactions have been made by this account. Since this is the first tx on this account, it is 0
-- `chain-id` is the unique ID that helps tendermint identify which network to connect to. You can find it in the terminal output from the gaiad daemon in the header block , or in the genesis.json file  at `~/.basecoind/config/genesis.json`
+- `chain-id` is the unique ID that helps tepleton identify which network to connect to. You can find it in the terminal output from the tond daemon in the header block , or in the genesis.json file  at `~/.basecoind/config/genesis.json`
 
 Now if we check bobs account, it should have `10000 mycoin`. You can do so by running :
 
@@ -256,9 +256,9 @@ Accounts are serialized and stored in a Merkle tree under the key
 Typically, the address of the account is the 20-byte ``RIPEMD160`` hash
 of the public key, but other formats are acceptable as well, as defined
 in the `Tendermint crypto
-library <https://github.com/tendermint/go-crypto>`__. The Merkle tree
+library <https://github.com/tepleton/go-crypto>`__. The Merkle tree
 used in Basecoin is a balanced, binary search tree, which we call an
-`IAVL tree <https://github.com/tendermint/iavl>`__.
+`IAVL tree <https://github.com/tepleton/iavl>`__.
 
 ### Transactions
 

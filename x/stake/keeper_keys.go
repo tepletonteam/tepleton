@@ -3,9 +3,9 @@ package stake
 import (
 	"encoding/binary"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/wire"
-	crypto "github.com/tendermint/go-crypto"
+	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/wire"
+	crypto "github.com/tepleton/go-crypto"
 )
 
 // TODO remove some of these prefixes once have working multistore
@@ -38,7 +38,7 @@ func GetValidatorByPubKeyIndexKey(pubkey crypto.PubKey) []byte {
 	return append(ValidatorsByPubKeyIndexKey, pubkey.Bytes()...)
 }
 
-// get the key for the current validator group, ordered like tendermint
+// get the key for the current validator group, ordered like tepleton
 func GetValidatorsBondedKey(pk crypto.PubKey) []byte {
 	addr := pk.Address()
 	return append(ValidatorsBondedKey, addr.Bytes()...)

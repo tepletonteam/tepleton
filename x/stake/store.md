@@ -34,12 +34,12 @@ prefixed areas of the staking store which are accessed in `x/stake/keeper.go`.
  - Used For:            Retrieving the list of all currently bonded validators when updating 
                         for a new validator entering the validator set we may want to loop 
                         through this set to determine who we've kicked out.
-                        retrieving validator by tendermint index
+                        retrieving validator by tepleton index
 
 ## Tendermint Updates
  - Prefix Key Space:    TendermintUpdatesKey
  - Key/Sort:            Validator Owner Address
- - Value:               Tendermint ABCI Validator
+ - Value:               Tendermint WRSP Validator
  - Contains:            Validators are queued to affect the consensus validation set in Tendermint
  - Used For:            Informing Tendermint of the validator set updates, is used only intra-block, as the
                         updates are applied then cleared on endblock

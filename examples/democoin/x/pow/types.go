@@ -8,9 +8,9 @@ import (
 	"math"
 	"strconv"
 
-	crypto "github.com/tendermint/go-crypto"
+	crypto "github.com/tepleton/go-crypto"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
 // MsgMine - mine some coins with PoW

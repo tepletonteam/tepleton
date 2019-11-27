@@ -9,11 +9,11 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 
-	"github.com/cosmos/cosmos-sdk/server/mock"
-	"github.com/cosmos/cosmos-sdk/wire"
-	"github.com/tendermint/abci/server"
-	tcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
-	"github.com/tendermint/tmlibs/log"
+	"github.com/tepleton/tepleton-sdk/server/mock"
+	"github.com/tepleton/tepleton-sdk/wire"
+	"github.com/tepleton/wrsp/server"
+	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
+	"github.com/tepleton/tmlibs/log"
 )
 
 func TestStartStandAlone(t *testing.T) {
@@ -41,7 +41,7 @@ func TestStartStandAlone(t *testing.T) {
 	require.Nil(t, err)
 	svr, err := server.NewServer(svrAddr, "socket", app)
 	require.Nil(t, err, "Error creating listener")
-	svr.SetLogger(logger.With("module", "abci-server"))
+	svr.SetLogger(logger.With("module", "wrsp-server"))
 	svr.Start()
 
 	timer := time.NewTimer(time.Duration(5) * time.Second)

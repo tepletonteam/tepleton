@@ -1,15 +1,15 @@
 package baseapp
 
 import (
-	"github.com/tendermint/abci/server"
-	abci "github.com/tendermint/abci/types"
-	cmn "github.com/tendermint/tmlibs/common"
+	"github.com/tepleton/wrsp/server"
+	wrsp "github.com/tepleton/wrsp/types"
+	cmn "github.com/tepleton/tmlibs/common"
 )
 
 // RunForever - BasecoinApp execution and cleanup
-func RunForever(app abci.Application) {
+func RunForever(app wrsp.Application) {
 
-	// Start the ABCI server
+	// Start the WRSP server
 	srv, err := server.NewServer("0.0.0.0:46658", "socket", app)
 	if err != nil {
 		cmn.Exit(err.Error())

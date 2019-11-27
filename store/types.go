@@ -1,10 +1,10 @@
 package store
 
 import (
-	"github.com/cosmos/cosmos-sdk/types"
+	"github.com/tepleton/tepleton-sdk/types"
 )
 
-// Import cosmos-sdk/types/store.go for convenience.
+// Import tepleton-sdk/types/store.go for convenience.
 // nolint
 type Store = types.Store
 type Committer = types.Committer

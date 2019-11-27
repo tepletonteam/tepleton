@@ -3,8 +3,8 @@ package stake
 import (
 	"bytes"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	abci "github.com/tendermint/abci/types"
+	sdk "github.com/tepleton/tepleton-sdk/types"
+	wrsp "github.com/tepleton/wrsp/types"
 )
 
 func NewHandler(k Keeper) sdk.Handler {
@@ -26,7 +26,7 @@ func NewHandler(k Keeper) sdk.Handler {
 }
 
 // Called every block, process inflation, update validator set
-func EndBlocker(ctx sdk.Context, k Keeper) (ValidatorUpdates []abci.Validator) {
+func EndBlocker(ctx sdk.Context, k Keeper) (ValidatorUpdates []wrsp.Validator) {
 	pool := k.GetPool(ctx)
 
 	// Process Validator Provisions
