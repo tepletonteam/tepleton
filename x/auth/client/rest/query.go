@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"encoding/hex"
 	"fmt"
 	"net/http"
 
@@ -25,16 +26,17 @@ func RegisterRoutes(ctx context.CoreContext, r *mux.Router, cdc *wire.Codec, sto
 func QueryAccountRequestHandlerFn(storeName string, cdc *wire.Codec, decoder auth.AccountDecoder, ctx context.CoreContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		bech32addr := vars["address"]
+		addr := vars["address"]
 
-		addr, err := sdk.GetAccAddressBech32(bech32addr)
+		bz, err := hex.DecodeString(addr)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(err.Error()))
 			return
 		}
+		key := sdk.Address(bz)
 
-		res, err := ctx.Query(addr, storeName)
+		res, err := ctx.Query(key, storeName)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(fmt.Sprintf("Could't query account. Error: %s", err.Error())))
