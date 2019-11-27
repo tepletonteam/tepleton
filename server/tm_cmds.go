@@ -10,7 +10,7 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 	"github.com/tepleton/tepleton/p2p"
-	pvm "github.com/tepleton/tepleton/types/priv_validator"
+	pvm "github.com/tepleton/tepleton/privval"
 )
 
 // ShowNodeIDCmd - ported from Tendermint, dump node ID to stdout

@@ -54,7 +54,7 @@
 
 [[constraint]]
   name = "github.com/tepleton/wrsp"
-  version = "=0.11.0-rc4"
+  version = "=0.11.0"
 
 [[constraint]]
   name = "github.com/tepleton/go-crypto"
@@ -70,7 +70,7 @@
 
 [[constraint]]
   name = "github.com/tepleton/tepleton"
-  version = "=0.20.0-rc3"
+  version = "=0.20.0"
 
 [[override]]
   name = "github.com/tepleton/tmlibs"
