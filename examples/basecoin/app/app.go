@@ -145,6 +145,7 @@ func (app *BasecoinApp) initChainer(ctx sdk.Context, req wrsp.RequestInitChain) 
 			panic(err) // TODO https://github.com/tepleton/tepleton-sdk/issues/468
 			//	return sdk.ErrGenesisParse("").TraceCause(err, "")
 		}
+		acc.AccountNumber = app.accountMapper.GetNextAccountNumber(ctx)
 		app.accountMapper.SetAccount(ctx, acc)
 	}
 

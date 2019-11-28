@@ -5,9 +5,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/tepleton/tepleton-sdk/x/auth/mock"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/x/auth"
+	"github.com/tepleton/tepleton-sdk/x/auth/mock"
 	"github.com/tepleton/tepleton-sdk/x/bank"
 
 	wrsp "github.com/tepleton/wrsp/types"
@@ -70,10 +70,10 @@ func TestIBCMsgs(t *testing.T) {
 		Sequence:  0,
 	}
 
-	mock.SignCheckDeliver(t, mapp.BaseApp, transferMsg, []int64{0}, true, priv1)
+	mock.SignCheckDeliver(t, mapp.BaseApp, transferMsg, []int64{0},[]int64{0}, true, priv1)
 	mock.CheckBalance(t, mapp, addr1, emptyCoins)
-	mock.SignCheckDeliver(t, mapp.BaseApp, transferMsg, []int64{1}, false, priv1)
-	mock.SignCheckDeliver(t, mapp.BaseApp, receiveMsg, []int64{2}, true, priv1)
+	mock.SignCheckDeliver(t, mapp.BaseApp, transferMsg, []int64{0}, []int64{1}, false, priv1)
+	mock.SignCheckDeliver(t, mapp.BaseApp, receiveMsg, []int64{0}, []int64{2}, true, priv1)
 	mock.CheckBalance(t, mapp, addr1, coins)
-	mock.SignCheckDeliver(t, mapp.BaseApp, receiveMsg, []int64{3}, false, priv1)
+	mock.SignCheckDeliver(t, mapp.BaseApp, receiveMsg, []int64{0}, []int64{3}, false, priv1)
 }

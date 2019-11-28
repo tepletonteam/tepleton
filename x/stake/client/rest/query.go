@@ -83,6 +83,65 @@ func bondingStatusHandlerFn(ctx context.CoreContext, storeName string, cdc *wire
 	}
 }
 
+<<<<<<< HEAD
+=======
+// TODO move exist next to validator struct for maintainability
+type StakeValidatorOutput struct {
+	Owner   string `json:"owner"`   // in bech32
+	PubKey  string `json:"pub_key"` // in bech32
+	Revoked bool   `json:"revoked"` // has the validator been revoked from bonded status?
+
+	PoolShares      stake.PoolShares `json:"pool_shares"`      // total shares for tokens held in the pool
+	DelegatorShares sdk.Rat          `json:"delegator_shares"` // total shares issued to a validator's delegators
+
+	Description        stake.Description `json:"description"`           // description terms for the validator
+	BondHeight         int64             `json:"bond_height"`           // earliest height as a bonded validator
+	BondIntraTxCounter int16             `json:"bond_intra_tx_counter"` // block-local tx index of validator change
+	ProposerRewardPool sdk.Coins         `json:"proposer_reward_pool"`  // XXX reward pool collected from being the proposer
+
+	Commission            sdk.Rat `json:"commission"`              // XXX the commission rate of fees charged to any delegators
+	CommissionMax         sdk.Rat `json:"commission_max"`          // XXX maximum commission rate which this validator can ever charge
+	CommissionChangeRate  sdk.Rat `json:"commission_change_rate"`  // XXX maximum daily increase of the validator commission
+	CommissionChangeToday sdk.Rat `json:"commission_change_today"` // XXX commission rate change today, reset each day (UTC time)
+
+	// fee related
+	PrevBondedShares sdk.Rat `json:"prev_bonded_shares"` // total shares of a global hold pools
+}
+
+func bech32StakeValidatorOutput(validator stake.Validator) (StakeValidatorOutput, error) {
+	bechOwner, err := sdk.Bech32ifyVal(validator.Owner)
+	if err != nil {
+		return StakeValidatorOutput{}, err
+	}
+	bechValPubkey, err := sdk.Bech32ifyValPub(validator.PubKey)
+	if err != nil {
+		return StakeValidatorOutput{}, err
+	}
+
+	return StakeValidatorOutput{
+		Owner:   bechOwner,
+		PubKey:  bechValPubkey,
+		Revoked: validator.Revoked,
+
+		PoolShares:      validator.PoolShares,
+		DelegatorShares: validator.DelegatorShares,
+
+		Description:        validator.Description,
+		BondHeight:         validator.BondHeight,
+		BondIntraTxCounter: validator.BondIntraTxCounter,
+		ProposerRewardPool: validator.ProposerRewardPool,
+
+		Commission:            validator.Commission,
+		CommissionMax:         validator.CommissionMax,
+		CommissionChangeRate:  validator.CommissionChangeRate,
+		CommissionChangeToday: validator.CommissionChangeToday,
+
+		PrevBondedShares: validator.PrevBondedShares,
+	}, nil
+}
+
+// TODO bech32
+>>>>>>> dev
 // http request handler to query list of validators
 func validatorsHandlerFn(ctx context.CoreContext, storeName string, cdc *wire.Codec) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

@@ -1,21 +1,11 @@
 package app
 
 import (
-	"os"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/stake"
 
 	wrsp "github.com/tepleton/wrsp/types"
-	crypto "github.com/tepleton/go-crypto"
-	dbm "github.com/tepleton/tmlibs/db"
-	"github.com/tepleton/tmlibs/log"
 )
 
 func setGenesis(gapp *GaiaApp, accs ...*auth.BaseAccount) error {
@@ -41,6 +31,7 @@ func setGenesis(gapp *GaiaApp, accs ...*auth.BaseAccount) error {
 
 	return nil
 }
+<<<<<<< HEAD
 
 func TestGenesis(t *testing.T) {
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "sdk/app")
@@ -404,5 +395,7 @@ func SignDeliver(t *testing.T, gapp *GaiaApp, msg sdk.Msg, seq []int64, expPass 
 	}
 	gapp.EndBlock(wrsp.RequestEndBlock{})
 }
+=======
+>>>>>>> dev
 =======
 >>>>>>> dev
