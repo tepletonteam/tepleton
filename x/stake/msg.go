@@ -45,20 +45,7 @@ func (msg MsgCreateValidator) GetSigners() []sdk.Address {
 
 // get the bytes for the message signer to sign on
 func (msg MsgCreateValidator) GetSignBytes() []byte {
-	b, err := msgCdc.MarshalJSON(struct {
-		Description
-		ValidatorAddr string   `json:"address"`
-		PubKey        string   `json:"pubkey"`
-		Bond          sdk.Coin `json:"bond"`
-	}{
-		Description:   msg.Description,
-		ValidatorAddr: sdk.MustBech32ifyVal(msg.ValidatorAddr),
-		PubKey:        sdk.MustBech32ifyValPub(msg.PubKey),
-	})
-	if err != nil {
-		panic(err)
-	}
-	return b
+	return msgCdc.MustMarshalBinary(msg)
 }
 
 // quick validity check
@@ -102,13 +89,7 @@ func (msg MsgEditValidator) GetSigners() []sdk.Address {
 
 // get the bytes for the message signer to sign on
 func (msg MsgEditValidator) GetSignBytes() []byte {
-	b, err := msgCdc.MarshalJSON(struct {
-		Description
-		ValidatorAddr string `json:"address"`
-	}{
-		Description:   msg.Description,
-		ValidatorAddr: sdk.MustBech32ifyVal(msg.ValidatorAddr),
-	})
+	b, err := msgCdc.MarshalJSON(msg)
 	if err != nil {
 		panic(err)
 	}
@@ -152,15 +133,7 @@ func (msg MsgDelegate) GetSigners() []sdk.Address {
 
 // get the bytes for the message signer to sign on
 func (msg MsgDelegate) GetSignBytes() []byte {
-	b, err := msgCdc.MarshalJSON(struct {
-		DelegatorAddr string   `json:"delegator_addr"`
-		ValidatorAddr string   `json:"validator_addr"`
-		Bond          sdk.Coin `json:"bond"`
-	}{
-		DelegatorAddr: sdk.MustBech32ifyAcc(msg.DelegatorAddr),
-		ValidatorAddr: sdk.MustBech32ifyVal(msg.ValidatorAddr),
-		Bond:          msg.Bond,
-	})
+	b, err := msgCdc.MarshalJSON(msg)
 	if err != nil {
 		panic(err)
 	}
@@ -207,15 +180,7 @@ func (msg MsgUnbond) GetSigners() []sdk.Address { return []sdk.Address{msg.Deleg
 
 // get the bytes for the message signer to sign on
 func (msg MsgUnbond) GetSignBytes() []byte {
-	b, err := msgCdc.MarshalJSON(struct {
-		DelegatorAddr string `json:"delegator_addr"`
-		ValidatorAddr string `json:"validator_addr"`
-		Shares        string `json:"shares"`
-	}{
-		DelegatorAddr: sdk.MustBech32ifyAcc(msg.DelegatorAddr),
-		ValidatorAddr: sdk.MustBech32ifyVal(msg.ValidatorAddr),
-		Shares:        msg.Shares,
-	})
+	b, err := msgCdc.MarshalJSON(msg)
 	if err != nil {
 		panic(err)
 	}

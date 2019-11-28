@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 
 	wrsp "github.com/tepleton/wrsp/types"
-	tmtypes "github.com/tepleton/tepleton/types"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
@@ -156,7 +155,7 @@ func (app *BasecoinApp) initChainer(ctx sdk.Context, req wrsp.RequestInitChain) 
 }
 
 // Custom logic for state export
-func (app *BasecoinApp) ExportAppStateAndValidators() (appState json.RawMessage, validators []tmtypes.GenesisValidator, err error) {
+func (app *BasecoinApp) ExportAppStateJSON() (appState json.RawMessage, err error) {
 	ctx := app.NewContext(true, wrsp.Header{})
 
 	// iterate to get the accounts
@@ -174,10 +173,5 @@ func (app *BasecoinApp) ExportAppStateAndValidators() (appState json.RawMessage,
 	genState := types.GenesisState{
 		Accounts: accounts,
 	}
-	appState, err = wire.MarshalJSONIndent(app.cdc, genState)
-	if err != nil {
-		return nil, nil, err
-	}
-	validators = stake.WriteValidators(ctx, app.stakeKeeper)
-	return appState, validators, err
+	return wire.MarshalJSONIndent(app.cdc, genState)
 }
