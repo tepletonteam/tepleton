@@ -108,8 +108,7 @@ func GaiaAppGenTx(cdc *wire.Codec, pk crypto.PubKey) (
 		return
 	}
 	cliPrint = json.RawMessage(bz)
-	appGenTx,_,validator,err = GaiaAppGenTxNF(cdc, pk, addr, name, overwrite)
-	return
+	return GaiaAppGenTxNF(cdc, pk, addr, name, overwrite)
 }
 
 // Generate a ton genesis transaction without flags

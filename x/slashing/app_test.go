@@ -18,7 +18,16 @@ import (
 var (
 	priv1 = crypto.GenPrivKeyEd25519()
 	addr1 = priv1.PubKey().Address()
+	priv2 = crypto.GenPrivKeyEd25519()
+	addr2 = priv2.PubKey().Address()
+	addr3 = crypto.GenPrivKeyEd25519().PubKey().Address()
+	priv4 = crypto.GenPrivKeyEd25519()
+	addr4 = priv4.PubKey().Address()
 	coins = sdk.Coins{{"foocoin", 10}}
+	fee   = auth.StdFee{
+		sdk.Coins{{"foocoin", 0}},
+		100000,
+	}
 )
 
 // initialize the mock application for this module
@@ -29,7 +38,7 @@ func getMockApp(t *testing.T) (*mock.App, stake.Keeper, Keeper) {
 	keyStake := sdk.NewKVStoreKey("stake")
 	keySlashing := sdk.NewKVStoreKey("slashing")
 	coinKeeper := bank.NewKeeper(mapp.AccountMapper)
-	stakeKeeper := stake.NewKeeper(mapp.Cdc, keyStake, coinKeeper, mapp.RegisterCodespace(stake.DefaultCodespace))
+	stakeKeeper := stake.NewKeeper(mapp.Cdc, keyStake, coinKeeper, mapp.RegisterCodespace(DefaultCodespace))
 	keeper := NewKeeper(mapp.Cdc, keySlashing, stakeKeeper, mapp.RegisterCodespace(DefaultCodespace))
 	mapp.Router().AddRoute("stake", stake.NewHandler(stakeKeeper))
 	mapp.Router().AddRoute("slashing", NewHandler(keeper))
@@ -86,13 +95,18 @@ func TestSlashingMsgs(t *testing.T) {
 		Address: addr1,
 		Coins:   sdk.Coins{genCoin},
 	}
-	accs := []auth.Account{acc1}
+	acc2 := &auth.BaseAccount{
+		Address: addr2,
+		Coins:   sdk.Coins{genCoin},
+	}
+	accs := []auth.Account{acc1, acc2}
+
 	mock.SetGenesis(mapp, accs)
 	description := stake.NewDescription("foo_moniker", "", "", "")
 	createValidatorMsg := stake.NewMsgCreateValidator(
 		addr1, priv1.PubKey(), bondCoin, description,
 	)
-	mock.SignCheckDeliver(t, mapp.BaseApp, createValidatorMsg, []int64{0}, []int64{0}, true, priv1)
+	mock.SignCheckDeliver(t, mapp.BaseApp, createValidatorMsg, []int64{0}, true, priv1)
 	mock.CheckBalance(t, mapp, addr1, sdk.Coins{genCoin.Minus(bondCoin)})
 	mapp.BeginBlock(wrsp.RequestBeginBlock{})
 
@@ -105,7 +119,6 @@ func TestSlashingMsgs(t *testing.T) {
 	// no signing info yet
 	checkValidatorSigningInfo(t, mapp, keeper, addr1, false)
 
-	// unrevoke should fail with unknown validator
-	res := mock.SignCheck(t, mapp.BaseApp, unrevokeMsg, []int64{0}, []int64{1}, priv1)
-	require.Equal(t, sdk.ToWRSPCode(DefaultCodespace, CodeInvalidValidator), res.Code)
+	// unrevoke should fail
+	mock.SignCheckDeliver(t, mapp.BaseApp, unrevokeMsg, []int64{1}, false, priv1)
 }

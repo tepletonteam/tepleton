@@ -80,7 +80,7 @@ func bondingStatusHandlerFn(ctx context.CoreContext, storeName string, cdc *wire
 	}
 }
 
-// TODO move exist next to validator struct for maintainability
+// TODO inherit from Validator
 type StakeValidatorOutput struct {
 	Owner   string `json:"owner"`   // in bech32
 	PubKey  string `json:"pub_key"` // in bech32

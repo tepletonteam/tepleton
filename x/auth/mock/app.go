@@ -78,9 +78,7 @@ func (app *App) CompleteSetup(t *testing.T, newKeys []*sdk.KVStoreKey) {
 func (app *App) InitChainer(ctx sdk.Context, _ wrsp.RequestInitChain) wrsp.ResponseInitChain {
 
 	// load the accounts
-	for _, genacc := range app.GenesisAccounts {
-		acc := app.AccountMapper.NewAccountWithAddress(ctx, genacc.GetAddress())
-		acc.SetCoins(genacc.GetCoins())
+	for _, acc := range app.GenesisAccounts {
 		app.AccountMapper.SetAccount(ctx, acc)
 	}
 
