@@ -3,7 +3,6 @@ package rest
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -24,26 +23,13 @@ func registerTxRoutes(ctx context.CoreContext, r *mux.Router, cdc *wire.Codec, k
 	).Methods("POST")
 }
 
-type msgDelegateInput struct {
-	DelegatorAddr string   `json:"delegator_addr"` // in bech32
-	ValidatorAddr string   `json:"validator_addr"` // in bech32
-	Bond          sdk.Coin `json:"bond"`
-}
-type msgUnbondInput struct {
-	DelegatorAddr string `json:"delegator_addr"` // in bech32
-	ValidatorAddr string `json:"validator_addr"` // in bech32
-	Shares        string `json:"shares"`
-}
-
 type editDelegationsBody struct {
-	LocalAccountName string             `json:"name"`
-	Password         string             `json:"password"`
-	ChainID          string             `json:"chain_id"`
-	AccountNumber    int64              `json:"account_number"`
-	Sequence         int64              `json:"sequence"`
-	Gas              int64              `json:"gas"`
-	Delegate         []msgDelegateInput `json:"delegate"`
-	Unbond           []msgUnbondInput   `json:"unbond"`
+	LocalAccountName string              `json:"name"`
+	Password         string              `json:"password"`
+	ChainID          string              `json:"chain_id"`
+	Sequence         int64               `json:"sequence"`
+	Delegate         []stake.MsgDelegate `json:"delegate"`
+	Unbond           []stake.MsgUnbond   `json:"unbond"`
 }
 
 func editDelegationsRequestHandlerFn(cdc *wire.Codec, kb keys.Keybase, ctx context.CoreContext) http.HandlerFunc {
@@ -73,64 +59,28 @@ func editDelegationsRequestHandlerFn(cdc *wire.Codec, kb keys.Keybase, ctx conte
 		messages := make([]sdk.Msg, len(m.Delegate)+len(m.Unbond))
 		i := 0
 		for _, msg := range m.Delegate {
-			delegatorAddr, err := sdk.GetAccAddressBech32(msg.DelegatorAddr)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte(fmt.Sprintf("Couldn't decode delegator. Error: %s", err.Error())))
-				return
-			}
-			validatorAddr, err := sdk.GetValAddressBech32(msg.ValidatorAddr)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte(fmt.Sprintf("Couldn't decode validator. Error: %s", err.Error())))
-				return
-			}
-			if !bytes.Equal(info.Address(), delegatorAddr) {
+			if !bytes.Equal(info.Address(), msg.DelegatorAddr) {
 				w.WriteHeader(http.StatusUnauthorized)
 				w.Write([]byte("Must use own delegator address"))
 				return
 			}
-			messages[i] = stake.MsgDelegate{
-				DelegatorAddr: delegatorAddr,
-				ValidatorAddr: validatorAddr,
-				Bond:          msg.Bond,
-			}
+			messages[i] = msg
 			i++
 		}
 		for _, msg := range m.Unbond {
-			delegatorAddr, err := sdk.GetAccAddressBech32(msg.DelegatorAddr)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte(fmt.Sprintf("Couldn't decode delegator. Error: %s", err.Error())))
-				return
-			}
-			validatorAddr, err := sdk.GetValAddressBech32(msg.ValidatorAddr)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte(fmt.Sprintf("Couldn't decode validator. Error: %s", err.Error())))
-				return
-			}
-			if !bytes.Equal(info.Address(), delegatorAddr) {
+			if !bytes.Equal(info.Address(), msg.DelegatorAddr) {
 				w.WriteHeader(http.StatusUnauthorized)
 				w.Write([]byte("Must use own delegator address"))
 				return
 			}
-			messages[i] = stake.MsgUnbond{
-				DelegatorAddr: delegatorAddr,
-				ValidatorAddr: validatorAddr,
-				Shares:        msg.Shares,
-			}
+			messages[i] = msg
 			i++
 		}
-
-		// add gas to context
-		ctx = ctx.WithGas(m.Gas)
 
 		// sign messages
 		signedTxs := make([][]byte, len(messages[:]))
 		for i, msg := range messages {
 			// increment sequence for each message
-			ctx = ctx.WithAccountNumber(m.AccountNumber)
 			ctx = ctx.WithSequence(m.Sequence)
 			m.Sequence++
 

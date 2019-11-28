@@ -10,8 +10,6 @@ import (
 
 	"github.com/tepleton/tepleton-sdk/client"
 	"github.com/tepleton/tepleton-sdk/client/context"
-	sdk "github.com/tepleton/tepleton-sdk/types"
-	tmtypes "github.com/tepleton/tepleton/types"
 )
 
 // TODO these next two functions feel kinda hacky based on their placement
@@ -30,38 +28,6 @@ func ValidatorCommand() *cobra.Command {
 	return cmd
 }
 
-// Validator output in bech32 format
-type ValidatorOutput struct {
-	Address     string `json:"address"` // in bech32
-	PubKey      string `json:"pub_key"` // in bech32
-	Accum       int64  `json:"accum"`
-	VotingPower int64  `json:"voting_power"`
-}
-
-// Validators at a certain height output in bech32 format
-type ResultValidatorsOutput struct {
-	BlockHeight int64             `json:"block_height"`
-	Validators  []ValidatorOutput `json:"validators"`
-}
-
-func bech32ValidatorOutput(validator *tmtypes.Validator) (ValidatorOutput, error) {
-	bechAddress, err := sdk.Bech32ifyVal(validator.Address)
-	if err != nil {
-		return ValidatorOutput{}, err
-	}
-	bechValPubkey, err := sdk.Bech32ifyValPub(validator.PubKey)
-	if err != nil {
-		return ValidatorOutput{}, err
-	}
-
-	return ValidatorOutput{
-		Address:     bechAddress,
-		PubKey:      bechValPubkey,
-		Accum:       validator.Accum,
-		VotingPower: validator.VotingPower,
-	}, nil
-}
-
 func getValidators(ctx context.CoreContext, height *int64) ([]byte, error) {
 	// get the node
 	node, err := ctx.GetNode()
@@ -69,23 +35,12 @@ func getValidators(ctx context.CoreContext, height *int64) ([]byte, error) {
 		return nil, err
 	}
 
-	validatorsRes, err := node.Validators(height)
+	res, err := node.Validators(height)
 	if err != nil {
 		return nil, err
 	}
 
-	outputValidatorsRes := ResultValidatorsOutput{
-		BlockHeight: validatorsRes.BlockHeight,
-		Validators:  make([]ValidatorOutput, len(validatorsRes.Validators)),
-	}
-	for i := 0; i < len(validatorsRes.Validators); i++ {
-		outputValidatorsRes.Validators[i], err = bech32ValidatorOutput(validatorsRes.Validators[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	output, err := cdc.MarshalJSON(outputValidatorsRes)
+	output, err := cdc.MarshalJSON(res)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +96,6 @@ func ValidatorSetRequestHandlerFn(ctx context.CoreContext) http.HandlerFunc {
 			w.Write([]byte(err.Error()))
 			return
 		}
-
 		w.Write(output)
 	}
 }

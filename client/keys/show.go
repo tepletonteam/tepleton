@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/gorilla/mux"
 	keys "github.com/tepleton/go-crypto/keys"
 
@@ -50,12 +51,7 @@ func GetKeyRequestHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	keyOutput, err := Bech32KeyOutput(info)
-	if err != nil {
-		w.WriteHeader(500)
-		w.Write([]byte(err.Error()))
-		return
-	}
+	keyOutput := KeyOutput{Name: info.Name, Address: sdk.Address(info.PubKey.Address())}
 	output, err := json.MarshalIndent(keyOutput, "", "  ")
 	if err != nil {
 		w.WriteHeader(500)

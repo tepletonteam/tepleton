@@ -92,9 +92,6 @@ test_cli:
 test_unit:
 	@go test $(PACKAGES_NOCLITEST)
 
-test_race:
-	@go test -race $(PACKAGES_NOCLITEST)
-
 test_cover:
 	@bash tests/test_cover.sh
 
