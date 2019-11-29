@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	wrsp "github.com/tepleton/wrsp/types"
+	tmtypes "github.com/tepleton/tepleton/types"
 	"github.com/tepleton/tmlibs/cli"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
@@ -26,7 +27,7 @@ func main() {
 
 	server.AddCommands(ctx, cdc, rootCmd, app.GaiaAppInit(),
 		server.ConstructAppCreator(newApp, "ton"),
-		server.ConstructAppExporter(exportAppState, "ton"))
+		server.ConstructAppExporter(exportAppStateAndTMValidators, "ton"))
 
 	// prepare and add flags
 	executor := cli.PrepareBaseCmd(rootCmd, "GA", app.DefaultNodeHome)
@@ -37,7 +38,7 @@ func newApp(logger log.Logger, db dbm.DB) wrsp.Application {
 	return app.NewGaiaApp(logger, db)
 }
 
-func exportAppState(logger log.Logger, db dbm.DB) (json.RawMessage, error) {
+func exportAppStateAndTMValidators(logger log.Logger, db dbm.DB) (json.RawMessage, []tmtypes.GenesisValidator, error) {
 	gapp := app.NewGaiaApp(logger, db)
-	return gapp.ExportAppStateJSON()
+	return gapp.ExportAppStateAndValidators()
 }
