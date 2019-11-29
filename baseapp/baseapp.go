@@ -14,6 +14,7 @@ import (
 
 	"github.com/tepleton/tepleton-sdk/store"
 	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/version"
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
 )
@@ -193,7 +194,7 @@ func (app *BaseApp) initFromStore(mainKey sdk.StoreKey) error {
 	// TODO: we don't actually need the main store here
 	main := app.cms.GetKVStore(mainKey)
 	if main == nil {
-		return errors.New("BaseApp expects MultiStore with 'main' KVStore")
+		return errors.New("baseapp expects MultiStore with 'main' KVStore")
 	}
 
 	// XXX: Do we really need the header? What does it have that we want
@@ -216,11 +217,11 @@ func (app *BaseApp) initFromStore(mainKey sdk.StoreKey) error {
 			}
 			err := proto.Unmarshal(headerBytes, &header)
 			if err != nil {
-				return errors.Wrap(err, "Failed to parse Header")
+				return errors.Wrap(err, "failed to parse Header")
 			}
 			lastVersion := lastCommitID.Version
 			if header.Height != lastVersion {
-				errStr := fmt.Sprintf("Expected db://%s.Height %v but got %v", dbHeaderKey, lastVersion, header.Height)
+				errStr := fmt.Sprintf("expected db://%s.Height %v but got %v", dbHeaderKey, lastVersion, header.Height)
 				return errors.New(errStr)
 			}
 		}
@@ -337,6 +338,11 @@ func (app *BaseApp) Query(req wrsp.RequestQuery) (res wrsp.ResponseQuery) {
 				result = err.Result()
 			} else {
 				result = app.Simulate(tx)
+			}
+		case "version":
+			return wrsp.ResponseQuery{
+				Code:  uint32(sdk.WRSPCodeOK),
+				Value: []byte(version.GetVersion()),
 			}
 		default:
 			result = sdk.ErrUnknownRequest(fmt.Sprintf("Unknown query: %s", path)).Result()
@@ -468,10 +474,10 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (result sdk
 		if r := recover(); r != nil {
 			switch r.(type) {
 			case sdk.ErrorOutOfGas:
-				log := fmt.Sprintf("Out of gas in location: %v", r.(sdk.ErrorOutOfGas).Descriptor)
+				log := fmt.Sprintf("out of gas in location: %v", r.(sdk.ErrorOutOfGas).Descriptor)
 				result = sdk.ErrOutOfGas(log).Result()
 			default:
-				log := fmt.Sprintf("Recovered: %v\nstack:\n%v", r, string(debug.Stack()))
+				log := fmt.Sprintf("recovered: %v\nstack:\n%v", r, string(debug.Stack()))
 				result = sdk.ErrInternal(log).Result()
 			}
 		}

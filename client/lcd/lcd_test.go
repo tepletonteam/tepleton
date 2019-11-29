@@ -116,6 +116,15 @@ func TestVersion(t *testing.T) {
 	require.Nil(t, err)
 	match := reg.MatchString(body)
 	assert.True(t, match, body)
+
+	// node info
+	res, body = Request(t, port, "GET", "/node_version", nil)
+	require.Equal(t, http.StatusOK, res.StatusCode, body)
+
+	reg, err = regexp.Compile(`\d+\.\d+\.\d+(-dev)?`)
+	require.Nil(t, err)
+	match = reg.MatchString(body)
+	assert.True(t, match, body)
 }
 
 func TestNodeStatus(t *testing.T) {
@@ -396,9 +405,10 @@ func TestBonding(t *testing.T) {
 
 	// TODO fix shares fn in staking
 	// query sender
-	//acc = getAccount(t, port, addr)
-	//coins = acc.GetCoins()
-	//assert.Equal(t, int64(70), coins.AmountOf(denom))
+	//acc := getAccount(t, sendAddr)
+	//coins := acc.GetCoins()
+	//assert.Equal(t, int64(98), coins.AmountOf(coinDenom))
+
 }
 
 //_____________________________________________________________________________
