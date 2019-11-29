@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tepleton/tepleton-sdk/server/mock"
+	"github.com/tepleton/tepleton-sdk/mock"
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/wrsp/server"
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
