@@ -3,12 +3,13 @@ package app
 import (
 	"encoding/json"
 	"errors"
+
 	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 	crypto "github.com/tepleton/go-crypto"
 	tmtypes "github.com/tepleton/tepleton/types"
 
 	"github.com/tepleton/tepleton-sdk/server"
-	gc "github.com/tepleton/tepleton-sdk/server/config"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
@@ -49,15 +50,25 @@ func (ga *GenesisAccount) ToAccount() (acc *auth.BaseAccount) {
 	}
 }
 
+var (
+	flagName       = "name"
+	flagClientHome = "home-client"
+	flagOWK        = "owk"
+
+	// bonded tokens given to genesis validators/accounts
+	freeFermionVal  = int64(100)
+	freeFermionsAcc = int64(50)
+)
+
 // get app init parameters for server init command
 func GaiaAppInit() server.AppInit {
 	fsAppGenState := pflag.NewFlagSet("", pflag.ContinueOnError)
 
 	fsAppGenTx := pflag.NewFlagSet("", pflag.ContinueOnError)
-	fsAppGenTx.String(server.FlagName, "", "validator moniker, required")
-	fsAppGenTx.String(server.FlagClientHome, DefaultCLIHome,
+	fsAppGenTx.String(flagName, "", "validator moniker, required")
+	fsAppGenTx.String(flagClientHome, DefaultCLIHome,
 		"home directory for the client, used for key generation")
-	fsAppGenTx.Bool(server.FlagOWK, false, "overwrite the accounts created")
+	fsAppGenTx.Bool(flagOWK, false, "overwrite the accounts created")
 
 	return server.AppInit{
 		FlagsAppGenState: fsAppGenState,
@@ -75,15 +86,18 @@ type GaiaGenTx struct {
 }
 
 // Generate a ton genesis transaction with flags
-func GaiaAppGenTx(cdc *wire.Codec, pk crypto.PubKey, genTxConfig gc.GenTxConfig) (
+func GaiaAppGenTx(cdc *wire.Codec, pk crypto.PubKey) (
 	appGenTx, cliPrint json.RawMessage, validator tmtypes.GenesisValidator, err error) {
-	if genTxConfig.Name == "" {
+	clientRoot := viper.GetString(flagClientHome)
+	overwrite := viper.GetBool(flagOWK)
+	name := viper.GetString(flagName)
+	if name == "" {
 		return nil, nil, tmtypes.GenesisValidator{}, errors.New("Must specify --name (validator moniker)")
 	}
 
 	var addr sdk.Address
 	var secret string
-	addr, secret, err = server.GenerateSaveCoinKey(genTxConfig.CliRoot, genTxConfig.Name, "1234567890", genTxConfig.Overwrite)
+	addr, secret, err = server.GenerateSaveCoinKey(clientRoot, name, "1234567890", overwrite)
 	if err != nil {
 		return
 	}
@@ -93,9 +107,8 @@ func GaiaAppGenTx(cdc *wire.Codec, pk crypto.PubKey, genTxConfig gc.GenTxConfig)
 	if err != nil {
 		return
 	}
-
 	cliPrint = json.RawMessage(bz)
-	appGenTx, _, validator, err = GaiaAppGenTxNF(cdc, pk, addr, genTxConfig.Name, genTxConfig.Overwrite)
+	appGenTx,_,validator,err = GaiaAppGenTxNF(cdc, pk, addr, name, overwrite)
 	return
 }
 
@@ -117,7 +130,7 @@ func GaiaAppGenTxNF(cdc *wire.Codec, pk crypto.PubKey, addr sdk.Address, name st
 
 	validator = tmtypes.GenesisValidator{
 		PubKey: pk,
-		Power:  server.FreeFermionVal,
+		Power:  freeFermionVal,
 	}
 	return
 }
@@ -148,21 +161,21 @@ func GaiaAppGenState(cdc *wire.Codec, appGenTxs []json.RawMessage) (genesisState
 		accAuth := auth.NewBaseAccountWithAddress(genTx.Address)
 		accAuth.Coins = sdk.Coins{
 			{genTx.Name + "Token", 1000},
-			{"steak", server.FreeFermionsAcc},
+			{"steak", freeFermionsAcc},
 		}
 		acc := NewGenesisAccount(&accAuth)
 		genaccs[i] = acc
-		stakeData.Pool.LooseUnbondedTokens += server.FreeFermionsAcc // increase the supply
+		stakeData.Pool.LooseUnbondedTokens += freeFermionsAcc // increase the supply
 
 		// add the validator
 		if len(genTx.Name) > 0 {
 			desc := stake.NewDescription(genTx.Name, "", "", "")
 			validator := stake.NewValidator(genTx.Address, genTx.PubKey, desc)
-			validator.PoolShares = stake.NewBondedShares(sdk.NewRat(server.FreeFermionVal))
+			validator.PoolShares = stake.NewBondedShares(sdk.NewRat(freeFermionVal))
 			stakeData.Validators = append(stakeData.Validators, validator)
 
 			// pool logic
-			stakeData.Pool.BondedTokens += server.FreeFermionVal
+			stakeData.Pool.BondedTokens += freeFermionVal
 			stakeData.Pool.BondedShares = sdk.NewRat(stakeData.Pool.BondedTokens)
 		}
 	}

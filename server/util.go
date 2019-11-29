@@ -85,7 +85,6 @@ func AddCommands(
 
 	rootCmd.AddCommand(
 		InitCmd(ctx, cdc, appInit),
-		TestnetFilesCmd(ctx, cdc, appInit),
 		StartCmd(ctx, appCreator),
 		UnsafeResetAllCmd(ctx),
 		client.LineBreak,
