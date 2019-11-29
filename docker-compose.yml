@@ -1,11 +1,11 @@
 version: '3'
 
 services:
-  node0:
-    container_name: node0
+  tondnode0:
+    container_name: tondnode0
     image: "tepleton/tondnode"
     ports:
-      - "46656-46657:46656-46657"
+      - "26656-26657:26656-26657"
     environment:
       - ID=0
       - LOG=$${LOG:-tond.log}
@@ -15,11 +15,11 @@ services:
       localnet:
         ipv4_address: 192.168.10.2
 
-  node1:
-    container_name: node1
+  tondnode1:
+    container_name: tondnode1
     image: "tepleton/tondnode"
     ports:
-      - "46659-46660:46656-46657"
+      - "26659-26660:26656-26657"
     environment:
       - ID=1
       - LOG=$${LOG:-tond.log}
@@ -29,28 +29,28 @@ services:
       localnet:
         ipv4_address: 192.168.10.3
 
-  node2:
-    container_name: node2
+  tondnode2:
+    container_name: tondnode2
     image: "tepleton/tondnode"
     environment:
       - ID=2
       - LOG=$${LOG:-tond.log}
     ports:
-      - "46661-46662:46656-46657"
+      - "26661-26662:26656-26657"
     volumes:
       - ./build:/tond:Z
     networks:
       localnet:
         ipv4_address: 192.168.10.4
 
-  node3:
-    container_name: node3
+  tondnode3:
+    container_name: tondnode3
     image: "tepleton/tondnode"
     environment:
       - ID=3
       - LOG=$${LOG:-tond.log}
     ports:
-      - "46663-46664:46656-46657"
+      - "26663-26664:26656-26657"
     volumes:
       - ./build:/tond:Z
     networks:

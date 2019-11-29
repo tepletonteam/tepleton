@@ -1,5 +1,68 @@
 # TESTNET STATUS
 
+## *June 13, 2018, 17:00 EST* - Gaia-6002 is making blocks!
+
+- Gaia-6002 is live and making blocks
+- Absent validators have been slashed and revoked 
+- Currently live with 17 validators
+
+## *June 13, 2018, 4:30 EST* - New Testnet Gaia-6002
+
+- After fixing bugs from ton-6001, especially [issue
+  #1197](https://github.com/tepleton/tepleton-sdk/issues/1197), we are announcing a
+  new testnet, Gaia-6002
+- Gaia-6002 has the same genesis file as Gaia-6001, just with the chain-id
+  updated
+- Update from previous testnet [here](https://github.com/tepleton/tepleton-sdk/tree/master/cmd/ton/testnets#upgrading-from-previous-testnet)
+
+## *June 13, 2018, 4:30 EST* - New Release
+
+- Released ton
+  [v0.19.0](https://github.com/tepleton/tepleton-sdk/releases/tag/v0.19.0)
+- Includes various bug-fixes for staking found on Gaia-6001
+
+## *June 13, 2018, 2:30 EST* - Published Postmortem of Gaia-6001 failure
+
+- A bug in the design of the staking data model caused a sanity check to fail
+- Full writeup
+  [here](https://github.com/tepleton/tepleton-sdk/issues/1197#issuecomment-396823021)
+
+## *June 10, 2018, 8:30 EST* - Gaia-6001 consensus failure
+
+- Validator unbonding and revocation activity caused a consensus failure
+- There is a bug in the staking module that must be fixed
+- The team is taking its time to look into this and release a fix following a
+  proper protocol for hotfix upgrades to the testnet
+- Please stay tuned!
+
+## *June 9, 2018, 14:00 EST* - New Release
+
+- Released ton
+  [v0.18.0](https://github.com/tepleton/tepleton-sdk/releases/tag/v0.18.0) with
+  update for Tendermint
+  [v0.20.0](https://github.com/tepleton/tepleton/releases/tag/v0.20.0)
+- Includes bug fix for declaring candidacy from the command line
+
+## *June 8, 2018, 23:30 EST* - Gaia-6001 is making blocks
+
+- +2/3 of the voting power is finally online for Gaia-6001 and it is making
+  blocks!
+- This is a momentous achievement - a successful asynchronous decentralized
+  testnet launch
+- Congrats everyone!
+
+## *June 8, 2018, 12:00 EST* - New Testnet Gaia-6001
+
+- After some confusion around testnet deployment and a contention testnet
+  hardfork, a new genesis file and network was released for `ton-6001`
+
+## *June 7, 2018, 9:00 EST* - New Testnet Gaia-6000
+
+- Released a new `genesis.json` file for `ton-6000`
+- Initial validators include those that were most active in
+  the ton-5001 testnet
+- Join the network via ton `v0.18.0-rc0`
+
 ## *June 5, 2018, 21:00 EST* - New Release
 
 - Released ton

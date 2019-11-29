@@ -37,13 +37,17 @@ func QueryAccountRequestHandlerFn(storeName string, cdc *wire.Codec, decoder aut
 		key := sdk.Address(bz)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 		res, err := ctx.Query(key, storeName)
 =======
 		res, err := ctx.Query(auth.AddressStoreKey(addr), storeName)
 >>>>>>> dev
+=======
+		res, err := ctx.QueryStore(auth.AddressStoreKey(addr), storeName)
+>>>>>>> dev
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(fmt.Sprintf("Could't query account. Error: %s", err.Error())))
+			w.Write([]byte(fmt.Sprintf("couldn't query account. Error: %s", err.Error())))
 			return
 		}
 
@@ -57,7 +61,7 @@ func QueryAccountRequestHandlerFn(storeName string, cdc *wire.Codec, decoder aut
 		account, err := decoder(res)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(fmt.Sprintf("Could't parse query result. Result: %s. Error: %s", res, err.Error())))
+			w.Write([]byte(fmt.Sprintf("couldn't parse query result. Result: %s. Error: %s", res, err.Error())))
 			return
 		}
 
@@ -65,7 +69,7 @@ func QueryAccountRequestHandlerFn(storeName string, cdc *wire.Codec, decoder aut
 		output, err := cdc.MarshalJSON(account)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(fmt.Sprintf("Could't marshall query result. Error: %s", err.Error())))
+			w.Write([]byte(fmt.Sprintf("couldn't marshall query result. Error: %s", err.Error())))
 			return
 		}
 
