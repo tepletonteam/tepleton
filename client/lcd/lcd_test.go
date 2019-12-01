@@ -87,7 +87,7 @@ func TestKeys(t *testing.T) {
 
 	// update key
 	jsonStr = []byte(fmt.Sprintf(`{
-		"old_password":"%s",
+		"old_password":"%s", 
 		"new_password":"12345678901"
 	}`, newPassword))
 
@@ -241,17 +241,15 @@ func TestCoinSend(t *testing.T) {
 	acc = getAccount(t, port, addr)
 	coins := acc.GetCoins()
 	mycoins := coins[0]
-
 	assert.Equal(t, "steak", mycoins.Denom)
-	assert.Equal(t, initialBalance[0].Amount.SubRaw(1), mycoins.Amount)
+	assert.Equal(t, initialBalance[0].Amount-1, mycoins.Amount)
 
 	// query receiver
 	acc = getAccount(t, port, receiveAddr)
 	coins = acc.GetCoins()
 	mycoins = coins[0]
-
 	assert.Equal(t, "steak", mycoins.Denom)
-	assert.Equal(t, int64(1), mycoins.Amount.Int64())
+	assert.Equal(t, int64(1), mycoins.Amount)
 }
 
 func TestIBCTransfer(t *testing.T) {
@@ -276,9 +274,8 @@ func TestIBCTransfer(t *testing.T) {
 	acc = getAccount(t, port, addr)
 	coins := acc.GetCoins()
 	mycoins := coins[0]
-
 	assert.Equal(t, "steak", mycoins.Denom)
-	assert.Equal(t, initialBalance[0].Amount.SubRaw(1), mycoins.Amount)
+	assert.Equal(t, initialBalance[0].Amount-1, mycoins.Amount)
 
 	// TODO: query ibc egress packet state
 }
@@ -324,9 +321,8 @@ func TestTxs(t *testing.T) {
 	assert.Equal(t, 1, len(indexedTxs))
 
 	// query sender
-	// also tests url decoding
 	addrBech := sdk.MustBech32ifyAcc(addr)
-	res, body = Request(t, port, "GET", "/txs?tag=sender_bech32=%27"+addrBech+"%27", nil)
+	res, body = Request(t, port, "GET", fmt.Sprintf("/txs?tag=sender_bech32='%s'", addrBech), nil)
 	require.Equal(t, http.StatusOK, res.StatusCode, body)
 
 	err = cdc.UnmarshalJSON([]byte(body), &indexedTxs)
@@ -347,8 +343,8 @@ func TestTxs(t *testing.T) {
 
 func TestValidatorsQuery(t *testing.T) {
 	cleanup, pks, port := InitializeTestLCD(t, 2, []sdk.Address{})
-	defer cleanup()
 	require.Equal(t, 2, len(pks))
+	defer cleanup()
 
 	validators := getValidators(t, port)
 	assert.Equal(t, len(validators), 2)
@@ -386,8 +382,7 @@ func TestBonding(t *testing.T) {
 	// query sender
 	acc := getAccount(t, port, addr)
 	coins := acc.GetCoins()
-
-	assert.Equal(t, int64(40), coins.AmountOf(denom).Int64())
+	assert.Equal(t, int64(40), coins.AmountOf(denom))
 
 	// query validator
 	bond := getDelegation(t, port, addr, validator1Owner)
@@ -442,19 +437,19 @@ func doSend(t *testing.T, port, seed, name, password string, addr sdk.Address) (
 	sequence := acc.GetSequence()
 
 	// send
-	coinbz, err := json.Marshal(sdk.NewCoin("steak", 1))
-	if err != nil {
-		panic(err)
-	}
-
 	jsonStr := []byte(fmt.Sprintf(`{
-		"name":"%s",
+		"name":"%s", 
 		"password":"%s",
-		"account_number":%d,
-		"sequence":%d,
+		"account_number":%d, 
+		"sequence":%d, 
 		"gas": 10000,
-		"amount":[%s]
-	}`, name, password, accnum, sequence, coinbz))
+		"amount":[
+			{ 
+				"denom": "%s", 
+				"amount": 1 
+			}
+		] 
+	}`, name, password, accnum, sequence, "steak"))
 	res, body := Request(t, port, "POST", "/accounts/"+receiveAddrBech+"/send", jsonStr)
 	require.Equal(t, http.StatusOK, res.StatusCode, body)
 
@@ -478,18 +473,18 @@ func doIBCTransfer(t *testing.T, port, seed, name, password string, addr sdk.Add
 	sequence := acc.GetSequence()
 
 	// send
-	jsonStr := []byte(fmt.Sprintf(`{
-		"name":"%s",
-		"password": "%s",
+	jsonStr := []byte(fmt.Sprintf(`{ 
+		"name":"%s", 
+		"password": "%s", 
 		"account_number":%d,
-		"sequence": %d,
+		"sequence": %d, 
 		"gas": 100000,
 		"amount":[
-			{
-				"denom": "%s",
-				"amount": 1
+			{ 
+				"denom": "%s", 
+				"amount": 1 
 			}
-		]
+		] 
 	}`, name, password, accnum, sequence, "steak"))
 	res, body := Request(t, port, "POST", "/ibc/testchain/"+receiveAddrBech+"/send", jsonStr)
 	require.Equal(t, http.StatusOK, res.StatusCode, body)
