@@ -4,6 +4,9 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
+// kind of shares
+type PoolShareKind byte
+
 // pool shares held by a validator
 type PoolShares struct {
 	Status sdk.BondStatus `json:"status"`

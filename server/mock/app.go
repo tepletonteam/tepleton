@@ -12,7 +12,6 @@ import (
 	"github.com/tepleton/tmlibs/log"
 
 	bam "github.com/tepleton/tepleton-sdk/baseapp"
-	gc "github.com/tepleton/tepleton-sdk/server/config"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 )
@@ -125,7 +124,7 @@ func AppGenState(_ *wire.Codec, _ []json.RawMessage) (appState json.RawMessage, 
 }
 
 // Return a validator, not much else
-func AppGenTx(_ *wire.Codec, pk crypto.PubKey, genTxConfig gc.GenTx) (
+func AppGenTx(_ *wire.Codec, pk crypto.PubKey) (
 	appGenTx, cliPrint json.RawMessage, validator tmtypes.GenesisValidator, err error) {
 
 	validator = tmtypes.GenesisValidator{

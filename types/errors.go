@@ -68,31 +68,31 @@ const (
 func CodeToDefaultMsg(code CodeType) string {
 	switch code {
 	case CodeInternal:
-		return "internal error"
+		return "Internal error"
 	case CodeTxDecode:
-		return "tx parse error"
+		return "Tx parse error"
 	case CodeInvalidSequence:
-		return "invalid sequence"
+		return "Invalid sequence"
 	case CodeUnauthorized:
-		return "unauthorized"
+		return "Unauthorized"
 	case CodeInsufficientFunds:
-		return "insufficent funds"
+		return "Insufficent funds"
 	case CodeUnknownRequest:
-		return "unknown request"
+		return "Unknown request"
 	case CodeInvalidAddress:
-		return "invalid address"
+		return "Invalid address"
 	case CodeInvalidPubKey:
-		return "invalid pubkey"
+		return "Invalid pubkey"
 	case CodeUnknownAddress:
-		return "unknown address"
+		return "Unknown address"
 	case CodeInsufficientCoins:
-		return "insufficient coins"
+		return "Insufficient coins"
 	case CodeInvalidCoins:
-		return "invalid coins"
+		return "Invalid coins"
 	case CodeOutOfGas:
-		return "out of gas"
+		return "Out of gas"
 	default:
-		return fmt.Sprintf("unknown code %d", code)
+		return fmt.Sprintf("Unknown code %d", code)
 	}
 }
 
@@ -183,7 +183,7 @@ type sdkError struct {
 
 // Implements WRSPError.
 func (err *sdkError) Error() string {
-	return fmt.Sprintf("error{%d:%d,%#v}", err.codespace, err.code, err.err)
+	return fmt.Sprintf("Error{%d:%d,%#v}", err.codespace, err.code, err.err)
 }
 
 // Implements WRSPError.

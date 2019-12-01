@@ -10,7 +10,7 @@ import (
 func RunForever(app wrsp.Application) {
 
 	// Start the WRSP server
-	srv, err := server.NewServer("0.0.0.0:26658", "socket", app)
+	srv, err := server.NewServer("0.0.0.0:46658", "socket", app)
 	if err != nil {
 		cmn.Exit(err.Error())
 	}

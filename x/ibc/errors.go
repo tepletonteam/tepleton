@@ -17,9 +17,9 @@ const (
 func codeToDefaultMsg(code sdk.CodeType) string {
 	switch code {
 	case CodeInvalidSequence:
-		return "invalid IBC packet sequence"
+		return "Invalid IBC packet sequence"
 	case CodeIdenticalChains:
-		return "source and destination chain cannot be identical"
+		return "Source and destination chain cannot be identical"
 	default:
 		return sdk.CodeToDefaultMsg(code)
 	}
