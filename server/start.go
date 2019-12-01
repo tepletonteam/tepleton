@@ -9,8 +9,8 @@ import (
 
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 	"github.com/tepleton/tepleton/node"
-	"github.com/tepleton/tepleton/proxy"
 	pvm "github.com/tepleton/tepleton/privval"
+	"github.com/tepleton/tepleton/proxy"
 	cmn "github.com/tepleton/tmlibs/common"
 )
 
@@ -37,7 +37,7 @@ func StartCmd(ctx *Context, appCreator AppCreator) *cobra.Command {
 
 	// basic flags for wrsp app
 	cmd.Flags().Bool(flagWithTendermint, true, "run wrsp app embedded in-process with tepleton")
-	cmd.Flags().String(flagAddress, "tcp://0.0.0.0:46658", "Listen address")
+	cmd.Flags().String(flagAddress, "tcp://0.0.0.0:26658", "Listen address")
 
 	// AddNodeFlags adds support for all tepleton-specific command line options
 	tcmd.AddNodeFlags(cmd)
@@ -55,7 +55,7 @@ func startStandAlone(ctx *Context, appCreator AppCreator) error {
 
 	svr, err := server.NewServer(addr, "socket", app)
 	if err != nil {
-		return errors.Errorf("Error creating listener: %v\n", err)
+		return errors.Errorf("error creating listener: %v\n", err)
 	}
 	svr.SetLogger(ctx.Logger.With("module", "wrsp-server"))
 	svr.Start()
