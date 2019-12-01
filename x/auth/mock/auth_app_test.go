@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/x/auth"
@@ -36,7 +37,7 @@ func getMockApp(t *testing.T) *App {
 	mapp.Router().AddRoute("bank", bank.NewHandler(coinKeeper))
 	mapp.Router().AddRoute("auth", auth.NewHandler(mapp.AccountMapper))
 
-	mapp.CompleteSetup(t, []*sdk.KVStoreKey{})
+	require.NoError(t, mapp.CompleteSetup([]*sdk.KVStoreKey{}))
 	return mapp
 }
 
