@@ -23,6 +23,7 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/stake"
+	stakerest "github.com/tepleton/tepleton-sdk/x/stake/client/rest"
 )
 
 func TestKeys(t *testing.T) {
@@ -182,7 +183,7 @@ func TestValidators(t *testing.T) {
 	cleanup, _, port := InitializeTestLCD(t, 1, []sdk.Address{})
 	defer cleanup()
 
-	var resultVals ctypes.ResultValidators
+	var resultVals rpc.ResultValidatorsOutput
 
 	res, body := Request(t, port, "GET", "/validatorsets/latest", nil)
 	require.Equal(t, http.StatusOK, res.StatusCode, body)
@@ -190,7 +191,10 @@ func TestValidators(t *testing.T) {
 	err := cdc.UnmarshalJSON([]byte(body), &resultVals)
 	require.Nil(t, err, "Couldn't parse validatorset")
 
-	assert.NotEqual(t, ctypes.ResultValidators{}, resultVals)
+	assert.NotEqual(t, rpc.ResultValidatorsOutput{}, resultVals)
+
+	assert.Contains(t, resultVals.Validators[0].Address, "tepletonvaladdr")
+	assert.Contains(t, resultVals.Validators[0].PubKey, "tepletonvalpub")
 
 	// --
 
@@ -200,7 +204,7 @@ func TestValidators(t *testing.T) {
 	err = cdc.UnmarshalJSON([]byte(body), &resultVals)
 	require.Nil(t, err, "Couldn't parse validatorset")
 
-	assert.NotEqual(t, ctypes.ResultValidators{}, resultVals)
+	assert.NotEqual(t, rpc.ResultValidatorsOutput{}, resultVals)
 
 	// --
 
@@ -406,135 +410,10 @@ func TestBonding(t *testing.T) {
 
 	// TODO fix shares fn in staking
 	// query sender
-<<<<<<< HEAD
-<<<<<<< HEAD
-	acc := getAccount(t, sendAddr)
-	coins := acc.GetCoins()
-	assert.Equal(t, int64(98), coins.AmountOf(coinDenom))
-
-	// query candidate
-	bond := getDelegation(t, sendAddr, validatorAddr1)
-	assert.Equal(t, "9/1", bond.Shares.String())
-}
-
-//__________________________________________________________
-// helpers
-
-// strt TM and the LCD in process, listening on their respective sockets
-func startTMAndLCD() (*nm.Node, net.Listener, error) {
-
-	dir, err := ioutil.TempDir("", "lcd_test")
-	if err != nil {
-		return nil, nil, err
-	}
-	viper.Set(cli.HomeFlag, dir)
-	viper.Set(client.FlagGas, 200000)
-	kb, err := keys.GetKeyBase() // dbm.NewMemDB()) // :(
-	if err != nil {
-		return nil, nil, err
-	}
-
-	config := GetConfig()
-	config.Consensus.TimeoutCommit = 1000
-	config.Consensus.SkipTimeoutCommit = false
-	config.TxIndex.IndexAllTags = true
-
-	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
-	logger = log.NewFilter(logger, log.AllowError())
-	privValidatorFile := config.PrivValidatorFile()
-	privVal := pvm.LoadOrGenFilePV(privValidatorFile)
-	db := dbm.NewMemDB()
-	app := gapp.NewGaiaApp(logger, db)
-	cdc = gapp.MakeCodec() // XXX
-
-	genesisFile := config.GenesisFile()
-	genDoc, err := tmtypes.GenesisDocFromFile(genesisFile)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	genDoc.Validators = append(genDoc.Validators,
-		tmtypes.GenesisValidator{
-			PubKey: crypto.GenPrivKeyEd25519().PubKey(),
-			Power:  1,
-			Name:   "val",
-		},
-	)
-
-	pk1 := genDoc.Validators[0].PubKey
-	pk2 := genDoc.Validators[1].PubKey
-	validatorAddr1 = hex.EncodeToString(pk1.Address())
-	validatorAddr2 = hex.EncodeToString(pk2.Address())
-
-	// NOTE it's bad practice to reuse pk address for the owner address but doing in the
-	// test for simplicity
-	var appGenTxs [2]json.RawMessage
-	appGenTxs[0], _, _, err = gapp.GaiaAppGenTxNF(cdc, pk1, pk1.Address(), "test_val1", true)
-	if err != nil {
-		return nil, nil, err
-	}
-	appGenTxs[1], _, _, err = gapp.GaiaAppGenTxNF(cdc, pk2, pk2.Address(), "test_val2", true)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	genesisState, err := gapp.GaiaAppGenState(cdc, appGenTxs[:])
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// add the sendAddr to genesis
-	var info cryptoKeys.Info
-	info, seed, err = kb.Create(name, password, cryptoKeys.AlgoEd25519) // XXX global seed
-	if err != nil {
-		return nil, nil, err
-	}
-	sendAddr = info.PubKey.Address().String() // XXX global
-	accAuth := auth.NewBaseAccountWithAddress(info.PubKey.Address())
-	accAuth.Coins = sdk.Coins{{"steak", 100}}
-	acc := gapp.NewGenesisAccount(&accAuth)
-	genesisState.Accounts = append(genesisState.Accounts, acc)
-
-	appState, err := wire.MarshalJSONIndent(cdc, genesisState)
-	if err != nil {
-		return nil, nil, err
-	}
-	genDoc.AppStateJSON = appState
-
-	// LCD listen address
-	var listenAddr string
-	listenAddr, port, err = server.FreeTCPAddr()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// XXX: need to set this so LCD knows the tepleton node address!
-	viper.Set(client.FlagNode, config.RPC.ListenAddress)
-	viper.Set(client.FlagChainID, genDoc.ChainID)
-
-	node, err := startTM(config, logger, genDoc, privVal, app)
-	if err != nil {
-		return nil, nil, err
-	}
-	lcd, err := startLCD(logger, listenAddr, cdc)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	tests.WaitForStart(port)
-
-	return node, lcd, nil
-=======
-	//acc = getAccount(t, port, addr)
-	//coins = acc.GetCoins()
-	//assert.Equal(t, int64(70), coins.AmountOf(denom))
->>>>>>> dev
-=======
 	//acc := getAccount(t, sendAddr)
 	//coins := acc.GetCoins()
 	//assert.Equal(t, int64(98), coins.AmountOf(coinDenom))
 
->>>>>>> dev
 }
 
 //_____________________________________________________________________________
@@ -555,12 +434,8 @@ func doSend(t *testing.T, port, seed, name, password string, addr sdk.Address) (
 	kb := client.MockKeyBase()
 	receiveInfo, _, err := kb.Create("receive_address", "1234567890", cryptoKeys.CryptoAlgo("ed25519"))
 	require.Nil(t, err)
-<<<<<<< HEAD
-	receiveAddr = receiveInfo.PubKey.Address().String()
-=======
 	receiveAddr = receiveInfo.PubKey.Address()
 	receiveAddrBech := sdk.MustBech32ifyAcc(receiveAddr)
->>>>>>> dev
 
 	acc := getAccount(t, port, addr)
 	accnum := acc.GetAccountNumber()
@@ -589,22 +464,13 @@ func doSend(t *testing.T, port, seed, name, password string, addr sdk.Address) (
 	return receiveAddr, resultTx
 }
 
-<<<<<<< HEAD
-func doIBCTransfer(t *testing.T, port, seed string) (resultTx ctypes.ResultBroadcastTxCommit) {
-
-=======
 func doIBCTransfer(t *testing.T, port, seed, name, password string, addr sdk.Address) (resultTx ctypes.ResultBroadcastTxCommit) {
->>>>>>> dev
 	// create receive address
 	kb := client.MockKeyBase()
 	receiveInfo, _, err := kb.Create("receive_address", "1234567890", cryptoKeys.CryptoAlgo("ed25519"))
 	require.Nil(t, err)
-<<<<<<< HEAD
-	receiveAddr := receiveInfo.PubKey.Address().String()
-=======
 	receiveAddr := receiveInfo.PubKey.Address()
 	receiveAddrBech := sdk.MustBech32ifyAcc(receiveAddr)
->>>>>>> dev
 
 	// get the account to get the sequence
 	acc := getAccount(t, port, addr)
@@ -666,19 +532,14 @@ func doBond(t *testing.T, port, seed, name, password string, delegatorAddr, vali
 		"gas": 10000,
 		"delegate": [
 			{
-				"delegator_addr": "%x",
+				"delegator_addr": "%s",
 				"validator_addr": "%s",
 				"bond": { "denom": "%s", "amount": 60 }
 			}
 		],
 		"unbond": []
-<<<<<<< HEAD
-	}`, name, password, sequence, acc.GetAddress(), validatorAddr1, coinDenom))
-	res, body := request(t, port, "POST", "/stake/delegations", jsonStr)
-=======
 	}`, name, password, accnum, sequence, delegatorAddrBech, validatorAddrBech, "steak"))
 	res, body := Request(t, port, "POST", "/stake/delegations", jsonStr)
->>>>>>> dev
 	require.Equal(t, http.StatusOK, res.StatusCode, body)
 
 	var results []ctypes.ResultBroadcastTxCommit
@@ -707,18 +568,13 @@ func doUnbond(t *testing.T, port, seed, name, password string, delegatorAddr, va
 		"delegate": [],
 		"unbond": [
 			{
-				"delegator_addr": "%x",
+				"delegator_addr": "%s",
 				"validator_addr": "%s",
 				"shares": "30"
 			}
 		]
-<<<<<<< HEAD
-	}`, name, password, sequence, acc.GetAddress(), validatorAddr1))
-	res, body := request(t, port, "POST", "/stake/delegations", jsonStr)
-=======
 	}`, name, password, accnum, sequence, delegatorAddrBech, validatorAddrBech))
 	res, body := Request(t, port, "POST", "/stake/delegations", jsonStr)
->>>>>>> dev
 	require.Equal(t, http.StatusOK, res.StatusCode, body)
 
 	var results []ctypes.ResultBroadcastTxCommit
@@ -728,15 +584,11 @@ func doUnbond(t *testing.T, port, seed, name, password string, delegatorAddr, va
 	return results[0]
 }
 
-<<<<<<< HEAD
-func getValidators(t *testing.T) []stake.Validator {
-=======
 func getValidators(t *testing.T, port string) []stakerest.StakeValidatorOutput {
->>>>>>> dev
 	// get the account to get the sequence
 	res, body := Request(t, port, "GET", "/stake/validators", nil)
 	require.Equal(t, http.StatusOK, res.StatusCode, body)
-	var validators stake.Validators
+	var validators []stakerest.StakeValidatorOutput
 	err := cdc.UnmarshalJSON([]byte(body), &validators)
 	require.Nil(t, err)
 	return validators

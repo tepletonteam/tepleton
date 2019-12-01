@@ -37,7 +37,14 @@ func TransferRequestHandlerFn(cdc *wire.Codec, kb keys.Keybase, ctx context.Core
 		// collect data
 		vars := mux.Vars(r)
 		destChainID := vars["destchain"]
-		address := vars["address"]
+		bech32addr := vars["address"]
+
+		address, err := sdk.GetAccAddressBech32(bech32addr)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(err.Error()))
+			return
+		}
 
 		var m transferBody
 		body, err := ioutil.ReadAll(r.Body)
@@ -60,7 +67,7 @@ func TransferRequestHandlerFn(cdc *wire.Codec, kb keys.Keybase, ctx context.Core
 			return
 		}
 
-		bz, err := hex.DecodeString(address)
+		bz, err := hex.DecodeString(address.String())
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(err.Error()))

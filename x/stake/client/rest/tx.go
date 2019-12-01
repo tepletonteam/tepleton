@@ -3,6 +3,7 @@ package rest
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -21,6 +22,17 @@ func registerTxRoutes(ctx context.CoreContext, r *mux.Router, cdc *wire.Codec, k
 		"/stake/delegations",
 		editDelegationsRequestHandlerFn(cdc, kb, ctx),
 	).Methods("POST")
+}
+
+type msgDelegateInput struct {
+	DelegatorAddr string   `json:"delegator_addr"` // in bech32
+	ValidatorAddr string   `json:"validator_addr"` // in bech32
+	Bond          sdk.Coin `json:"bond"`
+}
+type msgUnbondInput struct {
+	DelegatorAddr string `json:"delegator_addr"` // in bech32
+	ValidatorAddr string `json:"validator_addr"` // in bech32
+	Shares        string `json:"shares"`
 }
 
 type editDelegationsBody struct {
@@ -78,7 +90,11 @@ func editDelegationsRequestHandlerFn(cdc *wire.Codec, kb keys.Keybase, ctx conte
 				w.Write([]byte("must use own delegator address"))
 				return
 			}
-			messages[i] = msg
+			messages[i] = stake.MsgDelegate{
+				DelegatorAddr: delegatorAddr,
+				ValidatorAddr: validatorAddr,
+				Bond:          msg.Bond,
+			}
 			i++
 		}
 		for _, msg := range m.Unbond {
@@ -99,7 +115,11 @@ func editDelegationsRequestHandlerFn(cdc *wire.Codec, kb keys.Keybase, ctx conte
 				w.Write([]byte("must use own delegator address"))
 				return
 			}
-			messages[i] = msg
+			messages[i] = stake.MsgUnbond{
+				DelegatorAddr: delegatorAddr,
+				ValidatorAddr: validatorAddr,
+				Shares:        msg.Shares,
+			}
 			i++
 		}
 

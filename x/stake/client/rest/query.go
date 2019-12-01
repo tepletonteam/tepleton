@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"encoding/hex"
 	"fmt"
 	"net/http"
 
@@ -30,24 +29,22 @@ func bondingStatusHandlerFn(ctx context.CoreContext, storeName string, cdc *wire
 
 		// read parameters
 		vars := mux.Vars(r)
-		delegator := vars["delegator"]
-		validator := vars["validator"]
+		bech32delegator := vars["delegator"]
+		bech32validator := vars["validator"]
 
-		bz, err := hex.DecodeString(delegator)
+		delegatorAddr, err := sdk.GetAccAddressBech32(bech32delegator)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(err.Error()))
 			return
 		}
-		delegatorAddr := sdk.Address(bz)
 
-		bz, err = hex.DecodeString(validator)
+		validatorAddr, err := sdk.GetValAddressBech32(bech32validator)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(err.Error()))
 			return
 		}
-		validatorAddr := sdk.Address(bz)
 
 		key := stake.GetDelegationKey(delegatorAddr, validatorAddr, cdc)
 
@@ -83,8 +80,6 @@ func bondingStatusHandlerFn(ctx context.CoreContext, storeName string, cdc *wire
 	}
 }
 
-<<<<<<< HEAD
-=======
 // TODO move exist next to validator struct for maintainability
 type StakeValidatorOutput struct {
 	Owner   string `json:"owner"`   // in bech32
@@ -141,7 +136,6 @@ func bech32StakeValidatorOutput(validator stake.Validator) (StakeValidatorOutput
 }
 
 // TODO bech32
->>>>>>> dev
 // http request handler to query list of validators
 func validatorsHandlerFn(ctx context.CoreContext, storeName string, cdc *wire.Codec) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -159,16 +153,20 @@ func validatorsHandlerFn(ctx context.CoreContext, storeName string, cdc *wire.Co
 		}
 
 		// parse out the validators
-		validators := make([]stake.Validator, len(kvs))
+		validators := make([]StakeValidatorOutput, len(kvs))
 		for i, kv := range kvs {
 			var validator stake.Validator
+			var bech32Validator StakeValidatorOutput
 			err = cdc.UnmarshalBinary(kv.Value, &validator)
+			if err == nil {
+				bech32Validator, err = bech32StakeValidatorOutput(validator)
+			}
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write([]byte(fmt.Sprintf("couldn't decode validator. Error: %s", err.Error())))
 				return
 			}
-			validators[i] = validator
+			validators[i] = bech32Validator
 		}
 
 		output, err := cdc.MarshalJSON(validators)

@@ -1,6 +1,8 @@
 package bank
 
 import (
+	"encoding/json"
+
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
@@ -53,7 +55,20 @@ func (msg MsgSend) ValidateBasic() sdk.Error {
 
 // Implements Msg.
 func (msg MsgSend) GetSignBytes() []byte {
-	b, err := msgCdc.MarshalJSON(msg) // XXX: ensure some canonical form
+	var inputs, outputs []json.RawMessage
+	for _, input := range msg.Inputs {
+		inputs = append(inputs, input.GetSignBytes())
+	}
+	for _, output := range msg.Outputs {
+		outputs = append(outputs, output.GetSignBytes())
+	}
+	b, err := msgCdc.MarshalJSON(struct {
+		Inputs  []json.RawMessage `json:"inputs"`
+		Outputs []json.RawMessage `json:"outputs"`
+	}{
+		Inputs:  inputs,
+		Outputs: outputs,
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -77,6 +92,8 @@ type MsgIssue struct {
 	Banker  sdk.Address `json:"banker"`
 	Outputs []Output    `json:"outputs"`
 }
+
+var _ sdk.Msg = MsgIssue{}
 
 // NewMsgIssue - construct arbitrary multi-in, multi-out send msg.
 func NewMsgIssue(banker sdk.Address, out []Output) MsgIssue {
@@ -102,7 +119,17 @@ func (msg MsgIssue) ValidateBasic() sdk.Error {
 
 // Implements Msg.
 func (msg MsgIssue) GetSignBytes() []byte {
-	b, err := msgCdc.MarshalJSON(msg) // XXX: ensure some canonical form
+	var outputs []json.RawMessage
+	for _, output := range msg.Outputs {
+		outputs = append(outputs, output.GetSignBytes())
+	}
+	b, err := msgCdc.MarshalJSON(struct {
+		Banker  string            `json:"banker"`
+		Outputs []json.RawMessage `json:"outputs"`
+	}{
+		Banker:  sdk.MustBech32ifyAcc(msg.Banker),
+		Outputs: outputs,
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -123,8 +150,6 @@ type Input struct {
 	Coins   sdk.Coins   `json:"coins"`
 }
 
-<<<<<<< HEAD
-=======
 // Return bytes to sign for Input
 func (in Input) GetSignBytes() []byte {
 	bin, err := msgCdc.MarshalJSON(struct {
@@ -140,7 +165,6 @@ func (in Input) GetSignBytes() []byte {
 	return bin
 }
 
->>>>>>> dev
 // ValidateBasic - validate transaction input
 func (in Input) ValidateBasic() sdk.Error {
 	if len(in.Address) == 0 {
@@ -173,8 +197,6 @@ type Output struct {
 	Coins   sdk.Coins   `json:"coins"`
 }
 
-<<<<<<< HEAD
-=======
 // Return bytes to sign for Output
 func (out Output) GetSignBytes() []byte {
 	bin, err := msgCdc.MarshalJSON(struct {
@@ -190,7 +212,6 @@ func (out Output) GetSignBytes() []byte {
 	return bin
 }
 
->>>>>>> dev
 // ValidateBasic - validate transaction output
 func (out Output) ValidateBasic() sdk.Error {
 	if len(out.Address) == 0 {
