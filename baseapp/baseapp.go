@@ -64,8 +64,11 @@ type BaseApp struct {
 	// checkState is set on initialization and reset on Commit.
 	// deliverState is set in InitChain and BeginBlock and cleared on Commit.
 	// See methods setCheckState and setDeliverState.
+	// .valUpdates accumulate in DeliverTx and are reset in BeginBlock.
+	// QUESTION: should we put valUpdates in the deliverState.ctx?
 	checkState       *state                  // for CheckTx
 	deliverState     *state                  // for DeliverTx
+	valUpdates       []wrsp.Validator        // cached validator changes from DeliverTx
 	signedValidators []wrsp.SigningValidator // absent validators from begin block
 }
 
@@ -233,9 +236,9 @@ func (app *BaseApp) initFromStore(mainKey sdk.StoreKey) error {
 // NewContext returns a new Context with the correct store, the given header, and nil txBytes.
 func (app *BaseApp) NewContext(isCheckTx bool, header wrsp.Header) sdk.Context {
 	if isCheckTx {
-		return sdk.NewContext(app.checkState.ms, header, true, app.Logger)
+		return sdk.NewContext(app.checkState.ms, header, true, nil, app.Logger)
 	}
-	return sdk.NewContext(app.deliverState.ms, header, false, app.Logger)
+	return sdk.NewContext(app.deliverState.ms, header, false, nil, app.Logger)
 }
 
 type state struct {
@@ -251,7 +254,7 @@ func (app *BaseApp) setCheckState(header wrsp.Header) {
 	ms := app.cms.CacheMultiStore()
 	app.checkState = &state{
 		ms:  ms,
-		ctx: sdk.NewContext(ms, header, true, app.Logger),
+		ctx: sdk.NewContext(ms, header, true, nil, app.Logger),
 	}
 }
 
@@ -259,7 +262,7 @@ func (app *BaseApp) setDeliverState(header wrsp.Header) {
 	ms := app.cms.CacheMultiStore()
 	app.deliverState = &state{
 		ms:  ms,
-		ctx: sdk.NewContext(ms, header, false, app.Logger),
+		ctx: sdk.NewContext(ms, header, false, nil, app.Logger),
 	}
 }
 
@@ -384,6 +387,7 @@ func (app *BaseApp) BeginBlock(req wrsp.RequestBeginBlock) (res wrsp.ResponseBeg
 	if app.deliverState == nil {
 		app.setDeliverState(req.Header)
 	}
+	app.valUpdates = nil
 	if app.beginBlocker != nil {
 		res = app.beginBlocker(app.deliverState.ctx, req)
 	}
@@ -428,8 +432,13 @@ func (app *BaseApp) DeliverTx(txBytes []byte) (res wrsp.ResponseDeliverTx) {
 		result = app.runTx(runTxModeDeliver, txBytes, tx)
 	}
 
-	// Even though the Result.Code is not OK, there are still effects,
-	// namely fee deductions and sequence incrementing.
+	// After-handler hooks.
+	if result.IsOK() {
+		app.valUpdates = append(app.valUpdates, result.ValidatorUpdates...)
+	} else {
+		// Even though the Result.Code is not OK, there are still effects,
+		// namely fee deductions and sequence incrementing.
+	}
 
 	// Tell the blockchain engine (i.e. Tendermint).
 	return wrsp.ResponseDeliverTx{
@@ -475,18 +484,16 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (result sdk
 	}()
 
 	// Get the Msg.
-	var msgs = tx.GetMsgs()
-	if msgs == nil || len(msgs) == 0 {
-		return sdk.ErrInternal("Tx.GetMsgs() must return at least one message in list").Result()
+	var msg = tx.GetMsg()
+	if msg == nil {
+		return sdk.ErrInternal("Tx.GetMsg() returned nil").Result()
 	}
 
-	for _, msg := range msgs {
-		// Validate the Msg
-		err := msg.ValidateBasic()
-		if err != nil {
-			err = err.WithDefaultCodespace(sdk.CodespaceRoot)
-			return err.Result()
-		}
+	// Validate the Msg.
+	err := msg.ValidateBasic()
+	if err != nil {
+		err = err.WithDefaultCodespace(sdk.CodespaceRoot)
+		return err.Result()
 	}
 
 	// Get the context
@@ -514,6 +521,13 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (result sdk
 		}
 	}
 
+	// Match route.
+	msgType := msg.Type()
+	handler := app.router.Route(msgType)
+	if handler == nil {
+		return sdk.ErrUnknownRequest("Unrecognized Msg type: " + msgType).Result()
+	}
+
 	// Get the correct cache
 	var msCache sdk.CacheMultiStore
 	if mode == runTxModeCheck || mode == runTxModeSimulate {
@@ -526,59 +540,25 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (result sdk
 		ctx = ctx.WithMultiStore(msCache)
 	}
 
-	finalResult := sdk.Result{}
-	var logs []string
-	for i, msg := range msgs {
-		// Match route.
-		msgType := msg.Type()
-		handler := app.router.Route(msgType)
-		if handler == nil {
-			return sdk.ErrUnknownRequest("Unrecognized Msg type: " + msgType).Result()
-		}
+	result = handler(ctx, msg)
 
-		result = handler(ctx, msg)
-
-		// Set gas utilized
-		finalResult.GasUsed += ctx.GasMeter().GasConsumed()
-		finalResult.GasWanted += result.GasWanted
-
-		// Append Data and Tags
-		finalResult.Data = append(finalResult.Data, result.Data...)
-		finalResult.Tags = append(finalResult.Tags, result.Tags...)
-
-		// Construct usable logs in multi-message transactions. Messages are 1-indexed in logs.
-		logs = append(logs, fmt.Sprintf("Msg %d: %s", i+1, finalResult.Log))
-
-		// Stop execution and return on first failed message.
-		if !result.IsOK() {
-			if len(msgs) == 1 {
-				return result
-			}
-			result.GasUsed = finalResult.GasUsed
-			if i == 0 {
-				result.Log = fmt.Sprintf("Msg 1 failed: %s", result.Log)
-			} else {
-				result.Log = fmt.Sprintf("Msg 1-%d Passed. Msg %d failed: %s", i, i+1, result.Log)
-			}
-			return result
-		}
-	}
+	// Set gas utilized
+	result.GasUsed = ctx.GasMeter().GasConsumed()
 
 	// If not a simulated run and result was successful, write to app.checkState.ms or app.deliverState.ms
-	// Only update state if all messages pass.
 	if mode != runTxModeSimulate && result.IsOK() {
 		msCache.Write()
 	}
 
-	finalResult.Log = strings.Join(logs, "\n")
-
-	return finalResult
+	return result
 }
 
 // Implements WRSP
 func (app *BaseApp) EndBlock(req wrsp.RequestEndBlock) (res wrsp.ResponseEndBlock) {
 	if app.endBlocker != nil {
 		res = app.endBlocker(app.deliverState.ctx, req)
+	} else {
+		res.ValidatorUpdates = app.valUpdates
 	}
 	return
 }

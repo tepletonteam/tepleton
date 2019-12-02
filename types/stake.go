@@ -37,7 +37,6 @@ type Validator interface {
 	GetOwner() Address        // owner address to receive/return validators coins
 	GetPubKey() crypto.PubKey // validation pubkey
 	GetPower() Rat            // validation power
-	GetDelegatorShares() Rat  // Total out standing delegator shares
 	GetBondHeight() int64     // height in which the validator became active
 }
 
@@ -77,10 +76,9 @@ type Delegation interface {
 
 // properties for the set of all delegations for a particular
 type DelegationSet interface {
-	GetValidatorSet() ValidatorSet // validator set for which delegation set is based upon
 
 	// iterate through all delegations from one delegator by validator-address,
 	//   execute func for each validator
-	IterateDelegations(ctx Context, delegator Address,
+	IterateDelegators(Context, delegator Address,
 		fn func(index int64, delegation Delegation) (stop bool))
 }

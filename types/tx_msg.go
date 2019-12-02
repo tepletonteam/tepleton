@@ -30,7 +30,7 @@ type Msg interface {
 type Tx interface {
 
 	// Gets the Msg.
-	GetMsgs() []Msg
+	GetMsg() Msg
 
 	// Gets the memo.
 	GetMemo() string

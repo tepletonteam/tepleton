@@ -20,7 +20,7 @@ func TestPowHandler(t *testing.T) {
 	auth.RegisterBaseAccount(cdc)
 
 	am := auth.NewAccountMapper(cdc, capKey, &auth.BaseAccount{})
-	ctx := sdk.NewContext(ms, wrsp.Header{}, false, log.NewNopLogger())
+	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil, log.NewNopLogger())
 	config := NewConfig("pow", int64(1))
 	ck := bank.NewKeeper(am)
 	keeper := NewKeeper(capKey, config, ck, DefaultCodespace)
