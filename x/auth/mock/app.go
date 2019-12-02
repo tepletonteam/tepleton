@@ -4,6 +4,7 @@ import (
 	"os"
 
 	wrsp "github.com/tepleton/wrsp/types"
+	crypto "github.com/tepleton/go-crypto"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
 
@@ -81,4 +82,25 @@ func (app *App) InitChainer(ctx sdk.Context, _ wrsp.RequestInitChain) wrsp.Respo
 	}
 
 	return wrsp.ResponseInitChain{}
+}
+
+// Generate genesis accounts loaded with coins, and returns their addresses, pubkeys, and privkeys
+func CreateGenAccounts(numAccs int64, genCoins sdk.Coins) (genAccs []auth.Account, addrs []sdk.Address, pubKeys []crypto.PubKey, privKeys []crypto.PrivKey) {
+	for i := int64(0); i < numAccs; i++ {
+		privKey := crypto.GenPrivKeyEd25519()
+		pubKey := privKey.PubKey()
+		addr := pubKey.Address()
+
+		genAcc := &auth.BaseAccount{
+			Address: addr,
+			Coins:   genCoins,
+		}
+
+		genAccs = append(genAccs, genAcc)
+		privKeys = append(privKeys, privKey)
+		pubKeys = append(pubKeys, pubKey)
+		addrs = append(addrs, addr)
+	}
+
+	return
 }
