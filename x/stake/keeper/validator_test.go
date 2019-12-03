@@ -34,7 +34,6 @@ func TestSetValidator(t *testing.T) {
 	// Check each store for being saved
 	resVal, found := keeper.GetValidator(ctx, addrVals[0])
 	assert.True(ValEq(t, validator, resVal))
-	assert.True(t, found)
 
 	resVals := keeper.GetValidatorsBonded(ctx)
 	require.Equal(t, 1, len(resVals))
@@ -88,7 +87,6 @@ func TestUpdateValidatorByPowerIndex(t *testing.T) {
 
 	pool = keeper.GetPool(ctx)
 	validator, found = keeper.GetValidator(ctx, addrVals[0])
-	assert.True(t, found)
 	power = GetValidatorsByPowerIndexKey(validator, pool)
 	assert.True(t, keeper.validatorByPowerIndexExists(ctx, power))
 }

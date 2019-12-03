@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	wrsp "github.com/tepleton/wrsp/types"
 	crypto "github.com/tepleton/go-crypto"
@@ -80,7 +79,6 @@ func TestBonding(t *testing.T) {
 	assert.Nil(t, err)
 
 	power, err := stakeKeeper.bondWithoutCoins(ctx, addr, pubKey, sdk.NewCoin("steak", 10))
-	require.Nil(t, err)
 	assert.Equal(t, int64(20), power)
 
 	pk, _, err := stakeKeeper.unbondWithoutCoins(ctx, addr)

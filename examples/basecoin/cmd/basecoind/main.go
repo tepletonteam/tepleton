@@ -33,11 +33,7 @@ func main() {
 	// prepare and add flags
 	rootDir := os.ExpandEnv("$HOME/.basecoind")
 	executor := cli.PrepareBaseCmd(rootCmd, "BC", rootDir)
-	err := executor.Execute()
-	if err != nil {
-		// handle with #870
-		panic(err)
-	}
+	executor.Execute()
 }
 
 func newApp(logger log.Logger, db dbm.DB) wrsp.Application {

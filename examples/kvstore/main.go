@@ -55,18 +55,12 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	err = srv.Start()
-	if err != nil {
-		cmn.Exit(err.Error())
-	}
+	srv.Start()
 
 	// Wait forever
 	cmn.TrapSignal(func() {
 		// Cleanup
-		err = srv.Stop()
-		if err != nil {
-			cmn.Exit(err.Error())
-		}
+		srv.Stop()
 	})
 	return
 }

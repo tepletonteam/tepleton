@@ -164,19 +164,13 @@ func (app *BaseApp) Router() Router { return app.router }
 
 // load latest application version
 func (app *BaseApp) LoadLatestVersion(mainKey sdk.StoreKey) error {
-	err := app.cms.LoadLatestVersion()
-	if err != nil {
-		return err
-	}
+	app.cms.LoadLatestVersion()
 	return app.initFromStore(mainKey)
 }
 
 // load application version
 func (app *BaseApp) LoadVersion(version int64, mainKey sdk.StoreKey) error {
-	err := app.cms.LoadVersion(version)
-	if err != nil {
-		return err
-	}
+	app.cms.LoadVersion(version)
 	return app.initFromStore(mainKey)
 }
 
@@ -229,6 +223,9 @@ func (app *BaseApp) initFromStore(mainKey sdk.StoreKey) error {
 			}
 		}
 	*/
+
+	// initialize Check state
+	app.setCheckState(wrsp.Header{})
 
 	return nil
 }
@@ -290,13 +287,12 @@ func (app *BaseApp) SetOption(req wrsp.RequestSetOption) (res wrsp.ResponseSetOp
 // Implements WRSP
 // InitChain runs the initialization logic directly on the CommitMultiStore and commits it.
 func (app *BaseApp) InitChain(req wrsp.RequestInitChain) (res wrsp.ResponseInitChain) {
-	// Initialize the deliver state and check state with ChainID and run initChain
-	app.setDeliverState(wrsp.Header{ChainID: req.ChainId})
-	app.setCheckState(wrsp.Header{ChainID: req.ChainId})
-
 	if app.initChainer == nil {
 		return
 	}
+
+	// Initialize the deliver state and run initChain
+	app.setDeliverState(wrsp.Header{})
 	app.initChainer(app.deliverState.ctx, req) // no error
 
 	// NOTE: we don't commit, but BeginBlock for block 1
@@ -383,15 +379,10 @@ func (app *BaseApp) Query(req wrsp.RequestQuery) (res wrsp.ResponseQuery) {
 func (app *BaseApp) BeginBlock(req wrsp.RequestBeginBlock) (res wrsp.ResponseBeginBlock) {
 	// Initialize the DeliverTx state.
 	// If this is the first block, it should already
-	// be initialized in InitChain.
-	// Otherwise app.deliverState will be nil, since it
-	// is reset on Commit.
+	// be initialized in InitChain. It may also be nil
+	// if this is a test and InitChain was never called.
 	if app.deliverState == nil {
 		app.setDeliverState(req.Header)
-	} else {
-		// In the first block, app.deliverState.ctx will already be initialized
-		// by InitChain. Context is now updated with Header information.
-		app.deliverState.ctx = app.deliverState.ctx.WithBlockHeader(req.Header)
 	}
 	if app.beginBlocker != nil {
 		res = app.beginBlocker(app.deliverState.ctx, req)

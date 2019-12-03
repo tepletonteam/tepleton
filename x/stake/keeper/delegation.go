@@ -295,10 +295,7 @@ func (k Keeper) CompleteUnbonding(ctx sdk.Context, delegatorAddr, validatorAddr 
 		return types.ErrNotMature(k.Codespace(), "unbonding", "unit-time", ubd.MinTime, ctxTime)
 	}
 
-	_, _, err := k.coinKeeper.AddCoins(ctx, ubd.DelegatorAddr, sdk.Coins{ubd.Balance})
-	if err != nil {
-		return err
-	}
+	k.coinKeeper.AddCoins(ctx, ubd.DelegatorAddr, sdk.Coins{ubd.Balance})
 	k.RemoveUnbondingDelegation(ctx, ubd)
 	return nil
 }
@@ -324,9 +321,6 @@ func (k Keeper) BeginRedelegation(ctx sdk.Context, delegatorAddr, validatorSrcAd
 		return types.ErrBadRedelegationDst(k.Codespace())
 	}
 	sharesCreated, err := k.Delegate(ctx, delegatorAddr, returnCoin, dstValidator)
-	if err != nil {
-		return err
-	}
 
 	// create the unbonding delegation
 	minTime := ctx.BlockHeader().Time + params.UnbondingTime

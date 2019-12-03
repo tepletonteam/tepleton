@@ -34,9 +34,6 @@ func CoolAppGenState(cdc *wire.Codec, appGenTxs []json.RawMessage) (appState jso
         "trend": "ice-cold"
       }`)
 	appState, err = server.AppendJSON(cdc, appState, key, value)
-	if err != nil {
-		return
-	}
 	key = "pow"
 	value = json.RawMessage(`{
         "difficulty": 1,
@@ -72,9 +69,5 @@ func main() {
 	// prepare and add flags
 	rootDir := os.ExpandEnv("$HOME/.democoind")
 	executor := cli.PrepareBaseCmd(rootCmd, "BC", rootDir)
-	err := executor.Execute()
-	if err != nil {
-		// handle with #870
-		panic(err)
-	}
+	executor.Execute()
 }

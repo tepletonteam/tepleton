@@ -77,11 +77,7 @@ func (app *App) InitChainer(ctx sdk.Context, _ wrsp.RequestInitChain) wrsp.Respo
 	// load the accounts
 	for _, genacc := range app.GenesisAccounts {
 		acc := app.AccountMapper.NewAccountWithAddress(ctx, genacc.GetAddress())
-		err := acc.SetCoins(genacc.GetCoins())
-		if err != nil {
-			// TODO: Handle with #870
-			panic(err)
-		}
+		acc.SetCoins(genacc.GetCoins())
 		app.AccountMapper.SetAccount(ctx, acc)
 	}
 
