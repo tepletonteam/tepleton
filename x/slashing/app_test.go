@@ -55,7 +55,9 @@ func getEndBlocker(keeper stake.Keeper) sdk.EndBlocker {
 func getInitChainer(mapp *mock.App, keeper stake.Keeper) sdk.InitChainer {
 	return func(ctx sdk.Context, req wrsp.RequestInitChain) wrsp.ResponseInitChain {
 		mapp.InitChainer(ctx, req)
-		stake.InitGenesis(ctx, keeper, stake.DefaultGenesisState())
+		stakeGenesis := stake.DefaultGenesisState()
+		stakeGenesis.Pool.LooseTokens = 100000
+		stake.InitGenesis(ctx, keeper, stakeGenesis)
 		return wrsp.ResponseInitChain{}
 	}
 }
