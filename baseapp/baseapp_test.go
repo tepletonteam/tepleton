@@ -3,7 +3,6 @@ package baseapp
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/tepleton/tepleton-sdk/x/bank"
 	"os"
 	"testing"
 
@@ -20,6 +19,7 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
+	"github.com/tepleton/tepleton-sdk/x/bank"
 )
 
 func defaultLogger() log.Logger {
