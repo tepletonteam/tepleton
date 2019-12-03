@@ -43,7 +43,6 @@ func TestGenesis(t *testing.T) {
 		},
 	}
 	stateBytes, err := json.MarshalIndent(genesisState, "", "\t")
-	require.Nil(t, err)
 
 	vals := []wrsp.Validator{}
 	bapp.InitChain(wrsp.RequestInitChain{Validators: vals, AppStateBytes: stateBytes})
@@ -56,7 +55,6 @@ func TestGenesis(t *testing.T) {
 
 	// reload app and ensure the account is still there
 	bapp = NewDemocoinApp(logger, db)
-	bapp.InitChain(wrsp.RequestInitChain{AppStateBytes: []byte("{}")})
 	ctx = bapp.BaseApp.NewContext(true, wrsp.Header{})
 	res1 = bapp.accountMapper.GetAccount(ctx, baseAcc.Address)
 	assert.Equal(t, acc, res1)

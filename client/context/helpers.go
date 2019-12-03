@@ -127,8 +127,8 @@ func (ctx CoreContext) SignAndBuild(name, passphrase string, msgs []sdk.Msg, cdc
 
 	signMsg := auth.StdSignMsg{
 		ChainID:       chainID,
-		AccountNumber: accnum,
-		Sequence:      sequence,
+		AccountNumber: int64(accnum),
+		Sequence:      int64(sequence),
 		Msgs:          msgs,
 		Memo:          memo,
 		Fee:           auth.NewStdFee(ctx.Gas, sdk.Coin{}), // TODO run simulate to estimate gas?
