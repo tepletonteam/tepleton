@@ -2,7 +2,9 @@ package app
 
 import (
 	"os"
+	"fmt"
 	"testing"
+	"encoding/json"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -12,6 +14,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/stake"
+	gen "github.com/tepleton/tepleton-sdk/x/stake/types"
 
 	wrsp "github.com/tepleton/wrsp/types"
 	crypto "github.com/tepleton/go-crypto"
@@ -71,6 +74,16 @@ func TestGenesis(t *testing.T) {
 
 	// reload app and ensure the account is still there
 	bapp = NewBasecoinApp(logger, db)
+	// Initialize stake data with default genesis state
+	stakedata := gen.DefaultGenesisState()
+	genState, err := json.Marshal(stakedata)
+	if err != nil {
+		panic(err)
+	}
+
+	// InitChain with default stake data. Initializes deliverState and checkState context
+	bapp.InitChain(wrsp.RequestInitChain{AppStateBytes: []byte(fmt.Sprintf("{\"stake\": %s}", string(genState)))})
+	
 	ctx = bapp.BaseApp.NewContext(true, wrsp.Header{})
 	res1 = bapp.accountMapper.GetAccount(ctx, baseAcc.Address)
 	assert.Equal(t, acc, res1)
