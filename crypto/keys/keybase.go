@@ -7,62 +7,120 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	crypto "github.com/tepleton/go-crypto"
-	"github.com/tepleton/go-crypto/keys/words"
+	tcrypto "github.com/tepleton/tepleton/crypto"
 	dbm "github.com/tepleton/tmlibs/db"
+
+	"github.com/tepleton/tepleton-sdk/crypto"
+	"github.com/tepleton/tepleton-sdk/crypto/keys/bip39"
+	"github.com/tepleton/tepleton-sdk/crypto/keys/hd"
 )
-
-// dbKeybase combines encyption and storage implementation to provide
-// a full-featured key manager
-type dbKeybase struct {
-	db    dbm.DB
-	codec words.Codec
-}
-
-func New(db dbm.DB, codec words.Codec) dbKeybase {
-	return dbKeybase{
-		db:    db,
-		codec: codec,
-	}
-}
 
 var _ Keybase = dbKeybase{}
 
+// Language is a language to create the BIP 39 mnemonic in.
+// Currently, only english is supported though.
+// Find a list of all supported languages in the BIP 39 spec (word lists).
+type Language int
+
+const (
+	// English is the default language to create a mnemonic.
+	// It is the only supported language by this package.
+	English Language = iota + 1
+	// Japanese is currently not supported.
+	Japanese
+	// Korean is currently not supported.
+	Korean
+	// Spanish is currently not supported.
+	Spanish
+	// ChineseSimplified is currently not supported.
+	ChineseSimplified
+	// ChineseTraditional is currently not supported.
+	ChineseTraditional
+	// French is currently not supported.
+	French
+	// Italian is currently not supported.
+	Italian
+)
+
+var (
+	// ErrUnsupportedSigningAlgo is raised when the caller tries to use a different signing scheme than secp256k1.
+	ErrUnsupportedSigningAlgo = errors.New("unsupported signing algo: only secp256k1 is supported")
+	// ErrUnsupportedLanguage is raised when the caller tries to use a different language than english for creating
+	// a mnemonic sentence.
+	ErrUnsupportedLanguage = errors.New("unsupported language: only english is supported")
+)
+
+// dbKeybase combines encryption and storage implementation to provide
+// a full-featured key manager
+type dbKeybase struct {
+	db dbm.DB
+}
+
+// New creates a new keybase instance using the passed DB for reading and writing keys.
+func New(db dbm.DB) Keybase {
+	return dbKeybase{
+		db: db,
+	}
+}
+
 // CreateMnemonic generates a new key and persists it to storage, encrypted
-// using the passphrase.  It returns the generated seedphrase
-// (mnemonic) and the key Info.  It returns an error if it fails to
+// using the provided password.
+// It returns the generated mnemonic and the key Info.
+// It returns an error if it fails to
 // generate a key for the given algo type, or if another key is
 // already stored under the same name.
-func (kb dbKeybase) CreateMnemonic(name, passphrase string, algo SignAlgo) (Info, string, error) {
-	// NOTE: secret is SHA256 hashed by secp256k1 and ed25519.
-	// 16 byte secret corresponds to 12 BIP39 words.
-	// XXX: Ledgers use 24 words now - should we ?
-	secret := crypto.CRandBytes(16)
-	priv, err := generate(algo, secret)
-	if err != nil {
-		return nil, "", err
+func (kb dbKeybase) CreateMnemonic(name string, language Language, passwd string, algo SigningAlgo) (info Info, mnemonic string, err error) {
+	if language != English {
+		return nil, "", ErrUnsupportedLanguage
+	}
+	if algo != Secp256k1 {
+		err = ErrUnsupportedSigningAlgo
+		return
 	}
 
-	// encrypt and persist the key
-	info := kb.writeLocalKey(priv, name, passphrase)
+	// default number of words (24):
+	mnemonicS, err := bip39.NewMnemonic(bip39.FreshKey)
+	if err != nil {
+		return
+	}
+	mnemonic = strings.Join(mnemonicS, " ")
+	seed := bip39.MnemonicToSeed(mnemonic)
+	info, err = kb.persistDerivedKey(seed, passwd, name, hd.FullFundraiserPath)
+	return
+}
 
-	// we append the type byte to the serialized secret to help with
-	// recovery
-	// ie [secret] = [type] + [secret]
-	typ := cryptoAlgoToByte(algo)
-	secret = append([]byte{typ}, secret...)
+// CreateFundraiserKey converts a mnemonic to a private key and persists it,
+// encrypted with the given password.
+// TODO(ismail)
+func (kb dbKeybase) CreateFundraiserKey(name, mnemonic, passwd string) (info Info, err error) {
+	words := strings.Split(mnemonic, " ")
+	if len(words) != 12 {
+		err = fmt.Errorf("recovering only works with 12 word (fundraiser) mnemonics, got: %v words", len(words))
+		return
+	}
+	seed, err := bip39.MnemonicToSeedWithErrChecking(mnemonic)
+	if err != nil {
+		return
+	}
+	info, err = kb.persistDerivedKey(seed, passwd, name, hd.FullFundraiserPath)
+	return
+}
 
-	// return the mnemonic phrase
-	words, err := kb.codec.BytesToWords(secret)
-	seed := strings.Join(words, " ")
-	return info, seed, err
+func (kb dbKeybase) Derive(name, mnemonic, passwd string, params hd.BIP44Params) (info Info, err error) {
+	seed, err := bip39.MnemonicToSeedWithErrChecking(mnemonic)
+	if err != nil {
+		return
+	}
+	info, err = kb.persistDerivedKey(seed, passwd, name, params.String())
+
+	return
 }
 
 // CreateLedger creates a new locally-stored reference to a Ledger keypair
 // It returns the created key info and an error if the Ledger could not be queried
-func (kb dbKeybase) CreateLedger(name string, path crypto.DerivationPath, algo SignAlgo) (Info, error) {
-	if algo != AlgoSecp256k1 {
-		return nil, fmt.Errorf("Only secp256k1 is supported for Ledger devices")
+func (kb dbKeybase) CreateLedger(name string, path crypto.DerivationPath, algo SigningAlgo) (Info, error) {
+	if algo != Secp256k1 {
+		return nil, ErrUnsupportedSigningAlgo
 	}
 	priv, err := crypto.NewPrivKeyLedgerSecp256k1(path)
 	if err != nil {
@@ -74,33 +132,27 @@ func (kb dbKeybase) CreateLedger(name string, path crypto.DerivationPath, algo S
 
 // CreateOffline creates a new reference to an offline keypair
 // It returns the created key info
-func (kb dbKeybase) CreateOffline(name string, pub crypto.PubKey) (Info, error) {
+func (kb dbKeybase) CreateOffline(name string, pub tcrypto.PubKey) (Info, error) {
 	return kb.writeOfflineKey(pub, name), nil
 }
 
-// Recover converts a seedphrase to a private key and persists it,
-// encrypted with the given passphrase.  Functions like Create, but
-// seedphrase is input not output.
-func (kb dbKeybase) Recover(name, passphrase, seedphrase string) (Info, error) {
-	words := strings.Split(strings.TrimSpace(seedphrase), " ")
-	secret, err := kb.codec.WordsToBytes(words)
+func (kb *dbKeybase) persistDerivedKey(seed []byte, passwd, name, fullHdPath string) (info Info, err error) {
+	// create master key and derive first key:
+	masterPriv, ch := hd.ComputeMastersFromSeed(seed)
+	derivedPriv, err := hd.DerivePrivateKeyForPath(masterPriv, ch, fullHdPath)
 	if err != nil {
-		return nil, err
+		return
 	}
 
-	// secret is comprised of the actual secret with the type
-	// appended.
-	// ie [secret] = [type] + [secret]
-	typ, secret := secret[0], secret[1:]
-	algo := byteToSignAlgo(typ)
-	priv, err := generate(algo, secret)
-	if err != nil {
-		return nil, err
+	// if we have a password, use it to encrypt the private key and store it
+	// else store the public key only
+	if passwd != "" {
+		info = kb.writeLocalKey(tcrypto.PrivKeySecp256k1(derivedPriv), name, passwd)
+	} else {
+		pubk := tcrypto.PrivKeySecp256k1(derivedPriv).PubKey()
+		info = kb.writeOfflineKey(pubk, name)
 	}
-
-	// encrypt and persist key.
-	public := kb.writeLocalKey(priv, name, passphrase)
-	return public, nil
+	return
 }
 
 // List returns the keys from storage in alphabetical order.
@@ -126,12 +178,12 @@ func (kb dbKeybase) Get(name string) (Info, error) {
 
 // Sign signs the msg with the named key.
 // It returns an error if the key doesn't exist or the decryption fails.
-func (kb dbKeybase) Sign(name, passphrase string, msg []byte) (sig crypto.Signature, pub crypto.PubKey, err error) {
+func (kb dbKeybase) Sign(name, passphrase string, msg []byte) (sig tcrypto.Signature, pub tcrypto.PubKey, err error) {
 	info, err := kb.Get(name)
 	if err != nil {
 		return
 	}
-	var priv crypto.PrivKey
+	var priv tcrypto.PrivKey
 	switch info.(type) {
 	case localInfo:
 		linfo := info.(localInfo)
@@ -173,7 +225,7 @@ func (kb dbKeybase) Sign(name, passphrase string, msg []byte) (sig crypto.Signat
 func (kb dbKeybase) Export(name string) (armor string, err error) {
 	bz := kb.db.Get(infoKey(name))
 	if bz == nil {
-		return "", errors.New("No key to export with name " + name)
+		return "", fmt.Errorf("no key to export with name %s", name)
 	}
 	return armorInfoBytes(bz), nil
 }
@@ -184,7 +236,7 @@ func (kb dbKeybase) Export(name string) (armor string, err error) {
 func (kb dbKeybase) ExportPubKey(name string) (armor string, err error) {
 	bz := kb.db.Get(infoKey(name))
 	if bz == nil {
-		return "", errors.New("No key to export with name " + name)
+		return "", fmt.Errorf("no key to export with name %s", name)
 	}
 	info, err := readInfo(bz)
 	if err != nil {
@@ -218,7 +270,7 @@ func (kb dbKeybase) ImportPubKey(name string, armor string) (err error) {
 	if err != nil {
 		return
 	}
-	pubKey, err := crypto.PubKeyFromBytes(pubBytes)
+	pubKey, err := tcrypto.PubKeyFromBytes(pubBytes)
 	if err != nil {
 		return
 	}
@@ -248,7 +300,7 @@ func (kb dbKeybase) Delete(name, passphrase string) error {
 	case ledgerInfo:
 	case offlineInfo:
 		if passphrase != "yes" {
-			return fmt.Errorf("enter exactly 'yes' to delete the key")
+			return fmt.Errorf("enter 'yes' exactly to delete the key - this cannot be undone")
 		}
 		kb.db.DeleteSync(infoKey(name))
 		return nil
@@ -276,11 +328,11 @@ func (kb dbKeybase) Update(name, oldpass, newpass string) error {
 		kb.writeLocalKey(key, name, newpass)
 		return nil
 	default:
-		return fmt.Errorf("Locally stored key required")
+		return fmt.Errorf("locally stored key required")
 	}
 }
 
-func (kb dbKeybase) writeLocalKey(priv crypto.PrivKey, name, passphrase string) Info {
+func (kb dbKeybase) writeLocalKey(priv tcrypto.PrivKey, name, passphrase string) Info {
 	// encrypt private key using passphrase
 	privArmor := encryptArmorPrivKey(priv, passphrase)
 	// make Info
@@ -290,13 +342,13 @@ func (kb dbKeybase) writeLocalKey(priv crypto.PrivKey, name, passphrase string) 
 	return info
 }
 
-func (kb dbKeybase) writeLedgerKey(pub crypto.PubKey, path crypto.DerivationPath, name string) Info {
+func (kb dbKeybase) writeLedgerKey(pub tcrypto.PubKey, path crypto.DerivationPath, name string) Info {
 	info := newLedgerInfo(name, pub, path)
 	kb.writeInfo(info, name)
 	return info
 }
 
-func (kb dbKeybase) writeOfflineKey(pub crypto.PubKey, name string) Info {
+func (kb dbKeybase) writeOfflineKey(pub tcrypto.PubKey, name string) Info {
 	info := newOfflineInfo(name, pub)
 	kb.writeInfo(info, name)
 	return info
@@ -305,18 +357,6 @@ func (kb dbKeybase) writeOfflineKey(pub crypto.PubKey, name string) Info {
 func (kb dbKeybase) writeInfo(info Info, name string) {
 	// write the info by key
 	kb.db.SetSync(infoKey(name), writeInfo(info))
-}
-
-func generate(algo SignAlgo, secret []byte) (crypto.PrivKey, error) {
-	switch algo {
-	case AlgoEd25519:
-		return crypto.GenPrivKeyEd25519FromSecret(secret), nil
-	case AlgoSecp256k1:
-		return crypto.GenPrivKeySecp256k1FromSecret(secret), nil
-	default:
-		err := errors.Errorf("Cannot generate keys for algorithm: %s", algo)
-		return nil, err
-	}
 }
 
 func infoKey(name string) []byte {

@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 
-	"github.com/tepleton/go-amino"
-	"github.com/tepleton/go-crypto"
+	amino "github.com/tepleton/go-amino"
+	"github.com/tepleton/tepleton/crypto"
 )
 
 // amino codec to marshal/unmarshal

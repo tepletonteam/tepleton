@@ -4,7 +4,7 @@ import (
 	"bytes"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/go-crypto"
+	"github.com/tepleton/tepleton/crypto"
 )
 
 // Validator implements sdk.Validator

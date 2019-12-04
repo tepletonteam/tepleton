@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 
-	wrsp "github.com/tepleton/wrsp/types"
-	crypto "github.com/tepleton/go-crypto"
+	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	"github.com/tepleton/tepleton/crypto"
 	tmtypes "github.com/tepleton/tepleton/types"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"

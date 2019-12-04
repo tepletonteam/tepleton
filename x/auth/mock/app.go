@@ -3,8 +3,8 @@ package mock
 import (
 	"os"
 
-	wrsp "github.com/tepleton/wrsp/types"
-	crypto "github.com/tepleton/go-crypto"
+	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	"github.com/tepleton/tepleton/crypto"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
 
@@ -77,7 +77,11 @@ func (app *App) InitChainer(ctx sdk.Context, _ wrsp.RequestInitChain) wrsp.Respo
 	// load the accounts
 	for _, genacc := range app.GenesisAccounts {
 		acc := app.AccountMapper.NewAccountWithAddress(ctx, genacc.GetAddress())
-		acc.SetCoins(genacc.GetCoins())
+		err := acc.SetCoins(genacc.GetCoins())
+		if err != nil {
+			// TODO: Handle with #870
+			panic(err)
+		}
 		app.AccountMapper.SetAccount(ctx, acc)
 	}
 

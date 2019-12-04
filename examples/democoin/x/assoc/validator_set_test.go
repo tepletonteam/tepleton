@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	wrsp "github.com/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/tepleton/wrsp/types"
 	dbm "github.com/tepleton/tmlibs/db"
 
 	"github.com/tepleton/tepleton-sdk/examples/democoin/mock"

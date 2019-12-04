@@ -7,7 +7,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/auth/mock"
 
-	wrsp "github.com/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/tepleton/wrsp/types"
 )
 
 func BenchmarkOneBankSendTxPerBlock(b *testing.B) {
