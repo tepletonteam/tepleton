@@ -17,7 +17,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/gov"
 	"github.com/tepleton/tepleton-sdk/x/stake"
-	"github.com/tepleton/tepleton/crypto"
+	crypto "github.com/tepleton/go-crypto"
 )
 
 func TestGaiaCLISend(t *testing.T) {

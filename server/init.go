@@ -14,9 +14,9 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"github.com/tepleton/tepleton-sdk/crypto/keys"
-	"github.com/tepleton/tepleton/crypto"
-
+	crypto "github.com/tepleton/go-crypto"
+	"github.com/tepleton/go-crypto/keys"
+	"github.com/tepleton/go-crypto/keys/words"
 	cfg "github.com/tepleton/tepleton/config"
 	"github.com/tepleton/tepleton/p2p"
 	pvm "github.com/tepleton/tepleton/privval"
@@ -88,7 +88,7 @@ func GenTxCmd(ctx *Context, cdc *wire.Codec, appInit AppInit) *cobra.Command {
 				viper.GetBool(FlagOWK),
 				ip,
 			}
-			cliPrint, genTxFile, err := gentxWithConfig(cdc, appInit, config, genTxConfig)
+			cliPrint, genTxFile, err := gentxWithConfig(ctx, cdc, appInit, config, genTxConfig)
 			if err != nil {
 				return err
 			}
@@ -112,7 +112,7 @@ func GenTxCmd(ctx *Context, cdc *wire.Codec, appInit AppInit) *cobra.Command {
 	return cmd
 }
 
-func gentxWithConfig(cdc *wire.Codec, appInit AppInit, config *cfg.Config, genTxConfig serverconfig.GenTx) (
+func gentxWithConfig(ctx *Context, cdc *wire.Codec, appInit AppInit, config *cfg.Config, genTxConfig serverconfig.GenTx) (
 	cliPrint json.RawMessage, genTxFile json.RawMessage, err error) {
 	nodeKey, err := p2p.LoadOrGenNodeKey(config.NodeKeyFile())
 	if err != nil {
@@ -169,7 +169,7 @@ func InitCmd(ctx *Context, cdc *wire.Codec, appInit AppInit) *cobra.Command {
 				viper.GetBool(FlagOverwrite),
 			}
 
-			chainID, nodeID, appMessage, err := initWithConfig(cdc, appInit, config, initConfig)
+			chainID, nodeID, appMessage, err := initWithConfig(ctx, cdc, appInit, config, initConfig)
 			if err != nil {
 				return err
 			}
@@ -200,7 +200,7 @@ func InitCmd(ctx *Context, cdc *wire.Codec, appInit AppInit) *cobra.Command {
 	return cmd
 }
 
-func initWithConfig(cdc *wire.Codec, appInit AppInit, config *cfg.Config, initConfig InitConfig) (
+func initWithConfig(ctx *Context, cdc *wire.Codec, appInit AppInit, config *cfg.Config, initConfig InitConfig) (
 	chainID string, nodeID string, appMessage json.RawMessage, err error) {
 	nodeKey, err := p2p.LoadOrGenNodeKey(config.NodeKeyFile())
 	if err != nil {
@@ -459,17 +459,22 @@ func SimpleAppGenState(cdc *wire.Codec, appGenTxs []json.RawMessage) (appState j
 func GenerateCoinKey() (sdk.Address, string, error) {
 
 	// construct an in-memory key store
-	keybase := keys.New(
-		dbm.NewMemDB(),
-	)
-
-	// generate a private key, with recovery phrase
-	info, secret, err := keybase.CreateMnemonic("name", keys.English, "pass", keys.Secp256k1)
+	codec, err := words.LoadCodec("english")
 	if err != nil {
 		return nil, "", err
 	}
-	addr := info.GetPubKey().Address()
-	return sdk.Address(addr), secret, nil
+	keybase := keys.New(
+		dbm.NewMemDB(),
+		codec,
+	)
+
+	// generate a private key, with recovery phrase
+	info, secret, err := keybase.Create("name", "pass", keys.AlgoEd25519)
+	if err != nil {
+		return nil, "", err
+	}
+	addr := info.PubKey.Address()
+	return addr, secret, nil
 }
 
 // GenerateSaveCoinKey returns the address of a public key, along with the secret
@@ -491,10 +496,10 @@ func GenerateSaveCoinKey(clientRoot, keyName, keyPass string, overwrite bool) (s
 	}
 
 	// generate a private key, with recovery phrase
-	info, secret, err := keybase.CreateMnemonic(keyName, keys.English, keyPass, keys.Secp256k1)
+	info, secret, err := keybase.Create(keyName, keyPass, keys.AlgoEd25519)
 	if err != nil {
 		return nil, "", err
 	}
-	addr := info.GetPubKey().Address()
-	return sdk.Address(addr), secret, nil
+	addr := info.PubKey.Address()
+	return addr, secret, nil
 }

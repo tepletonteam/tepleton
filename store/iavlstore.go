@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/tepleton/go-amino"
+	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/iavl"
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
 
@@ -68,11 +67,7 @@ func (st *iavlStore) Commit() CommitID {
 	// Release an old version of history
 	if st.numHistory > 0 && (st.numHistory < st.tree.Version64()) {
 		toRelease := version - st.numHistory
-		err := st.tree.DeleteVersion(toRelease)
-		if err != nil {
-			// TODO: Handle with #870
-			panic(err)
-		}
+		st.tree.DeleteVersion(toRelease)
 	}
 
 	return CommitID{
@@ -172,13 +167,7 @@ func (st *iavlStore) Query(req wrsp.RequestQuery) (res wrsp.ResponseQuery) {
 				break
 			}
 			res.Value = value
-			cdc := amino.NewCodec()
-			p, err := cdc.MarshalBinary(proof)
-			if err != nil {
-				res.Log = err.Error()
-				break
-			}
-			res.Proof = p
+			res.Proof = proof.Bytes()
 		} else {
 			_, res.Value = tree.GetVersioned(key, height)
 		}

@@ -1,8 +1,6 @@
 package types
 
 import (
-	"encoding/json"
-
 	"math/big"
 )
 
@@ -48,25 +46,14 @@ func unmarshalAmino(i *big.Int, text string) (err error) {
 	return i.UnmarshalText([]byte(text))
 }
 
-// MarshalJSON for custom encoding scheme
-// Must be encoded as a string for JSON precision
+// MarshalJSON for custom encodig scheme
 func marshalJSON(i *big.Int) ([]byte, error) {
-	text, err := i.MarshalText()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(string(text))
+	return i.MarshalText()
 }
 
 // UnmarshalJSON for custom decoding scheme
-// Must be encoded as a string for JSON precision
 func unmarshalJSON(i *big.Int, bz []byte) error {
-	var text string
-	err := json.Unmarshal(bz, &text)
-	if err != nil {
-		return err
-	}
-	return i.UnmarshalText([]byte(text))
+	return i.UnmarshalText(bz)
 }
 
 // Int wraps integer with 256 bit range bound

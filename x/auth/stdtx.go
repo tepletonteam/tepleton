@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton/crypto"
+	crypto "github.com/tepleton/go-crypto"
 )
 
 var _ sdk.Tx = (*StdTx)(nil)
@@ -110,32 +110,28 @@ func (fee StdFee) Bytes() []byte {
 // and the Sequence numbers for each signature (prevent
 // inchain replay and enforce tx ordering per account).
 type StdSignDoc struct {
-	ChainID       string          `json:"chain_id"`
-	AccountNumber int64           `json:"account_number"`
-	Sequence      int64           `json:"sequence"`
-	FeeBytes      json.RawMessage `json:"fee_bytes"`
-	MsgsBytes     json.RawMessage `json:"msg_bytes"`
-	Memo          string          `json:"memo"`
+	ChainID       string `json:"chain_id"`
+	AccountNumber int64  `json:"account_number"`
+	Sequence      int64  `json:"sequence"`
+	FeeBytes      []byte `json:"fee_bytes"`
+	MsgsBytes     []byte `json:"msg_bytes"`
+	Memo          string `json:"memo"`
 }
 
 // StdSignBytes returns the bytes to sign for a transaction.
 // TODO: change the API to just take a chainID and StdTx ?
 func StdSignBytes(chainID string, accnum int64, sequence int64, fee StdFee, msgs []sdk.Msg, memo string) []byte {
-	var msgsBytes []json.RawMessage
+	var msgBytes []byte
 	for _, msg := range msgs {
-		msgsBytes = append(msgsBytes, json.RawMessage(msg.GetSignBytes()))
-	}
-	msgBytes, err := msgCdc.MarshalJSON(msgsBytes)
-	if err != nil {
-		panic(err)
+		msgBytes = append(msgBytes, msg.GetSignBytes()...)
 	}
 
-	bz, err := msgCdc.MarshalJSON(StdSignDoc{
+	bz, err := json.Marshal(StdSignDoc{
 		ChainID:       chainID,
 		AccountNumber: accnum,
 		Sequence:      sequence,
-		FeeBytes:      json.RawMessage(fee.Bytes()),
-		MsgsBytes:     json.RawMessage(msgBytes),
+		FeeBytes:      fee.Bytes(),
+		MsgsBytes:     msgBytes,
 		Memo:          memo,
 	})
 	if err != nil {

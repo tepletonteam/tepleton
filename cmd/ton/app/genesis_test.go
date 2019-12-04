@@ -6,7 +6,7 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/stretchr/testify/assert"
-	"github.com/tepleton/tepleton/crypto"
+	crypto "github.com/tepleton/go-crypto"
 )
 
 func TestToAccount(t *testing.T) {

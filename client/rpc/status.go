@@ -82,7 +82,7 @@ func NodeSyncingRequestHandlerFn(ctx context.CoreContext) http.HandlerFunc {
 			return
 		}
 
-		syncing := status.SyncInfo.CatchingUp
+		syncing := status.SyncInfo.Syncing
 		if err != nil {
 			w.WriteHeader(500)
 			w.Write([]byte(err.Error()))

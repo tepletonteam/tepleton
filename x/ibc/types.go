@@ -65,7 +65,7 @@ func (p IBCPacket) GetSignBytes() []byte {
 // validator the ibc packey
 func (p IBCPacket) ValidateBasic() sdk.Error {
 	if p.SrcChain == p.DestChain {
-		return ErrIdenticalChains(DefaultCodespace).TraceSDK("")
+		return ErrIdenticalChains(DefaultCodespace).Trace("")
 	}
 	if !p.Coins.IsValid() {
 		return sdk.ErrInvalidCoins("")

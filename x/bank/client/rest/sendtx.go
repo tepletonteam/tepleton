@@ -1,11 +1,12 @@
 package rest
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 
-	"github.com/tepleton/tepleton-sdk/crypto/keys"
 	"github.com/gorilla/mux"
+	"github.com/tepleton/go-crypto/keys"
 
 	"github.com/tepleton/tepleton-sdk/client/context"
 	sdk "github.com/tepleton/tepleton-sdk/types"
@@ -80,7 +81,7 @@ func SendRequestHandlerFn(cdc *wire.Codec, kb keys.Keybase, ctx context.CoreCont
 		}
 
 		// build message
-		msg := client.BuildMsg(info.GetPubKey().Address(), to, m.Amount)
+		msg := client.BuildMsg(info.PubKey.Address(), to, m.Amount)
 		if err != nil { // XXX rechecking same error ?
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
@@ -110,7 +111,7 @@ func SendRequestHandlerFn(cdc *wire.Codec, kb keys.Keybase, ctx context.CoreCont
 			return
 		}
 
-		output, err := wire.MarshalJSONIndent(cdc, res)
+		output, err := json.MarshalIndent(res, "", "  ")
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))

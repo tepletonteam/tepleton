@@ -10,8 +10,8 @@ import (
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/auth/mock"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	"github.com/tepleton/tepleton/crypto"
+	wrsp "github.com/tepleton/wrsp/types"
+	crypto "github.com/tepleton/go-crypto"
 )
 
 // test bank module in a mock application
@@ -77,22 +77,14 @@ var (
 
 // initialize the mock application for this module
 func getMockApp(t *testing.T) *mock.App {
-	mapp, err := getBenchmarkMockApp()
-	require.NoError(t, err)
-	return mapp
-}
-
-// getBenchmarkMockApp initializes a mock application for this module, for purposes of benchmarking
-// Any long term API support commitments do not apply to this function.
-func getBenchmarkMockApp() (*mock.App, error) {
 	mapp := mock.NewApp()
 
 	RegisterWire(mapp.Cdc)
 	coinKeeper := NewKeeper(mapp.AccountMapper)
 	mapp.Router().AddRoute("bank", NewHandler(coinKeeper))
 
-	err := mapp.CompleteSetup([]*sdk.KVStoreKey{})
-	return mapp, err
+	require.NoError(t, mapp.CompleteSetup([]*sdk.KVStoreKey{}))
+	return mapp
 }
 
 func TestMsgSendWithAccounts(t *testing.T) {

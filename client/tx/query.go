@@ -2,6 +2,7 @@ package tx
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -11,7 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/wrsp/types"
 	ctypes "github.com/tepleton/tepleton/rpc/core/types"
 
 	"github.com/tepleton/tepleton-sdk/client"
@@ -71,7 +72,7 @@ func queryTx(cdc *wire.Codec, ctx context.CoreContext, hashHexStr string, trustN
 		return nil, err
 	}
 
-	return wire.MarshalJSONIndent(cdc, info)
+	return json.MarshalIndent(info, "", "  ")
 }
 
 func formatTxResult(cdc *wire.Codec, res *ctypes.ResultTx) (txInfo, error) {

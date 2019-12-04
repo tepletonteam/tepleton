@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 
@@ -19,13 +20,13 @@ type baseReq struct {
 	Gas           int64  `json:"gas"`
 }
 
-func buildReq(w http.ResponseWriter, r *http.Request, cdc *wire.Codec, req interface{}) error {
+func buildReq(w http.ResponseWriter, r *http.Request, req interface{}) error {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		writeErr(&w, http.StatusBadRequest, err.Error())
 		return err
 	}
-	err = cdc.UnmarshalJSON(body, req)
+	err = json.Unmarshal(body, &req)
 	if err != nil {
 		writeErr(&w, http.StatusBadRequest, err.Error())
 		return err
@@ -89,7 +90,7 @@ func signAndBuild(w http.ResponseWriter, ctx context.CoreContext, baseReq baseRe
 		return
 	}
 
-	output, err := wire.MarshalJSONIndent(cdc, res)
+	output, err := json.MarshalIndent(res, "", "  ")
 	if err != nil {
 		writeErr(&w, http.StatusInternalServerError, err.Error())
 		return

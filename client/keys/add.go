@@ -12,9 +12,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	ccrypto "github.com/tepleton/tepleton-sdk/crypto"
-	"github.com/tepleton/tepleton-sdk/crypto/keys"
-
+	"github.com/tepleton/go-crypto/keys"
 	"github.com/tepleton/tmlibs/cli"
 )
 
@@ -23,8 +21,6 @@ const (
 	flagRecover  = "recover"
 	flagNoBackup = "no-backup"
 	flagDryRun   = "dry-run"
-	flagAccount  = "account"
-	flagIndex    = "index"
 )
 
 func addKeyCommand() *cobra.Command {
@@ -36,13 +32,10 @@ If you select --seed/-s you can recover a key from the seed
 phrase, otherwise, a new key will be generated.`,
 		RunE: runAddCmd,
 	}
-	cmd.Flags().StringP(flagType, "t", "secp256k1", "Type of private key (secp256k1|ed25519)")
-	cmd.Flags().Bool(client.FlagUseLedger, false, "Store a local reference to a private key on a Ledger device")
+	cmd.Flags().StringP(flagType, "t", "ed25519", "Type of private key (ed25519|secp256k1|ledger)")
 	cmd.Flags().Bool(flagRecover, false, "Provide seed phrase to recover existing key instead of creating")
 	cmd.Flags().Bool(flagNoBackup, false, "Don't print out seed phrase (if others are watching the terminal)")
 	cmd.Flags().Bool(flagDryRun, false, "Perform action, but don't add key to local keystore")
-	cmd.Flags().Uint32(flagAccount, 0, "Account number for HD derivation")
-	cmd.Flags().Uint32(flagIndex, 0, "Index number for HD derivation")
 	return cmd
 }
 
@@ -77,34 +70,21 @@ func runAddCmd(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-		// ask for a password when generating a local key
-		if !viper.GetBool(client.FlagUseLedger) {
-			pass, err = client.GetCheckPassword(
-				"Enter a passphrase for your key:",
-				"Repeat the passphrase:", buf)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	if viper.GetBool(client.FlagUseLedger) {
-		account := uint32(viper.GetInt(flagAccount))
-		index := uint32(viper.GetInt(flagIndex))
-		path := ccrypto.DerivationPath{44, 118, account, 0, index}
-		algo := keys.SigningAlgo(viper.GetString(flagType))
-		info, err := kb.CreateLedger(name, path, algo)
+		pass, err = client.GetCheckPassword(
+			"Enter a passphrase for your key:",
+			"Repeat the passphrase:", buf)
 		if err != nil {
 			return err
 		}
-		printCreate(info, "")
-	} else if viper.GetBool(flagRecover) {
+	}
+
+	if viper.GetBool(flagRecover) {
 		seed, err := client.GetSeed(
 			"Enter your recovery seed phrase:", buf)
 		if err != nil {
 			return err
 		}
-		info, err := kb.CreateFundraiserKey(name, seed, pass)
+		info, err := kb.Recover(name, pass, seed)
 		if err != nil {
 			return err
 		}
@@ -112,8 +92,8 @@ func runAddCmd(cmd *cobra.Command, args []string) error {
 		viper.Set(flagNoBackup, true)
 		printCreate(info, "")
 	} else {
-		algo := keys.SigningAlgo(viper.GetString(flagType))
-		info, seed, err := kb.CreateMnemonic(name, keys.English, pass, algo)
+		algo := keys.CryptoAlgo(viper.GetString(flagType))
+		info, seed, err := kb.Create(name, pass, algo)
 		if err != nil {
 			return err
 		}
@@ -128,7 +108,7 @@ func printCreate(info keys.Info, seed string) {
 	case "text":
 		printInfo(info)
 		// print seed unless requested not to.
-		if !viper.GetBool(client.FlagUseLedger) && !viper.GetBool(flagNoBackup) {
+		if !viper.GetBool(flagNoBackup) {
 			fmt.Println("**Important** write this seed phrase in a safe place.")
 			fmt.Println("It is the only way to recover your account if you ever forget your password.")
 			fmt.Println()
@@ -159,12 +139,7 @@ func printCreate(info keys.Info, seed string) {
 type NewKeyBody struct {
 	Name     string `json:"name"`
 	Password string `json:"password"`
-}
-
-// new key response REST body
-type NewKeyResponse struct {
-	Address  string `json:"address"`
-	Mnemonic string `json:"mnemonic"`
+	Seed     string `json:"seed"`
 }
 
 // add new key REST handler
@@ -197,11 +172,16 @@ func AddNewKeyRequestHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("You have to specify a password for the locally stored account."))
 		return
 	}
+	if m.Seed == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("You have to specify a seed for the locally stored account."))
+		return
+	}
 
 	// check if already exists
 	infos, err := kb.List()
 	for _, i := range infos {
-		if i.GetName() == m.Name {
+		if i.Name == m.Name {
 			w.WriteHeader(http.StatusConflict)
 			w.Write([]byte(fmt.Sprintf("Account with name %s already exists.", m.Name)))
 			return
@@ -209,30 +189,22 @@ func AddNewKeyRequestHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create account
-	info, mnemonic, err := kb.CreateMnemonic(m.Name, keys.English, m.Password, keys.Secp256k1)
+	info, err := kb.Recover(m.Name, m.Password, m.Seed)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return
 	}
-	bz, err := json.Marshal(NewKeyResponse{
-		Address:  info.GetPubKey().Address().String(),
-		Mnemonic: mnemonic,
-	})
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
-	w.Write(bz)
+	w.Write([]byte(info.PubKey.Address().String()))
 }
 
 // function to just a new seed to display in the UI before actually persisting it in the keybase
-func getSeed(algo keys.SigningAlgo) string {
+func getSeed(algo keys.CryptoAlgo) string {
 	kb := client.MockKeyBase()
 	pass := "throwing-this-key-away"
 	name := "inmemorykey"
-	_, seed, _ := kb.CreateMnemonic(name, keys.English, pass, algo)
+
+	_, seed, _ := kb.Create(name, pass, algo)
 	return seed
 }
 
@@ -240,11 +212,11 @@ func getSeed(algo keys.SigningAlgo) string {
 func SeedRequestHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	algoType := vars["type"]
-	// algo type defaults to secp256k1
+	// algo type defaults to ed25519
 	if algoType == "" {
-		algoType = "secp256k1"
+		algoType = "ed25519"
 	}
-	algo := keys.SigningAlgo(algoType)
+	algo := keys.CryptoAlgo(algoType)
 
 	seed := getSeed(algo)
 	w.Write([]byte(seed))

@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/tepleton/tepleton/wrsp/server"
+	"github.com/tepleton/wrsp/server"
 
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 	"github.com/tepleton/tepleton/node"
@@ -58,18 +58,12 @@ func startStandAlone(ctx *Context, appCreator AppCreator) error {
 		return errors.Errorf("error creating listener: %v\n", err)
 	}
 	svr.SetLogger(ctx.Logger.With("module", "wrsp-server"))
-	err = svr.Start()
-	if err != nil {
-		cmn.Exit(err.Error())
-	}
+	svr.Start()
 
 	// Wait forever
 	cmn.TrapSignal(func() {
 		// Cleanup
-		err = svr.Stop()
-		if err != nil {
-			cmn.Exit(err.Error())
-		}
+		svr.Stop()
 	})
 	return nil
 }
@@ -88,7 +82,6 @@ func startInProcess(ctx *Context, appCreator AppCreator) error {
 		proxy.NewLocalClientCreator(app),
 		node.DefaultGenesisDocProviderFunc(cfg),
 		node.DefaultDBProvider,
-		node.DefaultMetricsProvider,
 		ctx.Logger.With("module", "node"))
 	if err != nil {
 		return err

@@ -3,7 +3,7 @@ package app
 import (
 	"encoding/json"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/wrsp/types"
 	tmtypes "github.com/tepleton/tepleton/types"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"

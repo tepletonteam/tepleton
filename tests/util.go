@@ -101,13 +101,10 @@ func waitForHeight(height int64, url string) {
 		if err != nil {
 			panic(err)
 		}
-		err = res.Body.Close()
-		if err != nil {
-			panic(err)
-		}
+		res.Body.Close()
 
 		var resultBlock ctypes.ResultBlock
-		err = cdc.UnmarshalJSON(body, &resultBlock)
+		err = cdc.UnmarshalJSON([]byte(body), &resultBlock)
 		if err != nil {
 			fmt.Println("RES", res)
 			fmt.Println("BODY", string(body))
@@ -139,10 +136,7 @@ func WaitForStart(port string) {
 
 		// waiting for server to start ...
 		if res.StatusCode != http.StatusOK {
-			err = res.Body.Close()
-			if err != nil {
-				panic(err)
-			}
+			res.Body.Close()
 			return
 		}
 	}

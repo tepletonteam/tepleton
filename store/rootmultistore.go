@@ -6,7 +6,7 @@ import (
 
 	"golang.org/x/crypto/ripemd160"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/wrsp/types"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/merkle"
 
@@ -343,11 +343,7 @@ func (si storeInfo) Hash() []byte {
 	// include them via the keys.
 	bz, _ := cdc.MarshalBinary(si.Core) // Does not error
 	hasher := ripemd160.New()
-	_, err := hasher.Write(bz)
-	if err != nil {
-		// TODO: Handle with #870
-		panic(err)
-	}
+	hasher.Write(bz)
 	return hasher.Sum(nil)
 }
 

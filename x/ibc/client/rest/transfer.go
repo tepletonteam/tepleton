@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/tepleton/tepleton-sdk/crypto/keys"
 	"github.com/gorilla/mux"
+	"github.com/tepleton/go-crypto/keys"
 
 	"github.com/tepleton/tepleton-sdk/client/context"
 	sdk "github.com/tepleton/tepleton-sdk/types"
@@ -76,7 +76,7 @@ func TransferRequestHandlerFn(cdc *wire.Codec, kb keys.Keybase, ctx context.Core
 		to := sdk.Address(bz)
 
 		// build message
-		packet := ibc.NewIBCPacket(info.GetPubKey().Address(), to, m.Amount, m.SrcChainID, destChainID)
+		packet := ibc.NewIBCPacket(info.PubKey.Address(), to, m.Amount, m.SrcChainID, destChainID)
 		msg := ibc.IBCTransferMsg{packet}
 
 		// add gas to context

@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/wrsp/types"
 )
 
 func TestTickExpiredDepositPeriod(t *testing.T) {

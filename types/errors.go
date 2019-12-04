@@ -5,7 +5,7 @@ import (
 
 	cmn "github.com/tepleton/tmlibs/common"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/wrsp/types"
 )
 
 // WRSPCodeType - combined codetype / codespace
@@ -147,80 +147,49 @@ func ErrMemoTooLarge(msg string) Error {
 //----------------------------------------
 // Error & sdkError
 
-type cmnError = cmn.Error
-
 // sdk Error type
 type Error interface {
-	// Implements cmn.Error
-	// Error() string
-	// Stacktrace() cmn.Error
-	// Trace(offset int, format string, args ...interface{}) cmn.Error
-	// Data() interface{}
-	cmnError
-
-	// convenience
-	TraceSDK(format string, args ...interface{}) Error
-
-	// set codespace
-	WithDefaultCodespace(CodespaceType) Error
-
+	Error() string
 	Code() CodeType
 	Codespace() CodespaceType
 	WRSPLog() string
 	WRSPCode() WRSPCodeType
+	WithDefaultCodespace(codespace CodespaceType) Error
+	Trace(msg string) Error
+	T() interface{}
 	Result() Result
 	QueryResult() wrsp.ResponseQuery
 }
 
-// NewError - create an error.
-func NewError(codespace CodespaceType, code CodeType, format string, args ...interface{}) Error {
-	return newError(codespace, code, format, args...)
+// NewError - create an error
+func NewError(codespace CodespaceType, code CodeType, msg string) Error {
+	return newError(codespace, code, msg)
 }
 
-func newErrorWithRootCodespace(code CodeType, format string, args ...interface{}) *sdkError {
-	return newError(CodespaceRoot, code, format, args...)
+func newErrorWithRootCodespace(code CodeType, msg string) *sdkError {
+	return newError(CodespaceRoot, code, msg)
 }
 
-func newError(codespace CodespaceType, code CodeType, format string, args ...interface{}) *sdkError {
-	if format == "" {
-		format = CodeToDefaultMsg(code)
+func newError(codespace CodespaceType, code CodeType, msg string) *sdkError {
+	if msg == "" {
+		msg = CodeToDefaultMsg(code)
 	}
 	return &sdkError{
 		codespace: codespace,
 		code:      code,
-		cmnError:  cmn.NewError(format, args...),
+		err:       cmn.NewErrorWithT(code, msg),
 	}
 }
 
 type sdkError struct {
 	codespace CodespaceType
 	code      CodeType
-	cmnError
-}
-
-// Implements Error.
-func (err *sdkError) WithDefaultCodespace(cs CodespaceType) Error {
-	codespace := err.codespace
-	if codespace == CodespaceUndefined {
-		codespace = cs
-	}
-	return &sdkError{
-		codespace: cs,
-		code:      err.code,
-		cmnError:  err.cmnError,
-	}
+	err       cmn.Error
 }
 
 // Implements WRSPError.
-func (err *sdkError) TraceSDK(format string, args ...interface{}) Error {
-	err.Trace(1, format, args...)
-	return err
-}
-
-// Implements WRSPError.
-// Overrides err.Error.Error().
 func (err *sdkError) Error() string {
-	return fmt.Sprintf("Error{%d:%d,%#v}", err.codespace, err.code, err.cmnError)
+	return fmt.Sprintf("error{%d:%d,%#v}", err.codespace, err.code, err.err)
 }
 
 // Implements WRSPError.
@@ -246,7 +215,33 @@ Code:      %v
 WRSPCode:  %v
 Error:     %#v
 === /WRSP Log ===
-`, err.codespace, err.code, err.WRSPCode(), err.cmnError)
+`, err.codespace, err.code, err.WRSPCode(), err.err)
+}
+
+// Add tracing information with msg.
+func (err *sdkError) Trace(msg string) Error {
+	return &sdkError{
+		codespace: err.codespace,
+		code:      err.code,
+		err:       err.err.Trace(msg),
+	}
+}
+
+// Implements Error.
+func (err *sdkError) WithDefaultCodespace(cs CodespaceType) Error {
+	codespace := err.codespace
+	if codespace == CodespaceUndefined {
+		codespace = cs
+	}
+	return &sdkError{
+		codespace: codespace,
+		code:      err.code,
+		err:       err.err,
+	}
+}
+
+func (err *sdkError) T() interface{} {
+	return err.err.T()
 }
 
 func (err *sdkError) Result() Result {

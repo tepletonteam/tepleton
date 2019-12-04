@@ -7,8 +7,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	"github.com/tepleton/tepleton/crypto"
+	wrsp "github.com/tepleton/wrsp/types"
+	crypto "github.com/tepleton/go-crypto"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
 
@@ -66,11 +66,10 @@ func createTestInput(t *testing.T) (sdk.Context, bank.Keeper, stake.Keeper, Keep
 	genesis.Pool.LooseTokens = initCoins.MulRaw(int64(len(addrs))).Int64()
 	stake.InitGenesis(ctx, sk, genesis)
 	for _, addr := range addrs {
-		_, _, err = ck.AddCoins(ctx, addr, sdk.Coins{
+		ck.AddCoins(ctx, addr, sdk.Coins{
 			{sk.GetParams(ctx).BondDenom, initCoins},
 		})
 	}
-	require.Nil(t, err)
 	keeper := NewKeeper(cdc, keySlashing, sk, DefaultCodespace)
 	return ctx, ck, sk, keeper
 }

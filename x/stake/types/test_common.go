@@ -7,7 +7,7 @@ import (
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/stretchr/testify/require"
-	"github.com/tepleton/tepleton/crypto"
+	crypto "github.com/tepleton/go-crypto"
 )
 
 var (

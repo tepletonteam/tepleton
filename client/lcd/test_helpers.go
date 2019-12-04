@@ -15,10 +15,10 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 
-	crkeys "github.com/tepleton/tepleton-sdk/crypto/keys"
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/wrsp/types"
+	crypto "github.com/tepleton/go-crypto"
+	crkeys "github.com/tepleton/go-crypto/keys"
 	tmcfg "github.com/tepleton/tepleton/config"
-	"github.com/tepleton/tepleton/crypto"
 	nm "github.com/tepleton/tepleton/node"
 	pvm "github.com/tepleton/tepleton/privval"
 	"github.com/tepleton/tepleton/proxy"
@@ -83,9 +83,9 @@ func GetKB(t *testing.T) crkeys.Keybase {
 func CreateAddr(t *testing.T, name, password string, kb crkeys.Keybase) (addr sdk.Address, seed string) {
 	var info crkeys.Info
 	var err error
-	info, seed, err = kb.CreateMnemonic(name, crkeys.English, password, crkeys.Secp256k1)
+	info, seed, err = kb.Create(name, password, crkeys.AlgoEd25519)
 	require.NoError(t, err)
-	addr = info.GetPubKey().Address()
+	addr = info.PubKey.Address()
 	return
 }
 
@@ -193,7 +193,6 @@ func startTM(tmcfg *tmcfg.Config, logger log.Logger, genDoc *tmtypes.GenesisDoc,
 		proxy.NewLocalClientCreator(app),
 		genDocProvider,
 		dbProvider,
-		nm.DefaultMetricsProvider,
 		logger.With("module", "node"))
 	if err != nil {
 		return nil, err
@@ -214,7 +213,7 @@ func startTM(tmcfg *tmcfg.Config, logger log.Logger, genDoc *tmtypes.GenesisDoc,
 // start the LCD. note this blocks!
 func startLCD(logger log.Logger, listenAddr string, cdc *wire.Codec) (net.Listener, error) {
 	handler := createHandler(cdc)
-	return tmrpc.StartHTTPServer(listenAddr, handler, logger, tmrpc.Config{})
+	return tmrpc.StartHTTPServer(listenAddr, handler, logger)
 }
 
 // make a test lcd test request

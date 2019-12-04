@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/wrsp/types"
 	tmtypes "github.com/tepleton/tepleton/types"
 	"github.com/tepleton/tmlibs/cli"
 	dbm "github.com/tepleton/tmlibs/db"
@@ -31,11 +31,7 @@ func main() {
 
 	// prepare and add flags
 	executor := cli.PrepareBaseCmd(rootCmd, "GA", app.DefaultNodeHome)
-	err := executor.Execute()
-	if err != nil {
-		// handle with #870
-		panic(err)
-	}
+	executor.Execute()
 }
 
 func newApp(logger log.Logger, db dbm.DB) wrsp.Application {

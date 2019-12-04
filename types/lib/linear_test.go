@@ -9,7 +9,7 @@ import (
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/wrsp/types"
 
 	"github.com/tepleton/tepleton-sdk/store"
 	sdk "github.com/tepleton/tepleton-sdk/types"

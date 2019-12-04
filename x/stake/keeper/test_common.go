@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	"github.com/tepleton/tepleton/crypto"
+	wrsp "github.com/tepleton/wrsp/types"
+	crypto "github.com/tepleton/go-crypto"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
 
@@ -114,10 +114,9 @@ func CreateTestInput(t *testing.T, isCheckTx bool, initCoins int64) (sdk.Context
 	// fill all the addresses with some coins, set the loose pool tokens simultaneously
 	for _, addr := range Addrs {
 		pool := keeper.GetPool(ctx)
-		_, _, err := ck.AddCoins(ctx, addr, sdk.Coins{
+		ck.AddCoins(ctx, addr, sdk.Coins{
 			{keeper.GetParams(ctx).BondDenom, sdk.NewInt(initCoins)},
 		})
-		require.Nil(t, err)
 		pool.LooseTokens += initCoins
 		keeper.SetPool(ctx, pool)
 	}

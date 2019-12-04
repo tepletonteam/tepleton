@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton/crypto"
+	crypto "github.com/tepleton/go-crypto"
 )
 
 // NOTE the current slash functionality doesn't take into consideration unbonding/rebonding records

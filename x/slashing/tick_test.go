@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/wrsp/types"
 	tmtypes "github.com/tepleton/tepleton/types"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"

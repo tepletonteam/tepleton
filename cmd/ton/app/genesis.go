@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/spf13/pflag"
-	"github.com/tepleton/tepleton/crypto"
+	crypto "github.com/tepleton/go-crypto"
 	tmtypes "github.com/tepleton/tepleton/types"
 
 	"github.com/tepleton/tepleton-sdk/server"

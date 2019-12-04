@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	"github.com/tepleton/tepleton/crypto"
+	wrsp "github.com/tepleton/wrsp/types"
+	crypto "github.com/tepleton/go-crypto"
 
 	"github.com/tepleton/tepleton-sdk/x/stake"
 )

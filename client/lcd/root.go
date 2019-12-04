@@ -31,7 +31,6 @@ import (
 func ServeCommand(cdc *wire.Codec) *cobra.Command {
 	flagListenAddr := "laddr"
 	flagCORS := "cors"
-	flagMaxOpenConnections := "max-open"
 
 	cmd := &cobra.Command{
 		Use:   "rest-server",
@@ -41,8 +40,7 @@ func ServeCommand(cdc *wire.Codec) *cobra.Command {
 			handler := createHandler(cdc)
 			logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).
 				With("module", "rest-server")
-			maxOpen := viper.GetInt(flagMaxOpenConnections)
-			listener, err := tmserver.StartHTTPServer(listenAddr, handler, logger, tmserver.Config{MaxOpenConnections: maxOpen})
+			listener, err := tmserver.StartHTTPServer(listenAddr, handler, logger)
 			if err != nil {
 				return err
 			}
@@ -60,7 +58,6 @@ func ServeCommand(cdc *wire.Codec) *cobra.Command {
 	cmd.Flags().String(flagCORS, "", "Set to domains that can make CORS requests (* for all)")
 	cmd.Flags().StringP(client.FlagChainID, "c", "", "ID of chain we connect to")
 	cmd.Flags().StringP(client.FlagNode, "n", "tcp://localhost:26657", "Node to connect to")
-	cmd.Flags().IntP(flagMaxOpenConnections, "o", 1000, "Maximum open connections")
 	return cmd
 }
 
