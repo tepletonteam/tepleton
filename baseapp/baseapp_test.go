@@ -3,15 +3,14 @@ package baseapp
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/tepleton/tepleton-sdk/x/bank"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	wrsp "github.com/tepleton/wrsp/types"
-	crypto "github.com/tepleton/go-crypto"
+	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	"github.com/tepleton/tepleton/crypto"
 	tmtypes "github.com/tepleton/tepleton/types"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
@@ -20,6 +19,7 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
+	"github.com/tepleton/tepleton-sdk/x/bank"
 )
 
 func defaultLogger() log.Logger {
@@ -202,7 +202,15 @@ func TestInitChainer(t *testing.T) {
 
 	// set initChainer and try again - should see the value
 	app.SetInitChainer(initChainer)
-	app.InitChain(wrsp.RequestInitChain{AppStateBytes: []byte("{}")}) // must have valid JSON genesis file, even if empty
+	app.InitChain(wrsp.RequestInitChain{AppStateBytes: []byte("{}"), ChainId: "test-chain-id"}) // must have valid JSON genesis file, even if empty
+
+	// assert that chainID is set correctly in InitChain
+	chainID := app.deliverState.ctx.ChainID()
+	assert.Equal(t, "test-chain-id", chainID, "ChainID in deliverState not set correctly in InitChain")
+
+	chainID = app.checkState.ctx.ChainID()
+	assert.Equal(t, "test-chain-id", chainID, "ChainID in checkState not set correctly in InitChain")
+
 	app.Commit()
 	res = app.Query(query)
 	assert.Equal(t, value, res.Value)
@@ -378,16 +386,18 @@ func TestSimulateTx(t *testing.T) {
 		return ttx, nil
 	})
 
+	app.InitChain(wrsp.RequestInitChain{})
+
 	nBlocks := 3
 	for blockN := 0; blockN < nBlocks; blockN++ {
 		// block1
 		header.Height = int64(blockN + 1)
 		app.BeginBlock(wrsp.RequestBeginBlock{Header: header})
 		result := app.Simulate(tx)
-		require.Equal(t, result.Code, sdk.WRSPCodeOK)
+		require.Equal(t, result.Code, sdk.WRSPCodeOK, result.Log)
 		require.Equal(t, int64(80), result.GasUsed)
 		counter--
-		encoded, err := json.Marshal(tx)
+		encoded, err := app.cdc.MarshalJSON(tx)
 		require.Nil(t, err)
 		query := wrsp.RequestQuery{
 			Path: "/app/simulate",
@@ -397,8 +407,8 @@ func TestSimulateTx(t *testing.T) {
 		require.Equal(t, queryResult.Code, uint32(sdk.WRSPCodeOK))
 		var res sdk.Result
 		app.cdc.MustUnmarshalBinary(queryResult.Value, &res)
-		require.Equal(t, sdk.WRSPCodeOK, res.Code)
-		require.Equal(t, int64(160), res.GasUsed)
+		require.Equal(t, sdk.WRSPCodeOK, res.Code, res.Log)
+		require.Equal(t, int64(160), res.GasUsed, res.Log)
 		app.EndBlock(wrsp.RequestEndBlock{})
 		app.Commit()
 	}
@@ -725,9 +735,14 @@ func GenTx(chainID string, msgs []sdk.Msg, accnums []int64, seq []int64, priv ..
 
 	sigs := make([]auth.StdSignature, len(priv))
 	for i, p := range priv {
+		sig, err := p.Sign(auth.StdSignBytes(chainID, accnums[i], seq[i], fee, msgs, ""))
+		// TODO: replace with proper error handling:
+		if err != nil {
+			panic(err)
+		}
 		sigs[i] = auth.StdSignature{
 			PubKey:        p.PubKey(),
-			Signature:     p.Sign(auth.StdSignBytes(chainID, accnums[i], seq[i], fee, msgs, "")),
+			Signature:     sig,
 			AccountNumber: accnums[i],
 			Sequence:      seq[i],
 		}
@@ -984,17 +999,15 @@ func copyVal(val wrsp.Validator) wrsp.Validator {
 }
 
 func toJSON(o interface{}) []byte {
-	bz, err := json.Marshal(o)
+	bz, err := wire.Cdc.MarshalJSON(o)
 	if err != nil {
 		panic(err)
 	}
-	// fmt.Println(">> toJSON:", string(bz))
 	return bz
 }
 
 func fromJSON(bz []byte, ptr interface{}) {
-	// fmt.Println(">> fromJSON:", string(bz))
-	err := json.Unmarshal(bz, ptr)
+	err := wire.Cdc.UnmarshalJSON(bz, ptr)
 	if err != nil {
 		panic(err)
 	}

@@ -8,9 +8,9 @@ import (
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	crypto "github.com/tepleton/go-crypto"
+	"github.com/tepleton/tepleton/crypto"
 
-	wrsp "github.com/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/tepleton/wrsp/types"
 )
 
 var chainID = "" // TODO
@@ -44,14 +44,35 @@ func GenTx(msgs []sdk.Msg, accnums []int64, seq []int64, priv ...crypto.PrivKeyE
 	sigs := make([]auth.StdSignature, len(priv))
 	memo := "testmemotestmemo"
 	for i, p := range priv {
+		sig, err := p.Sign(auth.StdSignBytes(chainID, accnums[i], seq[i], fee, msgs, memo))
+		if err != nil {
+			panic(err)
+		}
 		sigs[i] = auth.StdSignature{
 			PubKey:        p.PubKey(),
-			Signature:     p.Sign(auth.StdSignBytes(chainID, accnums[i], seq[i], fee, msgs, memo)),
+			Signature:     sig,
 			AccountNumber: accnums[i],
 			Sequence:      seq[i],
 		}
 	}
 	return auth.NewStdTx(msgs, fee, sigs, memo)
+}
+
+// generate a set of signed transactions a msg, that differ only by having the
+// sequence numbers incremented between every transaction.
+func GenSequenceOfTxs(msgs []sdk.Msg, accnums []int64, initSeqNums []int64, numToGenerate int, priv ...crypto.PrivKeyEd25519) []auth.StdTx {
+	txs := make([]auth.StdTx, numToGenerate, numToGenerate)
+	for i := 0; i < numToGenerate; i++ {
+		txs[i] = GenTx(msgs, accnums, initSeqNums, priv...)
+		incrementAllSequenceNumbers(initSeqNums)
+	}
+	return txs
+}
+
+func incrementAllSequenceNumbers(initSeqNums []int64) {
+	for i := 0; i < len(initSeqNums); i++ {
+		initSeqNums[i]++
+	}
 }
 
 // check a transaction result
@@ -62,7 +83,7 @@ func SignCheck(t *testing.T, app *baseapp.BaseApp, msgs []sdk.Msg, accnums []int
 }
 
 // simulate a block
-func SignCheckDeliver(t *testing.T, app *baseapp.BaseApp, msgs []sdk.Msg, accnums []int64, seq []int64, expPass bool, priv ...crypto.PrivKeyEd25519) {
+func SignCheckDeliver(t *testing.T, app *baseapp.BaseApp, msgs []sdk.Msg, accnums []int64, seq []int64, expPass bool, priv ...crypto.PrivKeyEd25519) sdk.Result {
 
 	// Sign the tx
 	tx := GenTx(msgs, accnums, seq, priv...)
@@ -86,4 +107,5 @@ func SignCheckDeliver(t *testing.T, app *baseapp.BaseApp, msgs []sdk.Msg, accnum
 	app.EndBlock(wrsp.RequestEndBlock{})
 
 	app.Commit()
+	return res
 }

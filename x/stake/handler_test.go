@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	crypto "github.com/tepleton/go-crypto"
+	"github.com/tepleton/tepleton/crypto"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	keep "github.com/tepleton/tepleton-sdk/x/stake/keeper"

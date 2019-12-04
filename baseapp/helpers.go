@@ -1,8 +1,8 @@
 package baseapp
 
 import (
-	"github.com/tepleton/wrsp/server"
-	wrsp "github.com/tepleton/wrsp/types"
+	"github.com/tepleton/tepleton/wrsp/server"
+	wrsp "github.com/tepleton/tepleton/wrsp/types"
 	cmn "github.com/tepleton/tmlibs/common"
 )
 
@@ -13,12 +13,20 @@ func RunForever(app wrsp.Application) {
 	srv, err := server.NewServer("0.0.0.0:26658", "socket", app)
 	if err != nil {
 		cmn.Exit(err.Error())
+		return
 	}
-	srv.Start()
+	err = srv.Start()
+	if err != nil {
+		cmn.Exit(err.Error())
+		return
+	}
 
 	// Wait forever
 	cmn.TrapSignal(func() {
 		// Cleanup
-		srv.Stop()
+		err := srv.Stop()
+		if err != nil {
+			cmn.Exit(err.Error())
+		}
 	})
 }

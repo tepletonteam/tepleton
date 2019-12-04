@@ -11,7 +11,7 @@ import (
 
 	"github.com/tepleton/tepleton-sdk/server/mock"
 	"github.com/tepleton/tepleton-sdk/wire"
-	"github.com/tepleton/wrsp/server"
+	"github.com/tepleton/tepleton/wrsp/server"
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 	"github.com/tepleton/tmlibs/log"
 )

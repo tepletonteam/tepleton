@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	wrsp "github.com/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/tepleton/wrsp/types"
 	tmtypes "github.com/tepleton/tepleton/types"
 )
 
@@ -22,11 +22,11 @@ func BeginBlocker(ctx sdk.Context, req wrsp.RequestBeginBlock, sk Keeper) (tags 
 		if err != nil {
 			panic(err)
 		}
-		switch string(evidence.Type) {
+		switch evidence.Type {
 		case tmtypes.WRSPEvidenceTypeDuplicateVote:
 			sk.handleDoubleSign(ctx, evidence.Height, evidence.Time, pk)
 		default:
-			ctx.Logger().With("module", "x/slashing").Error(fmt.Sprintf("ignored unknown evidence type: %s", string(evidence.Type)))
+			ctx.Logger().With("module", "x/slashing").Error(fmt.Sprintf("ignored unknown evidence type: %s", evidence.Type))
 		}
 	}
 

@@ -1,12 +1,11 @@
 package stake
 
 import (
-	wrsp "github.com/tepleton/wrsp/types"
-
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/x/stake/keeper"
 	"github.com/tepleton/tepleton-sdk/x/stake/tags"
 	"github.com/tepleton/tepleton-sdk/x/stake/types"
+	wrsp "github.com/tepleton/tepleton/wrsp/types"
 )
 
 func NewHandler(k keeper.Keeper) sdk.Handler {

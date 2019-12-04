@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	wrsp "github.com/tepleton/wrsp/types"
-	crypto "github.com/tepleton/go-crypto"
+	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	"github.com/tepleton/tepleton/crypto"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/x/auth"
@@ -16,8 +16,9 @@ import (
 )
 
 var (
-	priv1 = crypto.GenPrivKeyEd25519()
-	addr1 = priv1.PubKey().Address()
+	priv1  = crypto.GenPrivKeyEd25519()
+	pubKey = priv1.PubKey()
+	addr1  = pubKey.Address()
 
 	quizMsg1 = MsgQuiz{
 		Sender:     addr1,

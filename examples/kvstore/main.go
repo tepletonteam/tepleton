@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/tepleton/wrsp/server"
+	"github.com/tepleton/tepleton/wrsp/server"
 	"github.com/tepleton/tmlibs/cli"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
@@ -55,12 +55,18 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	srv.Start()
+	err = srv.Start()
+	if err != nil {
+		cmn.Exit(err.Error())
+	}
 
 	// Wait forever
 	cmn.TrapSignal(func() {
 		// Cleanup
-		srv.Stop()
+		err = srv.Stop()
+		if err != nil {
+			cmn.Exit(err.Error())
+		}
 	})
 	return
 }
