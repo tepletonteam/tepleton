@@ -29,6 +29,10 @@ import (
 	stakerest "github.com/tepleton/tepleton-sdk/x/stake/client/rest"
 )
 
+func init() {
+	cryptoKeys.BcryptSecurityParameter = 1
+}
+
 func TestKeys(t *testing.T) {
 	name, password := "test", "1234567890"
 	addr, seed := CreateAddr(t, "test", password, GetKB(t))
