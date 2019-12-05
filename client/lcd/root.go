@@ -22,6 +22,7 @@ import (
 	bank "github.com/tepleton/tepleton-sdk/x/bank/client/rest"
 	gov "github.com/tepleton/tepleton-sdk/x/gov/client/rest"
 	ibc "github.com/tepleton/tepleton-sdk/x/ibc/client/rest"
+	slashing "github.com/tepleton/tepleton-sdk/x/slashing/client/rest"
 	stake "github.com/tepleton/tepleton-sdk/x/stake/client/rest"
 )
 
@@ -84,6 +85,7 @@ func createHandler(cdc *wire.Codec) http.Handler {
 	bank.RegisterRoutes(ctx, r, cdc, kb)
 	ibc.RegisterRoutes(ctx, r, cdc, kb)
 	stake.RegisterRoutes(ctx, r, cdc, kb)
+	slashing.RegisterRoutes(ctx, r, cdc, kb)
 	gov.RegisterRoutes(ctx, r, cdc)
 	return r
 }
