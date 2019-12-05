@@ -11,14 +11,13 @@ import (
 
 	"github.com/tepleton/tepleton-sdk/server/mock"
 	"github.com/tepleton/tepleton-sdk/wire"
-	"github.com/tepleton/tepleton/wrsp/server"
+	"github.com/tepleton/wrsp/server"
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 	"github.com/tepleton/tmlibs/log"
 )
 
 func TestStartStandAlone(t *testing.T) {
 	home, err := ioutil.TempDir("", "mock-sdk-cmd")
-	require.Nil(t, err)
 	defer func() {
 		os.RemoveAll(home)
 	}()
@@ -41,7 +40,7 @@ func TestStartStandAlone(t *testing.T) {
 	svrAddr, _, err := FreeTCPAddr()
 	require.Nil(t, err)
 	svr, err := server.NewServer(svrAddr, "socket", app)
-	require.Nil(t, err, "error creating listener")
+	require.Nil(t, err, "Error creating listener")
 	svr.SetLogger(logger.With("module", "wrsp-server"))
 	svr.Start()
 
