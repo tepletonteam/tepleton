@@ -210,6 +210,7 @@ func (app *GaiaApp) BeginBlocker(ctx sdk.Context, req wrsp.RequestBeginBlock) wr
 }
 
 // application updates every end block
+// nolint: unparam
 func (app *GaiaApp) EndBlocker(ctx sdk.Context, req wrsp.RequestEndBlock) wrsp.ResponseEndBlock {
 	validatorUpdates := stake.EndBlocker(ctx, app.stakeKeeper)
 

@@ -6,7 +6,6 @@ import (
 
 	"github.com/tepleton/tepleton-sdk/client/context"
 	"github.com/tepleton/tepleton-sdk/version"
-	"github.com/tepleton/tepleton-sdk/wire"
 )
 
 // cli version REST handler endpoint
@@ -16,7 +15,7 @@ func CLIVersionRequestHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // connected node version REST handler endpoint
-func NodeVersionRequestHandler(cdc *wire.Codec, ctx context.CoreContext) http.HandlerFunc {
+func NodeVersionRequestHandler(ctx context.CoreContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		version, err := ctx.Query("/app/version")
 		if err != nil {

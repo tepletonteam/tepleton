@@ -247,7 +247,7 @@ func (k Keeper) UpdateValidator(ctx sdk.Context, validator types.Validator) type
 	// efficiency case:
 	// if already bonded and power increasing only need to update tepleton
 	if powerIncreasing && !validator.Revoked && oldValidator.Status() == sdk.Bonded {
-		bz := k.cdc.MustMarshalBinary(validator.WRSPValidator(k.cdc))
+		bz := k.cdc.MustMarshalBinary(validator.WRSPValidator())
 		store.Set(GetTendermintUpdatesKey(ownerAddr), bz)
 		return validator
 	}
@@ -445,7 +445,7 @@ func (k Keeper) unbondValidator(ctx sdk.Context, validator types.Validator) type
 	store.Set(GetValidatorKey(validator.Owner), bzVal)
 
 	// add to accumulated changes for tepleton
-	bzWRSP := k.cdc.MustMarshalBinary(validator.WRSPValidatorZero(k.cdc))
+	bzWRSP := k.cdc.MustMarshalBinary(validator.WRSPValidatorZero())
 	store.Set(GetTendermintUpdatesKey(validator.Owner), bzWRSP)
 
 	// also remove from the Bonded types.Validators Store
@@ -474,7 +474,7 @@ func (k Keeper) bondValidator(ctx sdk.Context, validator types.Validator) types.
 	store.Set(GetValidatorsBondedIndexKey(validator.Owner), validator.Owner)
 
 	// add to accumulated changes for tepleton
-	bzWRSP := k.cdc.MustMarshalBinary(validator.WRSPValidator(k.cdc))
+	bzWRSP := k.cdc.MustMarshalBinary(validator.WRSPValidator())
 	store.Set(GetTendermintUpdatesKey(validator.Owner), bzWRSP)
 
 	return validator
@@ -503,7 +503,7 @@ func (k Keeper) RemoveValidator(ctx sdk.Context, address sdk.Address) {
 	}
 	store.Delete(GetValidatorsBondedIndexKey(validator.Owner))
 
-	bz := k.cdc.MustMarshalBinary(validator.WRSPValidatorZero(k.cdc))
+	bz := k.cdc.MustMarshalBinary(validator.WRSPValidatorZero())
 	store.Set(GetTendermintUpdatesKey(address), bz)
 }
 

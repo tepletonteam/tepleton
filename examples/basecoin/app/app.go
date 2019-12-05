@@ -120,6 +120,7 @@ func (app *BasecoinApp) BeginBlocker(ctx sdk.Context, req wrsp.RequestBeginBlock
 }
 
 // application updates every end block
+// nolint: unparam
 func (app *BasecoinApp) EndBlocker(ctx sdk.Context, req wrsp.RequestEndBlock) wrsp.ResponseEndBlock {
 	validatorUpdates := stake.EndBlocker(ctx, app.stakeKeeper)
 
