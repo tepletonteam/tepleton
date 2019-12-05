@@ -6,7 +6,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/tmlibs/log"
 )
 
@@ -30,8 +30,7 @@ type Context struct {
 }
 
 // create a new context
-func NewContext(ms MultiStore, header wrsp.Header, isCheckTx bool, logger log.Logger) Context {
-
+func NewContext(ms MultiStore, header wrsp.Header, isCheckTx bool, txBytes []byte, logger log.Logger) Context {
 	c := Context{
 		Context: context.Background(),
 		pst:     newThePast(),
@@ -42,9 +41,8 @@ func NewContext(ms MultiStore, header wrsp.Header, isCheckTx bool, logger log.Lo
 	c = c.WithBlockHeight(header.Height)
 	c = c.WithChainID(header.ChainID)
 	c = c.WithIsCheckTx(isCheckTx)
-	c = c.WithTxBytes(nil)
+	c = c.WithTxBytes(txBytes)
 	c = c.WithLogger(logger)
-	c = c.WithSigningValidators(nil)
 	c = c.WithGasMeter(NewInfiniteGasMeter())
 	return c
 }
@@ -130,7 +128,6 @@ const (
 	contextKeyIsCheckTx
 	contextKeyTxBytes
 	contextKeyLogger
-	contextKeySigningValidators
 	contextKeyGasMeter
 )
 
@@ -160,9 +157,6 @@ func (c Context) TxBytes() []byte {
 func (c Context) Logger() log.Logger {
 	return c.Value(contextKeyLogger).(log.Logger)
 }
-func (c Context) SigningValidators() []wrsp.SigningValidator {
-	return c.Value(contextKeySigningValidators).([]wrsp.SigningValidator)
-}
 func (c Context) GasMeter() GasMeter {
 	return c.Value(contextKeyGasMeter).(GasMeter)
 }
@@ -187,9 +181,6 @@ func (c Context) WithTxBytes(txBytes []byte) Context {
 }
 func (c Context) WithLogger(logger log.Logger) Context {
 	return c.withValue(contextKeyLogger, logger)
-}
-func (c Context) WithSigningValidators(SigningValidators []wrsp.SigningValidator) Context {
-	return c.withValue(contextKeySigningValidators, SigningValidators)
 }
 func (c Context) WithGasMeter(meter GasMeter) Context {
 	return c.withValue(contextKeyGasMeter, meter)

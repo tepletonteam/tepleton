@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"path/filepath"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	tmtypes "github.com/tepleton/tepleton/types"
+	wrsp "github.com/tepleton/wrsp/types"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
 )
@@ -14,8 +13,8 @@ import (
 // and other flags (?) to start
 type AppCreator func(string, log.Logger) (wrsp.Application, error)
 
-// AppExporter dumps all app state to JSON-serializable structure and returns the current validator set
-type AppExporter func(home string, log log.Logger) (json.RawMessage, []tmtypes.GenesisValidator, error)
+// AppExporter dumps all app state to JSON-serializable structure
+type AppExporter func(home string, log log.Logger) (json.RawMessage, error)
 
 // ConstructAppCreator returns an application generation function
 func ConstructAppCreator(appFn func(log.Logger, dbm.DB) wrsp.Application, name string) AppCreator {
@@ -31,12 +30,12 @@ func ConstructAppCreator(appFn func(log.Logger, dbm.DB) wrsp.Application, name s
 }
 
 // ConstructAppExporter returns an application export function
-func ConstructAppExporter(appFn func(log.Logger, dbm.DB) (json.RawMessage, []tmtypes.GenesisValidator, error), name string) AppExporter {
-	return func(rootDir string, logger log.Logger) (json.RawMessage, []tmtypes.GenesisValidator, error) {
+func ConstructAppExporter(appFn func(log.Logger, dbm.DB) (json.RawMessage, error), name string) AppExporter {
+	return func(rootDir string, logger log.Logger) (json.RawMessage, error) {
 		dataDir := filepath.Join(rootDir, "data")
 		db, err := dbm.NewGoLevelDB(name, dataDir)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		return appFn(logger, db)
 	}
