@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/tepleton/tepleton-sdk/client"
+	keys "github.com/tepleton/tepleton-sdk/crypto/keys"
 	"github.com/gorilla/mux"
-	keys "github.com/tepleton/go-crypto/keys"
 
 	"github.com/spf13/cobra"
 )
