@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/tepleton/tepleton-sdk/wire"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -36,5 +37,5 @@ func TestAppendJSON(t *testing.T) {
 	err = cdc.UnmarshalJSON(appended["barOuter"], &resBar)
 	require.NoError(t, err)
 
-	require.Equal(t, bar, resBar, "appended: %v", appended)
+	assert.Equal(t, bar, resBar, "appended: %v", appended)
 }
