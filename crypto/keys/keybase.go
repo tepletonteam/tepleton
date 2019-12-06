@@ -8,7 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	tcrypto "github.com/tepleton/tepleton/crypto"
-	dbm "github.com/tepleton/tmlibs/db"
+	dbm "github.com/tepleton/tepleton/libs/db"
 
 	"github.com/tepleton/tepleton-sdk/crypto"
 	"github.com/tepleton/tepleton-sdk/crypto/keys/bip39"
