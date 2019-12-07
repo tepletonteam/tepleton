@@ -8,10 +8,10 @@ import (
 	"github.com/tepleton/tepleton-sdk/server"
 	"github.com/spf13/cobra"
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	"github.com/tepleton/tepleton/libs/cli"
+	dbm "github.com/tepleton/tepleton/libs/db"
+	"github.com/tepleton/tepleton/libs/log"
 	tmtypes "github.com/tepleton/tepleton/types"
-	"github.com/tepleton/tmlibs/cli"
-	dbm "github.com/tepleton/tmlibs/db"
-	"github.com/tepleton/tmlibs/log"
 )
 
 func main() {
