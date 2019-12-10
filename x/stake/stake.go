@@ -7,29 +7,30 @@ import (
 	"github.com/tepleton/tepleton-sdk/x/stake/types"
 )
 
-type (
-	Keeper                = keeper.Keeper
-	Validator             = types.Validator
-	Description           = types.Description
-	Delegation            = types.Delegation
-	UnbondingDelegation   = types.UnbondingDelegation
-	Redelegation          = types.Redelegation
-	Params                = types.Params
-	Pool                  = types.Pool
-	PoolShares            = types.PoolShares
-	MsgCreateValidator    = types.MsgCreateValidator
-	MsgEditValidator      = types.MsgEditValidator
-	MsgDelegate           = types.MsgDelegate
-	MsgBeginUnbonding     = types.MsgBeginUnbonding
-	MsgCompleteUnbonding  = types.MsgCompleteUnbonding
-	MsgBeginRedelegate    = types.MsgBeginRedelegate
-	MsgCompleteRedelegate = types.MsgCompleteRedelegate
-	GenesisState          = types.GenesisState
-)
+// keeper
+type Keeper = keeper.Keeper
+
+var NewKeeper = keeper.NewKeeper
+
+// types
+type Validator = types.Validator
+type Description = types.Description
+type Delegation = types.Delegation
+type UnbondingDelegation = types.UnbondingDelegation
+type Redelegation = types.Redelegation
+type Params = types.Params
+type Pool = types.Pool
+type PoolShares = types.PoolShares
+type MsgCreateValidator = types.MsgCreateValidator
+type MsgEditValidator = types.MsgEditValidator
+type MsgDelegate = types.MsgDelegate
+type MsgBeginUnbonding = types.MsgBeginUnbonding
+type MsgCompleteUnbonding = types.MsgCompleteUnbonding
+type MsgBeginRedelegate = types.MsgBeginRedelegate
+type MsgCompleteRedelegate = types.MsgCompleteRedelegate
+type GenesisState = types.GenesisState
 
 var (
-	NewKeeper = keeper.NewKeeper
-
 	GetValidatorKey              = keeper.GetValidatorKey
 	GetValidatorByPubKeyIndexKey = keeper.GetValidatorByPubKeyIndexKey
 	GetValidatorsBondedIndexKey  = keeper.GetValidatorsBondedIndexKey
@@ -71,6 +72,7 @@ var (
 	DefaultGenesisState = types.DefaultGenesisState
 	RegisterWire        = types.RegisterWire
 
+	// messages
 	NewMsgCreateValidator    = types.NewMsgCreateValidator
 	NewMsgEditValidator      = types.NewMsgEditValidator
 	NewMsgDelegate           = types.NewMsgDelegate
@@ -80,6 +82,7 @@ var (
 	NewMsgCompleteRedelegate = types.NewMsgCompleteRedelegate
 )
 
+// errors
 const (
 	DefaultCodespace      = types.DefaultCodespace
 	CodeInvalidValidator  = types.CodeInvalidValidator
@@ -123,6 +126,7 @@ var (
 	ErrMissingSignature      = types.ErrMissingSignature
 )
 
+// tags
 var (
 	ActionCreateValidator      = tags.ActionCreateValidator
 	ActionEditValidator        = tags.ActionEditValidator
