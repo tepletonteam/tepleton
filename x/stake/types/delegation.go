@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/wire"
 )
 
 // Delegation represents the bond with tokens held by an account.  It is
@@ -15,6 +16,40 @@ type Delegation struct {
 	ValidatorAddr sdk.Address `json:"validator_addr"`
 	Shares        sdk.Rat     `json:"shares"`
 	Height        int64       `json:"height"` // Last height bond updated
+}
+
+type delegationValue struct {
+	Shares sdk.Rat
+	Height int64
+}
+
+// return the delegation without fields contained within the key for the store
+func MarshalDelegation(cdc *wire.Codec, delegation Delegation) []byte {
+	val := delegationValue{
+		delegation.Shares,
+		delegation.Height,
+	}
+	return cdc.MustMarshalBinary(val)
+}
+
+// return the delegation without fields contained within the key for the store
+func UnmarshalDelegation(cdc *wire.Codec, key, value []byte) Delegation {
+	var storeValue delegationValue
+	cdc.MustUnmarshalBinary(value, &storeValue)
+
+	addrs := key[1:] // remove prefix bytes
+	if len(addrs) != 40 {
+		panic("unexpected key length")
+	}
+	delAddr := sdk.Address(addrs[:20])
+	valAddr := sdk.Address(addrs[20:])
+
+	return Delegation{
+		DelegatorAddr: delAddr,
+		ValidatorAddr: valAddr,
+		Shares:        storeValue.Shares,
+		Height:        storeValue.Height,
+	}
 }
 
 // two are equal
@@ -65,6 +100,46 @@ type UnbondingDelegation struct {
 	Balance        sdk.Coin    `json:"balance"`         // atoms to receive at completion
 }
 
+type ubdValue struct {
+	CreationHeight int64
+	MinTime        int64
+	InitialBalance sdk.Coin
+	Balance        sdk.Coin
+}
+
+// return the unbonding delegation without fields contained within the key for the store
+func MarshalUBD(cdc *wire.Codec, ubd UnbondingDelegation) []byte {
+	val := ubdValue{
+		ubd.CreationHeight,
+		ubd.MinTime,
+		ubd.InitialBalance,
+		ubd.Balance,
+	}
+	return cdc.MustMarshalBinary(val)
+}
+
+// return the unbonding delegation without fields contained within the key for the store
+func UnmarshalUBD(cdc *wire.Codec, key, value []byte) UnbondingDelegation {
+	var storeValue ubdValue
+	cdc.MustUnmarshalBinary(value, &storeValue)
+
+	addrs := key[1:] // remove prefix bytes
+	if len(addrs) != 40 {
+		panic("unexpected key length")
+	}
+	delAddr := sdk.Address(addrs[:20])
+	valAddr := sdk.Address(addrs[20:])
+
+	return UnbondingDelegation{
+		DelegatorAddr:  delAddr,
+		ValidatorAddr:  valAddr,
+		CreationHeight: storeValue.CreationHeight,
+		MinTime:        storeValue.MinTime,
+		InitialBalance: storeValue.InitialBalance,
+		Balance:        storeValue.Balance,
+	}
+}
+
 // nolint
 func (d UnbondingDelegation) Equal(d2 UnbondingDelegation) bool {
 	bz1 := MsgCdc.MustMarshalBinary(&d)
@@ -106,6 +181,54 @@ type Redelegation struct {
 	Balance          sdk.Coin    `json:"balance"`            // current balance
 	SharesSrc        sdk.Rat     `json:"shares_src"`         // amount of source shares redelegating
 	SharesDst        sdk.Rat     `json:"shares_dst"`         // amount of destination shares redelegating
+}
+
+type redValue struct {
+	CreationHeight int64
+	MinTime        int64
+	InitialBalance sdk.Coin
+	Balance        sdk.Coin
+	SharesSrc      sdk.Rat
+	SharesDst      sdk.Rat
+}
+
+// return the unbonding delegation without fields contained within the key for the store
+func MarshalRED(cdc *wire.Codec, red Redelegation) []byte {
+	val := redValue{
+		red.CreationHeight,
+		red.MinTime,
+		red.InitialBalance,
+		red.Balance,
+		red.SharesSrc,
+		red.SharesDst,
+	}
+	return cdc.MustMarshalBinary(val)
+}
+
+// return the unbonding delegation without fields contained within the key for the store
+func UnmarshalRED(cdc *wire.Codec, key, value []byte) Redelegation {
+	var storeValue redValue
+	cdc.MustUnmarshalBinary(value, &storeValue)
+
+	addrs := key[1:] // remove prefix bytes
+	if len(addrs) != 60 {
+		panic("unexpected key length")
+	}
+	delAddr := sdk.Address(addrs[:20])
+	valSrcAddr := sdk.Address(addrs[20:40])
+	valDstAddr := sdk.Address(addrs[40:60])
+
+	return Redelegation{
+		DelegatorAddr:    delAddr,
+		ValidatorSrcAddr: valSrcAddr,
+		ValidatorDstAddr: valDstAddr,
+		CreationHeight:   storeValue.CreationHeight,
+		MinTime:          storeValue.MinTime,
+		InitialBalance:   storeValue.InitialBalance,
+		Balance:          storeValue.Balance,
+		SharesSrc:        storeValue.SharesSrc,
+		SharesDst:        storeValue.SharesDst,
+	}
 }
 
 // nolint
