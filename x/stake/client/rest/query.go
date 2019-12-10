@@ -9,9 +9,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/context"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
-
 	"github.com/tepleton/tepleton-sdk/x/stake"
-	"github.com/tepleton/tepleton-sdk/x/stake/types"
 )
 
 const storeName = "stake"
@@ -77,7 +75,13 @@ func delegationHandlerFn(ctx context.CoreContext, cdc *wire.Codec) http.HandlerF
 			return
 		}
 
-		delegation := types.UnmarshalDelegation(cdc, key, res)
+		var delegation stake.Delegation
+		err = cdc.UnmarshalBinary(res, &delegation)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(fmt.Sprintf("couldn't decode delegation. Error: %s", err.Error())))
+			return
+		}
 
 		output, err := cdc.MarshalJSON(delegation)
 		if err != nil {
