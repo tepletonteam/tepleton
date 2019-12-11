@@ -3,9 +3,6 @@ package clitest
 import (
 	"encoding/json"
 	"fmt"
-	"log"
-	"os"
-	"os/user"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -24,27 +21,32 @@ import (
 	"github.com/tepleton/tepleton-sdk/x/stake"
 )
 
-var (
-	pass        = "1234567890"
-	tondHome   = ""
-	toncliHome = ""
-)
-
-func init() {
-	tondHome, toncliHome = getTestingHomeDirs()
-}
-
 func TestGaiaCLISend(t *testing.T) {
-	flags, port, proc := resetTestEnv(t)
 
+	tests.ExecuteT(t, "tond unsafe_reset_all")
+	pass := "1234567890"
+	executeWrite(t, "toncli keys delete foo", pass)
+	executeWrite(t, "toncli keys delete bar", pass)
+	chainID := executeInit(t, "tond init -o --name=foo")
+	executeWrite(t, "toncli keys add bar", pass)
+
+	// get a free port, also setup some common flags
+	servAddr, port, err := server.FreeTCPAddr()
+	require.NoError(t, err)
+	flags := fmt.Sprintf("--node=%v --chain-id=%v", servAddr, chainID)
+
+	// start tond server
+	proc := tests.GoExecuteTWithStdout(t, fmt.Sprintf("tond start --rpc.laddr=%v", servAddr))
 	defer proc.Stop(false)
 	tests.WaitForTMStart(port)
 	tests.WaitForNextHeightTM(port)
 
-	fooAddr, _ := executeGetAddrPK(t, fmt.Sprintf("toncli keys show foo --output=json --home=%s", toncliHome))
-	fooCech := sdk.MustBech32ifyAcc(fooAddr)
-	barAddr, _ := executeGetAddrPK(t, fmt.Sprintf("toncli keys show bar --output=json --home=%s", toncliHome))
-	barCech := sdk.MustBech32ifyAcc(barAddr)
+	fooAddr, _ := executeGetAddrPK(t, "toncli keys show foo --output=json")
+	fooCech, err := sdk.Bech32ifyAcc(fooAddr)
+	require.NoError(t, err)
+	barAddr, _ := executeGetAddrPK(t, "toncli keys show bar --output=json")
+	barCech, err := sdk.Bech32ifyAcc(barAddr)
+	require.NoError(t, err)
 
 	fooAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooCech, flags))
 	require.Equal(t, int64(50), fooAcc.GetCoins().AmountOf("steak").Int64())
@@ -77,16 +79,33 @@ func TestGaiaCLISend(t *testing.T) {
 }
 
 func TestGaiaCLICreateValidator(t *testing.T) {
-	flags, port, proc := resetTestEnv(t)
+
+	tests.ExecuteT(t, "tond unsafe_reset_all")
+	pass := "1234567890"
+	executeWrite(t, "toncli keys delete foo", pass)
+	executeWrite(t, "toncli keys delete bar", pass)
+	chainID := executeInit(t, "tond init -o --name=foo")
+	executeWrite(t, "toncli keys add bar", pass)
+
+	// get a free port, also setup some common flags
+	servAddr, port, err := server.FreeTCPAddr()
+	require.NoError(t, err)
+	flags := fmt.Sprintf("--node=%v --chain-id=%v", servAddr, chainID)
+
+	// start tond server
+	proc := tests.GoExecuteTWithStdout(t, fmt.Sprintf("tond start --rpc.laddr=%v", servAddr))
 	defer proc.Stop(false)
 	tests.WaitForTMStart(port)
 	tests.WaitForNextHeightTM(port)
 
-	fooAddr, _ := executeGetAddrPK(t, fmt.Sprintf("toncli keys show foo --output=json --home=%s", toncliHome))
-	fooCech := sdk.MustBech32ifyAcc(fooAddr)
-	barAddr, barPubKey := executeGetAddrPK(t, fmt.Sprintf("toncli keys show bar --output=json --home=%s", toncliHome))
-	barCech := sdk.MustBech32ifyAcc(barAddr)
-	barCeshPubKey := sdk.MustBech32ifyValPub(barPubKey)
+	fooAddr, _ := executeGetAddrPK(t, "toncli keys show foo --output=json")
+	fooCech, err := sdk.Bech32ifyAcc(fooAddr)
+	require.NoError(t, err)
+	barAddr, barPubKey := executeGetAddrPK(t, "toncli keys show bar --output=json")
+	barCech, err := sdk.Bech32ifyAcc(barAddr)
+	require.NoError(t, err)
+	barCeshPubKey, err := sdk.Bech32ifyValPub(barPubKey)
+	require.NoError(t, err)
 
 	executeWrite(t, fmt.Sprintf("toncli send %v --amount=10steak --to=%v --name=foo", flags, barCech), pass)
 	tests.WaitForNextHeightTM(port)
@@ -134,13 +153,28 @@ func TestGaiaCLICreateValidator(t *testing.T) {
 }
 
 func TestGaiaCLISubmitProposal(t *testing.T) {
-	flags, port, proc := resetTestEnv(t)
+
+	tests.ExecuteT(t, "tond unsafe_reset_all")
+	pass := "1234567890"
+	executeWrite(t, "toncli keys delete foo", pass)
+	executeWrite(t, "toncli keys delete bar", pass)
+	chainID := executeInit(t, "tond init -o --name=foo")
+	executeWrite(t, "toncli keys add bar", pass)
+
+	// get a free port, also setup some common flags
+	servAddr, port, err := server.FreeTCPAddr()
+	require.NoError(t, err)
+	flags := fmt.Sprintf("--node=%v --chain-id=%v", servAddr, chainID)
+
+	// start tond server
+	proc := tests.GoExecuteTWithStdout(t, fmt.Sprintf("tond start --rpc.laddr=%v", servAddr))
 	defer proc.Stop(false)
 	tests.WaitForTMStart(port)
 	tests.WaitForNextHeightTM(port)
 
-	fooAddr, _ := executeGetAddrPK(t, fmt.Sprintf("toncli keys show foo --output=json --home=%s", toncliHome))
-	fooCech := sdk.MustBech32ifyAcc(fooAddr)
+	fooAddr, _ := executeGetAddrPK(t, "toncli keys show foo --output=json")
+	fooCech, err := sdk.Bech32ifyAcc(fooAddr)
+	require.NoError(t, err)
 
 	fooAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooCech, flags))
 	require.Equal(t, int64(50), fooAcc.GetCoins().AmountOf("steak").Int64())
@@ -170,39 +204,6 @@ func TestGaiaCLISubmitProposal(t *testing.T) {
 	vote := executeGetVote(t, fmt.Sprintf("toncli gov query-vote  --proposalID=1 --voter=%v --output=json %v", fooCech, flags))
 	require.Equal(t, int64(1), vote.ProposalID)
 	require.Equal(t, gov.VoteOptionToString(gov.OptionYes), vote.Option)
-}
-
-//___________________________________________________________________________________
-// helper methods
-
-func getTestingHomeDirs() (string, string) {
-	usr, err := user.Current()
-	if err != nil {
-		log.Fatal(err)
-	}
-	home := usr.HomeDir
-	tondHome := fmt.Sprintf("%s%s.test_tond", home, string(os.PathSeparator))
-	toncliHome := fmt.Sprintf("%s%s.test_toncli", home, string(os.PathSeparator))
-	return tondHome, toncliHome
-}
-
-// returns flags, port, process
-func resetTestEnv(t *testing.T) (flags string, port string, proc *tests.Process) {
-	tests.ExecuteT(t, fmt.Sprintf("tond --home=%s unsafe_reset_all", tondHome))
-	executeWrite(t, fmt.Sprintf("toncli keys delete --home=%s foo", toncliHome), pass)
-	executeWrite(t, fmt.Sprintf("toncli keys delete --home=%s bar", toncliHome), pass)
-	chainID := executeInit(t, "tond init -o --name=foo --home="+tondHome)
-	executeWrite(t, fmt.Sprintf("toncli keys add --home=%s bar", toncliHome), pass)
-
-	// get a free port, also setup some common flags
-	servAddr, port, err := server.FreeTCPAddr()
-	require.NoError(t, err)
-	flags = fmt.Sprintf("--home=%s --node=%v --chain-id=%v", toncliHome, servAddr, chainID)
-
-	// start tond server
-	proc = tests.GoExecuteTWithStdout(t, fmt.Sprintf("tond start --home=%s --rpc.laddr=%v", tondHome, servAddr))
-
-	return flags, port, proc
 }
 
 //___________________________________________________________________________________
