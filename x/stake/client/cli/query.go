@@ -5,13 +5,12 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/tepleton/tepleton/libs/cli"
+	"github.com/tepleton/tmlibs/cli"
 
 	"github.com/tepleton/tepleton-sdk/client/context"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/stake"
-	"github.com/tepleton/tepleton-sdk/x/stake/types"
 )
 
 // get the command to query a validator
@@ -32,8 +31,8 @@ func GetCmdQueryValidator(storeName string, cdc *wire.Codec) *cobra.Command {
 			if err != nil {
 				return err
 			}
-
-			validator := types.UnmarshalValidator(cdc, addr, res)
+			validator := new(stake.Validator)
+			cdc.MustUnmarshalBinary(res, validator)
 
 			switch viper.Get(cli.OutputFlag) {
 			case "text":
@@ -75,9 +74,9 @@ func GetCmdQueryValidators(storeName string, cdc *wire.Codec) *cobra.Command {
 
 			// parse out the validators
 			var validators []stake.Validator
-			for _, kv := range resKVs {
-				addr := kv.Key[1:]
-				validator := types.UnmarshalValidator(cdc, addr, kv.Value)
+			for _, KV := range resKVs {
+				var validator stake.Validator
+				cdc.MustUnmarshalBinary(KV.Value, &validator)
 				validators = append(validators, validator)
 			}
 
@@ -131,7 +130,7 @@ func GetCmdQueryDelegation(storeName string, cdc *wire.Codec) *cobra.Command {
 			}
 
 			// parse out the delegation
-			delegation := types.UnmarshalDelegation(cdc, key, res)
+			delegation := new(stake.Delegation)
 
 			switch viper.Get(cli.OutputFlag) {
 			case "text":
@@ -141,6 +140,7 @@ func GetCmdQueryDelegation(storeName string, cdc *wire.Codec) *cobra.Command {
 				}
 				fmt.Println(resp)
 			case "json":
+				cdc.MustUnmarshalBinary(res, delegation)
 				output, err := wire.MarshalJSONIndent(cdc, delegation)
 				if err != nil {
 					return err
@@ -178,8 +178,9 @@ func GetCmdQueryDelegations(storeName string, cdc *wire.Codec) *cobra.Command {
 
 			// parse out the validators
 			var delegations []stake.Delegation
-			for _, kv := range resKVs {
-				delegation := types.UnmarshalDelegation(cdc, kv.Key, kv.Value)
+			for _, KV := range resKVs {
+				var delegation stake.Delegation
+				cdc.MustUnmarshalBinary(KV.Value, &delegation)
 				delegations = append(delegations, delegation)
 			}
 
@@ -221,7 +222,7 @@ func GetCmdQueryUnbondingDelegation(storeName string, cdc *wire.Codec) *cobra.Co
 			}
 
 			// parse out the unbonding delegation
-			ubd := types.UnmarshalUBD(cdc, key, res)
+			ubd := new(stake.UnbondingDelegation)
 
 			switch viper.Get(cli.OutputFlag) {
 			case "text":
@@ -231,6 +232,7 @@ func GetCmdQueryUnbondingDelegation(storeName string, cdc *wire.Codec) *cobra.Co
 				}
 				fmt.Println(resp)
 			case "json":
+				cdc.MustUnmarshalBinary(res, ubd)
 				output, err := wire.MarshalJSONIndent(cdc, ubd)
 				if err != nil {
 					return err
@@ -268,8 +270,9 @@ func GetCmdQueryUnbondingDelegations(storeName string, cdc *wire.Codec) *cobra.C
 
 			// parse out the validators
 			var ubds []stake.UnbondingDelegation
-			for _, kv := range resKVs {
-				ubd := types.UnmarshalUBD(cdc, kv.Key, kv.Value)
+			for _, KV := range resKVs {
+				var ubd stake.UnbondingDelegation
+				cdc.MustUnmarshalBinary(KV.Value, &ubd)
 				ubds = append(ubds, ubd)
 			}
 
@@ -314,7 +317,7 @@ func GetCmdQueryRedelegation(storeName string, cdc *wire.Codec) *cobra.Command {
 			}
 
 			// parse out the unbonding delegation
-			red := types.UnmarshalRED(cdc, key, res)
+			red := new(stake.Redelegation)
 
 			switch viper.Get(cli.OutputFlag) {
 			case "text":
@@ -324,6 +327,7 @@ func GetCmdQueryRedelegation(storeName string, cdc *wire.Codec) *cobra.Command {
 				}
 				fmt.Println(resp)
 			case "json":
+				cdc.MustUnmarshalBinary(res, red)
 				output, err := wire.MarshalJSONIndent(cdc, red)
 				if err != nil {
 					return err
@@ -361,8 +365,9 @@ func GetCmdQueryRedelegations(storeName string, cdc *wire.Codec) *cobra.Command 
 
 			// parse out the validators
 			var reds []stake.Redelegation
-			for _, kv := range resKVs {
-				red := types.UnmarshalRED(cdc, kv.Key, kv.Value)
+			for _, KV := range resKVs {
+				var red stake.Redelegation
+				cdc.MustUnmarshalBinary(KV.Value, &red)
 				reds = append(reds, red)
 			}
 

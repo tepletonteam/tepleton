@@ -1,35 +1,34 @@
 # Simple usage with a mounted data directory:
 # > docker build -t ton .
-# > docker run -it -p 46657:46657 -p 46656:46656 -v ~/.tond:/root/.tond -v ~/.toncli:/root/.toncli ton tond init
-# > docker run -it -p 46657:46657 -p 46656:46656 -v ~/.tond:/root/.tond -v ~/.toncli:/root/.toncli ton tond start
-FROM golang:alpine AS build-env
+# > docker run -v $HOME/.tond:/root/.tond ton init
+# > docker run -v $HOME/.tond:/root/.tond ton start
+
+FROM alpine:edge
 
 # Set up dependencies
-ENV PACKAGES make git libc-dev bash gcc linux-headers eudev-dev
+ENV PACKAGES go glide make git libc-dev bash
 
-# Set working directory for the build
-WORKDIR /go/src/github.com/tepleton/tepleton-sdk
+# Set up GOPATH & PATH
+
+ENV GOPATH       /root/go
+ENV BASE_PATH    $GOPATH/src/github.com/tepleton
+ENV REPO_PATH    $BASE_PATH/tepleton-sdk
+ENV WORKDIR      /tepleton/
+ENV PATH         $GOPATH/bin:$PATH
+
+# Link expected Go repo path
+
+RUN mkdir -p $WORKDIR $GOPATH/pkg $ $GOPATH/bin $BASE_PATH
 
 # Add source files
-COPY . .
+
+ADD . $REPO_PATH
 
 # Install minimum necessary dependencies, build Tepleton SDK, remove packages
 RUN apk add --no-cache $PACKAGES && \
-    make get_tools && \
-    make get_vendor_deps && \
-    make build && \
-    make install
+    cd $REPO_PATH && make get_tools && make get_vendor_deps && make build && make install && \
+    apk del $PACKAGES
 
-# Final image
-FROM alpine:edge
+# Set entrypoint
 
-# Install ca-certificates
-RUN apk add --update ca-certificates
-WORKDIR /root
-
-# Copy over binaries from the build-env
-COPY --from=build-env /go/bin/tond /usr/bin/tond
-COPY --from=build-env /go/bin/toncli /usr/bin/toncli
-
-# Run tond by default, omit entrypoint to ease using container with toncli
-CMD ["tond"]
+ENTRYPOINT ["tond"]

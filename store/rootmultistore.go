@@ -7,8 +7,8 @@ import (
 	"golang.org/x/crypto/ripemd160"
 
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	"github.com/tepleton/tepleton/crypto/merkle"
-	dbm "github.com/tepleton/tepleton/libs/db"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/merkle"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )

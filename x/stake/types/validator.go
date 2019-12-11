@@ -9,10 +9,7 @@ import (
 	tmtypes "github.com/tepleton/tepleton/types"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/wire"
 )
-
-const doNotModifyDescVal = "[do-not-modify]"
 
 // Validator defines the total amount of bond shares and their exchange rate to
 // coins. Accumulation of interest is modelled as an in increase in the
@@ -63,70 +60,6 @@ func NewValidator(owner sdk.Address, pubKey crypto.PubKey, description Descripti
 	}
 }
 
-// what's kept in the store value
-type validatorValue struct {
-	PubKey                crypto.PubKey
-	Revoked               bool
-	PoolShares            PoolShares
-	DelegatorShares       sdk.Rat
-	Description           Description
-	BondHeight            int64
-	BondIntraTxCounter    int16
-	ProposerRewardPool    sdk.Coins
-	Commission            sdk.Rat
-	CommissionMax         sdk.Rat
-	CommissionChangeRate  sdk.Rat
-	CommissionChangeToday sdk.Rat
-	PrevBondedShares      sdk.Rat
-}
-
-// return the redelegation without fields contained within the key for the store
-func MarshalValidator(cdc *wire.Codec, validator Validator) []byte {
-	val := validatorValue{
-		PubKey:                validator.PubKey,
-		Revoked:               validator.Revoked,
-		PoolShares:            validator.PoolShares,
-		DelegatorShares:       validator.DelegatorShares,
-		Description:           validator.Description,
-		BondHeight:            validator.BondHeight,
-		BondIntraTxCounter:    validator.BondIntraTxCounter,
-		ProposerRewardPool:    validator.ProposerRewardPool,
-		Commission:            validator.Commission,
-		CommissionMax:         validator.CommissionMax,
-		CommissionChangeRate:  validator.CommissionChangeRate,
-		CommissionChangeToday: validator.CommissionChangeToday,
-		PrevBondedShares:      validator.PrevBondedShares,
-	}
-	return cdc.MustMarshalBinary(val)
-}
-
-// unmarshal a redelegation from a store key and value
-func UnmarshalValidator(cdc *wire.Codec, ownerAddr, value []byte) Validator {
-	var storeValue validatorValue
-	cdc.MustUnmarshalBinary(value, &storeValue)
-
-	if len(ownerAddr) != 20 {
-		panic("unexpected address length")
-	}
-
-	return Validator{
-		Owner:                 ownerAddr,
-		PubKey:                storeValue.PubKey,
-		Revoked:               storeValue.Revoked,
-		PoolShares:            storeValue.PoolShares,
-		DelegatorShares:       storeValue.DelegatorShares,
-		Description:           storeValue.Description,
-		BondHeight:            storeValue.BondHeight,
-		BondIntraTxCounter:    storeValue.BondIntraTxCounter,
-		ProposerRewardPool:    storeValue.ProposerRewardPool,
-		Commission:            storeValue.Commission,
-		CommissionMax:         storeValue.CommissionMax,
-		CommissionChangeRate:  storeValue.CommissionChangeRate,
-		CommissionChangeToday: storeValue.CommissionChangeToday,
-		PrevBondedShares:      storeValue.PrevBondedShares,
-	}
-}
-
 // only the vitals - does not check bond height of IntraTxCounter
 func (v Validator) Equal(c2 Validator) bool {
 	return v.PubKey.Equals(c2.PubKey) &&
@@ -134,6 +67,8 @@ func (v Validator) Equal(c2 Validator) bool {
 		v.PoolShares.Equal(c2.PoolShares) &&
 		v.DelegatorShares.Equal(c2.DelegatorShares) &&
 		v.Description == c2.Description &&
+		//v.BondHeight == c2.BondHeight &&
+		//v.BondIntraTxCounter == c2.BondIntraTxCounter && // counter is always changing
 		v.ProposerRewardPool.IsEqual(c2.ProposerRewardPool) &&
 		v.Commission.Equal(c2.Commission) &&
 		v.CommissionMax.Equal(c2.CommissionMax) &&
@@ -150,7 +85,6 @@ type Description struct {
 	Details  string `json:"details"`  // optional details
 }
 
-// NewDescription returns a new Description with the provided values.
 func NewDescription(moniker, identity, website, details string) Description {
 	return Description{
 		Moniker:  moniker,
@@ -160,22 +94,20 @@ func NewDescription(moniker, identity, website, details string) Description {
 	}
 }
 
-// UpdateDescription updates the fields of a given description. An error is
-// returned if the resulting description contains an invalid length.
+// update the description based on input
 func (d Description) UpdateDescription(d2 Description) (Description, sdk.Error) {
-	if d.Moniker == doNotModifyDescVal {
+	if d.Moniker == "[do-not-modify]" {
 		d2.Moniker = d.Moniker
 	}
-	if d.Identity == doNotModifyDescVal {
+	if d.Identity == "[do-not-modify]" {
 		d2.Identity = d.Identity
 	}
-	if d.Website == doNotModifyDescVal {
+	if d.Website == "[do-not-modify]" {
 		d2.Website = d.Website
 	}
-	if d.Details == doNotModifyDescVal {
+	if d.Details == "[do-not-modify]" {
 		d2.Details = d.Details
 	}
-
 	return Description{
 		Moniker:  d2.Moniker,
 		Identity: d2.Identity,
@@ -184,7 +116,7 @@ func (d Description) UpdateDescription(d2 Description) (Description, sdk.Error) 
 	}.EnsureLength()
 }
 
-// EnsureLength ensures the length of a validator's description.
+// ensure the length of the description
 func (d Description) EnsureLength() (Description, sdk.Error) {
 	if len(d.Moniker) > 70 {
 		return d, ErrDescriptionLength(DefaultCodespace, "moniker", len(d.Moniker), 70)
@@ -198,11 +130,10 @@ func (d Description) EnsureLength() (Description, sdk.Error) {
 	if len(d.Details) > 280 {
 		return d, ErrDescriptionLength(DefaultCodespace, "details", len(d.Details), 280)
 	}
-
 	return d, nil
 }
 
-// WRSPValidator returns an wrsp.Validator from a staked validator type.
+// wrsp validator from stake validator type
 func (v Validator) WRSPValidator() wrsp.Validator {
 	return wrsp.Validator{
 		PubKey: tmtypes.TM2PB.PubKey(v.PubKey),
@@ -210,8 +141,8 @@ func (v Validator) WRSPValidator() wrsp.Validator {
 	}
 }
 
-// WRSPValidatorZero returns an wrsp.Validator from a staked validator type
-// with with zero power used for validator updates.
+// wrsp validator from stake validator type
+// with zero power used for validator updates
 func (v Validator) WRSPValidatorZero() wrsp.Validator {
 	return wrsp.Validator{
 		PubKey: tmtypes.TM2PB.PubKey(v.PubKey),
@@ -219,13 +150,12 @@ func (v Validator) WRSPValidatorZero() wrsp.Validator {
 	}
 }
 
-// Status returns the validator's bond status inferred from the pool shares.
+// wrsp validator from stake validator type
 func (v Validator) Status() sdk.BondStatus {
 	return v.PoolShares.Status
 }
 
-// UpdateStatus updates the location of the shares within a validator if it's
-// bond status has changed.
+// update the location of the shares within a validator if its bond status has changed
 func (v Validator) UpdateStatus(pool Pool, NewStatus sdk.BondStatus) (Validator, Pool) {
 	var tokens int64
 
@@ -243,8 +173,7 @@ func (v Validator) UpdateStatus(pool Pool, NewStatus sdk.BondStatus) (Validator,
 		pool, tokens = pool.removeSharesUnbonding(v.PoolShares.Amount)
 
 	case sdk.Bonded:
-		if NewStatus == sdk.Bonded {
-			// Return if nothing needs switching
+		if NewStatus == sdk.Bonded { // return if nothing needs switching
 			return v, pool
 		}
 		pool, tokens = pool.removeSharesBonded(v.PoolShares.Amount)
@@ -258,16 +187,14 @@ func (v Validator) UpdateStatus(pool Pool, NewStatus sdk.BondStatus) (Validator,
 	case sdk.Bonded:
 		pool, v.PoolShares = pool.addTokensBonded(tokens)
 	}
-
 	return v, pool
 }
 
-// RemovePoolShares removes pool shares from a validator. It returns
-// corresponding tokens, which could be burned (e.g. when slashing a validator)
-// or redistributed elsewhere.
+// Remove pool shares
+// Returns corresponding tokens, which could be burned (e.g. when slashing
+// a validator) or redistributed elsewhere
 func (v Validator) RemovePoolShares(pool Pool, poolShares sdk.Rat) (Validator, Pool, int64) {
 	var tokens int64
-
 	switch v.Status() {
 	case sdk.Unbonded:
 		pool, tokens = pool.removeSharesUnbonded(poolShares)
@@ -276,33 +203,29 @@ func (v Validator) RemovePoolShares(pool Pool, poolShares sdk.Rat) (Validator, P
 	case sdk.Bonded:
 		pool, tokens = pool.removeSharesBonded(poolShares)
 	}
-
 	v.PoolShares.Amount = v.PoolShares.Amount.Sub(poolShares)
 	return v, pool, tokens
 }
 
-// EquivalentBondedShares ...
-//
-// TODO: Remove should only be tokens get the power or potential power for a
-// validator if bonded, the power is the BondedShares if not bonded, the power
-// is the amount of bonded shares which the the validator would have it was
-// bonded.
+// TODO remove should only be tokens
+// get the power or potential power for a validator
+// if bonded, the power is the BondedShares
+// if not bonded, the power is the amount of bonded shares which the
+//    the validator would have it was bonded
 func (v Validator) EquivalentBondedShares(pool Pool) (eqBondedShares sdk.Rat) {
 	return v.PoolShares.ToBonded(pool).Amount
 }
 
 //_________________________________________________________________________________________________________
 
-// AddTokensFromDel adds tokens to a validator
-func (v Validator) AddTokensFromDel(pool Pool, amount int64) (Validator, Pool, sdk.Rat) {
-	var (
-		poolShares             PoolShares
-		equivalentBondedShares sdk.Rat
-	)
+// add tokens to a validator
+func (v Validator) AddTokensFromDel(pool Pool,
+	amount int64) (validator2 Validator, p2 Pool, issuedDelegatorShares sdk.Rat) {
 
-	// bondedShare/delegatedShare
-	exRate := v.DelegatorShareExRate(pool)
+	exRate := v.DelegatorShareExRate(pool) // bshr/delshr
 
+	var poolShares PoolShares
+	var equivalentBondedShares sdk.Rat
 	switch v.Status() {
 	case sdk.Unbonded:
 		pool, poolShares = pool.addTokensUnbonded(amount)
@@ -314,23 +237,20 @@ func (v Validator) AddTokensFromDel(pool Pool, amount int64) (Validator, Pool, s
 	v.PoolShares.Amount = v.PoolShares.Amount.Add(poolShares.Amount)
 	equivalentBondedShares = poolShares.ToBonded(pool).Amount
 
-	// bondedShare/(bondedShare/delegatedShare) = delegatedShare
-	issuedDelegatorShares := equivalentBondedShares.Quo(exRate)
+	issuedDelegatorShares = equivalentBondedShares.Quo(exRate) // bshr/(bshr/delshr) = delshr
 	v.DelegatorShares = v.DelegatorShares.Add(issuedDelegatorShares)
 
 	return v, pool, issuedDelegatorShares
 }
 
-// RemoveDelShares removes delegator shares from a validator.
-//
-// NOTE: This function assumes the shares have already been updated for the
-// validator status.
-func (v Validator) RemoveDelShares(pool Pool, delShares sdk.Rat) (Validator, Pool, int64) {
+// remove delegator shares from a validator
+// NOTE this function assumes the shares have already been updated for the validator status
+func (v Validator) RemoveDelShares(pool Pool,
+	delShares sdk.Rat) (validator2 Validator, p2 Pool, createdCoins int64) {
+
 	amount := v.DelegatorShareExRate(pool).Mul(delShares)
 	eqBondedSharesToRemove := NewBondedShares(amount)
 	v.DelegatorShares = v.DelegatorShares.Sub(delShares)
-
-	var createdCoins int64
 
 	switch v.Status() {
 	case sdk.Unbonded:
@@ -345,17 +265,15 @@ func (v Validator) RemoveDelShares(pool Pool, delShares sdk.Rat) (Validator, Poo
 		pool, createdCoins = pool.removeSharesBonded(eqBondedSharesToRemove.Amount)
 		v.PoolShares.Amount = v.PoolShares.Amount.Sub(eqBondedSharesToRemove.Amount)
 	}
-
 	return v, pool, createdCoins
 }
 
-// DelegatorShareExRate gets the exchange rate of tokens over delegator shares.
+// get the exchange rate of tokens over delegator shares
 // UNITS: eq-val-bonded-shares/delegator-shares
 func (v Validator) DelegatorShareExRate(pool Pool) sdk.Rat {
 	if v.DelegatorShares.IsZero() {
 		return sdk.OneRat()
 	}
-
 	eqBondedShares := v.PoolShares.ToBonded(pool).Amount
 	return eqBondedShares.Quo(v.DelegatorShares)
 }
@@ -375,20 +293,16 @@ func (v Validator) GetPower() sdk.Rat           { return v.PoolShares.Bonded() }
 func (v Validator) GetDelegatorShares() sdk.Rat { return v.DelegatorShares }
 func (v Validator) GetBondHeight() int64        { return v.BondHeight }
 
-// HumanReadableString returns a human readable string representation of a
-// validator. An error is returned if the owner or the owner's public key
-// cannot be converted to Bech32 format.
+//Human Friendly pretty printer
 func (v Validator) HumanReadableString() (string, error) {
 	bechOwner, err := sdk.Bech32ifyAcc(v.Owner)
 	if err != nil {
 		return "", err
 	}
-
 	bechVal, err := sdk.Bech32ifyValPub(v.PubKey)
 	if err != nil {
 		return "", err
 	}
-
 	resp := "Validator \n"
 	resp += fmt.Sprintf("Owner: %s\n", bechOwner)
 	resp += fmt.Sprintf("Validator: %s\n", bechVal)

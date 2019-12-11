@@ -4,19 +4,18 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
-// PoolShares reflects the shares of a validator in a pool.
+// pool shares held by a validator
 type PoolShares struct {
 	Status sdk.BondStatus `json:"status"`
-	Amount sdk.Rat        `json:"amount"`
+	Amount sdk.Rat        `json:"amount"` // total shares of type ShareKind
 }
 
-// Equal returns a boolean determining of two PoolShares are identical.
+// only the vitals - does not check bond height of IntraTxCounter
 func (s PoolShares) Equal(s2 PoolShares) bool {
 	return s.Status == s2.Status &&
 		s.Amount.Equal(s2.Amount)
 }
 
-// NewUnbondedShares returns a new PoolShares with a specified unbonded amount.
 func NewUnbondedShares(amount sdk.Rat) PoolShares {
 	return PoolShares{
 		Status: sdk.Unbonded,
@@ -24,8 +23,6 @@ func NewUnbondedShares(amount sdk.Rat) PoolShares {
 	}
 }
 
-// NewUnbondingShares returns a new PoolShares with a specified unbonding
-// amount.
 func NewUnbondingShares(amount sdk.Rat) PoolShares {
 	return PoolShares{
 		Status: sdk.Unbonding,
@@ -33,7 +30,6 @@ func NewUnbondingShares(amount sdk.Rat) PoolShares {
 	}
 }
 
-// NewBondedShares returns a new PoolSahres with a specified bonding amount.
 func NewBondedShares(amount sdk.Rat) PoolShares {
 	return PoolShares{
 		Status: sdk.Bonded,
@@ -41,7 +37,9 @@ func NewBondedShares(amount sdk.Rat) PoolShares {
 	}
 }
 
-// Unbonded returns the amount of unbonded shares.
+//_________________________________________________________________________________________________________
+
+// amount of unbonded shares
 func (s PoolShares) Unbonded() sdk.Rat {
 	if s.Status == sdk.Unbonded {
 		return s.Amount
@@ -49,7 +47,7 @@ func (s PoolShares) Unbonded() sdk.Rat {
 	return sdk.ZeroRat()
 }
 
-// Unbonding returns the amount of unbonding shares.
+// amount of unbonding shares
 func (s PoolShares) Unbonding() sdk.Rat {
 	if s.Status == sdk.Unbonding {
 		return s.Amount
@@ -57,7 +55,7 @@ func (s PoolShares) Unbonding() sdk.Rat {
 	return sdk.ZeroRat()
 }
 
-// Bonded returns amount of bonded shares.
+// amount of bonded shares
 func (s PoolShares) Bonded() sdk.Rat {
 	if s.Status == sdk.Bonded {
 		return s.Amount
@@ -65,80 +63,64 @@ func (s PoolShares) Bonded() sdk.Rat {
 	return sdk.ZeroRat()
 }
 
-// ToUnbonded returns the equivalent amount of pool shares if the shares were
-// unbonded.
+//_________________________________________________________________________________________________________
+
+// equivalent amount of shares if the shares were unbonded
 func (s PoolShares) ToUnbonded(p Pool) PoolShares {
 	var amount sdk.Rat
-
 	switch s.Status {
 	case sdk.Bonded:
-		// (tok/bondedshr)/(tok/unbondedshr) = unbondedshr/bondedshr
-		exRate := p.BondedShareExRate().Quo(p.UnbondedShareExRate())
-		// bondedshr*unbondedshr/bondedshr = unbondedshr
-		amount = s.Amount.Mul(exRate)
+		exRate := p.BondedShareExRate().Quo(p.UnbondedShareExRate()) // (tok/bondedshr)/(tok/unbondedshr) = unbondedshr/bondedshr
+		amount = s.Amount.Mul(exRate)                                // bondedshr*unbondedshr/bondedshr = unbondedshr
 	case sdk.Unbonding:
-		// (tok/unbondingshr)/(tok/unbondedshr) = unbondedshr/unbondingshr
-		exRate := p.UnbondingShareExRate().Quo(p.UnbondedShareExRate())
-		// unbondingshr*unbondedshr/unbondingshr = unbondedshr
-		amount = s.Amount.Mul(exRate)
+		exRate := p.UnbondingShareExRate().Quo(p.UnbondedShareExRate()) // (tok/unbondingshr)/(tok/unbondedshr) = unbondedshr/unbondingshr
+		amount = s.Amount.Mul(exRate)                                   // unbondingshr*unbondedshr/unbondingshr = unbondedshr
 	case sdk.Unbonded:
 		amount = s.Amount
 	}
-
 	return NewUnbondedShares(amount)
 }
 
-// ToUnbonding returns the equivalent amount of pool shares if the shares were
-// unbonding.
+// equivalent amount of shares if the shares were unbonding
 func (s PoolShares) ToUnbonding(p Pool) PoolShares {
 	var amount sdk.Rat
-
 	switch s.Status {
 	case sdk.Bonded:
-		// (tok/bondedshr)/(tok/unbondingshr) = unbondingshr/bondedshr
-		exRate := p.BondedShareExRate().Quo(p.UnbondingShareExRate())
-		// bondedshr*unbondingshr/bondedshr = unbondingshr
-		amount = s.Amount.Mul(exRate)
+		exRate := p.BondedShareExRate().Quo(p.UnbondingShareExRate()) // (tok/bondedshr)/(tok/unbondingshr) = unbondingshr/bondedshr
+		amount = s.Amount.Mul(exRate)                                 // bondedshr*unbondingshr/bondedshr = unbondingshr
 	case sdk.Unbonding:
 		amount = s.Amount
 	case sdk.Unbonded:
-		// (tok/unbondedshr)/(tok/unbondingshr) = unbondingshr/unbondedshr
-		exRate := p.UnbondedShareExRate().Quo(p.UnbondingShareExRate())
-		// unbondedshr*unbondingshr/unbondedshr = unbondingshr
-		amount = s.Amount.Mul(exRate)
+		exRate := p.UnbondedShareExRate().Quo(p.UnbondingShareExRate()) // (tok/unbondedshr)/(tok/unbondingshr) = unbondingshr/unbondedshr
+		amount = s.Amount.Mul(exRate)                                   // unbondedshr*unbondingshr/unbondedshr = unbondingshr
 	}
-
 	return NewUnbondingShares(amount)
 }
 
-// ToBonded the equivalent amount of pool shares if the shares were bonded.
+// equivalent amount of shares if the shares were bonded
 func (s PoolShares) ToBonded(p Pool) PoolShares {
 	var amount sdk.Rat
-
 	switch s.Status {
 	case sdk.Bonded:
 		amount = s.Amount
 	case sdk.Unbonding:
-		// (tok/ubshr)/(tok/bshr) = bshr/ubshr
-		exRate := p.UnbondingShareExRate().Quo(p.BondedShareExRate())
-		// ubshr*bshr/ubshr = bshr
-		amount = s.Amount.Mul(exRate)
+		exRate := p.UnbondingShareExRate().Quo(p.BondedShareExRate()) // (tok/ubshr)/(tok/bshr) = bshr/ubshr
+		amount = s.Amount.Mul(exRate)                                 // ubshr*bshr/ubshr = bshr
 	case sdk.Unbonded:
-		// (tok/ubshr)/(tok/bshr) = bshr/ubshr
-		exRate := p.UnbondedShareExRate().Quo(p.BondedShareExRate())
-		// ubshr*bshr/ubshr = bshr
-		amount = s.Amount.Mul(exRate)
+		exRate := p.UnbondedShareExRate().Quo(p.BondedShareExRate()) // (tok/ubshr)/(tok/bshr) = bshr/ubshr
+		amount = s.Amount.Mul(exRate)                                // ubshr*bshr/ubshr = bshr
 	}
-
 	return NewUnbondedShares(amount)
 }
 
-// Tokens returns the equivalent amount of tokens contained by the pool shares
-// for a given pool.
+//_________________________________________________________________________________________________________
+
+// TODO better tests
+// get the equivalent amount of tokens contained by the shares
 func (s PoolShares) Tokens(p Pool) sdk.Rat {
 	switch s.Status {
 	case sdk.Bonded:
-		return p.BondedShareExRate().Mul(s.Amount)
+		return p.BondedShareExRate().Mul(s.Amount) // (tokens/shares) * shares
 	case sdk.Unbonding:
 		return p.UnbondingShareExRate().Mul(s.Amount)
 	case sdk.Unbonded:

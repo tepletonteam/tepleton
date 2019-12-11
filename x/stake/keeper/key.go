@@ -52,7 +52,7 @@ func GetValidatorsBondedIndexKey(ownerAddr sdk.Address) []byte {
 	return append(ValidatorsBondedIndexKey, ownerAddr.Bytes()...)
 }
 
-// Get the validator owner address from ValBondedIndexKey
+// rearrange the ValBondedIndexKey to get the ValidatorKey
 func GetAddressFromValBondedIndexKey(IndexKey []byte) []byte {
 	return IndexKey[1:] // remove prefix bytes
 }
@@ -84,12 +84,10 @@ func getValidatorPowerRank(validator types.Validator, pool types.Pool) []byte {
 	counterBytes := make([]byte, 2)
 	binary.BigEndian.PutUint16(counterBytes, ^uint16(validator.BondIntraTxCounter)) // invert counter (first txns have priority)
 
-	return append(append(append(append(
-		ValidatorsByPowerIndexKey,
-		revokedBytes...),
-		powerBytes...),
-		heightBytes...),
-		counterBytes...)
+	return append(ValidatorsByPowerIndexKey,
+		append(revokedBytes,
+			append(powerBytes,
+				append(heightBytes, counterBytes...)...)...)...)
 }
 
 // get the key for the accumulated update validators.
@@ -117,8 +115,12 @@ func GetDelegationsKey(delegatorAddr sdk.Address) []byte {
 // get the key for an unbonding delegation by delegator and validator addr.
 // VALUE: stake/types.UnbondingDelegation
 func GetUBDKey(delegatorAddr, validatorAddr sdk.Address) []byte {
+
+	key := make([]byte, len(delegatorAddr.Bytes()))
+	copy(key, delegatorAddr.Bytes())
+
 	return append(
-		GetUBDsKey(delegatorAddr.Bytes()),
+		GetUBDsKey(key),
 		validatorAddr.Bytes()...)
 }
 
@@ -131,11 +133,12 @@ func GetUBDByValIndexKey(delegatorAddr, validatorAddr sdk.Address) []byte {
 // rearrange the ValIndexKey to get the UBDKey
 func GetUBDKeyFromValIndexKey(IndexKey []byte) []byte {
 	addrs := IndexKey[1:] // remove prefix bytes
-	if len(addrs) != 40 {
-		panic("unexpected key length")
+	split := len(addrs) / 2
+	if (len(addrs) % 2) != 0 {
+		panic("key length not even")
 	}
-	valAddr := addrs[:20]
-	delAddr := addrs[20:]
+	valAddr := addrs[:split]
+	delAddr := addrs[split:]
 	return GetUBDKey(delAddr, valAddr)
 }
 
@@ -158,8 +161,11 @@ func GetUBDsByValIndexKey(validatorAddr sdk.Address) []byte {
 func GetREDKey(delegatorAddr, validatorSrcAddr,
 	validatorDstAddr sdk.Address) []byte {
 
+	key := make([]byte, len(delegatorAddr.Bytes()))
+	copy(key, delegatorAddr.Bytes())
+
 	return append(append(
-		GetREDsKey(delegatorAddr.Bytes()),
+		GetREDsKey(key),
 		validatorSrcAddr.Bytes()...),
 		validatorDstAddr.Bytes()...)
 }
@@ -169,10 +175,12 @@ func GetREDKey(delegatorAddr, validatorSrcAddr,
 func GetREDByValSrcIndexKey(delegatorAddr, validatorSrcAddr,
 	validatorDstAddr sdk.Address) []byte {
 
-	return append(append(
+	return append(
 		GetREDsFromValSrcIndexKey(validatorSrcAddr),
-		delegatorAddr.Bytes()...),
-		validatorDstAddr.Bytes()...)
+		append(
+			delegatorAddr.Bytes(),
+			validatorDstAddr.Bytes()...)...,
+	)
 }
 
 // get the index-key for a redelegation, stored by destination-validator-index
@@ -180,21 +188,24 @@ func GetREDByValSrcIndexKey(delegatorAddr, validatorSrcAddr,
 func GetREDByValDstIndexKey(delegatorAddr, validatorSrcAddr,
 	validatorDstAddr sdk.Address) []byte {
 
-	return append(append(
+	return append(
 		GetREDsToValDstIndexKey(validatorDstAddr),
-		delegatorAddr.Bytes()...),
-		validatorSrcAddr.Bytes()...)
+		append(
+			delegatorAddr.Bytes(),
+			validatorSrcAddr.Bytes()...)...,
+	)
 }
 
 // rearrange the ValSrcIndexKey to get the REDKey
 func GetREDKeyFromValSrcIndexKey(IndexKey []byte) []byte {
 	addrs := IndexKey[1:] // remove prefix bytes
-	if len(addrs) != 60 {
+	split := len(addrs) / 3
+	if (len(addrs) % 3) != 0 {
 		panic("unexpected key length")
 	}
-	valSrcAddr := addrs[:20]
-	delAddr := addrs[20:40]
-	valDstAddr := addrs[40:]
+	valSrcAddr := addrs[:split]
+	delAddr := addrs[split : 2*split]
+	valDstAddr := addrs[2*split:]
 
 	return GetREDKey(delAddr, valSrcAddr, valDstAddr)
 }
@@ -202,12 +213,13 @@ func GetREDKeyFromValSrcIndexKey(IndexKey []byte) []byte {
 // rearrange the ValDstIndexKey to get the REDKey
 func GetREDKeyFromValDstIndexKey(IndexKey []byte) []byte {
 	addrs := IndexKey[1:] // remove prefix bytes
-	if len(addrs) != 60 {
+	split := len(addrs) / 3
+	if (len(addrs) % 3) != 0 {
 		panic("unexpected key length")
 	}
-	valDstAddr := addrs[:20]
-	delAddr := addrs[20:40]
-	valSrcAddr := addrs[40:]
+	valDstAddr := addrs[:split]
+	delAddr := addrs[split : 2*split]
+	valSrcAddr := addrs[2*split:]
 	return GetREDKey(delAddr, valSrcAddr, valDstAddr)
 }
 
@@ -232,7 +244,6 @@ func GetREDsToValDstIndexKey(validatorDstAddr sdk.Address) []byte {
 // from a particular delegator
 func GetREDsByDelToValDstIndexKey(delegatorAddr sdk.Address,
 	validatorDstAddr sdk.Address) []byte {
-
 	return append(
 		GetREDsToValDstIndexKey(validatorDstAddr),
 		delegatorAddr.Bytes()...)

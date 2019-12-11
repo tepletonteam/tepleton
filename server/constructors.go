@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	dbm "github.com/tepleton/tepleton/libs/db"
-	"github.com/tepleton/tepleton/libs/log"
 	tmtypes "github.com/tepleton/tepleton/types"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 )
 
 // AppCreator lets us lazily initialize app, using home dir
