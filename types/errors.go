@@ -3,7 +3,7 @@ package types
 import (
 	"fmt"
 
-	cmn "github.com/tepleton/tmlibs/common"
+	cmn "github.com/tepleton/tepleton/libs/common"
 
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
 )

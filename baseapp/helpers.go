@@ -3,7 +3,7 @@ package baseapp
 import (
 	"github.com/tepleton/tepleton/wrsp/server"
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	cmn "github.com/tepleton/tmlibs/common"
+	cmn "github.com/tepleton/tepleton/libs/common"
 )
 
 // RunForever - BasecoinApp execution and cleanup
