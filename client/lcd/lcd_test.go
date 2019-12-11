@@ -56,7 +56,7 @@ func TestKeys(t *testing.T) {
 	res, body = Request(t, port, "POST", "/keys", jsonStr)
 
 	require.Equal(t, http.StatusOK, res.StatusCode, body)
-	var resp keys.KeyOutput
+	var resp keys.NewKeyResponse
 	err = wire.Cdc.UnmarshalJSON([]byte(body), &resp)
 	require.Nil(t, err, body)
 

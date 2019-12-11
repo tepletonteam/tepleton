@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/x/auth/mock"
+	"github.com/tepleton/tepleton-sdk/x/mock"
 )
 
 var (
