@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/tepleton/tepleton-sdk/client"
-	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -216,14 +215,8 @@ func AddNewKeyRequestHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
-	bech32Account, err := sdk.Bech32ifyAcc(sdk.Address(info.GetPubKey().Address().Bytes()))
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
 	bz, err := json.Marshal(NewKeyResponse{
-		Address:  bech32Account,
+		Address:  info.GetPubKey().Address().String(),
 		Mnemonic: mnemonic,
 	})
 	if err != nil {
