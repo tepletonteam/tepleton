@@ -6,10 +6,6 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
-// defaultUnbondingTime reflects three weeks in seconds as the default
-// unbonding time.
-const defaultUnbondingTime int64 = 60 * 60 * 24 * 3
-
 // Params defines the high level settings for staking
 type Params struct {
 	InflationRateChange sdk.Rat `json:"inflation_rate_change"` // maximum annual change in inflation rate
@@ -23,21 +19,21 @@ type Params struct {
 	BondDenom     string `json:"bond_denom"`     // bondable coin denomination
 }
 
-// Equal returns a boolean determining if two Param types are identical.
+// nolint
 func (p Params) Equal(p2 Params) bool {
 	bz1 := MsgCdc.MustMarshalBinary(&p)
 	bz2 := MsgCdc.MustMarshalBinary(&p2)
 	return bytes.Equal(bz1, bz2)
 }
 
-// DefaultParams returns a default set of parameters.
+// default params
 func DefaultParams() Params {
 	return Params{
 		InflationRateChange: sdk.NewRat(13, 100),
 		InflationMax:        sdk.NewRat(20, 100),
 		InflationMin:        sdk.NewRat(7, 100),
 		GoalBonded:          sdk.NewRat(67, 100),
-		UnbondingTime:       defaultUnbondingTime,
+		UnbondingTime:       60 * 60 * 24 * 3, // 3 weeks in seconds
 		MaxValidators:       100,
 		BondDenom:           "steak",
 	}
