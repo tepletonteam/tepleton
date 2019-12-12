@@ -34,7 +34,7 @@ func (k Keeper) IterateValidatorsBonded(ctx sdk.Context, fn func(index int64, va
 	iterator := sdk.KVStorePrefixIterator(store, ValidatorsBondedIndexKey)
 	i := int64(0)
 	for ; iterator.Valid(); iterator.Next() {
-		address := iterator.Value()
+		address := GetAddressFromValBondedIndexKey(iterator.Key())
 		validator, found := k.GetValidator(ctx, address)
 		if !found {
 			panic(fmt.Sprintf("validator record not found for address: %v\n", address))
@@ -87,13 +87,11 @@ func (k Keeper) Delegation(ctx sdk.Context, addrDel sdk.Address, addrVal sdk.Add
 // iterate through the active validator set and perform the provided function
 func (k Keeper) IterateDelegations(ctx sdk.Context, delAddr sdk.Address, fn func(index int64, delegation sdk.Delegation) (stop bool)) {
 	store := ctx.KVStore(k.storeKey)
-	key := GetDelegationsKey(delAddr, k.cdc)
+	key := GetDelegationsKey(delAddr)
 	iterator := sdk.KVStorePrefixIterator(store, key)
 	i := int64(0)
 	for ; iterator.Valid(); iterator.Next() {
-		bz := iterator.Value()
-		var delegation types.Delegation
-		k.cdc.MustUnmarshalBinary(bz, &delegation)
+		delegation := types.UnmarshalDelegation(k.cdc, iterator.Key(), iterator.Value())
 		stop := fn(i, delegation) // XXX is this safe will the fields be able to get written to?
 		if stop {
 			break
