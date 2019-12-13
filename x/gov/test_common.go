@@ -12,13 +12,13 @@ import (
 	"github.com/tepleton/tepleton/crypto"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/x/auth/mock"
 	"github.com/tepleton/tepleton-sdk/x/bank"
+	"github.com/tepleton/tepleton-sdk/x/mock"
 	"github.com/tepleton/tepleton-sdk/x/stake"
 )
 
 // initialize the mock application for this module
-func getMockApp(t *testing.T, numGenAccs int64) (*mock.App, Keeper, stake.Keeper, []sdk.Address, []crypto.PubKey, []crypto.PrivKey) {
+func getMockApp(t *testing.T, numGenAccs int) (*mock.App, Keeper, stake.Keeper, []sdk.Address, []crypto.PubKey, []crypto.PrivKey) {
 	mapp := mock.NewApp()
 
 	stake.RegisterWire(mapp.Cdc)

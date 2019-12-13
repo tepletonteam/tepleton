@@ -5,11 +5,10 @@ import (
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/x/auth"
-	"github.com/tepleton/tepleton-sdk/x/auth/mock"
 	"github.com/tepleton/tepleton-sdk/x/bank"
-	"github.com/stretchr/testify/require"
-
+	"github.com/tepleton/tepleton-sdk/x/mock"
 	"github.com/tepleton/tepleton-sdk/x/stake"
+	"github.com/stretchr/testify/require"
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
 	"github.com/tepleton/tepleton/crypto"
 )
@@ -103,10 +102,9 @@ func TestSlashingMsgs(t *testing.T) {
 	require.True(sdk.RatEq(t, sdk.NewRat(10), validator.PoolShares.Bonded()))
 	unrevokeMsg := MsgUnrevoke{ValidatorAddr: validator.PubKey.Address()}
 
-	// no signing info yet
 	checkValidatorSigningInfo(t, mapp, keeper, addr1, false)
 
-	// unrevoke should fail with validator not revoked
-	res := mock.SignCheck(mapp.BaseApp, []sdk.Msg{unrevokeMsg}, []int64{0}, []int64{1}, priv1)
+	// unrevoke should fail with unknown validator
+	res := mock.CheckGenTx(t, mapp.BaseApp, []sdk.Msg{unrevokeMsg}, []int64{0}, []int64{1}, false, priv1)
 	require.Equal(t, sdk.ToWRSPCode(DefaultCodespace, CodeValidatorNotRevoked), res.Code)
 }
