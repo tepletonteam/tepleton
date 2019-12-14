@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/tepleton/tepleton-sdk/client"
+	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -161,6 +162,12 @@ type NewKeyBody struct {
 	Password string `json:"password"`
 }
 
+// new key response REST body
+type NewKeyResponse struct {
+	Address  string `json:"address"`
+	Mnemonic string `json:"mnemonic"`
+}
+
 // add new key REST handler
 func AddNewKeyRequestHandler(w http.ResponseWriter, r *http.Request) {
 	var kb keys.Keybase
@@ -209,18 +216,22 @@ func AddNewKeyRequestHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
-
-	keyOutput, err := Bech32KeyOutput(info)
-	keyOutput.Seed = mnemonic
-
-	output, err := json.MarshalIndent(keyOutput, "", "  ")
+	bech32Account, err := sdk.Bech32ifyAcc(sdk.Address(info.GetPubKey().Address().Bytes()))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return
 	}
-
-	w.Write(output)
+	bz, err := json.Marshal(NewKeyResponse{
+		Address:  bech32Account,
+		Mnemonic: mnemonic,
+	})
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	w.Write(bz)
 }
 
 // function to just a new seed to display in the UI before actually persisting it in the keybase
