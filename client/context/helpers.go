@@ -9,9 +9,9 @@ import (
 
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
+	cmn "github.com/tepleton/tepleton/libs/common"
 	rpcclient "github.com/tepleton/tepleton/rpc/client"
 	ctypes "github.com/tepleton/tepleton/rpc/core/types"
-	cmn "github.com/tepleton/tepleton/libs/common"
 
 	"github.com/tepleton/tepleton-sdk/client"
 	"github.com/tepleton/tepleton-sdk/client/keys"
