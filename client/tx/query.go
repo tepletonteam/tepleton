@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/tepleton/tmlibs/common"
+	"github.com/tepleton/tepleton/libs/common"
 
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
