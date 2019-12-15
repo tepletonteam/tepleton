@@ -13,9 +13,9 @@ import (
 
 	cryptoKeys "github.com/tepleton/tepleton-sdk/crypto/keys"
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	"github.com/tepleton/tepleton/libs/common"
 	p2p "github.com/tepleton/tepleton/p2p"
 	ctypes "github.com/tepleton/tepleton/rpc/core/types"
+	"github.com/tepleton/tepleton/libs/common"
 
 	client "github.com/tepleton/tepleton-sdk/client"
 	keys "github.com/tepleton/tepleton-sdk/client/keys"

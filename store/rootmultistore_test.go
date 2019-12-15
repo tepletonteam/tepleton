@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	"github.com/tepleton/tepleton/crypto/merkle"
 	dbm "github.com/tepleton/tepleton/libs/db"
+	"github.com/tepleton/tepleton/crypto/merkle"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
