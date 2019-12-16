@@ -15,9 +15,16 @@ type Delegation struct {
 	ValidatorAddr sdk.Address `json:"validator_addr"`
 	Shares        sdk.Rat     `json:"shares"`
 	Height        int64       `json:"height"` // Last height bond updated
+	//DelegationValue
 }
 
-// Equal returns a boolean determining if two Delegation types are identical.
+// delegation store value
+//type DelegationValue struct {
+//Shares sdk.Rat `json:"shares"`
+//Height int64   `json:"height"` // Last height bond updated
+//}
+
+// two are equal
 func (d Delegation) Equal(d2 Delegation) bool {
 	return bytes.Equal(d.DelegatorAddr, d2.DelegatorAddr) &&
 		bytes.Equal(d.ValidatorAddr, d2.ValidatorAddr) &&
@@ -33,20 +40,16 @@ func (d Delegation) GetDelegator() sdk.Address { return d.DelegatorAddr }
 func (d Delegation) GetValidator() sdk.Address { return d.ValidatorAddr }
 func (d Delegation) GetBondShares() sdk.Rat    { return d.Shares }
 
-// HumanReadableString returns a human readable string representation of a
-// Delegation. An error is returned if the Delegation's delegator or validator
-// addresses cannot be Bech32 encoded.
+//Human Friendly pretty printer
 func (d Delegation) HumanReadableString() (string, error) {
 	bechAcc, err := sdk.Bech32ifyAcc(d.DelegatorAddr)
 	if err != nil {
 		return "", err
 	}
-
 	bechVal, err := sdk.Bech32ifyAcc(d.ValidatorAddr)
 	if err != nil {
 		return "", err
 	}
-
 	resp := "Delegation \n"
 	resp += fmt.Sprintf("Delegator: %s\n", bechAcc)
 	resp += fmt.Sprintf("Validator: %s\n", bechVal)
@@ -54,9 +57,12 @@ func (d Delegation) HumanReadableString() (string, error) {
 	resp += fmt.Sprintf("Height: %d", d.Height)
 
 	return resp, nil
+
 }
 
-// UnbondingDelegation reflects a delegation's passive unbonding queue.
+//__________________________________________________________________
+
+// element stored to represent the passive unbonding queue
 type UnbondingDelegation struct {
 	DelegatorAddr  sdk.Address `json:"delegator_addr"`  // delegator
 	ValidatorAddr  sdk.Address `json:"validator_addr"`  // validator unbonding from owner addr
@@ -64,30 +70,34 @@ type UnbondingDelegation struct {
 	MinTime        int64       `json:"min_time"`        // unix time for unbonding completion
 	InitialBalance sdk.Coin    `json:"initial_balance"` // atoms initially scheduled to receive at completion
 	Balance        sdk.Coin    `json:"balance"`         // atoms to receive at completion
+	//UBDValue
 }
 
-// Equal returns a boolean determining if two UnbondingDelegation types are
-// identical.
+// UBD store value
+//type UBDValue struct {
+//CreationHeight int64    `json:"creation_height"` // height which the unbonding took place
+//MinTime        int64    `json:"min_time"`        // unix time for unbonding completion
+//InitialBalance sdk.Coin `json:"initial_balance"` // atoms initially scheduled to receive at completion
+//Balance        sdk.Coin `json:"balance"`         // atoms to receive at completion
+//}
+
+// nolint
 func (d UnbondingDelegation) Equal(d2 UnbondingDelegation) bool {
 	bz1 := MsgCdc.MustMarshalBinary(&d)
 	bz2 := MsgCdc.MustMarshalBinary(&d2)
 	return bytes.Equal(bz1, bz2)
 }
 
-// HumanReadableString returns a human readable string representation of an
-// UnbondingDelegation. An error is returned if the UnbondingDelegation's
-// delegator or validator addresses cannot be Bech32 encoded.
+//Human Friendly pretty printer
 func (d UnbondingDelegation) HumanReadableString() (string, error) {
 	bechAcc, err := sdk.Bech32ifyAcc(d.DelegatorAddr)
 	if err != nil {
 		return "", err
 	}
-
 	bechVal, err := sdk.Bech32ifyAcc(d.ValidatorAddr)
 	if err != nil {
 		return "", err
 	}
-
 	resp := "Unbonding Delegation \n"
 	resp += fmt.Sprintf("Delegator: %s\n", bechAcc)
 	resp += fmt.Sprintf("Validator: %s\n", bechVal)
@@ -99,7 +109,9 @@ func (d UnbondingDelegation) HumanReadableString() (string, error) {
 
 }
 
-// Redelegation reflects a delegation's passive re-delegation queue.
+//__________________________________________________________________
+
+// element stored to represent the passive redelegation queue
 type Redelegation struct {
 	DelegatorAddr    sdk.Address `json:"delegator_addr"`     // delegator
 	ValidatorSrcAddr sdk.Address `json:"validator_src_addr"` // validator redelegation source owner addr
@@ -110,34 +122,40 @@ type Redelegation struct {
 	Balance          sdk.Coin    `json:"balance"`            // current balance
 	SharesSrc        sdk.Rat     `json:"shares_src"`         // amount of source shares redelegating
 	SharesDst        sdk.Rat     `json:"shares_dst"`         // amount of destination shares redelegating
+	//REDValue
 }
 
-// Equal returns a boolean determining if two Redelegation types are identical.
+// Redelegation store value
+//type REDValue struct {
+//CreationHeight int64    `json:"creation_height"` // height which the redelegation took place
+//MinTime        int64    `json:"min_time"`        // unix time for redelegation completion
+//InitialBalance sdk.Coin `json:"initial_balance"` // initial balance when redelegation started
+//Balance        sdk.Coin `json:"balance"`         // current balance
+//SharesSrc      sdk.Rat  `json:"shares_src"`      // amount of source shares redelegating
+//SharesDst      sdk.Rat  `json:"shares_dst"`      // amount of destination shares redelegating
+//}
+
+// nolint
 func (d Redelegation) Equal(d2 Redelegation) bool {
 	bz1 := MsgCdc.MustMarshalBinary(&d)
 	bz2 := MsgCdc.MustMarshalBinary(&d2)
 	return bytes.Equal(bz1, bz2)
 }
 
-// HumanReadableString returns a human readable string representation of a
-// Redelegation. An error is returned if the UnbondingDelegation's delegator or
-// validator addresses cannot be Bech32 encoded.
+//Human Friendly pretty printer
 func (d Redelegation) HumanReadableString() (string, error) {
 	bechAcc, err := sdk.Bech32ifyAcc(d.DelegatorAddr)
 	if err != nil {
 		return "", err
 	}
-
 	bechValSrc, err := sdk.Bech32ifyAcc(d.ValidatorSrcAddr)
 	if err != nil {
 		return "", err
 	}
-
 	bechValDst, err := sdk.Bech32ifyAcc(d.ValidatorDstAddr)
 	if err != nil {
 		return "", err
 	}
-
 	resp := "Redelegation \n"
 	resp += fmt.Sprintf("Delegator: %s\n", bechAcc)
 	resp += fmt.Sprintf("Source Validator: %s\n", bechValSrc)
