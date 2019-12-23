@@ -82,10 +82,17 @@ func StatusOK(statusCode int) bool {
 }
 
 func waitForHeight(height int64, url string) {
-	var res *http.Response
-	var err error
 	for {
-		res, err = http.Get(url)
+		// get url, try a few times
+		var res *http.Response
+		var err error
+		for i := 0; i < 5; i++ {
+			res, err = http.Get(url)
+			if err == nil && StatusOK(res.StatusCode) {
+				break
+			}
+			time.Sleep(time.Millisecond * 200)
+		}
 		if err != nil {
 			panic(err)
 		}
@@ -118,31 +125,30 @@ func waitForHeight(height int64, url string) {
 // wait for tepleton to start
 func WaitForStart(port string) {
 	var err error
-	url := fmt.Sprintf("http://localhost:%v/blocks/latest", port)
+	for i := 0; i < 5; i++ {
+		time.Sleep(time.Second)
 
-	// ping the status endpoint a few times a second
-	// for a few seconds until we get a good response.
-	// otherwise something probably went wrong
-	for i := 0; i < 50; i++ {
-		time.Sleep(time.Millisecond * 100)
+		url := fmt.Sprintf("http://localhost:%v/blocks/latest", port)
 
+		// get url, try a few times
 		var res *http.Response
 		res, err = http.Get(url)
-		if err != nil || res == nil {
+		if err == nil || res == nil {
 			continue
 		}
-		err = res.Body.Close()
-		if err != nil {
-			panic(err)
-		}
 
-		if res.StatusCode == http.StatusOK {
-			// good!
+		// waiting for server to start ...
+		if res.StatusCode != http.StatusOK {
+			err = res.Body.Close()
+			if err != nil {
+				panic(err)
+			}
 			return
 		}
 	}
-	// still haven't started up?! panic!
-	panic(err)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // TODO: these functions just print to Stdout.

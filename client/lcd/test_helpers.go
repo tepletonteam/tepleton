@@ -24,9 +24,9 @@ import (
 	"github.com/tepleton/tepleton/proxy"
 	tmrpc "github.com/tepleton/tepleton/rpc/lib/server"
 	tmtypes "github.com/tepleton/tepleton/types"
-	"github.com/tepleton/tepleton/libs/cli"
-	dbm "github.com/tepleton/tepleton/libs/db"
-	"github.com/tepleton/tepleton/libs/log"
+	"github.com/tepleton/tmlibs/cli"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/tepleton-sdk/client"
 	keys "github.com/tepleton/tepleton-sdk/client/keys"
@@ -95,7 +95,7 @@ func CreateAddr(t *testing.T, name, password string, kb crkeys.Keybase) (addr sd
 func InitializeTestLCD(t *testing.T, nValidators int, initAddrs []sdk.Address) (cleanup func(), validatorsPKs []crypto.PubKey, port string) {
 
 	config := GetConfig()
-	config.Consensus.TimeoutCommit = 100
+	config.Consensus.TimeoutCommit = 1000
 	config.Consensus.SkipTimeoutCommit = false
 	config.TxIndex.IndexAllTags = true
 

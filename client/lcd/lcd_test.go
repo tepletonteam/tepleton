@@ -15,7 +15,7 @@ import (
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
 	p2p "github.com/tepleton/tepleton/p2p"
 	ctypes "github.com/tepleton/tepleton/rpc/core/types"
-	"github.com/tepleton/tepleton/libs/common"
+	"github.com/tepleton/tmlibs/common"
 
 	client "github.com/tepleton/tepleton-sdk/client"
 	keys "github.com/tepleton/tepleton-sdk/client/keys"
@@ -527,9 +527,6 @@ func TestUnrevoke(t *testing.T) {
 	addr, _ := CreateAddr(t, "test", password, GetKB(t))
 	cleanup, pks, port := InitializeTestLCD(t, 1, []sdk.Address{addr})
 	defer cleanup()
-
-	// XXX: any less than this and it fails
-	tests.WaitForHeight(3, port)
 
 	signingInfo := getSigningInfo(t, port, pks[0].Address())
 	tests.WaitForHeight(4, port)
