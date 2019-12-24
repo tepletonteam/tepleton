@@ -6,7 +6,7 @@ import (
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	wire "github.com/tepleton/tepleton-sdk/wire"
-	"github.com/tepleton/tepleton/crypto"
+	crypto "github.com/tepleton/go-crypto"
 )
 
 var globalAccountNumberKey = []byte("globalAccountNumber")
@@ -39,26 +39,14 @@ func NewAccountMapper(cdc *wire.Codec, key sdk.StoreKey, proto Account) AccountM
 // Implaements sdk.AccountMapper.
 func (am AccountMapper) NewAccountWithAddress(ctx sdk.Context, addr sdk.Address) Account {
 	acc := am.clonePrototype()
-	err := acc.SetAddress(addr)
-	if err != nil {
-		// Handle w/ #870
-		panic(err)
-	}
-	err = acc.SetAccountNumber(am.GetNextAccountNumber(ctx))
-	if err != nil {
-		// Handle w/ #870
-		panic(err)
-	}
+	acc.SetAddress(addr)
+	acc.SetAccountNumber(am.GetNextAccountNumber(ctx))
 	return acc
 }
 
 // New Account
 func (am AccountMapper) NewAccount(ctx sdk.Context, acc Account) Account {
-	err := acc.SetAccountNumber(am.GetNextAccountNumber(ctx))
-	if err != nil {
-		// TODO: Handle with #870
-		panic(err)
-	}
+	acc.SetAccountNumber(am.GetNextAccountNumber(ctx))
 	return acc
 }
 
@@ -112,6 +100,17 @@ func (am AccountMapper) GetPubKey(ctx sdk.Context, addr sdk.Address) (crypto.Pub
 	return acc.GetPubKey(), nil
 }
 
+// Sets the PubKey of the account at address
+func (am AccountMapper) SetPubKey(ctx sdk.Context, addr sdk.Address, newPubKey crypto.PubKey) sdk.Error {
+	acc := am.GetAccount(ctx, addr)
+	if acc == nil {
+		return sdk.ErrUnknownAddress(addr.String())
+	}
+	acc.SetPubKey(newPubKey)
+	am.SetAccount(ctx, acc)
+	return nil
+}
+
 // Returns the Sequence of the account at address
 func (am AccountMapper) GetSequence(ctx sdk.Context, addr sdk.Address) (int64, sdk.Error) {
 	acc := am.GetAccount(ctx, addr)
@@ -126,11 +125,7 @@ func (am AccountMapper) setSequence(ctx sdk.Context, addr sdk.Address, newSequen
 	if acc == nil {
 		return sdk.ErrUnknownAddress(addr.String())
 	}
-	err := acc.SetSequence(newSequence)
-	if err != nil {
-		// Handle w/ #870
-		panic(err)
-	}
+	acc.SetSequence(newSequence)
 	am.SetAccount(ctx, acc)
 	return nil
 }
