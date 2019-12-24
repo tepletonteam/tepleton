@@ -5,7 +5,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/stake"
 
-	wrsp "github.com/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/tepleton/wrsp/types"
 )
 
 func setGenesis(gapp *GaiaApp, accs ...*auth.BaseAccount) error {

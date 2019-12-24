@@ -5,12 +5,13 @@ import (
 	"fmt"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/spf13/viper"
 )
 
 const (
-	deductFeesCost sdk.Gas = 10
-	verifyCost             = 100
+	deductFeesCost    sdk.Gas = 10
+	memoCostPerByte   sdk.Gas = 1
+	verifyCost                = 100
+	maxMemoCharacters         = 100
 )
 
 // NewAnteHandler returns an AnteHandler that checks
@@ -36,10 +37,24 @@ func NewAnteHandler(am AccountMapper, fck FeeCollectionKeeper) sdk.AnteHandler {
 				true
 		}
 
-		msg := tx.GetMsg()
+		memo := stdTx.GetMemo()
+
+		if len(memo) > maxMemoCharacters {
+			return ctx,
+				sdk.ErrMemoTooLarge(fmt.Sprintf("maximum number of characters is %d but received %d characters", maxMemoCharacters, len(memo))).Result(),
+				true
+		}
+
+		// set the gas meter
+		ctx = ctx.WithGasMeter(sdk.NewGasMeter(stdTx.Fee.Gas))
+
+		// charge gas for the memo
+		ctx.GasMeter().ConsumeGas(memoCostPerByte*sdk.Gas(len(memo)), "memo")
+
+		msgs := tx.GetMsgs()
 
 		// Assert that number of signatures is correct.
-		var signerAddrs = msg.GetSigners()
+		var signerAddrs = stdTx.GetSigners()
 		if len(sigs) != len(signerAddrs) {
 			return ctx,
 				sdk.ErrUnauthorized("wrong number of signers").Result(),
@@ -56,13 +71,6 @@ func NewAnteHandler(am AccountMapper, fck FeeCollectionKeeper) sdk.AnteHandler {
 			accNums[i] = sigs[i].AccountNumber
 		}
 		fee := stdTx.Fee
-		chainID := ctx.ChainID()
-		// XXX: major hack; need to get ChainID
-		// into the app right away (#565)
-		if chainID == "" {
-			chainID = viper.GetString("chain-id")
-		}
-		signBytes := StdSignBytes(ctx.ChainID(), accNums, sequences, fee, msg)
 
 		// Check sig and nonce and collect signer accounts.
 		var signerAccs = make([]Account, len(signerAddrs))
@@ -70,6 +78,7 @@ func NewAnteHandler(am AccountMapper, fck FeeCollectionKeeper) sdk.AnteHandler {
 			signerAddr, sig := signerAddrs[i], sigs[i]
 
 			// check signature, return account with incremented nonce
+			signBytes := StdSignBytes(ctx.ChainID(), accNums[i], sequences[i], fee, msgs, stdTx.GetMemo())
 			signerAcc, res := processSig(
 				ctx, am,
 				signerAddr, sig, signBytes,
@@ -98,9 +107,6 @@ func NewAnteHandler(am AccountMapper, fck FeeCollectionKeeper) sdk.AnteHandler {
 
 		// cache the signer accounts in the context
 		ctx = WithSigners(ctx, signerAccs)
-
-		// set the gas meter
-		ctx = ctx.WithGasMeter(sdk.NewGasMeter(stdTx.Fee.Gas))
 
 		// TODO: tx tags (?)
 
@@ -134,8 +140,11 @@ func processSig(
 		return nil, sdk.ErrInvalidSequence(
 			fmt.Sprintf("Invalid sequence. Got %d, expected %d", sig.Sequence, seq)).Result()
 	}
-	acc.SetSequence(seq + 1)
-
+	err := acc.SetSequence(seq + 1)
+	if err != nil {
+		// Handle w/ #870
+		panic(err)
+	}
 	// If pubkey is not known for account,
 	// set it from the StdSignature.
 	pubKey := acc.GetPubKey()
@@ -148,7 +157,7 @@ func processSig(
 			return nil, sdk.ErrInvalidPubKey(
 				fmt.Sprintf("PubKey does not match Signer address %v", addr)).Result()
 		}
-		err := acc.SetPubKey(pubKey)
+		err = acc.SetPubKey(pubKey)
 		if err != nil {
 			return nil, sdk.ErrInternal("setting PubKey on signer's account").Result()
 		}
@@ -175,7 +184,11 @@ func deductFees(acc Account, fee StdFee) (Account, sdk.Result) {
 		errMsg := fmt.Sprintf("%s < %s", coins, feeAmount)
 		return nil, sdk.ErrInsufficientFunds(errMsg).Result()
 	}
-	acc.SetCoins(newCoins)
+	err := acc.SetCoins(newCoins)
+	if err != nil {
+		// Handle w/ #870
+		panic(err)
+	}
 	return acc, sdk.Result{}
 }
 
