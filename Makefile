@@ -1,9 +1,9 @@
 PACKAGES=$(shell go list ./... | grep -v '/vendor/')
 PACKAGES_NOCLITEST=$(shell go list ./... | grep -v '/vendor/' | grep -v github.com/tepleton/tepleton-sdk/cmd/ton/cli_test)
 COMMIT_HASH := $(shell git rev-parse --short HEAD)
-BUILD_FLAGS = -ldflags "-X github.com/tepleton/tepleton-sdk/version.GitCommit=${COMMIT_HASH}"
+BUILD_FLAGS = -tags netgo -ldflags "-X github.com/tepleton/tepleton-sdk/version.GitCommit=${COMMIT_HASH}"
 
-all: check_tools get_vendor_deps install install_examples test_lint test
+all: get_tools get_vendor_deps install install_examples test_lint test
 
 ########################################
 ### CI
@@ -36,11 +36,11 @@ else
 	go build $(BUILD_FLAGS) -o build/democli ./examples/democoin/cmd/democli
 endif
 
-install: 
+install:
 	go install $(BUILD_FLAGS) ./cmd/ton/cmd/tond
 	go install $(BUILD_FLAGS) ./cmd/ton/cmd/toncli
 
-install_examples: 
+install_examples:
 	go install $(BUILD_FLAGS) ./examples/basecoin/cmd/basecoind
 	go install $(BUILD_FLAGS) ./examples/basecoin/cmd/basecli
 	go install $(BUILD_FLAGS) ./examples/democoin/cmd/democoind
@@ -89,11 +89,17 @@ godocs:
 
 test: test_unit
 
-test_cli: 
+test_cli:
 	@go test -count 1 -p 1 `go list github.com/tepleton/tepleton-sdk/cmd/ton/cli_test`
+
+test_cli_retry:
+	for i in 1 2 3; do make test_cli && break || sleep 2; done
 
 test_unit:
 	@go test $(PACKAGES_NOCLITEST)
+
+test_unit_retry:
+	for i in 1 2 3; do make test_unit && break || sleep 2; done
 
 test_race:
 	@go test -race $(PACKAGES_NOCLITEST)
@@ -102,7 +108,13 @@ test_cover:
 	@bash tests/test_cover.sh
 
 test_lint:
-	gometalinter --disable-all --enable='golint' --vendor ./...
+	gometalinter.v2 --disable-all --enable='golint' --enable='misspell' --enable='unparam' --enable='unconvert' --enable='ineffassign' --linter='vet:go vet -composites=false:PATH:LINE:MESSAGE' --enable='vet' --deadline=500s --vendor ./...
+	!(gometalinter.v2 --disable-all --enable='errcheck' --vendor ./... | grep -v "client/")
+	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" | xargs gofmt -d -s
+
+format:
+	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" | xargs gofmt -w -s
+	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" | xargs misspell -w
 
 benchmark:
 	@go test -bench=. $(PACKAGES_NOCLITEST)
@@ -133,11 +145,26 @@ devdoc_update:
 
 
 ########################################
-### Remote validator nodes using terraform and ansible
+### Local validator nodes using docker and docker-compose
 
 # Build linux binary
 build-linux:
 	GOOS=linux GOARCH=amd64 $(MAKE) build
+
+build-docker-tondnode:
+	$(MAKE) -C networks/local
+
+# Run a 4-node testnet locally
+localnet-start: localnet-stop
+	@if ! [ -f build/node0/tond/config/genesis.json ]; then docker run --rm -v $(CURDIR)/build:/tond:Z tepleton/tondnode testnet --v 4 --o . --starting-ip-address 192.168.10.2 ; fi
+	docker-compose up
+
+# Stop testnet
+localnet-stop:
+	docker-compose down
+
+########################################
+### Remote validator nodes using terraform and ansible
 
 TESTNET_NAME?=remotenet
 SERVERS?=4
@@ -160,4 +187,4 @@ remotenet-status:
 # To avoid unintended conflicts with file names, always add to .PHONY
 # unless there is a reason not to.
 # https://www.gnu.org/software/make/manual/html_node/Phony-Targets.html
-.PHONY: build build_examples install install_examples install_debug dist check_tools get_tools get_vendor_deps draw_deps test test_cli test_unit test_cover test_lint benchmark devdoc_init devdoc devdoc_save devdoc_update remotenet-start remotenet-stop remotenet-status
+.PHONY: build build_examples install install_examples install_debug dist check_tools get_tools get_vendor_deps draw_deps test test_cli test_unit test_cover test_lint benchmark devdoc_init devdoc devdoc_save devdoc_update build-linux build-docker-tondnode localnet-start localnet-stop remotenet-start remotenet-stop remotenet-status format
