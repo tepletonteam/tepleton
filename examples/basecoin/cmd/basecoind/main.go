@@ -6,7 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	wrsp "github.com/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	tmtypes "github.com/tepleton/tepleton/types"
 	"github.com/tepleton/tmlibs/cli"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
@@ -27,19 +28,23 @@ func main() {
 
 	server.AddCommands(ctx, cdc, rootCmd, server.DefaultAppInit,
 		server.ConstructAppCreator(newApp, "basecoin"),
-		server.ConstructAppExporter(exportAppState, "basecoin"))
+		server.ConstructAppExporter(exportAppStateAndTMValidators, "basecoin"))
 
 	// prepare and add flags
 	rootDir := os.ExpandEnv("$HOME/.basecoind")
 	executor := cli.PrepareBaseCmd(rootCmd, "BC", rootDir)
-	executor.Execute()
+	err := executor.Execute()
+	if err != nil {
+		// handle with #870
+		panic(err)
+	}
 }
 
 func newApp(logger log.Logger, db dbm.DB) wrsp.Application {
 	return app.NewBasecoinApp(logger, db)
 }
 
-func exportAppState(logger log.Logger, db dbm.DB) (json.RawMessage, error) {
+func exportAppStateAndTMValidators(logger log.Logger, db dbm.DB) (json.RawMessage, []tmtypes.GenesisValidator, error) {
 	bapp := app.NewBasecoinApp(logger, db)
-	return bapp.ExportAppStateJSON()
+	return bapp.ExportAppStateAndValidators()
 }
