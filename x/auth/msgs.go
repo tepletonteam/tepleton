@@ -1,8 +1,11 @@
 package auth
 
 import (
+	"encoding/json"
+
+	"github.com/tepleton/go-crypto"
+
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	crypto "github.com/tepleton/go-crypto"
 )
 
 // MsgChangeKey - high level transaction of the auth module
@@ -28,7 +31,7 @@ func (msg MsgChangeKey) ValidateBasic() sdk.Error {
 
 // Implements Msg.
 func (msg MsgChangeKey) GetSignBytes() []byte {
-	b, err := msgCdc.MarshalJSON(msg) // XXX: ensure some canonical form
+	b, err := json.Marshal(msg) // XXX: ensure some canonical form
 	if err != nil {
 		panic(err)
 	}

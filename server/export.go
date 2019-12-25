@@ -18,16 +18,15 @@ func ExportCmd(ctx *Context, cdc *wire.Codec, appExporter AppExporter) *cobra.Co
 		Short: "Export state to JSON",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			home := viper.GetString("home")
-			appState, validators, err := appExporter(home, ctx.Logger)
+			appState, err := appExporter(home, ctx.Logger)
 			if err != nil {
-				return errors.Errorf("error exporting state: %v\n", err)
+				return errors.Errorf("Error exporting state: %v\n", err)
 			}
 			doc, err := tmtypes.GenesisDocFromFile(ctx.Config.GenesisFile())
 			if err != nil {
 				return err
 			}
 			doc.AppStateJSON = appState
-			doc.Validators = validators
 			encoded, err := wire.MarshalJSONIndent(cdc, doc)
 			if err != nil {
 				return err

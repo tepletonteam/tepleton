@@ -1,22 +1,23 @@
 package cli
 
 import (
+	"encoding/hex"
 	"fmt"
 
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	crypto "github.com/tepleton/go-crypto"
 
 	"github.com/tepleton/tepleton-sdk/client/context"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 	authcmd "github.com/tepleton/tepleton-sdk/x/auth/client/cli"
 	"github.com/tepleton/tepleton-sdk/x/stake"
-	"github.com/tepleton/tepleton-sdk/x/stake/types"
 )
 
-// create create validator command
-func GetCmdCreateValidator(cdc *wire.Codec) *cobra.Command {
+// create declare candidacy command
+func GetCmdDeclareCandidacy(cdc *wire.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create-validator",
 		Short: "create new validator initialized with a self-delegation to it",
@@ -27,7 +28,7 @@ func GetCmdCreateValidator(cdc *wire.Codec) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			validatorAddr, err := sdk.GetAccAddressBech32(viper.GetString(FlagAddressValidator))
+			validatorAddr, err := sdk.GetAddress(viper.GetString(FlagAddressValidator))
 			if err != nil {
 				return err
 			}
@@ -36,10 +37,15 @@ func GetCmdCreateValidator(cdc *wire.Codec) *cobra.Command {
 			if len(pkStr) == 0 {
 				return fmt.Errorf("must use --pubkey flag")
 			}
-			pk, err := sdk.GetValPubKeyBech32(pkStr)
+			pkBytes, err := hex.DecodeString(pkStr)
 			if err != nil {
 				return err
 			}
+			pk, err := crypto.PubKeyFromBytes(pkBytes)
+			if err != nil {
+				return err
+			}
+
 			if viper.GetString(FlagMoniker) == "" {
 				return fmt.Errorf("please enter a moniker for the validator using --moniker")
 			}
@@ -49,10 +55,10 @@ func GetCmdCreateValidator(cdc *wire.Codec) *cobra.Command {
 				Website:  viper.GetString(FlagWebsite),
 				Details:  viper.GetString(FlagDetails),
 			}
-			msg := stake.NewMsgCreateValidator(validatorAddr, pk, amount, description)
+			msg := stake.NewMsgDeclareCandidacy(validatorAddr, pk, amount, description)
 
 			// build and sign the transaction, then broadcast to Tendermint
-			res, err := ctx.EnsureSignBuildBroadcast(ctx.FromAddressName, []sdk.Msg{msg}, cdc)
+			res, err := ctx.EnsureSignBuildBroadcast(ctx.FromAddressName, msg, cdc)
 			if err != nil {
 				return err
 			}
@@ -69,14 +75,14 @@ func GetCmdCreateValidator(cdc *wire.Codec) *cobra.Command {
 	return cmd
 }
 
-// create edit validator command
-func GetCmdEditValidator(cdc *wire.Codec) *cobra.Command {
+// create edit candidacy command
+func GetCmdEditCandidacy(cdc *wire.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "edit-validator",
 		Short: "edit and existing validator account",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			validatorAddr, err := sdk.GetAccAddressBech32(viper.GetString(FlagAddressValidator))
+			validatorAddr, err := sdk.GetAddress(viper.GetString(FlagAddressValidator))
 			if err != nil {
 				return err
 			}
@@ -86,12 +92,12 @@ func GetCmdEditValidator(cdc *wire.Codec) *cobra.Command {
 				Website:  viper.GetString(FlagWebsite),
 				Details:  viper.GetString(FlagDetails),
 			}
-			msg := stake.NewMsgEditValidator(validatorAddr, description)
+			msg := stake.NewMsgEditCandidacy(validatorAddr, description)
 
 			// build and sign the transaction, then broadcast to Tendermint
 			ctx := context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(cdc))
 
-			res, err := ctx.EnsureSignBuildBroadcast(ctx.FromAddressName, []sdk.Msg{msg}, cdc)
+			res, err := ctx.EnsureSignBuildBroadcast(ctx.FromAddressName, msg, cdc)
 			if err != nil {
 				return err
 			}
@@ -106,22 +112,19 @@ func GetCmdEditValidator(cdc *wire.Codec) *cobra.Command {
 	return cmd
 }
 
-// delegate command
+// create edit candidacy command
 func GetCmdDelegate(cdc *wire.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delegate",
-		Short: "delegate liquid tokens to an validator",
+		Short: "delegate coins to an existing validator",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			amount, err := sdk.ParseCoin(viper.GetString(FlagAmount))
 			if err != nil {
 				return err
 			}
 
-			delegatorAddr, err := sdk.GetAccAddressBech32(viper.GetString(FlagAddressDelegator))
-			if err != nil {
-				return err
-			}
-			validatorAddr, err := sdk.GetAccAddressBech32(viper.GetString(FlagAddressValidator))
+			delegatorAddr, err := sdk.GetAddress(viper.GetString(FlagAddressDelegator))
+			validatorAddr, err := sdk.GetAddress(viper.GetString(FlagAddressValidator))
 			if err != nil {
 				return err
 			}
@@ -131,7 +134,7 @@ func GetCmdDelegate(cdc *wire.Codec) *cobra.Command {
 			// build and sign the transaction, then broadcast to Tendermint
 			ctx := context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(cdc))
 
-			res, err := ctx.EnsureSignBuildBroadcast(ctx.FromAddressName, []sdk.Msg{msg}, cdc)
+			res, err := ctx.EnsureSignBuildBroadcast(ctx.FromAddressName, msg, cdc)
 			if err != nil {
 				return err
 			}
@@ -147,197 +150,39 @@ func GetCmdDelegate(cdc *wire.Codec) *cobra.Command {
 	return cmd
 }
 
-// create edit validator command
-func GetCmdRedelegate(storeName string, cdc *wire.Codec) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "redelegate",
-		Short: "redelegate illiquid tokens from one validator to another",
-	}
-	cmd.AddCommand(
-		GetCmdBeginRedelegate(storeName, cdc),
-		GetCmdCompleteRedelegate(cdc),
-	)
-	return cmd
-}
-
-// redelegate command
-func GetCmdBeginRedelegate(storeName string, cdc *wire.Codec) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "begin",
-		Short: "begin redelegation",
-		RunE: func(cmd *cobra.Command, args []string) error {
-
-			var err error
-			delegatorAddr, err := sdk.GetAccAddressBech32(viper.GetString(FlagAddressDelegator))
-			if err != nil {
-				return err
-			}
-			validatorSrcAddr, err := sdk.GetAccAddressBech32(viper.GetString(FlagAddressValidatorSrc))
-			if err != nil {
-				return err
-			}
-			validatorDstAddr, err := sdk.GetAccAddressBech32(viper.GetString(FlagAddressValidatorDst))
-			if err != nil {
-				return err
-			}
-
-			// get the shares amount
-			sharesAmountStr := viper.GetString(FlagSharesAmount)
-			sharesPercentStr := viper.GetString(FlagSharesPercent)
-			sharesAmount, err := getShares(storeName, cdc, sharesAmountStr, sharesPercentStr,
-				delegatorAddr, validatorSrcAddr)
-			if err != nil {
-				return err
-			}
-
-			msg := stake.NewMsgBeginRedelegate(delegatorAddr, validatorSrcAddr, validatorDstAddr, sharesAmount)
-
-			// build and sign the transaction, then broadcast to Tendermint
-			ctx := context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(cdc))
-
-			res, err := ctx.EnsureSignBuildBroadcast(ctx.FromAddressName, []sdk.Msg{msg}, cdc)
-			if err != nil {
-				return err
-			}
-
-			fmt.Printf("Committed at block %d. Hash: %s\n", res.Height, res.Hash.String())
-			return nil
-		},
-	}
-
-	cmd.Flags().AddFlagSet(fsShares)
-	cmd.Flags().AddFlagSet(fsDelegator)
-	cmd.Flags().AddFlagSet(fsRedelegation)
-	return cmd
-}
-
-func getShares(storeName string, cdc *wire.Codec, sharesAmountStr, sharesPercentStr string,
-	delegatorAddr, validatorAddr sdk.Address) (sharesAmount sdk.Rat, err error) {
-
-	switch {
-	case sharesAmountStr != "" && sharesPercentStr != "":
-		return sharesAmount, errors.Errorf("can either specify the amount OR the percent of the shares, not both")
-	case sharesAmountStr == "" && sharesPercentStr == "":
-		return sharesAmount, errors.Errorf("can either specify the amount OR the percent of the shares, not both")
-	case sharesAmountStr != "":
-		sharesAmount, err = sdk.NewRatFromDecimal(sharesAmountStr, types.MaxBondDenominatorPrecision)
-		if err != nil {
-			return sharesAmount, err
-		}
-		if !sharesAmount.GT(sdk.ZeroRat()) {
-			return sharesAmount, errors.Errorf("shares amount must be positive number (ex. 123, 1.23456789)")
-		}
-	case sharesPercentStr != "":
-		var sharesPercent sdk.Rat
-		sharesPercent, err = sdk.NewRatFromDecimal(sharesPercentStr, types.MaxBondDenominatorPrecision)
-		if err != nil {
-			return sharesAmount, err
-		}
-		if !sharesPercent.GT(sdk.ZeroRat()) || !sharesPercent.LTE(sdk.OneRat()) {
-			return sharesAmount, errors.Errorf("shares percent must be >0 and <=1 (ex. 0.01, 0.75, 1)")
-		}
-
-		// make a query to get the existing delegation shares
-		key := stake.GetDelegationKey(delegatorAddr, validatorAddr, cdc)
-		ctx := context.NewCoreContextFromViper()
-		resQuery, err := ctx.QueryStore(key, storeName)
-		if err != nil {
-			return sharesAmount, err
-		}
-		var delegation stake.Delegation
-		err = cdc.UnmarshalBinary(resQuery, &delegation)
-		if err != nil {
-			return sharesAmount, errors.Errorf("cannot find delegation to determine percent Error: %v", err)
-		}
-
-		sharesAmount = sharesPercent.Mul(delegation.Shares)
-	}
-	return
-}
-
-// redelegate command
-func GetCmdCompleteRedelegate(cdc *wire.Codec) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "complete",
-		Short: "complete redelegation",
-		RunE: func(cmd *cobra.Command, args []string) error {
-
-			delegatorAddr, err := sdk.GetAccAddressBech32(viper.GetString(FlagAddressDelegator))
-			if err != nil {
-				return err
-			}
-			validatorSrcAddr, err := sdk.GetAccAddressBech32(viper.GetString(FlagAddressValidatorSrc))
-			if err != nil {
-				return err
-			}
-			validatorDstAddr, err := sdk.GetAccAddressBech32(viper.GetString(FlagAddressValidatorDst))
-			if err != nil {
-				return err
-			}
-
-			msg := stake.NewMsgCompleteRedelegate(delegatorAddr, validatorSrcAddr, validatorDstAddr)
-
-			// build and sign the transaction, then broadcast to Tendermint
-			ctx := context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(cdc))
-
-			res, err := ctx.EnsureSignBuildBroadcast(ctx.FromAddressName, []sdk.Msg{msg}, cdc)
-			if err != nil {
-				return err
-			}
-
-			fmt.Printf("Committed at block %d. Hash: %s\n", res.Height, res.Hash.String())
-			return nil
-		},
-	}
-	cmd.Flags().AddFlagSet(fsDelegator)
-	cmd.Flags().AddFlagSet(fsRedelegation)
-	return cmd
-}
-
-// create edit validator command
-func GetCmdUnbond(storeName string, cdc *wire.Codec) *cobra.Command {
+// create edit candidacy command
+func GetCmdUnbond(cdc *wire.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "unbond",
-		Short: "begin or complete unbonding shares from a validator",
-	}
-	cmd.AddCommand(
-		GetCmdBeginUnbonding(storeName, cdc),
-		GetCmdCompleteUnbonding(cdc),
-	)
-	return cmd
-}
-
-// create edit validator command
-func GetCmdBeginUnbonding(storeName string, cdc *wire.Codec) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "begin",
-		Short: "begin unbonding",
+		Short: "unbond shares from a validator",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			delegatorAddr, err := sdk.GetAccAddressBech32(viper.GetString(FlagAddressDelegator))
-			if err != nil {
-				return err
+			// check the shares before broadcasting
+			sharesStr := viper.GetString(FlagShares)
+			var shares sdk.Rat
+			if sharesStr != "MAX" {
+				var err error
+				shares, err = sdk.NewRatFromDecimal(sharesStr)
+				if err != nil {
+					return err
+				}
+				if !shares.GT(sdk.ZeroRat()) {
+					return fmt.Errorf("shares must be positive integer or decimal (ex. 123, 1.23456789)")
+				}
 			}
-			validatorAddr, err := sdk.GetAccAddressBech32(viper.GetString(FlagAddressValidator))
+
+			delegatorAddr, err := sdk.GetAddress(viper.GetString(FlagAddressDelegator))
+			validatorAddr, err := sdk.GetAddress(viper.GetString(FlagAddressValidator))
 			if err != nil {
 				return err
 			}
 
-			// get the shares amount
-			sharesAmountStr := viper.GetString(FlagSharesAmount)
-			sharesPercentStr := viper.GetString(FlagSharesPercent)
-			sharesAmount, err := getShares(storeName, cdc, sharesAmountStr, sharesPercentStr,
-				delegatorAddr, validatorAddr)
-			if err != nil {
-				return err
-			}
-
-			msg := stake.NewMsgBeginUnbonding(delegatorAddr, validatorAddr, sharesAmount)
+			msg := stake.NewMsgUnbond(delegatorAddr, validatorAddr, sharesStr)
 
 			// build and sign the transaction, then broadcast to Tendermint
 			ctx := context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(cdc))
 
-			res, err := ctx.EnsureSignBuildBroadcast(ctx.FromAddressName, []sdk.Msg{msg}, cdc)
+			res, err := ctx.EnsureSignBuildBroadcast(ctx.FromAddressName, msg, cdc)
 			if err != nil {
 				return err
 			}
@@ -348,41 +193,6 @@ func GetCmdBeginUnbonding(storeName string, cdc *wire.Codec) *cobra.Command {
 	}
 
 	cmd.Flags().AddFlagSet(fsShares)
-	cmd.Flags().AddFlagSet(fsDelegator)
-	cmd.Flags().AddFlagSet(fsValidator)
-	return cmd
-}
-
-// create edit validator command
-func GetCmdCompleteUnbonding(cdc *wire.Codec) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "complete",
-		Short: "complete unbonding",
-		RunE: func(cmd *cobra.Command, args []string) error {
-
-			delegatorAddr, err := sdk.GetAccAddressBech32(viper.GetString(FlagAddressDelegator))
-			if err != nil {
-				return err
-			}
-			validatorAddr, err := sdk.GetAccAddressBech32(viper.GetString(FlagAddressValidator))
-			if err != nil {
-				return err
-			}
-
-			msg := stake.NewMsgCompleteUnbonding(delegatorAddr, validatorAddr)
-
-			// build and sign the transaction, then broadcast to Tendermint
-			ctx := context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(cdc))
-
-			res, err := ctx.EnsureSignBuildBroadcast(ctx.FromAddressName, []sdk.Msg{msg}, cdc)
-			if err != nil {
-				return err
-			}
-
-			fmt.Printf("Committed at block %d. Hash: %s\n", res.Height, res.Hash.String())
-			return nil
-		},
-	}
 	cmd.Flags().AddFlagSet(fsDelegator)
 	cmd.Flags().AddFlagSet(fsValidator)
 	return cmd

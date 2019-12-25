@@ -16,26 +16,14 @@ import (
 
 // Get a free address for a test tepleton server
 // protocol is either tcp, http, etc
-func FreeTCPAddr() (addr, port string, err error) {
+func FreeTCPAddr(t *testing.T) string {
 	l, err := net.Listen("tcp", "0.0.0.0:0")
-	if err != nil {
-		return "", "", err
-	}
+	defer l.Close()
+	require.Nil(t, err)
 
-	closer := func() {
-		err := l.Close()
-		if err != nil {
-			// TODO: Handle with #870
-			panic(err)
-		}
-	}
-
-	defer closer()
-
-	portI := l.Addr().(*net.TCPAddr).Port
-	port = fmt.Sprintf("%d", portI)
-	addr = fmt.Sprintf("tcp://0.0.0.0:%s", port)
-	return
+	port := l.Addr().(*net.TCPAddr).Port
+	addr := fmt.Sprintf("tcp://0.0.0.0:%d", port)
+	return addr
 }
 
 // setupViper creates a homedir to run inside,
@@ -45,11 +33,7 @@ func setupViper(t *testing.T) func() {
 	require.Nil(t, err)
 	viper.Set(cli.HomeFlag, rootDir)
 	return func() {
-		err := os.RemoveAll(rootDir)
-		if err != nil {
-			// TODO: Handle with #870
-			panic(err)
-		}
+		os.RemoveAll(rootDir)
 	}
 }
 
