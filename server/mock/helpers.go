@@ -6,7 +6,7 @@ import (
 	"os"
 
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	"github.com/tepleton/tepleton/libs/log"
+	"github.com/tepleton/tmlibs/log"
 )
 
 // SetupApp returns an application as well as a clean-up function
