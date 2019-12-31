@@ -1,16 +1,17 @@
 package rest
 
 import (
+	"encoding/hex"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 
-	"github.com/tepleton/tepleton-sdk/crypto/keys"
 	"github.com/gorilla/mux"
+	"github.com/tepleton/go-crypto/keys"
 
 	"github.com/tepleton/tepleton-sdk/client/context"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
-	"github.com/tepleton/tepleton-sdk/x/bank"
 	"github.com/tepleton/tepleton-sdk/x/bank/client"
 )
 
@@ -26,15 +27,7 @@ type sendBody struct {
 	LocalAccountName string    `json:"name"`
 	Password         string    `json:"password"`
 	ChainID          string    `json:"chain_id"`
-	AccountNumber    int64     `json:"account_number"`
 	Sequence         int64     `json:"sequence"`
-	Gas              int64     `json:"gas"`
-}
-
-var msgCdc = wire.NewCodec()
-
-func init() {
-	bank.RegisterWire(msgCdc)
 }
 
 // SendRequestHandlerFn - http request handler to send coins to a address
@@ -42,14 +35,7 @@ func SendRequestHandlerFn(cdc *wire.Codec, kb keys.Keybase, ctx context.CoreCont
 	return func(w http.ResponseWriter, r *http.Request) {
 		// collect data
 		vars := mux.Vars(r)
-		bech32addr := vars["address"]
-
-		address, err := sdk.GetAccAddressBech32(bech32addr)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(err.Error()))
-			return
-		}
+		address := vars["address"]
 
 		var m sendBody
 		body, err := ioutil.ReadAll(r.Body)
@@ -58,7 +44,7 @@ func SendRequestHandlerFn(cdc *wire.Codec, kb keys.Keybase, ctx context.CoreCont
 			w.Write([]byte(err.Error()))
 			return
 		}
-		err = msgCdc.UnmarshalJSON(body, &m)
+		err = json.Unmarshal(body, &m)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(err.Error()))
@@ -72,30 +58,25 @@ func SendRequestHandlerFn(cdc *wire.Codec, kb keys.Keybase, ctx context.CoreCont
 			return
 		}
 
-		to, err := sdk.GetAccAddressHex(address.String())
+		bz, err := hex.DecodeString(address)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(err.Error()))
 			return
 		}
+		to := sdk.Address(bz)
 
 		// build message
-		msg := client.BuildMsg(info.GetPubKey().Address(), to, m.Amount)
+		msg := client.BuildMsg(info.PubKey.Address(), to, m.Amount)
 		if err != nil { // XXX rechecking same error ?
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
 			return
 		}
 
-		// add gas to context
-		ctx = ctx.WithGas(m.Gas)
-		// add chain-id to context
-		ctx = ctx.WithChainID(m.ChainID)
-
 		// sign
-		ctx = ctx.WithAccountNumber(m.AccountNumber)
 		ctx = ctx.WithSequence(m.Sequence)
-		txBytes, err := ctx.SignAndBuild(m.LocalAccountName, m.Password, []sdk.Msg{msg}, cdc)
+		txBytes, err := ctx.SignAndBuild(m.LocalAccountName, m.Password, msg, cdc)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Write([]byte(err.Error()))
@@ -110,7 +91,7 @@ func SendRequestHandlerFn(cdc *wire.Codec, kb keys.Keybase, ctx context.CoreCont
 			return
 		}
 
-		output, err := wire.MarshalJSONIndent(cdc, res)
+		output, err := json.MarshalIndent(res, "", "  ")
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
