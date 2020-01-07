@@ -3,7 +3,7 @@ package context
 import (
 	"fmt"
 
-	"github.com/tepleton/tepleton/libs/common"
+	"github.com/tepleton/tmlibs/common"
 
 	"github.com/pkg/errors"
 
@@ -11,7 +11,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	rpcclient "github.com/tepleton/tepleton/rpc/client"
 	ctypes "github.com/tepleton/tepleton/rpc/core/types"
-	cmn "github.com/tepleton/tepleton/libs/common"
+	cmn "github.com/tepleton/tmlibs/common"
 
 	"github.com/tepleton/tepleton-sdk/client"
 	"github.com/tepleton/tepleton-sdk/client/keys"
