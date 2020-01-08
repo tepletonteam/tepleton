@@ -3,7 +3,7 @@ package simplestake
 import (
 	"encoding/json"
 
-	"github.com/tepleton/tepleton/crypto"
+	crypto "github.com/tepleton/go-crypto"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )

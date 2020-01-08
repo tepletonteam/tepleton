@@ -3,7 +3,7 @@ package ibc
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
@@ -23,9 +23,9 @@ func TestIBCPacketValidation(t *testing.T) {
 	for i, tc := range cases {
 		err := tc.packet.ValidateBasic()
 		if tc.valid {
-			require.Nil(t, err, "%d: %+v", i, err)
+			assert.Nil(t, err, "%d: %+v", i, err)
 		} else {
-			require.NotNil(t, err, "%d", i)
+			assert.NotNil(t, err, "%d", i)
 		}
 	}
 }
@@ -37,7 +37,7 @@ func TestIBCTransferMsg(t *testing.T) {
 	packet := constructIBCPacket(true)
 	msg := IBCTransferMsg{packet}
 
-	require.Equal(t, msg.Type(), "ibc")
+	assert.Equal(t, msg.Type(), "ibc")
 }
 
 func TestIBCTransferMsgValidation(t *testing.T) {
@@ -55,9 +55,9 @@ func TestIBCTransferMsgValidation(t *testing.T) {
 	for i, tc := range cases {
 		err := tc.msg.ValidateBasic()
 		if tc.valid {
-			require.Nil(t, err, "%d: %+v", i, err)
+			assert.Nil(t, err, "%d: %+v", i, err)
 		} else {
-			require.NotNil(t, err, "%d", i)
+			assert.NotNil(t, err, "%d", i)
 		}
 	}
 }
@@ -69,7 +69,7 @@ func TestIBCReceiveMsg(t *testing.T) {
 	packet := constructIBCPacket(true)
 	msg := IBCReceiveMsg{packet, sdk.Address([]byte("relayer")), 0}
 
-	require.Equal(t, msg.Type(), "ibc")
+	assert.Equal(t, msg.Type(), "ibc")
 }
 
 func TestIBCReceiveMsgValidation(t *testing.T) {
@@ -87,9 +87,9 @@ func TestIBCReceiveMsgValidation(t *testing.T) {
 	for i, tc := range cases {
 		err := tc.msg.ValidateBasic()
 		if tc.valid {
-			require.Nil(t, err, "%d: %+v", i, err)
+			assert.Nil(t, err, "%d: %+v", i, err)
 		} else {
-			require.NotNil(t, err, "%d", i)
+			assert.NotNil(t, err, "%d", i)
 		}
 	}
 }
@@ -100,7 +100,7 @@ func TestIBCReceiveMsgValidation(t *testing.T) {
 func constructIBCPacket(valid bool) IBCPacket {
 	srcAddr := sdk.Address([]byte("source"))
 	destAddr := sdk.Address([]byte("destination"))
-	coins := sdk.Coins{sdk.NewCoin("atom", 10)}
+	coins := sdk.Coins{{"atom", 10}}
 	srcChain := "source-chain"
 	destChain := "dest-chain"
 
