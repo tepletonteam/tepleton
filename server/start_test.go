@@ -9,15 +9,16 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tepleton/tepleton-sdk/mock"
+	"github.com/tepleton/tepleton-sdk/server/mock"
 	"github.com/tepleton/tepleton-sdk/wire"
-	"github.com/tepleton/wrsp/server"
+	"github.com/tepleton/tepleton/wrsp/server"
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 	"github.com/tepleton/tmlibs/log"
 )
 
 func TestStartStandAlone(t *testing.T) {
 	home, err := ioutil.TempDir("", "mock-sdk-cmd")
+	require.Nil(t, err)
 	defer func() {
 		os.RemoveAll(home)
 	}()
@@ -37,8 +38,10 @@ func TestStartStandAlone(t *testing.T) {
 
 	app, err := mock.NewApp(home, logger)
 	require.Nil(t, err)
-	svr, err := server.NewServer(FreeTCPAddr(t), "socket", app)
-	require.Nil(t, err, "Error creating listener")
+	svrAddr, _, err := FreeTCPAddr()
+	require.Nil(t, err)
+	svr, err := server.NewServer(svrAddr, "socket", app)
+	require.Nil(t, err, "error creating listener")
 	svr.SetLogger(logger.With("module", "wrsp-server"))
 	svr.Start()
 
@@ -69,7 +72,9 @@ func TestStartWithTendermint(t *testing.T) {
 	// set up app and start up
 	viper.Set(flagWithTendermint, true)
 	startCmd := StartCmd(ctx, mock.NewApp)
-	startCmd.Flags().Set(flagAddress, FreeTCPAddr(t)) // set to a new free address
+	svrAddr, _, err := FreeTCPAddr()
+	require.NoError(t, err)
+	startCmd.Flags().Set(flagAddress, svrAddr) // set to a new free address
 	timeout := time.Duration(5) * time.Second
 
 	close(RunOrTimeout(startCmd, timeout, t))
