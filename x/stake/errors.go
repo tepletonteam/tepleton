@@ -16,7 +16,6 @@ const (
 	CodeInvalidValidator CodeType = 201
 	CodeInvalidBond      CodeType = 202
 	CodeInvalidInput     CodeType = 203
-	CodeValidatorJailed  CodeType = 204
 	CodeUnauthorized     CodeType = sdk.CodeUnauthorized
 	CodeInternal         CodeType = sdk.CodeInternal
 	CodeUnknownRequest   CodeType = sdk.CodeUnknownRequest
@@ -73,10 +72,10 @@ func ErrBadDelegatorAddr(codespace sdk.CodespaceType) sdk.Error {
 	return newError(codespace, CodeInvalidValidator, "Delegator does not exist for that address")
 }
 func ErrValidatorExistsAddr(codespace sdk.CodespaceType) sdk.Error {
-	return newError(codespace, CodeInvalidValidator, "Validator already exist, cannot re-create validator")
+	return newError(codespace, CodeInvalidValidator, "Validator already exist, cannot re-declare candidacy")
 }
 func ErrValidatorRevoked(codespace sdk.CodespaceType) sdk.Error {
-	return newError(codespace, CodeInvalidValidator, "Validator for this address is currently revoked")
+	return newError(codespace, CodeInvalidValidator, "Candidacy for this address is currently revoked")
 }
 func ErrMissingSignature(codespace sdk.CodespaceType) sdk.Error {
 	return newError(codespace, CodeInvalidValidator, "Missing signature")

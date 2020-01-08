@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 )
 
 var codeTypes = []CodeType{
@@ -32,11 +32,11 @@ var errFns = []errFn{
 }
 
 func TestCodeType(t *testing.T) {
-	require.True(t, WRSPCodeOK.IsOK())
+	assert.True(t, WRSPCodeOK.IsOK())
 
 	for _, c := range codeTypes {
 		msg := CodeToDefaultMsg(c)
-		require.False(t, strings.HasPrefix(msg, "Unknown code"))
+		assert.False(t, strings.HasPrefix(msg, "Unknown code"))
 	}
 }
 
@@ -44,7 +44,7 @@ func TestErrFn(t *testing.T) {
 	for i, errFn := range errFns {
 		err := errFn("")
 		codeType := codeTypes[i]
-		require.Equal(t, err.Code(), codeType)
-		require.Equal(t, err.Result().Code, ToWRSPCode(CodespaceRoot, codeType))
+		assert.Equal(t, err.Code(), codeType)
+		assert.Equal(t, err.Result().Code, ToWRSPCode(CodespaceRoot, codeType))
 	}
 }

@@ -19,9 +19,12 @@ func (dsa dbStoreAdapter) CacheWrap() CacheWrap {
 	return NewCacheKVStore(dsa)
 }
 
-// Implements KVStore
-func (dsa dbStoreAdapter) Prefix(prefix []byte) KVStore {
-	return prefixStore{dsa, prefix}
+func (dsa dbStoreAdapter) SubspaceIterator(prefix []byte) Iterator {
+	return dsa.Iterator(prefix, sdk.PrefixEndBytes(prefix))
+}
+
+func (dsa dbStoreAdapter) ReverseSubspaceIterator(prefix []byte) Iterator {
+	return dsa.ReverseIterator(prefix, sdk.PrefixEndBytes(prefix))
 }
 
 // dbm.DB implements KVStore so we can CacheKVStore it.
