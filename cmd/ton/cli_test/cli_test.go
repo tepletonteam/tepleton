@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/tepleton/tepleton-sdk/client/keys"
@@ -14,9 +15,8 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
-	"github.com/tepleton/tepleton-sdk/x/gov"
 	"github.com/tepleton/tepleton-sdk/x/stake"
-	"github.com/tepleton/tepleton/crypto"
+	crypto "github.com/tepleton/go-crypto"
 )
 
 func TestGaiaCLISend(t *testing.T) {
@@ -46,33 +46,24 @@ func TestGaiaCLISend(t *testing.T) {
 	require.NoError(t, err)
 
 	fooAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooCech, flags))
-	require.Equal(t, int64(50), fooAcc.GetCoins().AmountOf("steak").Int64())
+	assert.Equal(t, int64(50), fooAcc.GetCoins().AmountOf("steak"))
 
 	executeWrite(t, fmt.Sprintf("toncli send %v --amount=10steak --to=%v --name=foo", flags, barCech), pass)
 	tests.WaitForNextHeightTM(port)
 
 	barAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barCech, flags))
-	require.Equal(t, int64(10), barAcc.GetCoins().AmountOf("steak").Int64())
+	assert.Equal(t, int64(10), barAcc.GetCoins().AmountOf("steak"))
 	fooAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooCech, flags))
-	require.Equal(t, int64(40), fooAcc.GetCoins().AmountOf("steak").Int64())
+	assert.Equal(t, int64(40), fooAcc.GetCoins().AmountOf("steak"))
 
 	// test autosequencing
 	executeWrite(t, fmt.Sprintf("toncli send %v --amount=10steak --to=%v --name=foo", flags, barCech), pass)
 	tests.WaitForNextHeightTM(port)
 
 	barAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barCech, flags))
-	require.Equal(t, int64(20), barAcc.GetCoins().AmountOf("steak").Int64())
+	assert.Equal(t, int64(20), barAcc.GetCoins().AmountOf("steak"))
 	fooAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooCech, flags))
-	require.Equal(t, int64(30), fooAcc.GetCoins().AmountOf("steak").Int64())
-
-	// test memo
-	executeWrite(t, fmt.Sprintf("toncli send %v --amount=10steak --to=%v --name=foo --memo 'testmemo'", flags, barCech), pass)
-	tests.WaitForNextHeightTM(port)
-
-	barAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barCech, flags))
-	require.Equal(t, int64(30), barAcc.GetCoins().AmountOf("steak").Int64())
-	fooAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooCech, flags))
-	require.Equal(t, int64(20), fooAcc.GetCoins().AmountOf("steak").Int64())
+	assert.Equal(t, int64(30), fooAcc.GetCoins().AmountOf("steak"))
 }
 
 func TestGaiaCLICreateValidator(t *testing.T) {
@@ -107,9 +98,9 @@ func TestGaiaCLICreateValidator(t *testing.T) {
 	tests.WaitForNextHeightTM(port)
 
 	barAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barCech, flags))
-	require.Equal(t, int64(10), barAcc.GetCoins().AmountOf("steak").Int64())
+	assert.Equal(t, int64(10), barAcc.GetCoins().AmountOf("steak"))
 	fooAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooCech, flags))
-	require.Equal(t, int64(40), fooAcc.GetCoins().AmountOf("steak").Int64())
+	assert.Equal(t, int64(40), fooAcc.GetCoins().AmountOf("steak"))
 
 	// create validator
 	cvStr := fmt.Sprintf("toncli stake create-validator %v", flags)
@@ -123,11 +114,11 @@ func TestGaiaCLICreateValidator(t *testing.T) {
 	tests.WaitForNextHeightTM(port)
 
 	barAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barCech, flags))
-	require.Equal(t, int64(8), barAcc.GetCoins().AmountOf("steak").Int64(), "%v", barAcc)
+	require.Equal(t, int64(8), barAcc.GetCoins().AmountOf("steak"), "%v", barAcc)
 
 	validator := executeGetValidator(t, fmt.Sprintf("toncli stake validator %v --output=json %v", barCech, flags))
-	require.Equal(t, validator.Owner, barAddr)
-	require.Equal(t, "2/1", validator.PoolShares.Amount.String())
+	assert.Equal(t, validator.Owner, barAddr)
+	assert.Equal(t, "2/1", validator.PoolShares.Amount.String())
 
 	// unbond a single share
 	unbondStr := fmt.Sprintf("toncli stake unbond %v", flags)
@@ -142,62 +133,9 @@ func TestGaiaCLICreateValidator(t *testing.T) {
 	tests.WaitForNextHeightTM(port)
 
 	barAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barCech, flags))
-	require.Equal(t, int64(9), barAcc.GetCoins().AmountOf("steak").Int64(), "%v", barAcc)
+	require.Equal(t, int64(9), barAcc.GetCoins().AmountOf("steak"), "%v", barAcc)
 	validator = executeGetValidator(t, fmt.Sprintf("toncli stake validator %v --output=json %v", barCech, flags))
-	require.Equal(t, "1/1", validator.PoolShares.Amount.String())
-}
-
-func TestGaiaCLISubmitProposal(t *testing.T) {
-
-	tests.ExecuteT(t, "tond unsafe_reset_all")
-	pass := "1234567890"
-	executeWrite(t, "toncli keys delete foo", pass)
-	executeWrite(t, "toncli keys delete bar", pass)
-	chainID := executeInit(t, "tond init -o --name=foo")
-	executeWrite(t, "toncli keys add bar", pass)
-
-	// get a free port, also setup some common flags
-	servAddr, port, err := server.FreeTCPAddr()
-	require.NoError(t, err)
-	flags := fmt.Sprintf("--node=%v --chain-id=%v", servAddr, chainID)
-
-	// start tond server
-	proc := tests.GoExecuteT(t, fmt.Sprintf("tond start --rpc.laddr=%v", servAddr))
-	defer proc.Stop(false)
-	tests.WaitForStart(port)
-
-	fooAddr, _ := executeGetAddrPK(t, "toncli keys show foo --output=json")
-	fooCech, err := sdk.Bech32ifyAcc(fooAddr)
-	require.NoError(t, err)
-
-	fooAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooCech, flags))
-	require.Equal(t, int64(50), fooAcc.GetCoins().AmountOf("steak").Int64())
-
-	executeWrite(t, fmt.Sprintf("toncli gov submitproposal %v --proposer=%v --deposit=5steak --type=Text --title=Test --description=test --name=foo", flags, fooCech), pass)
-	tests.WaitForNextHeightTM(port)
-
-	fooAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooCech, flags))
-	require.Equal(t, int64(45), fooAcc.GetCoins().AmountOf("steak").Int64())
-
-	proposal1 := executeGetProposal(t, fmt.Sprintf("toncli gov query-proposal --proposalID=1 --output=json %v", flags))
-	require.Equal(t, int64(1), proposal1.ProposalID)
-	require.Equal(t, gov.StatusToString(gov.StatusDepositPeriod), proposal1.Status)
-
-	executeWrite(t, fmt.Sprintf("toncli gov deposit %v --depositer=%v --deposit=10steak --proposalID=1 --name=foo", flags, fooCech), pass)
-	tests.WaitForNextHeightTM(port)
-
-	fooAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooCech, flags))
-	require.Equal(t, int64(35), fooAcc.GetCoins().AmountOf("steak").Int64())
-	proposal1 = executeGetProposal(t, fmt.Sprintf("toncli gov query-proposal --proposalID=1 --output=json %v", flags))
-	require.Equal(t, int64(1), proposal1.ProposalID)
-	require.Equal(t, gov.StatusToString(gov.StatusVotingPeriod), proposal1.Status)
-
-	executeWrite(t, fmt.Sprintf("toncli gov vote %v --proposalID=1 --voter=%v --option=Yes --name=foo", flags, fooCech), pass)
-	tests.WaitForNextHeightTM(port)
-
-	vote := executeGetVote(t, fmt.Sprintf("toncli gov query-vote  --proposalID=1 --voter=%v --output=json %v", fooCech, flags))
-	require.Equal(t, int64(1), vote.ProposalID)
-	require.Equal(t, gov.VoteOptionToString(gov.OptionYes), vote.Option)
+	assert.Equal(t, "1/1", validator.PoolShares.Amount.String())
 }
 
 //___________________________________________________________________________________
@@ -263,22 +201,4 @@ func executeGetValidator(t *testing.T, cmdStr string) stake.Validator {
 	err := cdc.UnmarshalJSON([]byte(out), &validator)
 	require.NoError(t, err, "out %v\n, err %v", out, err)
 	return validator
-}
-
-func executeGetProposal(t *testing.T, cmdStr string) gov.ProposalRest {
-	out := tests.ExecuteT(t, cmdStr)
-	var proposal gov.ProposalRest
-	cdc := app.MakeCodec()
-	err := cdc.UnmarshalJSON([]byte(out), &proposal)
-	require.NoError(t, err, "out %v\n, err %v", out, err)
-	return proposal
-}
-
-func executeGetVote(t *testing.T, cmdStr string) gov.VoteRest {
-	out := tests.ExecuteT(t, cmdStr)
-	var vote gov.VoteRest
-	cdc := app.MakeCodec()
-	err := cdc.UnmarshalJSON([]byte(out), &vote)
-	require.NoError(t, err, "out %v\n, err %v", out, err)
-	return vote
 }

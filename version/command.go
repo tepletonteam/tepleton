@@ -2,6 +2,7 @@ package version
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/spf13/cobra"
 )
@@ -15,8 +16,7 @@ var (
 	}
 )
 
-// return version of CLI/node and commit hash
-func GetVersion() string {
+func getVersion() string {
 	v := Version
 	if GitCommit != "" {
 		v = v + "-" + GitCommit
@@ -26,6 +26,12 @@ func GetVersion() string {
 
 // CMD
 func printVersion(cmd *cobra.Command, args []string) {
-	v := GetVersion()
+	v := getVersion()
 	fmt.Println(v)
+}
+
+// version REST handler endpoint
+func RequestHandler(w http.ResponseWriter, r *http.Request) {
+	v := getVersion()
+	w.Write([]byte(v))
 }

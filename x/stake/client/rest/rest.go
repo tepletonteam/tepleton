@@ -1,8 +1,8 @@
 package rest
 
 import (
-	"github.com/tepleton/tepleton-sdk/crypto/keys"
 	"github.com/gorilla/mux"
+	"github.com/tepleton/go-crypto/keys"
 
 	"github.com/tepleton/tepleton-sdk/client/context"
 	"github.com/tepleton/tepleton-sdk/wire"
