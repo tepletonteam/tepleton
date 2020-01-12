@@ -92,9 +92,5 @@ func main() {
 
 	// prepare and add flags
 	executor := cli.PrepareMainCmd(rootCmd, "BC", os.ExpandEnv("$HOME/.democli"))
-	err := executor.Execute()
-	if err != nil {
-		// handle with #870
-		panic(err)
-	}
+	executor.Execute()
 }

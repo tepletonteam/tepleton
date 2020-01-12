@@ -1,33 +1,55 @@
 package simplestake
 
 import (
+	wrsp "github.com/tepleton/wrsp/types"
+
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
 // NewHandler returns a handler for "simplestake" type messages.
 func NewHandler(k Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
-		switch msg.(type) {
+		switch msg := msg.(type) {
 		case MsgBond:
-			return handleMsgBond()
+			return handleMsgBond(ctx, k, msg)
 		case MsgUnbond:
-			return handleMsgUnbond()
+			return handleMsgUnbond(ctx, k, msg)
 		default:
 			return sdk.ErrUnknownRequest("No match for message type.").Result()
 		}
 	}
 }
 
-func handleMsgBond() sdk.Result {
-	// Removed ValidatorSet from result because it does not get used.
-	// TODO: Implement correct bond/unbond handling
+func handleMsgBond(ctx sdk.Context, k Keeper, msg MsgBond) sdk.Result {
+	power, err := k.Bond(ctx, msg.Address, msg.PubKey, msg.Stake)
+	if err != nil {
+		return err.Result()
+	}
+
+	valSet := wrsp.Validator{
+		PubKey: msg.PubKey.Bytes(),
+		Power:  power,
+	}
+
 	return sdk.Result{
-		Code: sdk.WRSPCodeOK,
+		Code:             sdk.WRSPCodeOK,
+		ValidatorUpdates: wrsp.Validators{valSet},
 	}
 }
 
-func handleMsgUnbond() sdk.Result {
+func handleMsgUnbond(ctx sdk.Context, k Keeper, msg MsgUnbond) sdk.Result {
+	pubKey, _, err := k.Unbond(ctx, msg.Address)
+	if err != nil {
+		return err.Result()
+	}
+
+	valSet := wrsp.Validator{
+		PubKey: pubKey.Bytes(),
+		Power:  int64(0),
+	}
+
 	return sdk.Result{
-		Code: sdk.WRSPCodeOK,
+		Code:             sdk.WRSPCodeOK,
+		ValidatorUpdates: wrsp.Validators{valSet},
 	}
 }

@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/tepleton/go-amino"
+	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/iavl"
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
 
@@ -47,8 +46,6 @@ type iavlStore struct {
 }
 
 // CONTRACT: tree should be fully loaded.
-// TODO: use more numHistory's, so the below nolint can be removed
-// nolint: unparam
 func newIAVLStore(tree *iavl.VersionedTree, numHistory int64) *iavlStore {
 	st := &iavlStore{
 		tree:       tree,
@@ -70,11 +67,7 @@ func (st *iavlStore) Commit() CommitID {
 	// Release an old version of history
 	if st.numHistory > 0 && (st.numHistory < st.tree.Version64()) {
 		toRelease := version - st.numHistory
-		err := st.tree.DeleteVersion(toRelease)
-		if err != nil {
-			// TODO: Handle with #870
-			panic(err)
-		}
+		st.tree.DeleteVersion(toRelease)
 	}
 
 	return CommitID{
@@ -122,11 +115,6 @@ func (st *iavlStore) Delete(key []byte) {
 	st.tree.Remove(key)
 }
 
-// Implements KVStore
-func (st *iavlStore) Prefix(prefix []byte) KVStore {
-	return prefixStore{st, prefix}
-}
-
 // Implements KVStore.
 func (st *iavlStore) Iterator(start, end []byte) Iterator {
 	return newIAVLIterator(st.tree.Tree(), start, end, true)
@@ -135,6 +123,16 @@ func (st *iavlStore) Iterator(start, end []byte) Iterator {
 // Implements KVStore.
 func (st *iavlStore) ReverseIterator(start, end []byte) Iterator {
 	return newIAVLIterator(st.tree.Tree(), start, end, false)
+}
+
+// Implements KVStore.
+func (st *iavlStore) SubspaceIterator(prefix []byte) Iterator {
+	return st.Iterator(prefix, sdk.PrefixEndBytes(prefix))
+}
+
+// Implements KVStore.
+func (st *iavlStore) ReverseSubspaceIterator(prefix []byte) Iterator {
+	return st.ReverseIterator(prefix, sdk.PrefixEndBytes(prefix))
 }
 
 // Query implements WRSP interface, allows queries
@@ -174,13 +172,7 @@ func (st *iavlStore) Query(req wrsp.RequestQuery) (res wrsp.ResponseQuery) {
 				break
 			}
 			res.Value = value
-			cdc := amino.NewCodec()
-			p, err := cdc.MarshalBinary(proof)
-			if err != nil {
-				res.Log = err.Error()
-				break
-			}
-			res.Proof = p
+			res.Proof = proof.Bytes()
 		} else {
 			_, res.Value = tree.GetVersioned(key, height)
 		}
@@ -188,7 +180,7 @@ func (st *iavlStore) Query(req wrsp.RequestQuery) (res wrsp.ResponseQuery) {
 		subspace := req.Data
 		res.Key = subspace
 		var KVs []KVPair
-		iterator := sdk.KVStorePrefixIterator(st, subspace)
+		iterator := st.SubspaceIterator(subspace)
 		for ; iterator.Valid(); iterator.Next() {
 			KVs = append(KVs, KVPair{iterator.Key(), iterator.Value()})
 		}

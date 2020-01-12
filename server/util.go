@@ -4,13 +4,11 @@ import (
 	"encoding/json"
 	"net"
 	"os"
-	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/tepleton/tepleton-sdk/client"
 	"github.com/tepleton/tepleton-sdk/version"
 	"github.com/tepleton/tepleton-sdk/wire"
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
@@ -47,7 +45,7 @@ func PersistentPreRunEFn(context *Context) func(*cobra.Command, []string) error 
 		if cmd.Name() == version.VersionCmd.Name() {
 			return nil
 		}
-		config, err := interceptLoadConfig()
+		config, err := tcmd.ParseConfig()
 		if err != nil {
 			return err
 		}
@@ -66,30 +64,6 @@ func PersistentPreRunEFn(context *Context) func(*cobra.Command, []string) error 
 	}
 }
 
-// If a new config is created, change some of the default tepleton settings
-func interceptLoadConfig() (conf *cfg.Config, err error) {
-	tmpConf := cfg.DefaultConfig()
-	err = viper.Unmarshal(tmpConf)
-	if err != nil {
-		// TODO: Handle with #870
-		panic(err)
-	}
-	rootDir := tmpConf.RootDir
-	configFilePath := filepath.Join(rootDir, "config/config.toml")
-	// Intercept only if the file doesn't already exist
-	if _, err := os.Stat(configFilePath); os.IsNotExist(err) {
-		// the following parse config is needed to create directories
-		sdkDefaultConfig, _ := tcmd.ParseConfig()
-		sdkDefaultConfig.ProfListenAddress = "prof_laddr=localhost:6060"
-		sdkDefaultConfig.P2P.RecvRate = 5120000
-		sdkDefaultConfig.P2P.SendRate = 5120000
-		cfg.WriteConfigFile(configFilePath, sdkDefaultConfig)
-		// Fall through, just so that its parsed into memory.
-	}
-	conf, err = tcmd.ParseConfig()
-	return
-}
-
 // add server commands
 func AddCommands(
 	ctx *Context, cdc *wire.Codec,
@@ -98,25 +72,13 @@ func AddCommands(
 
 	rootCmd.PersistentFlags().String("log_level", ctx.Config.LogLevel, "Log level")
 
-	tepletonCmd := &cobra.Command{
-		Use:   "tepleton",
-		Short: "Tendermint subcommands",
-	}
-
-	tepletonCmd.AddCommand(
-		ShowNodeIDCmd(ctx),
-		ShowValidatorCmd(ctx),
-	)
-
 	rootCmd.AddCommand(
 		InitCmd(ctx, cdc, appInit),
-		TestnetFilesCmd(ctx, cdc, appInit),
 		StartCmd(ctx, appCreator),
 		UnsafeResetAllCmd(ctx),
-		client.LineBreak,
-		tepletonCmd,
+		ShowNodeIDCmd(ctx),
+		ShowValidatorCmd(ctx),
 		ExportCmd(ctx, cdc, appExport),
-		client.LineBreak,
 		version.VersionCmd,
 	)
 }
