@@ -56,7 +56,7 @@ func (k Keeper) SetValidatorByPowerIndex(ctx sdk.Context, validator types.Valida
 // validator index
 func (k Keeper) SetValidatorBondedIndex(ctx sdk.Context, validator types.Validator) {
 	store := ctx.KVStore(k.storeKey)
-	store.Set(GetValidatorsBondedIndexKey(validator.Owner), []byte{})
+	store.Set(GetValidatorsBondedIndexKey(validator.Owner), validator.Owner)
 }
 
 // used in testing
@@ -124,7 +124,7 @@ func (k Keeper) GetValidatorsBonded(ctx sdk.Context) (validators []types.Validat
 		if i > int(maxValidators-1) {
 			panic("maxValidators is less than the number of records in ValidatorsBonded Store, store should have been updated")
 		}
-		address := GetAddressFromValBondedIndexKey(iterator.Key())
+		address := iterator.Value()
 		validator, found := k.GetValidator(ctx, address)
 		if !found {
 			panic(fmt.Sprintf("validator record not found for address: %v\n", address))
@@ -362,7 +362,7 @@ func (k Keeper) UpdateBondedValidatorsFull(ctx sdk.Context) {
 	toKickOut := make(map[string]byte)
 	iterator := sdk.KVStorePrefixIterator(store, ValidatorsBondedIndexKey)
 	for ; iterator.Valid(); iterator.Next() {
-		ownerAddr := GetAddressFromValBondedIndexKey(iterator.Key())
+		ownerAddr := iterator.Value()
 		toKickOut[string(ownerAddr)] = 0 // set anything
 	}
 	iterator.Close()
@@ -471,7 +471,7 @@ func (k Keeper) bondValidator(ctx sdk.Context, validator types.Validator) types.
 	// save the now bonded validator record to the three referenced stores
 	bzVal := k.cdc.MustMarshalBinary(validator)
 	store.Set(GetValidatorKey(validator.Owner), bzVal)
-	store.Set(GetValidatorsBondedIndexKey(validator.Owner), []byte{})
+	store.Set(GetValidatorsBondedIndexKey(validator.Owner), validator.Owner)
 
 	// add to accumulated changes for tepleton
 	bzWRSP := k.cdc.MustMarshalBinary(validator.WRSPValidator())
