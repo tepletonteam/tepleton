@@ -7,14 +7,16 @@ import (
 
 	"github.com/pkg/errors"
 
-	wrsp "github.com/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/tepleton/wrsp/types"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/tepleton-sdk/store"
 	sdk "github.com/tepleton/tepleton-sdk/types"
+	"github.com/tepleton/tepleton-sdk/version"
 	"github.com/tepleton/tepleton-sdk/wire"
+	"github.com/tepleton/tepleton-sdk/x/auth"
 )
 
 // Key to store the header in the DB itself.
@@ -62,11 +64,9 @@ type BaseApp struct {
 	// checkState is set on initialization and reset on Commit.
 	// deliverState is set in InitChain and BeginBlock and cleared on Commit.
 	// See methods setCheckState and setDeliverState.
-	// .valUpdates accumulate in DeliverTx and are reset in BeginBlock.
-	// QUESTION: should we put valUpdates in the deliverState.ctx?
-	checkState   *state           // for CheckTx
-	deliverState *state           // for DeliverTx
-	valUpdates   []wrsp.Validator // cached validator changes from DeliverTx
+	checkState       *state                  // for CheckTx
+	deliverState     *state                  // for DeliverTx
+	signedValidators []wrsp.SigningValidator // absent validators from begin block
 }
 
 var _ wrsp.Application = (*BaseApp)(nil)
@@ -85,7 +85,6 @@ func NewBaseApp(name string, cdc *wire.Codec, logger log.Logger, db dbm.DB) *Bas
 		txDecoder:  defaultTxDecoder(cdc),
 	}
 	// Register the undefined & root codespaces, which should not be used by any modules
-	app.codespacer.RegisterOrPanic(sdk.CodespaceUndefined)
 	app.codespacer.RegisterOrPanic(sdk.CodespaceRoot)
 	return app
 }
@@ -125,7 +124,7 @@ func (app *BaseApp) SetTxDecoder(txDecoder sdk.TxDecoder) {
 // default custom logic for transaction decoding
 func defaultTxDecoder(cdc *wire.Codec) sdk.TxDecoder {
 	return func(txBytes []byte) (sdk.Tx, sdk.Error) {
-		var tx = sdk.StdTx{}
+		var tx = auth.StdTx{}
 
 		if len(txBytes) == 0 {
 			return nil, sdk.ErrTxDecode("txBytes are empty")
@@ -135,7 +134,7 @@ func defaultTxDecoder(cdc *wire.Codec) sdk.TxDecoder {
 		// are registered by MakeTxCodec
 		err := cdc.UnmarshalBinary(txBytes, &tx)
 		if err != nil {
-			return nil, sdk.ErrTxDecode("").Trace(err.Error())
+			return nil, sdk.ErrTxDecode("").TraceSDK(err.Error())
 		}
 		return tx, nil
 	}
@@ -164,13 +163,19 @@ func (app *BaseApp) Router() Router { return app.router }
 
 // load latest application version
 func (app *BaseApp) LoadLatestVersion(mainKey sdk.StoreKey) error {
-	app.cms.LoadLatestVersion()
+	err := app.cms.LoadLatestVersion()
+	if err != nil {
+		return err
+	}
 	return app.initFromStore(mainKey)
 }
 
 // load application version
 func (app *BaseApp) LoadVersion(version int64, mainKey sdk.StoreKey) error {
-	app.cms.LoadVersion(version)
+	err := app.cms.LoadVersion(version)
+	if err != nil {
+		return err
+	}
 	return app.initFromStore(mainKey)
 }
 
@@ -179,7 +184,7 @@ func (app *BaseApp) LastCommitID() sdk.CommitID {
 	return app.cms.LastCommitID()
 }
 
-// the last commited block height
+// the last committed block height
 func (app *BaseApp) LastBlockHeight() int64 {
 	return app.cms.LastCommitID().Version
 }
@@ -191,7 +196,7 @@ func (app *BaseApp) initFromStore(mainKey sdk.StoreKey) error {
 	// TODO: we don't actually need the main store here
 	main := app.cms.GetKVStore(mainKey)
 	if main == nil {
-		return errors.New("BaseApp expects MultiStore with 'main' KVStore")
+		return errors.New("baseapp expects MultiStore with 'main' KVStore")
 	}
 
 	// XXX: Do we really need the header? What does it have that we want
@@ -214,18 +219,15 @@ func (app *BaseApp) initFromStore(mainKey sdk.StoreKey) error {
 			}
 			err := proto.Unmarshal(headerBytes, &header)
 			if err != nil {
-				return errors.Wrap(err, "Failed to parse Header")
+				return errors.Wrap(err, "failed to parse Header")
 			}
 			lastVersion := lastCommitID.Version
 			if header.Height != lastVersion {
-				errStr := fmt.Sprintf("Expected db://%s.Height %v but got %v", dbHeaderKey, lastVersion, header.Height)
+				errStr := fmt.Sprintf("expected db://%s.Height %v but got %v", dbHeaderKey, lastVersion, header.Height)
 				return errors.New(errStr)
 			}
 		}
 	*/
-
-	// initialize Check state
-	app.setCheckState(wrsp.Header{})
 
 	return nil
 }
@@ -233,9 +235,9 @@ func (app *BaseApp) initFromStore(mainKey sdk.StoreKey) error {
 // NewContext returns a new Context with the correct store, the given header, and nil txBytes.
 func (app *BaseApp) NewContext(isCheckTx bool, header wrsp.Header) sdk.Context {
 	if isCheckTx {
-		return sdk.NewContext(app.checkState.ms, header, true, nil, app.Logger)
+		return sdk.NewContext(app.checkState.ms, header, true, app.Logger)
 	}
-	return sdk.NewContext(app.deliverState.ms, header, false, nil, app.Logger)
+	return sdk.NewContext(app.deliverState.ms, header, false, app.Logger)
 }
 
 type state struct {
@@ -251,7 +253,7 @@ func (app *BaseApp) setCheckState(header wrsp.Header) {
 	ms := app.cms.CacheMultiStore()
 	app.checkState = &state{
 		ms:  ms,
-		ctx: sdk.NewContext(ms, header, true, nil, app.Logger),
+		ctx: sdk.NewContext(ms, header, true, app.Logger),
 	}
 }
 
@@ -259,7 +261,7 @@ func (app *BaseApp) setDeliverState(header wrsp.Header) {
 	ms := app.cms.CacheMultiStore()
 	app.deliverState = &state{
 		ms:  ms,
-		ctx: sdk.NewContext(ms, header, false, nil, app.Logger),
+		ctx: sdk.NewContext(ms, header, false, app.Logger),
 	}
 }
 
@@ -287,12 +289,13 @@ func (app *BaseApp) SetOption(req wrsp.RequestSetOption) (res wrsp.ResponseSetOp
 // Implements WRSP
 // InitChain runs the initialization logic directly on the CommitMultiStore and commits it.
 func (app *BaseApp) InitChain(req wrsp.RequestInitChain) (res wrsp.ResponseInitChain) {
+	// Initialize the deliver state and check state with ChainID and run initChain
+	app.setDeliverState(wrsp.Header{ChainID: req.ChainId})
+	app.setCheckState(wrsp.Header{ChainID: req.ChainId})
+
 	if app.initChainer == nil {
 		return
 	}
-
-	// Initialize the deliver state and run initChain
-	app.setDeliverState(wrsp.Header{})
 	app.initChainer(app.deliverState.ctx, req) // no error
 
 	// NOTE: we don't commit, but BeginBlock for block 1
@@ -336,6 +339,11 @@ func (app *BaseApp) Query(req wrsp.RequestQuery) (res wrsp.ResponseQuery) {
 			} else {
 				result = app.Simulate(tx)
 			}
+		case "version":
+			return wrsp.ResponseQuery{
+				Code:  uint32(sdk.WRSPCodeOK),
+				Value: []byte(version.GetVersion()),
+			}
 		default:
 			result = sdk.ErrUnknownRequest(fmt.Sprintf("Unknown query: %s", path)).Result()
 		}
@@ -374,15 +382,21 @@ func (app *BaseApp) Query(req wrsp.RequestQuery) (res wrsp.ResponseQuery) {
 func (app *BaseApp) BeginBlock(req wrsp.RequestBeginBlock) (res wrsp.ResponseBeginBlock) {
 	// Initialize the DeliverTx state.
 	// If this is the first block, it should already
-	// be initialized in InitChain. It may also be nil
-	// if this is a test and InitChain was never called.
+	// be initialized in InitChain.
+	// Otherwise app.deliverState will be nil, since it
+	// is reset on Commit.
 	if app.deliverState == nil {
 		app.setDeliverState(req.Header)
+	} else {
+		// In the first block, app.deliverState.ctx will already be initialized
+		// by InitChain. Context is now updated with Header information.
+		app.deliverState.ctx = app.deliverState.ctx.WithBlockHeader(req.Header)
 	}
-	app.valUpdates = nil
 	if app.beginBlocker != nil {
 		res = app.beginBlocker(app.deliverState.ctx, req)
 	}
+	// set the signed validators for addition to context in deliverTx
+	app.signedValidators = req.Validators
 	return
 }
 
@@ -422,13 +436,8 @@ func (app *BaseApp) DeliverTx(txBytes []byte) (res wrsp.ResponseDeliverTx) {
 		result = app.runTx(runTxModeDeliver, txBytes, tx)
 	}
 
-	// After-handler hooks.
-	if result.IsOK() {
-		app.valUpdates = append(app.valUpdates, result.ValidatorUpdates...)
-	} else {
-		// Even though the Result.Code is not OK, there are still effects,
-		// namely fee deductions and sequence incrementing.
-	}
+	// Even though the Result.Code is not OK, there are still effects,
+	// namely fee deductions and sequence incrementing.
 
 	// Tell the blockchain engine (i.e. Tendermint).
 	return wrsp.ResponseDeliverTx{
@@ -464,26 +473,28 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (result sdk
 		if r := recover(); r != nil {
 			switch r.(type) {
 			case sdk.ErrorOutOfGas:
-				log := fmt.Sprintf("Out of gas in location: %v", r.(sdk.ErrorOutOfGas).Descriptor)
+				log := fmt.Sprintf("out of gas in location: %v", r.(sdk.ErrorOutOfGas).Descriptor)
 				result = sdk.ErrOutOfGas(log).Result()
 			default:
-				log := fmt.Sprintf("Recovered: %v\nstack:\n%v", r, string(debug.Stack()))
+				log := fmt.Sprintf("recovered: %v\nstack:\n%v", r, string(debug.Stack()))
 				result = sdk.ErrInternal(log).Result()
 			}
 		}
 	}()
 
 	// Get the Msg.
-	var msg = tx.GetMsg()
-	if msg == nil {
-		return sdk.ErrInternal("Tx.GetMsg() returned nil").Result()
+	var msgs = tx.GetMsgs()
+	if msgs == nil || len(msgs) == 0 {
+		return sdk.ErrInternal("Tx.GetMsgs() must return at least one message in list").Result()
 	}
 
-	// Validate the Msg.
-	err := msg.ValidateBasic()
-	if err != nil {
-		err = err.WithDefaultCodespace(sdk.CodespaceRoot)
-		return err.Result()
+	for _, msg := range msgs {
+		// Validate the Msg
+		err := msg.ValidateBasic()
+		if err != nil {
+			err = err.WithDefaultCodespace(sdk.CodespaceRoot)
+			return err.Result()
+		}
 	}
 
 	// Get the context
@@ -492,6 +503,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (result sdk
 		ctx = app.checkState.ctx.WithTxBytes(txBytes)
 	} else {
 		ctx = app.deliverState.ctx.WithTxBytes(txBytes)
+		ctx = ctx.WithSigningValidators(app.signedValidators)
 	}
 
 	// Simulate a DeliverTx for gas calculation
@@ -510,13 +522,6 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (result sdk
 		}
 	}
 
-	// Match route.
-	msgType := msg.Type()
-	handler := app.router.Route(msgType)
-	if handler == nil {
-		return sdk.ErrUnknownRequest("Unrecognized Msg type: " + msgType).Result()
-	}
-
 	// Get the correct cache
 	var msCache sdk.CacheMultiStore
 	if mode == runTxModeCheck || mode == runTxModeSimulate {
@@ -529,25 +534,59 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (result sdk
 		ctx = ctx.WithMultiStore(msCache)
 	}
 
-	result = handler(ctx, msg)
+	finalResult := sdk.Result{}
+	var logs []string
+	for i, msg := range msgs {
+		// Match route.
+		msgType := msg.Type()
+		handler := app.router.Route(msgType)
+		if handler == nil {
+			return sdk.ErrUnknownRequest("Unrecognized Msg type: " + msgType).Result()
+		}
 
-	// Set gas utilized
-	result.GasUsed = ctx.GasMeter().GasConsumed()
+		result = handler(ctx, msg)
+
+		// Set gas utilized
+		finalResult.GasUsed += ctx.GasMeter().GasConsumed()
+		finalResult.GasWanted += result.GasWanted
+
+		// Append Data and Tags
+		finalResult.Data = append(finalResult.Data, result.Data...)
+		finalResult.Tags = append(finalResult.Tags, result.Tags...)
+
+		// Construct usable logs in multi-message transactions. Messages are 1-indexed in logs.
+		logs = append(logs, fmt.Sprintf("Msg %d: %s", i+1, finalResult.Log))
+
+		// Stop execution and return on first failed message.
+		if !result.IsOK() {
+			if len(msgs) == 1 {
+				return result
+			}
+			result.GasUsed = finalResult.GasUsed
+			if i == 0 {
+				result.Log = fmt.Sprintf("Msg 1 failed: %s", result.Log)
+			} else {
+				result.Log = fmt.Sprintf("Msg 1-%d Passed. Msg %d failed: %s", i, i+1, result.Log)
+			}
+			return result
+		}
+	}
 
 	// If not a simulated run and result was successful, write to app.checkState.ms or app.deliverState.ms
+	// Only update state if all messages pass.
 	if mode != runTxModeSimulate && result.IsOK() {
 		msCache.Write()
 	}
 
-	return result
+	finalResult.Log = strings.Join(logs, "\n")
+
+	return finalResult
 }
 
 // Implements WRSP
 func (app *BaseApp) EndBlock(req wrsp.RequestEndBlock) (res wrsp.ResponseEndBlock) {
 	if app.endBlocker != nil {
 		res = app.endBlocker(app.deliverState.ctx, req)
-	} else {
-		res.ValidatorUpdates = app.valUpdates
 	}
 	return
 }
@@ -567,6 +606,7 @@ func (app *BaseApp) Commit() (res wrsp.ResponseCommit) {
 	// Write the Deliver state and commit the MultiStore
 	app.deliverState.ms.Write()
 	commitID := app.cms.Commit()
+	// TODO: this is missing a module identifier and dumps byte array
 	app.Logger.Debug("Commit synced",
 		"commit", commitID,
 	)

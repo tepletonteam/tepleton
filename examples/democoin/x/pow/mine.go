@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	crypto "github.com/tepleton/go-crypto"
+	"github.com/tepleton/tepleton/crypto"
 )
 
 // generate the mine message
