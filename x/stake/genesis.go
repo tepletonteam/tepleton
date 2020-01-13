@@ -4,39 +4,63 @@ import (
 	tmtypes "github.com/tepleton/tepleton/types"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	"github.com/tepleton/tepleton-sdk/x/stake/types"
 )
 
+// GenesisState - all staking state that must be provided at genesis
+type GenesisState struct {
+	Pool       Pool         `json:"pool"`
+	Params     Params       `json:"params"`
+	Validators []Validator  `json:"validators"`
+	Bonds      []Delegation `json:"bonds"`
+}
+
+func NewGenesisState(pool Pool, params Params, validators []Validator, bonds []Delegation) GenesisState {
+	return GenesisState{
+		Pool:       pool,
+		Params:     params,
+		Validators: validators,
+		Bonds:      bonds,
+	}
+}
+
+// get raw genesis raw message for testing
+func DefaultGenesisState() GenesisState {
+	return GenesisState{
+		Pool:   InitialPool(),
+		Params: DefaultParams(),
+	}
+}
+
 // InitGenesis - store genesis parameters
-func InitGenesis(ctx sdk.Context, keeper Keeper, data types.GenesisState) {
-	keeper.SetPool(ctx, data.Pool)
-	keeper.SetNewParams(ctx, data.Params)
-	keeper.InitIntraTxCounter(ctx)
+func InitGenesis(ctx sdk.Context, k Keeper, data GenesisState) {
+	store := ctx.KVStore(k.storeKey)
+	k.setPool(ctx, data.Pool)
+	k.setNewParams(ctx, data.Params)
 	for _, validator := range data.Validators {
 
 		// set validator
-		keeper.SetValidator(ctx, validator)
+		k.setValidator(ctx, validator)
 
 		// manually set indexes for the first time
-		keeper.SetValidatorByPubKeyIndex(ctx, validator)
-		keeper.SetValidatorByPowerIndex(ctx, validator, data.Pool)
+		k.setValidatorByPubKeyIndex(ctx, validator)
+		k.setValidatorByPowerIndex(ctx, validator, data.Pool)
 		if validator.Status() == sdk.Bonded {
-			keeper.SetValidatorBondedIndex(ctx, validator)
+			store.Set(GetValidatorsBondedKey(validator.PubKey), validator.Owner)
 		}
 	}
 	for _, bond := range data.Bonds {
-		keeper.SetDelegation(ctx, bond)
+		k.setDelegation(ctx, bond)
 	}
-	keeper.UpdateBondedValidatorsFull(ctx)
+	k.updateBondedValidatorsFull(ctx, store)
 }
 
 // WriteGenesis - output genesis parameters
-func WriteGenesis(ctx sdk.Context, keeper Keeper) types.GenesisState {
-	pool := keeper.GetPool(ctx)
-	params := keeper.GetParams(ctx)
-	validators := keeper.GetAllValidators(ctx)
-	bonds := keeper.GetAllDelegations(ctx)
-	return types.GenesisState{
+func WriteGenesis(ctx sdk.Context, k Keeper) GenesisState {
+	pool := k.GetPool(ctx)
+	params := k.GetParams(ctx)
+	validators := k.getAllValidators(ctx)
+	bonds := k.getAllDelegations(ctx)
+	return GenesisState{
 		pool,
 		params,
 		validators,
@@ -45,11 +69,11 @@ func WriteGenesis(ctx sdk.Context, keeper Keeper) types.GenesisState {
 }
 
 // WriteValidators - output current validator set
-func WriteValidators(ctx sdk.Context, keeper Keeper) (vals []tmtypes.GenesisValidator) {
-	keeper.IterateValidatorsBonded(ctx, func(_ int64, validator sdk.Validator) (stop bool) {
+func WriteValidators(ctx sdk.Context, k Keeper) (vals []tmtypes.GenesisValidator) {
+	k.IterateValidatorsBonded(ctx, func(_ int64, validator sdk.Validator) (stop bool) {
 		vals = append(vals, tmtypes.GenesisValidator{
 			PubKey: validator.GetPubKey(),
-			Power:  validator.GetPower().RoundInt64(),
+			Power:  validator.GetPower().Evaluate(),
 			Name:   validator.GetMoniker(),
 		})
 		return false

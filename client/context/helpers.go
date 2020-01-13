@@ -3,8 +3,6 @@ package context
 import (
 	"fmt"
 
-	"github.com/tepleton/tmlibs/common"
-
 	"github.com/pkg/errors"
 
 	"github.com/tepleton/tepleton-sdk/wire"
@@ -32,47 +30,26 @@ func (ctx CoreContext) BroadcastTx(tx []byte) (*ctypes.ResultBroadcastTxCommit, 
 	}
 
 	if res.CheckTx.Code != uint32(0) {
-		return res, errors.Errorf("checkTx failed: (%d) %s",
+		return res, errors.Errorf("CheckTx failed: (%d) %s",
 			res.CheckTx.Code,
 			res.CheckTx.Log)
 	}
 	if res.DeliverTx.Code != uint32(0) {
-		return res, errors.Errorf("deliverTx failed: (%d) %s",
+		return res, errors.Errorf("DeliverTx failed: (%d) %s",
 			res.DeliverTx.Code,
 			res.DeliverTx.Log)
 	}
 	return res, err
 }
 
-// Broadcast the transaction bytes to Tendermint
-func (ctx CoreContext) BroadcastTxAsync(tx []byte) (*ctypes.ResultBroadcastTx, error) {
-
-	node, err := ctx.GetNode()
-	if err != nil {
-		return nil, err
-	}
-
-	res, err := node.BroadcastTxAsync(tx)
-	if err != nil {
-		return res, err
-	}
-
-	return res, err
-}
-
-// Query information about the connected node
-func (ctx CoreContext) Query(path string) (res []byte, err error) {
-	return ctx.query(path, nil)
-}
-
-// QueryStore from Tendermint with the provided key and storename
-func (ctx CoreContext) QueryStore(key cmn.HexBytes, storeName string) (res []byte, err error) {
-	return ctx.queryStore(key, storeName, "key")
+// Query from Tendermint with the provided key and storename
+func (ctx CoreContext) Query(key cmn.HexBytes, storeName string) (res []byte, err error) {
+	return ctx.query(key, storeName, "key")
 }
 
 // Query from Tendermint with the provided storename and subspace
 func (ctx CoreContext) QuerySubspace(cdc *wire.Codec, subspace []byte, storeName string) (res []sdk.KVPair, err error) {
-	resRaw, err := ctx.queryStore(subspace, storeName, "subspace")
+	resRaw, err := ctx.query(subspace, storeName, "subspace")
 	if err != nil {
 		return res, err
 	}
@@ -81,7 +58,8 @@ func (ctx CoreContext) QuerySubspace(cdc *wire.Codec, subspace []byte, storeName
 }
 
 // Query from Tendermint with the provided storename and path
-func (ctx CoreContext) query(path string, key common.HexBytes) (res []byte, err error) {
+func (ctx CoreContext) query(key cmn.HexBytes, storeName, endPath string) (res []byte, err error) {
+	path := fmt.Sprintf("/store/%s/%s", storeName, endPath)
 	node, err := ctx.GetNode()
 	if err != nil {
 		return res, err
@@ -97,15 +75,9 @@ func (ctx CoreContext) query(path string, key common.HexBytes) (res []byte, err 
 	}
 	resp := result.Response
 	if resp.Code != uint32(0) {
-		return res, errors.Errorf("query failed: (%d) %s", resp.Code, resp.Log)
+		return res, errors.Errorf("Query failed: (%d) %s", resp.Code, resp.Log)
 	}
 	return resp.Value, nil
-}
-
-// Query from Tendermint with the provided storename and path
-func (ctx CoreContext) queryStore(key cmn.HexBytes, storeName, endPath string) (res []byte, err error) {
-	path := fmt.Sprintf("/store/%s/%s", storeName, endPath)
-	return ctx.query(path, key)
 }
 
 // Get the from address from the name flag
@@ -123,31 +95,29 @@ func (ctx CoreContext) GetFromAddress() (from sdk.Address, err error) {
 
 	info, err := keybase.Get(name)
 	if err != nil {
-		return nil, errors.Errorf("no key for: %s", name)
+		return nil, errors.Errorf("No key for: %s", name)
 	}
 
-	return info.GetPubKey().Address(), nil
+	return info.PubKey.Address(), nil
 }
 
 // sign and build the transaction from the msg
-func (ctx CoreContext) SignAndBuild(name, passphrase string, msgs []sdk.Msg, cdc *wire.Codec) ([]byte, error) {
+func (ctx CoreContext) SignAndBuild(name, passphrase string, msg sdk.Msg, cdc *wire.Codec) ([]byte, error) {
 
 	// build the Sign Messsage from the Standard Message
 	chainID := ctx.ChainID
 	if chainID == "" {
-		return nil, errors.Errorf("chain ID required but not specified")
+		return nil, errors.Errorf("Chain ID required but not specified")
 	}
 	accnum := ctx.AccountNumber
 	sequence := ctx.Sequence
-	memo := ctx.Memo
 
 	signMsg := auth.StdSignMsg{
-		ChainID:       chainID,
-		AccountNumber: accnum,
-		Sequence:      sequence,
-		Msgs:          msgs,
-		Memo:          memo,
-		Fee:           auth.NewStdFee(ctx.Gas, sdk.Coin{}), // TODO run simulate to estimate gas?
+		ChainID:        chainID,
+		AccountNumbers: []int64{accnum},
+		Sequences:      []int64{sequence},
+		Msg:            msg,
+		Fee:            auth.NewStdFee(ctx.Gas, sdk.Coin{}), // TODO run simulate to estimate gas?
 	}
 
 	keybase, err := keys.GetKeyBase()
@@ -170,13 +140,14 @@ func (ctx CoreContext) SignAndBuild(name, passphrase string, msgs []sdk.Msg, cdc
 	}}
 
 	// marshal bytes
-	tx := auth.NewStdTx(signMsg.Msgs, signMsg.Fee, sigs, memo)
+	tx := auth.NewStdTx(signMsg.Msg, signMsg.Fee, sigs)
 
 	return cdc.MarshalBinary(tx)
 }
 
 // sign and build the transaction from the msg
-func (ctx CoreContext) ensureSignBuild(name string, msgs []sdk.Msg, cdc *wire.Codec) (tyBytes []byte, err error) {
+func (ctx CoreContext) EnsureSignBuildBroadcast(name string, msg sdk.Msg, cdc *wire.Codec) (res *ctypes.ResultBroadcastTxCommit, err error) {
+
 	ctx, err = EnsureAccountNumber(ctx)
 	if err != nil {
 		return nil, err
@@ -187,37 +158,12 @@ func (ctx CoreContext) ensureSignBuild(name string, msgs []sdk.Msg, cdc *wire.Co
 		return nil, err
 	}
 
-	var txBytes []byte
-
-	keybase, err := keys.GetKeyBase()
+	passphrase, err := ctx.GetPassphraseFromStdin(name)
 	if err != nil {
 		return nil, err
 	}
 
-	info, err := keybase.Get(name)
-	if err != nil {
-		return nil, err
-	}
-	var passphrase string
-	// Only need a passphrase for locally-stored keys
-	if info.GetType() == "local" {
-		passphrase, err = ctx.GetPassphraseFromStdin(name)
-		if err != nil {
-			return nil, fmt.Errorf("Error fetching passphrase: %v", err)
-		}
-	}
-	txBytes, err = ctx.SignAndBuild(name, passphrase, msgs, cdc)
-	if err != nil {
-		return nil, fmt.Errorf("Error signing transaction: %v", err)
-	}
-
-	return txBytes, err
-}
-
-// sign and build the transaction from the msg
-func (ctx CoreContext) EnsureSignBuildBroadcast(name string, msgs []sdk.Msg, cdc *wire.Codec) (res *ctypes.ResultBroadcastTxCommit, err error) {
-
-	txBytes, err := ctx.ensureSignBuild(name, msgs, cdc)
+	txBytes, err := ctx.SignAndBuild(name, passphrase, msg, cdc)
 	if err != nil {
 		return nil, err
 	}
@@ -225,24 +171,13 @@ func (ctx CoreContext) EnsureSignBuildBroadcast(name string, msgs []sdk.Msg, cdc
 	return ctx.BroadcastTx(txBytes)
 }
 
-// sign and build the async transaction from the msg
-func (ctx CoreContext) EnsureSignBuildBroadcastAsync(name string, msgs []sdk.Msg, cdc *wire.Codec) (res *ctypes.ResultBroadcastTx, err error) {
-
-	txBytes, err := ctx.ensureSignBuild(name, msgs, cdc)
-	if err != nil {
-		return nil, err
-	}
-
-	return ctx.BroadcastTxAsync(txBytes)
-}
-
 // get the next sequence for the account address
 func (ctx CoreContext) GetAccountNumber(address []byte) (int64, error) {
 	if ctx.Decoder == nil {
-		return 0, errors.New("accountDecoder required but not provided")
+		return 0, errors.New("AccountDecoder required but not provided")
 	}
 
-	res, err := ctx.QueryStore(auth.AddressStoreKey(address), ctx.AccountStore)
+	res, err := ctx.Query(auth.AddressStoreKey(address), ctx.AccountStore)
 	if err != nil {
 		return 0, err
 	}
@@ -263,10 +198,10 @@ func (ctx CoreContext) GetAccountNumber(address []byte) (int64, error) {
 // get the next sequence for the account address
 func (ctx CoreContext) NextSequence(address []byte) (int64, error) {
 	if ctx.Decoder == nil {
-		return 0, errors.New("accountDecoder required but not provided")
+		return 0, errors.New("AccountDecoder required but not provided")
 	}
 
-	res, err := ctx.QueryStore(auth.AddressStoreKey(address), ctx.AccountStore)
+	res, err := ctx.Query(auth.AddressStoreKey(address), ctx.AccountStore)
 	if err != nil {
 		return 0, err
 	}
@@ -294,7 +229,7 @@ func (ctx CoreContext) GetPassphraseFromStdin(name string) (pass string, err err
 // GetNode prepares a simple rpc.Client
 func (ctx CoreContext) GetNode() (rpcclient.Client, error) {
 	if ctx.Client == nil {
-		return nil, errors.New("must define node URI")
+		return nil, errors.New("Must define node URI")
 	}
 	return ctx.Client, nil
 }
