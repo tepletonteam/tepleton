@@ -15,9 +15,9 @@ import (
 	"github.com/tepleton/tepleton-sdk/wire"
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 	cfg "github.com/tepleton/tepleton/config"
-	"github.com/tepleton/tmlibs/cli"
-	tmflags "github.com/tepleton/tmlibs/cli/flags"
-	"github.com/tepleton/tmlibs/log"
+	"github.com/tepleton/tepleton/libs/cli"
+	tmflags "github.com/tepleton/tepleton/libs/cli/flags"
+	"github.com/tepleton/tepleton/libs/log"
 )
 
 // server context
