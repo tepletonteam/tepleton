@@ -8,9 +8,9 @@ import (
 
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
 	tmtypes "github.com/tepleton/tepleton/types"
-	"github.com/tepleton/tepleton/libs/cli"
-	dbm "github.com/tepleton/tepleton/libs/db"
-	"github.com/tepleton/tepleton/libs/log"
+	"github.com/tepleton/tmlibs/cli"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/tepleton-sdk/examples/basecoin/app"
 	"github.com/tepleton/tepleton-sdk/server"

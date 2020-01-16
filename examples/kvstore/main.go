@@ -8,10 +8,10 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/tepleton/tepleton/wrsp/server"
-	"github.com/tepleton/tepleton/libs/cli"
-	cmn "github.com/tepleton/tepleton/libs/common"
-	dbm "github.com/tepleton/tepleton/libs/db"
-	"github.com/tepleton/tepleton/libs/log"
+	"github.com/tepleton/tmlibs/cli"
+	cmn "github.com/tepleton/tmlibs/common"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
 	bam "github.com/tepleton/tepleton-sdk/baseapp"
 	sdk "github.com/tepleton/tepleton-sdk/types"
