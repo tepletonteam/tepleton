@@ -46,7 +46,7 @@ type Validator interface {
 func WRSPValidator(v Validator) wrsp.Validator {
 	return wrsp.Validator{
 		PubKey: tmtypes.TM2PB.PubKey(v.GetPubKey()),
-		Power:  v.GetPower().RoundInt64(),
+		Power:  v.GetPower().Evaluate(),
 	}
 }
 

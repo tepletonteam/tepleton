@@ -146,13 +146,13 @@ func TestUnbondDelegation(t *testing.T) {
 	//create a validator and a delegator to that validator
 	validator := types.NewValidator(addrVals[0], PKs[0], types.Description{})
 	validator, pool, issuedShares := validator.AddTokensFromDel(pool, 10)
-	require.Equal(t, int64(10), issuedShares.RoundInt64())
+	require.Equal(t, int64(10), issuedShares.Evaluate())
 	keeper.SetPool(ctx, pool)
 	validator = keeper.UpdateValidator(ctx, validator)
 
 	pool = keeper.GetPool(ctx)
 	require.Equal(t, int64(10), pool.BondedTokens)
-	require.Equal(t, int64(10), validator.PoolShares.Bonded().RoundInt64())
+	require.Equal(t, int64(10), validator.PoolShares.Bonded().Evaluate())
 
 	delegation := types.Delegation{
 		DelegatorAddr: addrDels[0],
@@ -173,38 +173,10 @@ func TestUnbondDelegation(t *testing.T) {
 	require.True(t, found)
 	pool = keeper.GetPool(ctx)
 
-	require.Equal(t, int64(4), delegation.Shares.RoundInt64())
-	require.Equal(t, int64(4), validator.PoolShares.Bonded().RoundInt64())
+	require.Equal(t, int64(4), delegation.Shares.Evaluate())
+	require.Equal(t, int64(4), validator.PoolShares.Bonded().Evaluate())
 	require.Equal(t, int64(6), pool.LooseTokens, "%v", pool)
 	require.Equal(t, int64(4), pool.BondedTokens)
-}
-
-// tests Get/Set/Remove/Has UnbondingDelegation
-func TestGetRedelegationsFromValidator(t *testing.T) {
-	ctx, _, keeper := CreateTestInput(t, false, 0)
-
-	rd := types.Redelegation{
-		DelegatorAddr:    addrDels[0],
-		ValidatorSrcAddr: addrVals[0],
-		ValidatorDstAddr: addrVals[1],
-		CreationHeight:   0,
-		MinTime:          0,
-		SharesSrc:        sdk.NewRat(5),
-		SharesDst:        sdk.NewRat(5),
-	}
-
-	// set and retrieve a record
-	keeper.SetRedelegation(ctx, rd)
-	resBond, found := keeper.GetRedelegation(ctx, addrDels[0], addrVals[0], addrVals[1])
-	require.True(t, found)
-
-	redelegations := keeper.GetRedelegationsFromValidator(ctx, addrVals[0])
-	require.Equal(t, 1, len(redelegations))
-	require.True(t, redelegations[0].Equal(resBond))
-
-	redelegations = keeper.GetRedelegationsFromValidator(ctx, addrVals[0])
-	require.Equal(t, 1, len(redelegations))
-	require.True(t, redelegations[0].Equal(resBond))
 }
 
 // tests Get/Set/Remove/Has UnbondingDelegation
@@ -229,10 +201,7 @@ func TestRedelegation(t *testing.T) {
 	keeper.SetRedelegation(ctx, rd)
 	resBond, found := keeper.GetRedelegation(ctx, addrDels[0], addrVals[0], addrVals[1])
 	require.True(t, found)
-
-	redelegations := keeper.GetRedelegationsFromValidator(ctx, addrVals[0])
-	require.Equal(t, 1, len(redelegations))
-	require.True(t, redelegations[0].Equal(resBond))
+	require.True(t, rd.Equal(resBond))
 
 	// check if has the redelegation
 	has = keeper.HasReceivingRedelegation(ctx, addrDels[0], addrVals[1])
@@ -242,14 +211,9 @@ func TestRedelegation(t *testing.T) {
 	rd.SharesSrc = sdk.NewRat(21)
 	rd.SharesDst = sdk.NewRat(21)
 	keeper.SetRedelegation(ctx, rd)
-
 	resBond, found = keeper.GetRedelegation(ctx, addrDels[0], addrVals[0], addrVals[1])
 	require.True(t, found)
 	require.True(t, rd.Equal(resBond))
-
-	redelegations = keeper.GetRedelegationsFromValidator(ctx, addrVals[0])
-	require.Equal(t, 1, len(redelegations))
-	require.True(t, redelegations[0].Equal(resBond))
 
 	// delete a record
 	keeper.RemoveRedelegation(ctx, rd)
