@@ -118,14 +118,13 @@ func (s PoolShares) ToBonded(p Pool) PoolShares {
 
 //_________________________________________________________________________________________________________
 
-// TODO better tests
 // get the equivalent amount of tokens contained by the shares
 func (s PoolShares) Tokens(p Pool) sdk.Rat {
 	switch s.Status {
 	case sdk.Bonded:
-		return p.bondedShareExRate().Mul(s.Amount) // (tokens/shares) * shares
+		return p.unbondedShareExRate().Mul(s.Amount) // (tokens/shares) * shares
 	case sdk.Unbonding:
-		return p.unbondingShareExRate().Mul(s.Amount)
+		return p.unbondedShareExRate().Mul(s.Amount)
 	case sdk.Unbonded:
 		return p.unbondedShareExRate().Mul(s.Amount)
 	default:
