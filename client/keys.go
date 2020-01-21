@@ -1,8 +1,7 @@
 package client
 
 import (
-	"github.com/tepleton/go-crypto/keys"
-	"github.com/tepleton/go-crypto/keys/words"
+	"github.com/tepleton/tepleton-sdk/crypto/keys"
 	dbm "github.com/tepleton/tmlibs/db"
 )
 
@@ -11,7 +10,6 @@ import (
 func GetKeyBase(db dbm.DB) keys.Keybase {
 	keybase := keys.New(
 		db,
-		words.MustLoadCodec("english"),
 	)
 	return keybase
 }
