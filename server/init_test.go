@@ -7,7 +7,7 @@ import (
 
 	"github.com/tepleton/tmlibs/log"
 
-	"github.com/tepleton/tepleton-sdk/mock"
+	"github.com/tepleton/tepleton-sdk/server/mock"
 	"github.com/tepleton/tepleton-sdk/wire"
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 )
@@ -31,6 +31,10 @@ func TestInitCmd(t *testing.T) {
 }
 
 func TestGenTxCmd(t *testing.T) {
+	// TODO
+}
+
+func TestTestnetFilesCmd(t *testing.T) {
 	// TODO
 }
 

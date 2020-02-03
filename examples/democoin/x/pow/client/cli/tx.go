@@ -9,6 +9,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/context"
 
 	"github.com/tepleton/tepleton-sdk/examples/democoin/x/pow"
+	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 	authcmd "github.com/tepleton/tepleton-sdk/x/auth/client/cli"
 )
@@ -48,7 +49,7 @@ func MineCmd(cdc *wire.Codec) *cobra.Command {
 			name := ctx.FromAddressName
 
 			// build and sign the transaction, then broadcast to Tendermint
-			res, err := ctx.EnsureSignBuildBroadcast(name, msg, cdc)
+			res, err := ctx.EnsureSignBuildBroadcast(name, []sdk.Msg{msg}, cdc)
 			if err != nil {
 				return err
 			}

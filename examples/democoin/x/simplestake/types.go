@@ -1,6 +1,6 @@
 package simplestake
 
-import crypto "github.com/tepleton/go-crypto"
+import "github.com/tepleton/tepleton/crypto"
 
 type bondInfo struct {
 	PubKey crypto.PubKey
