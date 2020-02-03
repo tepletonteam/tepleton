@@ -6,8 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	tmtypes "github.com/tepleton/tepleton/types"
+	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/tmlibs/cli"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
@@ -34,9 +33,6 @@ func CoolAppGenState(cdc *wire.Codec, appGenTxs []json.RawMessage) (appState jso
         "trend": "ice-cold"
       }`)
 	appState, err = server.AppendJSON(cdc, appState, key, value)
-	if err != nil {
-		return
-	}
 	key = "pow"
 	value = json.RawMessage(`{
         "difficulty": 1,
@@ -50,9 +46,9 @@ func newApp(logger log.Logger, db dbm.DB) wrsp.Application {
 	return app.NewDemocoinApp(logger, db)
 }
 
-func exportAppStateAndTMValidators(logger log.Logger, db dbm.DB) (json.RawMessage, []tmtypes.GenesisValidator, error) {
+func exportAppState(logger log.Logger, db dbm.DB) (json.RawMessage, error) {
 	dapp := app.NewDemocoinApp(logger, db)
-	return dapp.ExportAppStateAndValidators()
+	return dapp.ExportAppStateJSON()
 }
 
 func main() {
@@ -67,14 +63,10 @@ func main() {
 
 	server.AddCommands(ctx, cdc, rootCmd, CoolAppInit,
 		server.ConstructAppCreator(newApp, "democoin"),
-		server.ConstructAppExporter(exportAppStateAndTMValidators, "democoin"))
+		server.ConstructAppExporter(exportAppState, "democoin"))
 
 	// prepare and add flags
 	rootDir := os.ExpandEnv("$HOME/.democoind")
 	executor := cli.PrepareBaseCmd(rootCmd, "BC", rootDir)
-	err := executor.Execute()
-	if err != nil {
-		// handle with #870
-		panic(err)
-	}
+	executor.Execute()
 }

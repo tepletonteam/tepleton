@@ -21,13 +21,8 @@ func (t Tags) AppendTag(k string, v []byte) Tags {
 }
 
 // Append two lists of tags
-func (t Tags) AppendTags(tags Tags) Tags {
-	return append(t, tags...)
-}
-
-// Turn tags into KVPair list
-func (t Tags) ToKVPairs() []cmn.KVPair {
-	return []cmn.KVPair(t)
+func (t Tags) AppendTags(a Tags) Tags {
+	return append(t, a...)
 }
 
 // New variadic tags, must be k string, v []byte repeating
@@ -51,13 +46,3 @@ func NewTags(tags ...interface{}) Tags {
 func MakeTag(k string, v []byte) Tag {
 	return Tag{Key: []byte(k), Value: v}
 }
-
-//__________________________________________________
-
-// common tags
-var (
-	TagAction       = "action"
-	TagSrcValidator = "source-validator"
-	TagDstValidator = "destination-validator"
-	TagDelegator    = "delegator"
-)

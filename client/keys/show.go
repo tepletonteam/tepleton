@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	keys "github.com/tepleton/tepleton-sdk/crypto/keys"
 	"github.com/gorilla/mux"
+	keys "github.com/tepleton/go-crypto/keys"
 
 	"github.com/spf13/cobra"
 )
@@ -28,7 +28,7 @@ var showKeysCmd = &cobra.Command{
 func getKey(name string) (keys.Info, error) {
 	kb, err := GetKeyBase()
 	if err != nil {
-		return nil, err
+		return keys.Info{}, err
 	}
 
 	return kb.Get(name)
@@ -50,12 +50,7 @@ func GetKeyRequestHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	keyOutput, err := Bech32KeyOutput(info)
-	if err != nil {
-		w.WriteHeader(500)
-		w.Write([]byte(err.Error()))
-		return
-	}
+	keyOutput := KeyOutput{Name: info.Name, Address: info.PubKey.Address().String()}
 	output, err := json.MarshalIndent(keyOutput, "", "  ")
 	if err != nil {
 		w.WriteHeader(500)

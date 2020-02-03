@@ -9,6 +9,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	//"strings"
 	"testing"
 	"time"
 
@@ -238,9 +239,7 @@ func StartNodeServerForTest(t *testing.T, home string) *exec.Cmd {
 // expects TestInitBaseCoin to have been run
 func StartLCDServerForTest(t *testing.T, home, chainID string) (cmd *exec.Cmd, port string) {
 	cmdName := whereIsBasecli()
-	var err error
-	_, port, err = server.FreeTCPAddr()
-	require.NoError(t, err)
+	port = strings.Split(server.FreeTCPAddr(t), ":")[2]
 	cmdArgs := []string{
 		"rest-server",
 		"--home",
@@ -253,7 +252,7 @@ func StartLCDServerForTest(t *testing.T, home, chainID string) (cmd *exec.Cmd, p
 	cmd = exec.Command(cmdName, cmdArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	err = cmd.Start()
+	err := cmd.Start()
 	require.Nil(t, err)
 	time.Sleep(time.Second * 2) // TODO: LOL
 	return cmd, port
