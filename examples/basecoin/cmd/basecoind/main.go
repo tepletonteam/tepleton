@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	wrsp "github.com/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/tepleton/wrsp/types"
 	tmtypes "github.com/tepleton/tepleton/types"
 	"github.com/tepleton/tmlibs/cli"
 	dbm "github.com/tepleton/tmlibs/db"
@@ -33,7 +33,11 @@ func main() {
 	// prepare and add flags
 	rootDir := os.ExpandEnv("$HOME/.basecoind")
 	executor := cli.PrepareBaseCmd(rootCmd, "BC", rootDir)
-	executor.Execute()
+	err := executor.Execute()
+	if err != nil {
+		// handle with #870
+		panic(err)
+	}
 }
 
 func newApp(logger log.Logger, db dbm.DB) wrsp.Application {

@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"sync"
 
-	wrsp "github.com/tepleton/wrsp/types"
+	"github.com/tepleton/go-amino"
 	"github.com/tepleton/iavl"
+	wrsp "github.com/tepleton/tepleton/wrsp/types"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
 
@@ -46,6 +47,8 @@ type iavlStore struct {
 }
 
 // CONTRACT: tree should be fully loaded.
+// TODO: use more numHistory's, so the below nolint can be removed
+// nolint: unparam
 func newIAVLStore(tree *iavl.VersionedTree, numHistory int64) *iavlStore {
 	st := &iavlStore{
 		tree:       tree,
@@ -67,7 +70,11 @@ func (st *iavlStore) Commit() CommitID {
 	// Release an old version of history
 	if st.numHistory > 0 && (st.numHistory < st.tree.Version64()) {
 		toRelease := version - st.numHistory
-		st.tree.DeleteVersion(toRelease)
+		err := st.tree.DeleteVersion(toRelease)
+		if err != nil {
+			// TODO: Handle with #870
+			panic(err)
+		}
 	}
 
 	return CommitID{
@@ -113,6 +120,11 @@ func (st *iavlStore) Has(key []byte) (exists bool) {
 // Implements KVStore.
 func (st *iavlStore) Delete(key []byte) {
 	st.tree.Remove(key)
+}
+
+// Implements KVStore
+func (st *iavlStore) Prefix(prefix []byte) KVStore {
+	return prefixStore{st, prefix}
 }
 
 // Implements KVStore.
@@ -162,7 +174,13 @@ func (st *iavlStore) Query(req wrsp.RequestQuery) (res wrsp.ResponseQuery) {
 				break
 			}
 			res.Value = value
-			res.Proof = proof.Bytes()
+			cdc := amino.NewCodec()
+			p, err := cdc.MarshalBinary(proof)
+			if err != nil {
+				res.Log = err.Error()
+				break
+			}
+			res.Proof = p
 		} else {
 			_, res.Value = tree.GetVersioned(key, height)
 		}
