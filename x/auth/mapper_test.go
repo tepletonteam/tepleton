@@ -3,9 +3,9 @@ package auth
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/wrsp/types"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
 
@@ -31,24 +31,24 @@ func TestAccountMapperGetSet(t *testing.T) {
 	RegisterBaseAccount(cdc)
 
 	// make context and mapper
-	ctx := sdk.NewContext(ms, wrsp.Header{}, false, log.NewNopLogger())
+	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil, log.NewNopLogger())
 	mapper := NewAccountMapper(cdc, capKey, &BaseAccount{})
 
 	addr := sdk.Address([]byte("some-address"))
 
 	// no account before its created
 	acc := mapper.GetAccount(ctx, addr)
-	require.Nil(t, acc)
+	assert.Nil(t, acc)
 
 	// create account and check default values
 	acc = mapper.NewAccountWithAddress(ctx, addr)
-	require.NotNil(t, acc)
-	require.Equal(t, addr, acc.GetAddress())
-	require.EqualValues(t, nil, acc.GetPubKey())
-	require.EqualValues(t, 0, acc.GetSequence())
+	assert.NotNil(t, acc)
+	assert.Equal(t, addr, acc.GetAddress())
+	assert.EqualValues(t, nil, acc.GetPubKey())
+	assert.EqualValues(t, 0, acc.GetSequence())
 
 	// NewAccount doesn't call Set, so it's still nil
-	require.Nil(t, mapper.GetAccount(ctx, addr))
+	assert.Nil(t, mapper.GetAccount(ctx, addr))
 
 	// set some values on the account and save it
 	newSequence := int64(20)
@@ -57,6 +57,6 @@ func TestAccountMapperGetSet(t *testing.T) {
 
 	// check the new values
 	acc = mapper.GetAccount(ctx, addr)
-	require.NotNil(t, acc)
-	require.Equal(t, newSequence, acc.GetSequence())
+	assert.NotNil(t, acc)
+	assert.Equal(t, newSequence, acc.GetSequence())
 }

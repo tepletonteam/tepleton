@@ -6,7 +6,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/wrsp/types"
 	"github.com/tepleton/tmlibs/log"
 )
 
@@ -30,7 +30,7 @@ type Context struct {
 }
 
 // create a new context
-func NewContext(ms MultiStore, header wrsp.Header, isCheckTx bool, logger log.Logger) Context {
+func NewContext(ms MultiStore, header wrsp.Header, isCheckTx bool, txBytes []byte, logger log.Logger) Context {
 
 	c := Context{
 		Context: context.Background(),
@@ -42,7 +42,7 @@ func NewContext(ms MultiStore, header wrsp.Header, isCheckTx bool, logger log.Lo
 	c = c.WithBlockHeight(header.Height)
 	c = c.WithChainID(header.ChainID)
 	c = c.WithIsCheckTx(isCheckTx)
-	c = c.WithTxBytes(nil)
+	c = c.WithTxBytes(txBytes)
 	c = c.WithLogger(logger)
 	c = c.WithSigningValidators(nil)
 	c = c.WithGasMeter(NewInfiniteGasMeter())

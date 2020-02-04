@@ -5,7 +5,7 @@ import (
 
 	cmn "github.com/tepleton/tmlibs/common"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/wrsp/types"
 )
 
 // WRSPCodeType - combined codetype / codespace
@@ -53,13 +53,9 @@ const (
 	CodeInsufficientCoins CodeType = 10
 	CodeInvalidCoins      CodeType = 11
 	CodeOutOfGas          CodeType = 12
-	CodeMemoTooLarge      CodeType = 13
 
 	// CodespaceRoot is a codespace for error codes in this file only.
-	// Notice that 0 is an "unset" codespace, which can be overridden with
-	// Error.WithDefaultCodespace().
-	CodespaceUndefined CodespaceType = 0
-	CodespaceRoot      CodespaceType = 1
+	CodespaceRoot CodespaceType = 1
 
 	// Maximum reservable codespace (2^16 - 1)
 	MaximumCodespace CodespaceType = 65535
@@ -69,33 +65,31 @@ const (
 func CodeToDefaultMsg(code CodeType) string {
 	switch code {
 	case CodeInternal:
-		return "internal error"
+		return "Internal error"
 	case CodeTxDecode:
-		return "tx parse error"
+		return "Tx parse error"
 	case CodeInvalidSequence:
-		return "invalid sequence"
+		return "Invalid sequence"
 	case CodeUnauthorized:
-		return "unauthorized"
+		return "Unauthorized"
 	case CodeInsufficientFunds:
-		return "insufficient funds"
+		return "Insufficent funds"
 	case CodeUnknownRequest:
-		return "unknown request"
+		return "Unknown request"
 	case CodeInvalidAddress:
-		return "invalid address"
+		return "Invalid address"
 	case CodeInvalidPubKey:
-		return "invalid pubkey"
+		return "Invalid pubkey"
 	case CodeUnknownAddress:
-		return "unknown address"
+		return "Unknown address"
 	case CodeInsufficientCoins:
-		return "insufficient coins"
+		return "Insufficient coins"
 	case CodeInvalidCoins:
-		return "invalid coins"
+		return "Invalid coins"
 	case CodeOutOfGas:
-		return "out of gas"
-	case CodeMemoTooLarge:
-		return "memo too large"
+		return "Out of gas"
 	default:
-		return fmt.Sprintf("unknown code %d", code)
+		return fmt.Sprintf("Unknown code %d", code)
 	}
 }
 
@@ -140,9 +134,6 @@ func ErrInvalidCoins(msg string) Error {
 func ErrOutOfGas(msg string) Error {
 	return newErrorWithRootCodespace(CodeOutOfGas, msg)
 }
-func ErrMemoTooLarge(msg string) Error {
-	return newErrorWithRootCodespace(CodeMemoTooLarge, msg)
-}
 
 //----------------------------------------
 // Error & sdkError
@@ -160,9 +151,6 @@ type Error interface {
 
 	// convenience
 	TraceSDK(format string, args ...interface{}) Error
-
-	// set codespace
-	WithDefaultCodespace(CodespaceType) Error
 
 	Code() CodeType
 	Codespace() CodespaceType
@@ -196,19 +184,6 @@ type sdkError struct {
 	codespace CodespaceType
 	code      CodeType
 	cmnError
-}
-
-// Implements Error.
-func (err *sdkError) WithDefaultCodespace(cs CodespaceType) Error {
-	codespace := err.codespace
-	if codespace == CodespaceUndefined {
-		codespace = cs
-	}
-	return &sdkError{
-		codespace: cs,
-		code:      err.code,
-		cmnError:  err.cmnError,
-	}
 }
 
 // Implements WRSPError.
