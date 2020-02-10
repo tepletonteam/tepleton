@@ -7,16 +7,15 @@ import (
 	"github.com/tepleton/go-amino"
 	"github.com/tepleton/iavl"
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	cmn "github.com/tepleton/tepleton/libs/common"
-	dbm "github.com/tepleton/tepleton/libs/db"
+	cmn "github.com/tepleton/tmlibs/common"
+	dbm "github.com/tepleton/tmlibs/db"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
 const (
 	defaultIAVLCacheSize  = 10000
-	defaultIAVLNumRecent  = 100
-	defaultIAVLStoreEvery = 10000
+	defaultIAVLNumHistory = 1<<53 - 1 // DEPRECATED
 )
 
 // load the iavl store
@@ -26,7 +25,7 @@ func LoadIAVLStore(db dbm.DB, id CommitID) (CommitStore, error) {
 	if err != nil {
 		return nil, err
 	}
-	store := newIAVLStore(tree, defaultIAVLNumRecent, defaultIAVLStoreEvery)
+	store := newIAVLStore(tree, defaultIAVLNumHistory)
 	return store, nil
 }
 
@@ -43,25 +42,17 @@ type iavlStore struct {
 	tree *iavl.VersionedTree
 
 	// How many old versions we hold onto.
-	// A value of 0 means keep no recent states
-	numRecent int64
-
-	// Distance between state-sync waypoint states to be stored
-	// See https://github.com/tepleton/tepleton/issues/828
-	// A value of 1 means store every state
-	// A value of 0 means store no waypoints (node cannot assist in state-sync)
-	// By default this value should be set the same across all nodes,
-	// so that nodes can know the waypoints their peers store
-	// TODO if set to non-default, signal to peers that the node is not suitable as a state sync source
-	storeEvery int64
+	// A value of 0 means keep all history.
+	numHistory int64
 }
 
 // CONTRACT: tree should be fully loaded.
-func newIAVLStore(tree *iavl.VersionedTree, numRecent int64, storeEvery int64) *iavlStore {
+// TODO: use more numHistory's, so the below nolint can be removed
+// nolint: unparam
+func newIAVLStore(tree *iavl.VersionedTree, numHistory int64) *iavlStore {
 	st := &iavlStore{
 		tree:       tree,
-		numRecent:  numRecent,
-		storeEvery: storeEvery,
+		numHistory: numHistory,
 	}
 	return st
 }
@@ -76,15 +67,13 @@ func (st *iavlStore) Commit() CommitID {
 		panic(err)
 	}
 
-	// Release an old version of history, if not a sync waypoint
-	previous := version - 1
-	if st.numRecent < previous {
-		toRelease := previous - st.numRecent
-		if st.storeEvery == 0 || toRelease%st.storeEvery != 0 {
-			err := st.tree.DeleteVersion(toRelease)
-			if err != nil {
-				panic(err)
-			}
+	// Release an old version of history
+	if st.numHistory > 0 && (st.numHistory < st.tree.Version64()) {
+		toRelease := version - st.numHistory
+		err := st.tree.DeleteVersion(toRelease)
+		if err != nil {
+			// TODO: Handle with #870
+			panic(err)
 		}
 	}
 
@@ -100,11 +89,6 @@ func (st *iavlStore) LastCommitID() CommitID {
 		Version: st.tree.Version64(),
 		Hash:    st.tree.Hash(),
 	}
-}
-
-// VersionExists returns whether or not a given version is stored
-func (st *iavlStore) VersionExists(version int64) bool {
-	return st.tree.VersionExists(version)
 }
 
 // Implements Store.
