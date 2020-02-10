@@ -3,9 +3,9 @@ package auth
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 
-	"github.com/tepleton/tepleton/crypto"
+	crypto "github.com/tepleton/go-crypto"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	wire "github.com/tepleton/tepleton-sdk/wire"
@@ -24,42 +24,42 @@ func TestBaseAddressPubKey(t *testing.T) {
 	acc := NewBaseAccountWithAddress(addr1)
 
 	// check the address (set) and pubkey (not set)
-	require.EqualValues(t, addr1, acc.GetAddress())
-	require.EqualValues(t, nil, acc.GetPubKey())
+	assert.EqualValues(t, addr1, acc.GetAddress())
+	assert.EqualValues(t, nil, acc.GetPubKey())
 
 	// can't override address
 	err := acc.SetAddress(addr2)
-	require.NotNil(t, err)
-	require.EqualValues(t, addr1, acc.GetAddress())
+	assert.NotNil(t, err)
+	assert.EqualValues(t, addr1, acc.GetAddress())
 
 	// set the pubkey
 	err = acc.SetPubKey(pub1)
-	require.Nil(t, err)
-	require.Equal(t, pub1, acc.GetPubKey())
+	assert.Nil(t, err)
+	assert.Equal(t, pub1, acc.GetPubKey())
 
 	// can override pubkey
 	err = acc.SetPubKey(pub2)
-	require.Nil(t, err)
-	require.Equal(t, pub2, acc.GetPubKey())
+	assert.Nil(t, err)
+	assert.Equal(t, pub2, acc.GetPubKey())
 
 	//------------------------------------
 
 	// can set address on empty account
 	acc2 := BaseAccount{}
 	err = acc2.SetAddress(addr2)
-	require.Nil(t, err)
-	require.EqualValues(t, addr2, acc2.GetAddress())
+	assert.Nil(t, err)
+	assert.EqualValues(t, addr2, acc2.GetAddress())
 }
 
 func TestBaseAccountCoins(t *testing.T) {
 	_, _, addr := keyPubAddr()
 	acc := NewBaseAccountWithAddress(addr)
 
-	someCoins := sdk.Coins{sdk.NewCoin("atom", 123), sdk.NewCoin("eth", 246)}
+	someCoins := sdk.Coins{{"atom", 123}, {"eth", 246}}
 
 	err := acc.SetCoins(someCoins)
-	require.Nil(t, err)
-	require.Equal(t, someCoins, acc.GetCoins())
+	assert.Nil(t, err)
+	assert.Equal(t, someCoins, acc.GetCoins())
 }
 
 func TestBaseAccountSequence(t *testing.T) {
@@ -69,40 +69,40 @@ func TestBaseAccountSequence(t *testing.T) {
 	seq := int64(7)
 
 	err := acc.SetSequence(seq)
-	require.Nil(t, err)
-	require.Equal(t, seq, acc.GetSequence())
+	assert.Nil(t, err)
+	assert.Equal(t, seq, acc.GetSequence())
 }
 
 func TestBaseAccountMarshal(t *testing.T) {
 	_, pub, addr := keyPubAddr()
 	acc := NewBaseAccountWithAddress(addr)
 
-	someCoins := sdk.Coins{sdk.NewCoin("atom", 123), sdk.NewCoin("eth", 246)}
+	someCoins := sdk.Coins{{"atom", 123}, {"eth", 246}}
 	seq := int64(7)
 
 	// set everything on the account
 	err := acc.SetPubKey(pub)
-	require.Nil(t, err)
+	assert.Nil(t, err)
 	err = acc.SetSequence(seq)
-	require.Nil(t, err)
+	assert.Nil(t, err)
 	err = acc.SetCoins(someCoins)
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	// need a codec for marshaling
 	codec := wire.NewCodec()
 	wire.RegisterCrypto(codec)
 
 	b, err := codec.MarshalBinary(acc)
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	acc2 := BaseAccount{}
 	err = codec.UnmarshalBinary(b, &acc2)
-	require.Nil(t, err)
-	require.Equal(t, acc, acc2)
+	assert.Nil(t, err)
+	assert.Equal(t, acc, acc2)
 
 	// error on bad bytes
 	acc2 = BaseAccount{}
 	err = codec.UnmarshalBinary(b[:len(b)/2], &acc2)
-	require.NotNil(t, err)
+	assert.NotNil(t, err)
 
 }
