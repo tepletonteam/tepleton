@@ -7,10 +7,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/tepleton/tmlibs/log"
+	"github.com/tepleton/tepleton/libs/log"
 
 	tmserver "github.com/tepleton/tepleton/rpc/lib/server"
-	cmn "github.com/tepleton/tmlibs/common"
+	cmn "github.com/tepleton/tepleton/libs/common"
 
 	client "github.com/tepleton/tepleton-sdk/client"
 	"github.com/tepleton/tepleton-sdk/client/context"

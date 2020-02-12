@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
-	"github.com/tepleton/tmlibs/cli"
+	"github.com/tepleton/tepleton/libs/cli"
 )
 
 // Get a free address for a test tepleton server

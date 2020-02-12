@@ -15,7 +15,7 @@ import (
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
 	p2p "github.com/tepleton/tepleton/p2p"
 	ctypes "github.com/tepleton/tepleton/rpc/core/types"
-	"github.com/tepleton/tmlibs/common"
+	"github.com/tepleton/tepleton/libs/common"
 
 	client "github.com/tepleton/tepleton-sdk/client"
 	keys "github.com/tepleton/tepleton-sdk/client/keys"
