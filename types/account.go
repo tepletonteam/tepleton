@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"github.com/tepleton/tepleton/crypto"
-	"github.com/tepleton/tepleton/libs/bech32"
-	cmn "github.com/tepleton/tepleton/libs/common"
+	"github.com/tepleton/tmlibs/bech32"
+	cmn "github.com/tepleton/tmlibs/common"
 )
 
 //Address is a go crypto-style Address
