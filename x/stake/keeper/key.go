@@ -207,18 +207,8 @@ func GetREDKeyFromValSrcIndexKey(IndexKey []byte) []byte {
 	valSrcAddr := addrs[:split]
 	delAddr := addrs[split : 2*split]
 	valDstAddr := addrs[2*split:]
-	fmt.Printf("debug indexKey: %v\n", IndexKey)
-	fmt.Printf("debug valSrcAddr: %v\n", valSrcAddr)
-	fmt.Printf("debug delAddr: %v\n", delAddr)
-	fmt.Printf("debug valDstAddr: %v\n", valDstAddr)
-	redKey := GetREDKey(delAddr, valSrcAddr, valDstAddr)
-	fmt.Println("------")
-	fmt.Printf("debug indexKey: %v\n", IndexKey)
-	fmt.Printf("debug valSrcAddr: %v\n", valSrcAddr)
-	fmt.Printf("debug delAddr: %v\n", delAddr)
-	fmt.Printf("debug valDstAddr: %v\n", valDstAddr)
-	fmt.Println("")
-	return redKey
+
+	return GetREDKey(delAddr, valSrcAddr, valDstAddr)
 }
 
 // rearrange the ValDstIndexKey to get the REDKey
