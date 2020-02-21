@@ -180,34 +180,6 @@ func TestUnbondDelegation(t *testing.T) {
 }
 
 // tests Get/Set/Remove/Has UnbondingDelegation
-func TestGetRedelegationsFromValidator(t *testing.T) {
-	ctx, _, keeper := CreateTestInput(t, false, 0)
-
-	rd := types.Redelegation{
-		DelegatorAddr:    addrDels[0],
-		ValidatorSrcAddr: addrVals[0],
-		ValidatorDstAddr: addrVals[1],
-		CreationHeight:   0,
-		MinTime:          0,
-		SharesSrc:        sdk.NewRat(5),
-		SharesDst:        sdk.NewRat(5),
-	}
-
-	// set and retrieve a record
-	keeper.SetRedelegation(ctx, rd)
-	resBond, found := keeper.GetRedelegation(ctx, addrDels[0], addrVals[0], addrVals[1])
-	require.True(t, found)
-
-	redelegations := keeper.GetRedelegationsFromValidator(ctx, addrVals[0])
-	require.Equal(t, 1, len(redelegations))
-	require.True(t, redelegations[0].Equal(resBond))
-
-	redelegations = keeper.GetRedelegationsFromValidator(ctx, addrVals[0])
-	require.Equal(t, 1, len(redelegations))
-	require.True(t, redelegations[0].Equal(resBond))
-}
-
-// tests Get/Set/Remove/Has UnbondingDelegation
 func TestRedelegation(t *testing.T) {
 	ctx, _, keeper := CreateTestInput(t, false, 0)
 
@@ -229,10 +201,7 @@ func TestRedelegation(t *testing.T) {
 	keeper.SetRedelegation(ctx, rd)
 	resBond, found := keeper.GetRedelegation(ctx, addrDels[0], addrVals[0], addrVals[1])
 	require.True(t, found)
-
-	redelegations := keeper.GetRedelegationsFromValidator(ctx, addrVals[0])
-	require.Equal(t, 1, len(redelegations))
-	require.True(t, redelegations[0].Equal(resBond))
+	require.True(t, rd.Equal(resBond))
 
 	// check if has the redelegation
 	has = keeper.HasReceivingRedelegation(ctx, addrDels[0], addrVals[1])
@@ -242,14 +211,9 @@ func TestRedelegation(t *testing.T) {
 	rd.SharesSrc = sdk.NewRat(21)
 	rd.SharesDst = sdk.NewRat(21)
 	keeper.SetRedelegation(ctx, rd)
-
 	resBond, found = keeper.GetRedelegation(ctx, addrDels[0], addrVals[0], addrVals[1])
 	require.True(t, found)
 	require.True(t, rd.Equal(resBond))
-
-	redelegations = keeper.GetRedelegationsFromValidator(ctx, addrVals[0])
-	require.Equal(t, 1, len(redelegations))
-	require.True(t, redelegations[0].Equal(resBond))
 
 	// delete a record
 	keeper.RemoveRedelegation(ctx, rd)
