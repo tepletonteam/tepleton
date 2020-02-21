@@ -34,10 +34,6 @@ func TestGenTxCmd(t *testing.T) {
 	// TODO
 }
 
-func TestTestnetFilesCmd(t *testing.T) {
-	// TODO
-}
-
 func TestSimpleAppGenTx(t *testing.T) {
 	// TODO
 }
