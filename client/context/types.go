@@ -16,9 +16,11 @@ type CoreContext struct {
 	FromAddressName string
 	AccountNumber   int64
 	Sequence        int64
+	Memo            string
 	Client          rpcclient.Client
 	Decoder         auth.AccountDecoder
 	AccountStore    string
+	UseLedger       bool
 }
 
 // WithChainID - return a copy of the context with an updated chainID
@@ -70,6 +72,12 @@ func (c CoreContext) WithSequence(sequence int64) CoreContext {
 	return c
 }
 
+// WithMemo - return a copy of the context with an updated memo
+func (c CoreContext) WithMemo(memo string) CoreContext {
+	c.Memo = memo
+	return c
+}
+
 // WithClient - return a copy of the context with an updated RPC client instance
 func (c CoreContext) WithClient(client rpcclient.Client) CoreContext {
 	c.Client = client
@@ -85,5 +93,11 @@ func (c CoreContext) WithDecoder(decoder auth.AccountDecoder) CoreContext {
 // WithAccountStore - return a copy of the context with an updated AccountStore
 func (c CoreContext) WithAccountStore(accountStore string) CoreContext {
 	c.AccountStore = accountStore
+	return c
+}
+
+// WithUseLedger - return a copy of the context with an updated UseLedger
+func (c CoreContext) WithUseLedger(useLedger bool) CoreContext {
+	c.UseLedger = useLedger
 	return c
 }

@@ -18,10 +18,19 @@ import (
 // protocol is either tcp, http, etc
 func FreeTCPAddr() (addr, port string, err error) {
 	l, err := net.Listen("tcp", "0.0.0.0:0")
-	defer l.Close()
 	if err != nil {
 		return "", "", err
 	}
+
+	closer := func() {
+		err := l.Close()
+		if err != nil {
+			// TODO: Handle with #870
+			panic(err)
+		}
+	}
+
+	defer closer()
 
 	portI := l.Addr().(*net.TCPAddr).Port
 	port = fmt.Sprintf("%d", portI)
@@ -36,7 +45,11 @@ func setupViper(t *testing.T) func() {
 	require.Nil(t, err)
 	viper.Set(cli.HomeFlag, rootDir)
 	return func() {
-		os.RemoveAll(rootDir)
+		err := os.RemoveAll(rootDir)
+		if err != nil {
+			// TODO: Handle with #870
+			panic(err)
+		}
 	}
 }
 
