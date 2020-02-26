@@ -7,8 +7,8 @@ import (
 	"github.com/tepleton/go-amino"
 	"github.com/tepleton/iavl"
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	cmn "github.com/tepleton/tepleton/libs/common"
-	dbm "github.com/tepleton/tepleton/libs/db"
+	cmn "github.com/tepleton/tmlibs/common"
+	dbm "github.com/tepleton/tmlibs/db"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
