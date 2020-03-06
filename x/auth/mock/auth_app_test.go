@@ -3,36 +3,15 @@ package mock
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/x/auth"
+	"github.com/tepleton/tepleton-sdk/x/bank"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	"github.com/tepleton/tepleton/crypto"
+	wrsp "github.com/tepleton/wrsp/types"
+	crypto "github.com/tepleton/go-crypto"
 )
-
-// A mock transaction that has a validation which can fail.
-type testMsg struct {
-	signers     []sdk.Address
-	positiveNum int64
-}
-
-// TODO: Clean this up, make it public
-const msgType = "testMsg"
-
-func (tx testMsg) Type() string                       { return msgType }
-func (tx testMsg) GetMsg() sdk.Msg                    { return tx }
-func (tx testMsg) GetMemo() string                    { return "" }
-func (tx testMsg) GetSignBytes() []byte               { return nil }
-func (tx testMsg) GetSigners() []sdk.Address          { return tx.signers }
-func (tx testMsg) GetSignatures() []auth.StdSignature { return nil }
-func (tx testMsg) ValidateBasic() sdk.Error {
-	if tx.positiveNum >= 0 {
-		return nil
-	}
-	return sdk.ErrTxDecode("positiveNum should be a non-negative integer.")
-}
 
 // test auth module messages
 
@@ -42,26 +21,31 @@ var (
 	priv2 = crypto.GenPrivKeyEd25519()
 	addr2 = priv2.PubKey().Address()
 
-	coins    = sdk.Coins{sdk.NewCoin("foocoin", 10)}
-	testMsg1 = testMsg{signers: []sdk.Address{addr1}, positiveNum: 1}
+	coins    = sdk.Coins{{"foocoin", 10}}
+	sendMsg1 = bank.MsgSend{
+		Inputs:  []bank.Input{bank.NewInput(addr1, coins)},
+		Outputs: []bank.Output{bank.NewOutput(addr2, coins)},
+	}
 )
 
 // initialize the mock application for this module
 func getMockApp(t *testing.T) *App {
 	mapp := NewApp()
 
-	mapp.Router().AddRoute(msgType, func(ctx sdk.Context, msg sdk.Msg) (res sdk.Result) { return })
-	require.NoError(t, mapp.CompleteSetup([]*sdk.KVStoreKey{}))
+	coinKeeper := bank.NewKeeper(mapp.AccountMapper)
+	mapp.Router().AddRoute("bank", bank.NewHandler(coinKeeper))
+	mapp.Router().AddRoute("auth", auth.NewHandler(mapp.AccountMapper))
+
+	mapp.CompleteSetup(t, []*sdk.KVStoreKey{})
 	return mapp
 }
 
-func TestMsgPrivKeys(t *testing.T) {
+func TestMsgChangePubKey(t *testing.T) {
 	mapp := getMockApp(t)
-	mapp.Cdc.RegisterConcrete(testMsg{}, "mock/testMsg", nil)
 
 	// Construct some genesis bytes to reflect basecoin/types/AppAccount
 	// Give 77 foocoin to the first key
-	coins := sdk.Coins{sdk.NewCoin("foocoin", 77)}
+	coins := sdk.Coins{{"foocoin", 77}}
 	acc1 := &auth.BaseAccount{
 		Address: addr1,
 		Coins:   coins,
@@ -74,19 +58,40 @@ func TestMsgPrivKeys(t *testing.T) {
 	// A checkTx context (true)
 	ctxCheck := mapp.BaseApp.NewContext(true, wrsp.Header{})
 	res1 := mapp.AccountMapper.GetAccount(ctxCheck, addr1)
-	require.Equal(t, acc1, res1.(*auth.BaseAccount))
+	assert.Equal(t, acc1, res1.(*auth.BaseAccount))
 
 	// Run a CheckDeliver
-	SignCheckDeliver(t, mapp.BaseApp, []sdk.Msg{testMsg1}, []int64{0}, []int64{0}, true, priv1)
+	SignCheckDeliver(t, mapp.BaseApp, sendMsg1, []int64{0}, []int64{0}, true, priv1)
 
-	// signing a SendMsg with the wrong privKey should be an auth error
+	// Check balances
+	CheckBalance(t, mapp, addr1, sdk.Coins{{"foocoin", 67}})
+	CheckBalance(t, mapp, addr2, sdk.Coins{{"foocoin", 10}})
+
+	changePubKeyMsg := auth.MsgChangeKey{
+		Address:   addr1,
+		NewPubKey: priv2.PubKey(),
+	}
+
 	mapp.BeginBlock(wrsp.RequestBeginBlock{})
-	tx := GenTx([]sdk.Msg{testMsg1}, []int64{0}, []int64{1}, priv2)
+	ctxDeliver := mapp.BaseApp.NewContext(false, wrsp.Header{})
+	acc2 := mapp.AccountMapper.GetAccount(ctxDeliver, addr1)
+
+	// send a MsgChangePubKey
+	SignCheckDeliver(t, mapp.BaseApp, changePubKeyMsg, []int64{0}, []int64{1}, true, priv1)
+	acc2 = mapp.AccountMapper.GetAccount(ctxDeliver, addr1)
+
+	assert.True(t, priv2.PubKey().Equals(acc2.GetPubKey()))
+
+	// signing a SendMsg with the old privKey should be an auth error
+	mapp.BeginBlock(wrsp.RequestBeginBlock{})
+	tx := GenTx(sendMsg1, []int64{0}, []int64{2}, priv1)
 	res := mapp.Deliver(tx)
-	require.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeUnauthorized), res.Code, res.Log)
+	assert.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeUnauthorized), res.Code, res.Log)
 
-	// resigning the tx with the correct priv key should still work
-	res = SignCheckDeliver(t, mapp.BaseApp, []sdk.Msg{testMsg1}, []int64{0}, []int64{1}, true, priv1)
+	// resigning the tx with the new correct priv key should work
+	SignCheckDeliver(t, mapp.BaseApp, sendMsg1, []int64{0}, []int64{2}, true, priv2)
 
-	require.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeOK), res.Code, res.Log)
+	// Check balances
+	CheckBalance(t, mapp, addr1, sdk.Coins{{"foocoin", 57}})
+	CheckBalance(t, mapp, addr2, sdk.Coins{{"foocoin", 20}})
 }

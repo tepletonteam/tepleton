@@ -3,9 +3,9 @@ package simplestake
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 
-	"github.com/tepleton/tepleton/crypto"
+	crypto "github.com/tepleton/go-crypto"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
@@ -16,16 +16,16 @@ func TestBondMsgValidation(t *testing.T) {
 		valid   bool
 		msgBond MsgBond
 	}{
-		{true, NewMsgBond(sdk.Address{}, sdk.NewCoin("mycoin", 5), privKey.PubKey())},
-		{false, NewMsgBond(sdk.Address{}, sdk.NewCoin("mycoin", 0), privKey.PubKey())},
+		{true, NewMsgBond(sdk.Address{}, sdk.Coin{"mycoin", 5}, privKey.PubKey())},
+		{false, NewMsgBond(sdk.Address{}, sdk.Coin{"mycoin", 0}, privKey.PubKey())},
 	}
 
 	for i, tc := range cases {
 		err := tc.msgBond.ValidateBasic()
 		if tc.valid {
-			require.Nil(t, err, "%d: %+v", i, err)
+			assert.Nil(t, err, "%d: %+v", i, err)
 		} else {
-			require.NotNil(t, err, "%d", i)
+			assert.NotNil(t, err, "%d", i)
 		}
 	}
 }
