@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	"github.com/tepleton/tmlibs/log"
+	"github.com/tepleton/tepleton/libs/log"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
