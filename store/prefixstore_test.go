@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/tepleton/iavl"
-	dbm "github.com/tepleton/tepleton/libs/db"
+	dbm "github.com/tepleton/tmlibs/db"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
@@ -66,7 +66,7 @@ func testPrefixStore(t *testing.T, baseStore KVStore, prefix []byte) {
 func TestIAVLStorePrefix(t *testing.T) {
 	db := dbm.NewMemDB()
 	tree := iavl.NewVersionedTree(db, cacheSize)
-	iavlStore := newIAVLStore(tree, numRecent, storeEvery)
+	iavlStore := newIAVLStore(tree, numHistory)
 
 	testPrefixStore(t, iavlStore, []byte("test"))
 }
