@@ -3,10 +3,10 @@ package ibc
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
-	wrsp "github.com/tepleton/wrsp/types"
-	crypto "github.com/tepleton/go-crypto"
+	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	"github.com/tepleton/tepleton/crypto"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
 
@@ -24,7 +24,7 @@ func defaultContext(key sdk.StoreKey) sdk.Context {
 	cms := store.NewCommitMultiStore(db)
 	cms.MountStoreWithDB(key, sdk.StoreTypeIAVL, db)
 	cms.LoadLatestVersion()
-	ctx := sdk.NewContext(cms, wrsp.Header{}, false, nil, log.NewNopLogger())
+	ctx := sdk.NewContext(cms, wrsp.Header{}, false, log.NewNopLogger())
 	return ctx
 }
 
@@ -69,11 +69,11 @@ func TestIBC(t *testing.T) {
 	dest := newAddress()
 	chainid := "ibcchain"
 	zero := sdk.Coins(nil)
-	mycoins := sdk.Coins{sdk.Coin{"mycoin", 10}}
+	mycoins := sdk.Coins{sdk.NewCoin("mycoin", 10)}
 
 	coins, _, err := ck.AddCoins(ctx, src, mycoins)
-	assert.Nil(t, err)
-	assert.Equal(t, mycoins, coins)
+	require.Nil(t, err)
+	require.Equal(t, mycoins, coins)
 
 	ibcm := NewMapper(cdc, key, DefaultCodespace)
 	h := NewHandler(ibcm, ck)
@@ -93,23 +93,23 @@ func TestIBC(t *testing.T) {
 	var igs int64
 
 	egl = ibcm.getEgressLength(store, chainid)
-	assert.Equal(t, egl, int64(0))
+	require.Equal(t, egl, int64(0))
 
 	msg = IBCTransferMsg{
 		IBCPacket: packet,
 	}
 	res = h(ctx, msg)
-	assert.True(t, res.IsOK())
+	require.True(t, res.IsOK())
 
 	coins, err = getCoins(ck, ctx, src)
-	assert.Nil(t, err)
-	assert.Equal(t, zero, coins)
+	require.Nil(t, err)
+	require.Equal(t, zero, coins)
 
 	egl = ibcm.getEgressLength(store, chainid)
-	assert.Equal(t, egl, int64(1))
+	require.Equal(t, egl, int64(1))
 
 	igs = ibcm.GetIngressSequence(ctx, chainid)
-	assert.Equal(t, igs, int64(0))
+	require.Equal(t, igs, int64(0))
 
 	msg = IBCReceiveMsg{
 		IBCPacket: packet,
@@ -117,18 +117,18 @@ func TestIBC(t *testing.T) {
 		Sequence:  0,
 	}
 	res = h(ctx, msg)
-	assert.True(t, res.IsOK())
+	require.True(t, res.IsOK())
 
 	coins, err = getCoins(ck, ctx, dest)
-	assert.Nil(t, err)
-	assert.Equal(t, mycoins, coins)
+	require.Nil(t, err)
+	require.Equal(t, mycoins, coins)
 
 	igs = ibcm.GetIngressSequence(ctx, chainid)
-	assert.Equal(t, igs, int64(1))
+	require.Equal(t, igs, int64(1))
 
 	res = h(ctx, msg)
-	assert.False(t, res.IsOK())
+	require.False(t, res.IsOK())
 
 	igs = ibcm.GetIngressSequence(ctx, chainid)
-	assert.Equal(t, igs, int64(1))
+	require.Equal(t, igs, int64(1))
 }

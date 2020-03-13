@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"path/filepath"
 
-	wrsp "github.com/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/tepleton/wrsp/types"
 	tmtypes "github.com/tepleton/tepleton/types"
 	dbm "github.com/tepleton/tmlibs/db"
 	"github.com/tepleton/tmlibs/log"
