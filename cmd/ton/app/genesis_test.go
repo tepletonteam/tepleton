@@ -5,8 +5,8 @@ import (
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/x/auth"
-	"github.com/stretchr/testify/require"
-	"github.com/tepleton/tepleton/crypto"
+	"github.com/stretchr/testify/assert"
+	crypto "github.com/tepleton/go-crypto"
 )
 
 func TestToAccount(t *testing.T) {
@@ -14,7 +14,7 @@ func TestToAccount(t *testing.T) {
 	addr := sdk.Address(priv.PubKey().Address())
 	authAcc := auth.NewBaseAccountWithAddress(addr)
 	genAcc := NewGenesisAccount(&authAcc)
-	require.Equal(t, authAcc, *genAcc.ToAccount())
+	assert.Equal(t, authAcc, *genAcc.ToAccount())
 }
 
 func TestGaiaAppGenTx(t *testing.T) {
