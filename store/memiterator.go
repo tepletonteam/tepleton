@@ -3,8 +3,8 @@ package store
 import (
 	"bytes"
 
-	cmn "github.com/tepleton/tepleton/libs/common"
-	dbm "github.com/tepleton/tepleton/libs/db"
+	cmn "github.com/tepleton/tmlibs/common"
+	dbm "github.com/tepleton/tmlibs/db"
 )
 
 // Iterates over iterKVCache items.
