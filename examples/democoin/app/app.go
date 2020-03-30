@@ -3,7 +3,7 @@ package app
 import (
 	"encoding/json"
 
-	wrsp "github.com/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/tepleton/wrsp/types"
 	tmtypes "github.com/tepleton/tepleton/types"
 	cmn "github.com/tepleton/tmlibs/common"
 	dbm "github.com/tepleton/tmlibs/db"
@@ -117,6 +117,7 @@ func MakeCodec() *wire.Codec {
 }
 
 // custom logic for democoin initialization
+// nolint: unparam
 func (app *DemocoinApp) initChainerFn(coolKeeper cool.Keeper, powKeeper pow.Keeper) sdk.InitChainer {
 	return func(ctx sdk.Context, req wrsp.RequestInitChain) wrsp.ResponseInitChain {
 		stateJSON := req.AppStateBytes
