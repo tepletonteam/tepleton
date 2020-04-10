@@ -16,8 +16,8 @@ import (
 
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
 	"github.com/tepleton/tepleton/crypto"
-	dbm "github.com/tepleton/tepleton/libs/db"
-	"github.com/tepleton/tepleton/libs/log"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 )
 
 func setGenesis(bapp *BasecoinApp, accs ...auth.BaseAccount) error {
