@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	cmn "github.com/tepleton/tepleton/libs/common"
-	dbm "github.com/tepleton/tepleton/libs/db"
+	cmn "github.com/tepleton/tmlibs/common"
+	dbm "github.com/tepleton/tmlibs/db"
 )
 
 // NOTE: These are implemented in tepleton-sdk/store.
