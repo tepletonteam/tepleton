@@ -1,12 +1,14 @@
 package mock
 
 import (
+	"testing"
+
 	"os"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	"github.com/tepleton/tepleton/crypto"
-	dbm "github.com/tepleton/tepleton/libs/db"
-	"github.com/tepleton/tepleton/libs/log"
+	"github.com/stretchr/testify/require"
+	wrsp "github.com/tepleton/wrsp/types"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
 	bam "github.com/tepleton/tepleton-sdk/baseapp"
 	sdk "github.com/tepleton/tepleton-sdk/types"
@@ -63,12 +65,13 @@ func NewApp() *App {
 }
 
 // complete the application setup after the routes have been registered
-func (app *App) CompleteSetup(newKeys []*sdk.KVStoreKey) error {
+func (app *App) CompleteSetup(t *testing.T, newKeys []*sdk.KVStoreKey) {
+
 	newKeys = append(newKeys, app.KeyMain)
 	newKeys = append(newKeys, app.KeyAccount)
 	app.MountStoresIAVL(newKeys...)
 	err := app.LoadLatestVersion(app.KeyMain)
-	return err
+	require.NoError(t, err)
 }
 
 // custom logic for initialization
@@ -77,34 +80,9 @@ func (app *App) InitChainer(ctx sdk.Context, _ wrsp.RequestInitChain) wrsp.Respo
 	// load the accounts
 	for _, genacc := range app.GenesisAccounts {
 		acc := app.AccountMapper.NewAccountWithAddress(ctx, genacc.GetAddress())
-		err := acc.SetCoins(genacc.GetCoins())
-		if err != nil {
-			// TODO: Handle with #870
-			panic(err)
-		}
+		acc.SetCoins(genacc.GetCoins())
 		app.AccountMapper.SetAccount(ctx, acc)
 	}
 
 	return wrsp.ResponseInitChain{}
-}
-
-// Generate genesis accounts loaded with coins, and returns their addresses, pubkeys, and privkeys
-func CreateGenAccounts(numAccs int64, genCoins sdk.Coins) (genAccs []auth.Account, addrs []sdk.Address, pubKeys []crypto.PubKey, privKeys []crypto.PrivKey) {
-	for i := int64(0); i < numAccs; i++ {
-		privKey := crypto.GenPrivKeyEd25519()
-		pubKey := privKey.PubKey()
-		addr := pubKey.Address()
-
-		genAcc := &auth.BaseAccount{
-			Address: addr,
-			Coins:   genCoins,
-		}
-
-		genAccs = append(genAccs, genAcc)
-		privKeys = append(privKeys, privKey)
-		pubKeys = append(pubKeys, pubKey)
-		addrs = append(addrs, addr)
-	}
-
-	return
 }

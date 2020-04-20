@@ -3,10 +3,10 @@ package pow
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	"github.com/tepleton/tepleton/libs/log"
+	wrsp "github.com/tepleton/wrsp/types"
+	"github.com/tepleton/tmlibs/log"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	wire "github.com/tepleton/tepleton-sdk/wire"
@@ -20,7 +20,7 @@ func TestPowHandler(t *testing.T) {
 	auth.RegisterBaseAccount(cdc)
 
 	am := auth.NewAccountMapper(cdc, capKey, &auth.BaseAccount{})
-	ctx := sdk.NewContext(ms, wrsp.Header{}, false, log.NewNopLogger())
+	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil, log.NewNopLogger())
 	config := NewConfig("pow", int64(1))
 	ck := bank.NewKeeper(am)
 	keeper := NewKeeper(capKey, config, ck, DefaultCodespace)
@@ -32,21 +32,21 @@ func TestPowHandler(t *testing.T) {
 	difficulty := uint64(2)
 
 	err := InitGenesis(ctx, keeper, Genesis{uint64(1), uint64(0)})
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	nonce, proof := mine(addr, count, difficulty)
 	msg := NewMsgMine(addr, difficulty, count, nonce, proof)
 
 	result := handler(ctx, msg)
-	require.Equal(t, result, sdk.Result{})
+	assert.Equal(t, result, sdk.Result{})
 
 	newDiff, err := keeper.GetLastDifficulty(ctx)
-	require.Nil(t, err)
-	require.Equal(t, newDiff, uint64(2))
+	assert.Nil(t, err)
+	assert.Equal(t, newDiff, uint64(2))
 
 	newCount, err := keeper.GetLastCount(ctx)
-	require.Nil(t, err)
-	require.Equal(t, newCount, uint64(1))
+	assert.Nil(t, err)
+	assert.Equal(t, newCount, uint64(1))
 
 	// todo assert correct coin change, awaiting https://github.com/tepleton/tepleton-sdk/pull/691
 
@@ -55,5 +55,5 @@ func TestPowHandler(t *testing.T) {
 	msg = NewMsgMine(addr, difficulty, count, nonce, proof)
 
 	result = handler(ctx, msg)
-	require.NotEqual(t, result, sdk.Result{})
+	assert.NotEqual(t, result, sdk.Result{})
 }

@@ -65,11 +65,6 @@ func (gi *gasKVStore) Delete(key []byte) {
 	gi.parent.Delete(key)
 }
 
-// Implements KVStore
-func (gi *gasKVStore) Prefix(prefix []byte) KVStore {
-	return prefixStore{gi, prefix}
-}
-
 // Implements KVStore.
 func (gi *gasKVStore) Iterator(start, end []byte) sdk.Iterator {
 	return gi.iterator(start, end, true)

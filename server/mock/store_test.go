@@ -3,31 +3,31 @@ package mock
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 
-	dbm "github.com/tepleton/tepleton/libs/db"
+	dbm "github.com/tepleton/tmlibs/db"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
 func TestStore(t *testing.T) {
 	db := dbm.NewMemDB()
-	cms := NewCommitMultiStore()
+	cms := NewCommitMultiStore(db)
 
 	key := sdk.NewKVStoreKey("test")
 	cms.MountStoreWithDB(key, sdk.StoreTypeIAVL, db)
 	err := cms.LoadLatestVersion()
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	store := cms.GetKVStore(key)
-	require.NotNil(t, store)
+	assert.NotNil(t, store)
 
 	k := []byte("hello")
 	v := []byte("world")
-	require.False(t, store.Has(k))
+	assert.False(t, store.Has(k))
 	store.Set(k, v)
-	require.True(t, store.Has(k))
-	require.Equal(t, v, store.Get(k))
+	assert.True(t, store.Has(k))
+	assert.Equal(t, v, store.Get(k))
 	store.Delete(k)
-	require.False(t, store.Has(k))
+	assert.False(t, store.Has(k))
 }
