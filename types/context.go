@@ -7,7 +7,7 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	"github.com/tepleton/tepleton/libs/log"
+	"github.com/tepleton/tmlibs/log"
 )
 
 /*

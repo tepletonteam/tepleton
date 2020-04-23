@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tepleton/tepleton/crypto"
 
-	dbm "github.com/tepleton/tepleton/libs/db"
+	dbm "github.com/tepleton/tmlibs/db"
 )
 
 // TestKeyManagement makes sure we can manipulate these keys well

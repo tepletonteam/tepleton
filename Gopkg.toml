@@ -58,11 +58,11 @@
 
 [[constraint]]
   name = "github.com/tepleton/iavl"
-  version = "=v0.8.1"
+  revision = "481b89cbbe6a641f7f6cb5db92b30b20f5a2e001"
 
 [[constraint]]
   name = "github.com/tepleton/tepleton"
-  version = "=0.22.0-rc2"
+  revision = "8412b75b1070ac023405e8228e017ed36531fe1b"
 
 [[constraint]]
   name = "github.com/tepleton/tmlibs"
