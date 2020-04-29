@@ -31,7 +31,6 @@ func NewCoreContextFromViper() CoreContext {
 		ChainID:         chainID,
 		Height:          viper.GetInt64(client.FlagHeight),
 		Gas:             viper.GetInt64(client.FlagGas),
-		Fee:             viper.GetString(client.FlagFee),
 		TrustNode:       viper.GetBool(client.FlagTrustNode),
 		FromAddressName: viper.GetString(client.FlagName),
 		NodeURI:         nodeURI,

@@ -4,17 +4,18 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
+	"github.com/tepleton/tepleton-sdk/x/stake"
 )
 
 var _ auth.Account = (*AppAccount)(nil)
 
-// AppAccount is a custom extension for this application. It is an example of
-// extending auth.BaseAccount with custom fields. It is compatible with the
-// stock auth.AccountStore, since auth.AccountStore uses the flexible go-amino
-// library.
+// Custom extensions for this application.  This is just an example of
+// extending auth.BaseAccount with custom fields.
+//
+// This is compatible with the stock auth.AccountStore, since
+// auth.AccountStore uses the flexible go-amino library.
 type AppAccount struct {
 	auth.BaseAccount
-
 	Name string `json:"name"`
 }
 
@@ -22,45 +23,36 @@ type AppAccount struct {
 func (acc AppAccount) GetName() string      { return acc.Name }
 func (acc *AppAccount) SetName(name string) { acc.Name = name }
 
-// NewAppAccount returns a reference to a new AppAccount given a name and an
-// auth.BaseAccount.
-func NewAppAccount(name string, baseAcct auth.BaseAccount) *AppAccount {
-	return &AppAccount{BaseAccount: baseAcct, Name: name}
-}
-
-// GetAccountDecoder returns the AccountDecoder function for the custom
-// AppAccount.
+// Get the AccountDecoder function for the custom AppAccount
 func GetAccountDecoder(cdc *wire.Codec) auth.AccountDecoder {
-	return func(accBytes []byte) (auth.Account, error) {
+	return func(accBytes []byte) (res auth.Account, err error) {
 		if len(accBytes) == 0 {
 			return nil, sdk.ErrTxDecode("accBytes are empty")
 		}
-
 		acct := new(AppAccount)
-		err := cdc.UnmarshalBinaryBare(accBytes, &acct)
+		err = cdc.UnmarshalBinaryBare(accBytes, &acct)
 		if err != nil {
 			panic(err)
 		}
-
 		return acct, err
 	}
 }
 
-// GenesisState reflects the genesis state of the application.
+//___________________________________________________________________________________
+
+// State to Unmarshal
 type GenesisState struct {
-	Accounts []*GenesisAccount `json:"accounts"`
+	Accounts  []*GenesisAccount  `json:"accounts"`
+	StakeData stake.GenesisState `json:"stake"`
 }
 
-// GenesisAccount reflects a genesis account the application expects in it's
-// genesis state.
+// GenesisAccount doesn't need pubkey or sequence
 type GenesisAccount struct {
 	Name    string      `json:"name"`
 	Address sdk.Address `json:"address"`
 	Coins   sdk.Coins   `json:"coins"`
 }
 
-// NewGenesisAccount returns a reference to a new GenesisAccount given an
-// AppAccount.
 func NewGenesisAccount(aa *AppAccount) *GenesisAccount {
 	return &GenesisAccount{
 		Name:    aa.Name,
@@ -69,13 +61,14 @@ func NewGenesisAccount(aa *AppAccount) *GenesisAccount {
 	}
 }
 
-// ToAppAccount converts a GenesisAccount to an AppAccount.
+// convert GenesisAccount to AppAccount
 func (ga *GenesisAccount) ToAppAccount() (acc *AppAccount, err error) {
+	baseAcc := auth.BaseAccount{
+		Address: ga.Address,
+		Coins:   ga.Coins.Sort(),
+	}
 	return &AppAccount{
-		Name: ga.Name,
-		BaseAccount: auth.BaseAccount{
-			Address: ga.Address,
-			Coins:   ga.Coins.Sort(),
-		},
+		BaseAccount: baseAcc,
+		Name:        ga.Name,
 	}, nil
 }
