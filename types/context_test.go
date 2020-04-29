@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	dbm "github.com/tepleton/tepleton/libs/db"
-	"github.com/tepleton/tepleton/libs/log"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/tepleton-sdk/store"
 	"github.com/tepleton/tepleton-sdk/types"
