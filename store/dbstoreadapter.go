@@ -2,7 +2,7 @@ package store
 
 import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	dbm "github.com/tepleton/tepleton/libs/db"
+	dbm "github.com/tepleton/tmlibs/db"
 )
 
 type dbStoreAdapter struct {
@@ -17,11 +17,6 @@ func (dbStoreAdapter) GetStoreType() StoreType {
 // Implements KVStore.
 func (dsa dbStoreAdapter) CacheWrap() CacheWrap {
 	return NewCacheKVStore(dsa)
-}
-
-// Implements KVStore
-func (dsa dbStoreAdapter) Prefix(prefix []byte) KVStore {
-	return prefixStore{dsa, prefix}
 }
 
 // dbm.DB implements KVStore so we can CacheKVStore it.

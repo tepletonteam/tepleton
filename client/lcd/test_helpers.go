@@ -15,18 +15,18 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 
-	crkeys "github.com/tepleton/tepleton-sdk/crypto/keys"
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/wrsp/types"
+	crypto "github.com/tepleton/go-crypto"
+	crkeys "github.com/tepleton/go-crypto/keys"
 	tmcfg "github.com/tepleton/tepleton/config"
-	"github.com/tepleton/tepleton/crypto"
 	nm "github.com/tepleton/tepleton/node"
 	pvm "github.com/tepleton/tepleton/privval"
 	"github.com/tepleton/tepleton/proxy"
 	tmrpc "github.com/tepleton/tepleton/rpc/lib/server"
 	tmtypes "github.com/tepleton/tepleton/types"
-	"github.com/tepleton/tepleton/libs/cli"
-	dbm "github.com/tepleton/tepleton/libs/db"
-	"github.com/tepleton/tepleton/libs/log"
+	"github.com/tepleton/tmlibs/cli"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/tepleton-sdk/client"
 	keys "github.com/tepleton/tepleton-sdk/client/keys"
@@ -83,9 +83,9 @@ func GetKB(t *testing.T) crkeys.Keybase {
 func CreateAddr(t *testing.T, name, password string, kb crkeys.Keybase) (addr sdk.Address, seed string) {
 	var info crkeys.Info
 	var err error
-	info, seed, err = kb.CreateMnemonic(name, crkeys.English, password, crkeys.Secp256k1)
+	info, seed, err = kb.Create(name, password, crkeys.AlgoEd25519)
 	require.NoError(t, err)
-	addr = info.GetPubKey().Address()
+	addr = info.PubKey.Address()
 	return
 }
 
@@ -95,18 +95,18 @@ func CreateAddr(t *testing.T, name, password string, kb crkeys.Keybase) (addr sd
 func InitializeTestLCD(t *testing.T, nValidators int, initAddrs []sdk.Address) (cleanup func(), validatorsPKs []crypto.PubKey, port string) {
 
 	config := GetConfig()
-	config.Consensus.TimeoutCommit = 100
+	config.Consensus.TimeoutCommit = 1000
 	config.Consensus.SkipTimeoutCommit = false
 	config.TxIndex.IndexAllTags = true
 
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
-	logger = log.NewFilter(logger, log.AllowDebug())
+	logger = log.NewFilter(logger, log.AllowError())
 	privValidatorFile := config.PrivValidatorFile()
 	privVal := pvm.LoadOrGenFilePV(privValidatorFile)
 	privVal.Reset()
 	db := dbm.NewMemDB()
 	app := gapp.NewGaiaApp(logger, db)
-	cdc = gapp.MakeCodec()
+	cdc = gapp.MakeCodec() // XXX
 
 	genesisFile := config.GenesisFile()
 	genDoc, err := tmtypes.GenesisDocFromFile(genesisFile)
@@ -132,7 +132,7 @@ func InitializeTestLCD(t *testing.T, nValidators int, initAddrs []sdk.Address) (
 	for _, gdValidator := range genDoc.Validators {
 		pk := gdValidator.PubKey
 		validatorsPKs = append(validatorsPKs, pk) // append keys for output
-		appGenTx, _, _, err := gapp.GaiaAppGenTxNF(cdc, pk, pk.Address(), "test_val1")
+		appGenTx, _, _, err := gapp.GaiaAppGenTxNF(cdc, pk, pk.Address(), "test_val1", true)
 		require.NoError(t, err)
 		appGenTxs = append(appGenTxs, appGenTx)
 	}
@@ -143,10 +143,9 @@ func InitializeTestLCD(t *testing.T, nValidators int, initAddrs []sdk.Address) (
 	// add some tokens to init accounts
 	for _, addr := range initAddrs {
 		accAuth := auth.NewBaseAccountWithAddress(addr)
-		accAuth.Coins = sdk.Coins{sdk.NewCoin("steak", 100)}
+		accAuth.Coins = sdk.Coins{{"steak", 100}}
 		acc := gapp.NewGenesisAccount(&accAuth)
 		genesisState.Accounts = append(genesisState.Accounts, acc)
-		genesisState.StakeData.Pool.LooseTokens += 100
 	}
 
 	appState, err := wire.MarshalJSONIndent(cdc, genesisState)
@@ -193,7 +192,6 @@ func startTM(tmcfg *tmcfg.Config, logger log.Logger, genDoc *tmtypes.GenesisDoc,
 		proxy.NewLocalClientCreator(app),
 		genDocProvider,
 		dbProvider,
-		nm.DefaultMetricsProvider,
 		logger.With("module", "node"))
 	if err != nil {
 		return nil, err
@@ -214,7 +212,7 @@ func startTM(tmcfg *tmcfg.Config, logger log.Logger, genDoc *tmtypes.GenesisDoc,
 // start the LCD. note this blocks!
 func startLCD(logger log.Logger, listenAddr string, cdc *wire.Codec) (net.Listener, error) {
 	handler := createHandler(cdc)
-	return tmrpc.StartHTTPServer(listenAddr, handler, logger, tmrpc.Config{})
+	return tmrpc.StartHTTPServer(listenAddr, handler, logger)
 }
 
 // make a test lcd test request
