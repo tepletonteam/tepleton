@@ -3,15 +3,15 @@ package pow
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/x/auth"
 	"github.com/tepleton/tepleton-sdk/x/auth/mock"
 	"github.com/tepleton/tepleton-sdk/x/bank"
 
-	wrsp "github.com/tepleton/wrsp/types"
-	crypto "github.com/tepleton/go-crypto"
+	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	"github.com/tepleton/tepleton/crypto"
 )
 
 var (
@@ -32,7 +32,7 @@ func getMockApp(t *testing.T) *mock.App {
 
 	mapp.SetInitChainer(getInitChainer(mapp, keeper))
 
-	mapp.CompleteSetup(t, []*sdk.KVStoreKey{keyPOW})
+	require.NoError(t, mapp.CompleteSetup([]*sdk.KVStoreKey{keyPOW}))
 	return mapp
 }
 
@@ -67,17 +67,17 @@ func TestMsgMine(t *testing.T) {
 	// A checkTx context (true)
 	ctxCheck := mapp.BaseApp.NewContext(true, wrsp.Header{})
 	res1 := mapp.AccountMapper.GetAccount(ctxCheck, addr1)
-	assert.Equal(t, acc1, res1)
+	require.Equal(t, acc1, res1)
 
 	// Mine and check for reward
 	mineMsg1 := GenerateMsgMine(addr1, 1, 2)
-	mock.SignCheckDeliver(t, mapp.BaseApp, mineMsg1, []int64{0}, []int64{0}, true, priv1)
-	mock.CheckBalance(t, mapp, addr1, sdk.Coins{{"pow", 1}})
+	mock.SignCheckDeliver(t, mapp.BaseApp, []sdk.Msg{mineMsg1}, []int64{0}, []int64{0}, true, priv1)
+	mock.CheckBalance(t, mapp, addr1, sdk.Coins{{"pow", sdk.NewInt(1)}})
 	// Mine again and check for reward
 	mineMsg2 := GenerateMsgMine(addr1, 2, 3)
-	mock.SignCheckDeliver(t, mapp.BaseApp, mineMsg2, []int64{0}, []int64{1}, true, priv1)
-	mock.CheckBalance(t, mapp, addr1, sdk.Coins{{"pow", 2}})
+	mock.SignCheckDeliver(t, mapp.BaseApp, []sdk.Msg{mineMsg2}, []int64{0}, []int64{1}, true, priv1)
+	mock.CheckBalance(t, mapp, addr1, sdk.Coins{{"pow", sdk.NewInt(2)}})
 	// Mine again - should be invalid
-	mock.SignCheckDeliver(t, mapp.BaseApp, mineMsg2, []int64{0}, []int64{1}, false, priv1)
-	mock.CheckBalance(t, mapp, addr1, sdk.Coins{{"pow", 2}})
+	mock.SignCheckDeliver(t, mapp.BaseApp, []sdk.Msg{mineMsg2}, []int64{0}, []int64{1}, false, priv1)
+	mock.CheckBalance(t, mapp, addr1, sdk.Coins{{"pow", sdk.NewInt(2)}})
 }
