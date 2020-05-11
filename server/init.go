@@ -21,9 +21,9 @@ import (
 	"github.com/tepleton/tepleton/p2p"
 	pvm "github.com/tepleton/tepleton/privval"
 	tmtypes "github.com/tepleton/tepleton/types"
-	tmcli "github.com/tepleton/tmlibs/cli"
-	cmn "github.com/tepleton/tmlibs/common"
-	dbm "github.com/tepleton/tmlibs/db"
+	tmcli "github.com/tepleton/tepleton/libs/cli"
+	cmn "github.com/tepleton/tepleton/libs/common"
+	dbm "github.com/tepleton/tepleton/libs/db"
 
 	clkeys "github.com/tepleton/tepleton-sdk/client/keys"
 	serverconfig "github.com/tepleton/tepleton-sdk/server/config"
@@ -444,7 +444,7 @@ func SimpleAppGenState(cdc *wire.Codec, appGenTxs []json.RawMessage) (appState j
     "coins": [
       {
         "denom": "mycoin",
-        "amount": 9007199254740992
+        "amount": "9007199254740992"
       }
     ]
   }]
