@@ -2,7 +2,7 @@ package store
 
 import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
-	dbm "github.com/tepleton/tepleton/libs/db"
+	dbm "github.com/tepleton/tmlibs/db"
 )
 
 type dbStoreAdapter struct {
