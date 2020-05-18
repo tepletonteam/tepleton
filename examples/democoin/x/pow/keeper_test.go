@@ -3,11 +3,11 @@ package pow
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	dbm "github.com/tepleton/tepleton/libs/db"
-	"github.com/tepleton/tepleton/libs/log"
+	wrsp "github.com/tepleton/wrsp/types"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/tepleton-sdk/store"
 	sdk "github.com/tepleton/tepleton-sdk/types"
@@ -33,25 +33,25 @@ func TestPowKeeperGetSet(t *testing.T) {
 	auth.RegisterBaseAccount(cdc)
 
 	am := auth.NewAccountMapper(cdc, capKey, &auth.BaseAccount{})
-	ctx := sdk.NewContext(ms, wrsp.Header{}, false, log.NewNopLogger())
+	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil, log.NewNopLogger())
 	config := NewConfig("pow", int64(1))
 	ck := bank.NewKeeper(am)
 	keeper := NewKeeper(capKey, config, ck, DefaultCodespace)
 
 	err := InitGenesis(ctx, keeper, Genesis{uint64(1), uint64(0)})
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	genesis := WriteGenesis(ctx, keeper)
-	require.Nil(t, err)
-	require.Equal(t, genesis, Genesis{uint64(1), uint64(0)})
+	assert.Nil(t, err)
+	assert.Equal(t, genesis, Genesis{uint64(1), uint64(0)})
 
 	res, err := keeper.GetLastDifficulty(ctx)
-	require.Nil(t, err)
-	require.Equal(t, res, uint64(1))
+	assert.Nil(t, err)
+	assert.Equal(t, res, uint64(1))
 
 	keeper.SetLastDifficulty(ctx, 2)
 
 	res, err = keeper.GetLastDifficulty(ctx)
-	require.Nil(t, err)
-	require.Equal(t, res, uint64(2))
+	assert.Nil(t, err)
+	assert.Equal(t, res, uint64(2))
 }

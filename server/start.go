@@ -5,13 +5,13 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/tepleton/tepleton/wrsp/server"
+	"github.com/tepleton/wrsp/server"
 
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 	"github.com/tepleton/tepleton/node"
-	pvm "github.com/tepleton/tepleton/privval"
 	"github.com/tepleton/tepleton/proxy"
-	cmn "github.com/tepleton/tepleton/libs/common"
+	pvm "github.com/tepleton/tepleton/privval"
+	cmn "github.com/tepleton/tmlibs/common"
 )
 
 const (
@@ -31,14 +31,13 @@ func StartCmd(ctx *Context, appCreator AppCreator) *cobra.Command {
 				return startStandAlone(ctx, appCreator)
 			}
 			ctx.Logger.Info("Starting WRSP with Tendermint")
-			_, err := startInProcess(ctx, appCreator)
-			return err
+			return startInProcess(ctx, appCreator)
 		},
 	}
 
 	// basic flags for wrsp app
 	cmd.Flags().Bool(flagWithTendermint, true, "run wrsp app embedded in-process with tepleton")
-	cmd.Flags().String(flagAddress, "tcp://0.0.0.0:26658", "Listen address")
+	cmd.Flags().String(flagAddress, "tcp://0.0.0.0:46658", "Listen address")
 
 	// AddNodeFlags adds support for all tepleton-specific command line options
 	tcmd.AddNodeFlags(cmd)
@@ -56,31 +55,25 @@ func startStandAlone(ctx *Context, appCreator AppCreator) error {
 
 	svr, err := server.NewServer(addr, "socket", app)
 	if err != nil {
-		return errors.Errorf("error creating listener: %v\n", err)
+		return errors.Errorf("Error creating listener: %v\n", err)
 	}
 	svr.SetLogger(ctx.Logger.With("module", "wrsp-server"))
-	err = svr.Start()
-	if err != nil {
-		cmn.Exit(err.Error())
-	}
+	svr.Start()
 
 	// Wait forever
 	cmn.TrapSignal(func() {
 		// Cleanup
-		err = svr.Stop()
-		if err != nil {
-			cmn.Exit(err.Error())
-		}
+		svr.Stop()
 	})
 	return nil
 }
 
-func startInProcess(ctx *Context, appCreator AppCreator) (*node.Node, error) {
+func startInProcess(ctx *Context, appCreator AppCreator) error {
 	cfg := ctx.Config
 	home := cfg.RootDir
 	app, err := appCreator(home, ctx.Logger)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Create & start tepleton node
@@ -89,18 +82,17 @@ func startInProcess(ctx *Context, appCreator AppCreator) (*node.Node, error) {
 		proxy.NewLocalClientCreator(app),
 		node.DefaultGenesisDocProviderFunc(cfg),
 		node.DefaultDBProvider,
-		node.DefaultMetricsProvider,
 		ctx.Logger.With("module", "node"))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	err = n.Start()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Trap signal, run forever.
 	n.RunForever()
-	return n, nil
+	return nil
 }
