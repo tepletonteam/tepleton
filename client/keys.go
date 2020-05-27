@@ -2,7 +2,7 @@ package client
 
 import (
 	"github.com/tepleton/tepleton-sdk/crypto/keys"
-	dbm "github.com/tepleton/tmlibs/db"
+	dbm "github.com/tepleton/tepleton/libs/db"
 )
 
 // GetKeyBase initializes a keybase based on the given db.
