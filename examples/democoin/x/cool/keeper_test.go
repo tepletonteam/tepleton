@@ -3,10 +3,10 @@ package cool
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	dbm "github.com/tepleton/tepleton/libs/db"
+	wrsp "github.com/tepleton/wrsp/types"
+	dbm "github.com/tepleton/tmlibs/db"
 
 	"github.com/tepleton/tepleton-sdk/store"
 	sdk "github.com/tepleton/tepleton-sdk/types"
@@ -30,21 +30,21 @@ func TestCoolKeeper(t *testing.T) {
 	auth.RegisterBaseAccount(cdc)
 
 	am := auth.NewAccountMapper(cdc, capKey, &auth.BaseAccount{})
-	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil)
+	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil, nil)
 	ck := bank.NewKeeper(am)
 	keeper := NewKeeper(capKey, ck, DefaultCodespace)
 
 	err := InitGenesis(ctx, keeper, Genesis{"icy"})
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	genesis := WriteGenesis(ctx, keeper)
-	require.Nil(t, err)
-	require.Equal(t, genesis, Genesis{"icy"})
+	assert.Nil(t, err)
+	assert.Equal(t, genesis, Genesis{"icy"})
 
 	res := keeper.GetTrend(ctx)
-	require.Equal(t, res, "icy")
+	assert.Equal(t, res, "icy")
 
 	keeper.setTrend(ctx, "fiery")
 	res = keeper.GetTrend(ctx)
-	require.Equal(t, res, "fiery")
+	assert.Equal(t, res, "fiery")
 }

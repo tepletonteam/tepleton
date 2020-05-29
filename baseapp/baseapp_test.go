@@ -9,17 +9,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	"github.com/tepleton/tepleton/crypto"
+	wrsp "github.com/tepleton/wrsp/types"
+	crypto "github.com/tepleton/go-crypto"
 	tmtypes "github.com/tepleton/tepleton/types"
-	cmn "github.com/tepleton/tepleton/libs/common"
-	dbm "github.com/tepleton/tepleton/libs/db"
-	"github.com/tepleton/tepleton/libs/log"
+	cmn "github.com/tepleton/tmlibs/common"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
-	"github.com/tepleton/tepleton-sdk/x/bank"
 )
 
 func defaultLogger() log.Logger {
@@ -30,33 +29,33 @@ func newBaseApp(name string) *BaseApp {
 	logger := defaultLogger()
 	db := dbm.NewMemDB()
 	codec := wire.NewCodec()
-	auth.RegisterBaseAccount(codec)
+	wire.RegisterCrypto(codec)
 	return NewBaseApp(name, codec, logger, db)
 }
 
 func TestMountStores(t *testing.T) {
 	name := t.Name()
 	app := newBaseApp(name)
-	require.Equal(t, name, app.Name())
+	assert.Equal(t, name, app.Name())
 
 	// make some cap keys
 	capKey1 := sdk.NewKVStoreKey("key1")
 	capKey2 := sdk.NewKVStoreKey("key2")
 
 	// no stores are mounted
-	require.Panics(t, func() { app.LoadLatestVersion(capKey1) })
+	assert.Panics(t, func() { app.LoadLatestVersion(capKey1) })
 
 	app.MountStoresIAVL(capKey1, capKey2)
 
 	// stores are mounted
 	err := app.LoadLatestVersion(capKey1)
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	// check both stores
 	store1 := app.cms.GetCommitKVStore(capKey1)
-	require.NotNil(t, store1)
+	assert.NotNil(t, store1)
 	store2 := app.cms.GetCommitKVStore(capKey2)
-	require.NotNil(t, store2)
+	assert.NotNil(t, store2)
 }
 
 // Test that we can make commits and then reload old versions.
@@ -71,14 +70,14 @@ func TestLoadVersion(t *testing.T) {
 	capKey := sdk.NewKVStoreKey("main")
 	app.MountStoresIAVL(capKey)
 	err := app.LoadLatestVersion(capKey) // needed to make stores non-nil
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	emptyCommitID := sdk.CommitID{}
 
 	lastHeight := app.LastBlockHeight()
 	lastID := app.LastCommitID()
-	require.Equal(t, int64(0), lastHeight)
-	require.Equal(t, emptyCommitID, lastID)
+	assert.Equal(t, int64(0), lastHeight)
+	assert.Equal(t, emptyCommitID, lastID)
 
 	// execute some blocks
 	header := wrsp.Header{Height: 1}
@@ -94,7 +93,7 @@ func TestLoadVersion(t *testing.T) {
 	app = NewBaseApp(name, nil, logger, db)
 	app.MountStoresIAVL(capKey)
 	err = app.LoadLatestVersion(capKey)
-	require.Nil(t, err)
+	assert.Nil(t, err)
 	testLoadVersionHelper(t, app, int64(2), commitID2)
 
 	// reload with LoadVersion, see if you can commit the same block and get
@@ -102,7 +101,7 @@ func TestLoadVersion(t *testing.T) {
 	app = NewBaseApp(name, nil, logger, db)
 	app.MountStoresIAVL(capKey)
 	err = app.LoadVersion(1, capKey)
-	require.Nil(t, err)
+	assert.Nil(t, err)
 	testLoadVersionHelper(t, app, int64(1), commitID1)
 	app.BeginBlock(wrsp.RequestBeginBlock{Header: header})
 	app.Commit()
@@ -112,8 +111,8 @@ func TestLoadVersion(t *testing.T) {
 func testLoadVersionHelper(t *testing.T, app *BaseApp, expectedHeight int64, expectedID sdk.CommitID) {
 	lastHeight := app.LastBlockHeight()
 	lastID := app.LastCommitID()
-	require.Equal(t, expectedHeight, lastHeight)
-	require.Equal(t, expectedID, lastID)
+	assert.Equal(t, expectedHeight, lastHeight)
+	assert.Equal(t, expectedID, lastID)
 }
 
 // Test that the app hash is static
@@ -125,7 +124,7 @@ func testLoadVersionHelper(t *testing.T, app *BaseApp, expectedHeight int64, exp
 	capKey := sdk.NewKVStoreKey("main")
 	app.MountStoresIAVL(capKey)
 	err := app.LoadLatestVersion(capKey) // needed to make stores non-nil
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	// execute some blocks
 	header := wrsp.Header{Height: 1}
@@ -138,7 +137,7 @@ func testLoadVersionHelper(t *testing.T, app *BaseApp, expectedHeight int64, exp
 	res = app.Commit()
 	commitID2 := sdk.CommitID{2, res.Data}
 
-	require.Equal(t, commitID1.Hash, commitID2.Hash)
+	assert.Equal(t, commitID1.Hash, commitID2.Hash)
 }
 */
 
@@ -160,7 +159,7 @@ func TestInfo(t *testing.T) {
 	assert.Equal(t, "", res.Version)
 	assert.Equal(t, t.Name(), res.GetData())
 	assert.Equal(t, int64(0), res.LastBlockHeight)
-	require.Equal(t, []uint8(nil), res.LastBlockAppHash)
+	assert.Equal(t, []uint8(nil), res.LastBlockAppHash)
 
 	// ----- test a proper response -------
 	// TODO
@@ -179,7 +178,7 @@ func TestInitChainer(t *testing.T) {
 	capKey2 := sdk.NewKVStoreKey("key2")
 	app.MountStoresIAVL(capKey, capKey2)
 	err := app.LoadLatestVersion(capKey) // needed to make stores non-nil
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	key, value := []byte("hello"), []byte("goodbye")
 
@@ -198,39 +197,31 @@ func TestInitChainer(t *testing.T) {
 	// initChainer is nil - nothing happens
 	app.InitChain(wrsp.RequestInitChain{})
 	res := app.Query(query)
-	require.Equal(t, 0, len(res.Value))
+	assert.Equal(t, 0, len(res.Value))
 
 	// set initChainer and try again - should see the value
 	app.SetInitChainer(initChainer)
-	app.InitChain(wrsp.RequestInitChain{AppStateBytes: []byte("{}"), ChainId: "test-chain-id"}) // must have valid JSON genesis file, even if empty
-
-	// assert that chainID is set correctly in InitChain
-	chainID := app.deliverState.ctx.ChainID()
-	require.Equal(t, "test-chain-id", chainID, "ChainID in deliverState not set correctly in InitChain")
-
-	chainID = app.checkState.ctx.ChainID()
-	require.Equal(t, "test-chain-id", chainID, "ChainID in checkState not set correctly in InitChain")
-
+	app.InitChain(wrsp.RequestInitChain{AppStateBytes: []byte("{}")}) // must have valid JSON genesis file, even if empty
 	app.Commit()
 	res = app.Query(query)
-	require.Equal(t, value, res.Value)
+	assert.Equal(t, value, res.Value)
 
 	// reload app
 	app = NewBaseApp(name, nil, logger, db)
 	app.MountStoresIAVL(capKey, capKey2)
 	err = app.LoadLatestVersion(capKey) // needed to make stores non-nil
-	require.Nil(t, err)
+	assert.Nil(t, err)
 	app.SetInitChainer(initChainer)
 
 	// ensure we can still query after reloading
 	res = app.Query(query)
-	require.Equal(t, value, res.Value)
+	assert.Equal(t, value, res.Value)
 
 	// commit and ensure we can still query
 	app.BeginBlock(wrsp.RequestBeginBlock{})
 	app.Commit()
 	res = app.Query(query)
-	require.Equal(t, value, res.Value)
+	assert.Equal(t, value, res.Value)
 }
 
 func getStateCheckingHandler(t *testing.T, capKey *sdk.KVStoreKey, txPerHeight int, checkHeader bool) func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
@@ -243,7 +234,7 @@ func getStateCheckingHandler(t *testing.T, capKey *sdk.KVStoreKey, txPerHeight i
 			// check previous value in store
 			counterBytes := []byte{byte(counter - 1)}
 			prevBytes := store.Get(counterBytes)
-			require.Equal(t, counterBytes, prevBytes)
+			assert.Equal(t, counterBytes, prevBytes)
 		}
 
 		// set the current counter in the store
@@ -255,7 +246,7 @@ func getStateCheckingHandler(t *testing.T, capKey *sdk.KVStoreKey, txPerHeight i
 		if checkHeader {
 			thisHeader := ctx.BlockHeader()
 			height := int64((counter / txPerHeight) + 1)
-			require.Equal(t, height, thisHeader.Height)
+			assert.Equal(t, height, thisHeader.Height)
 		}
 
 		counter++
@@ -271,8 +262,7 @@ type testTx struct {
 const msgType2 = "testTx"
 
 func (tx testTx) Type() string                       { return msgType2 }
-func (tx testTx) GetMemo() string                    { return "" }
-func (tx testTx) GetMsgs() []sdk.Msg                 { return []sdk.Msg{tx} }
+func (tx testTx) GetMsg() sdk.Msg                    { return tx }
 func (tx testTx) GetSignBytes() []byte               { return nil }
 func (tx testTx) GetSigners() []sdk.Address          { return nil }
 func (tx testTx) GetSignatures() []auth.StdSignature { return nil }
@@ -293,7 +283,7 @@ func TestCheckTx(t *testing.T) {
 	capKey := sdk.NewKVStoreKey("main")
 	app.MountStoresIAVL(capKey)
 	err := app.LoadLatestVersion(capKey) // needed to make stores non-nil
-	require.Nil(t, err)
+	assert.Nil(t, err)
 	app.SetAnteHandler(func(ctx sdk.Context, tx sdk.Tx) (newCtx sdk.Context, res sdk.Result, abort bool) { return })
 
 	txPerHeight := 3
@@ -317,7 +307,7 @@ func TestCheckTx(t *testing.T) {
 	checkStateStore := app.checkState.ctx.KVStore(capKey)
 	for i := 0; i < txPerHeight; i++ {
 		storedValue := checkStateStore.Get([]byte{byte(i)})
-		require.Nil(t, storedValue)
+		assert.Nil(t, storedValue)
 	}
 }
 
@@ -330,7 +320,7 @@ func TestDeliverTx(t *testing.T) {
 	capKey := sdk.NewKVStoreKey("main")
 	app.MountStoresIAVL(capKey)
 	err := app.LoadLatestVersion(capKey) // needed to make stores non-nil
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	txPerHeight := 2
 	app.SetAnteHandler(func(ctx sdk.Context, tx sdk.Tx) (newCtx sdk.Context, res sdk.Result, abort bool) { return })
@@ -359,7 +349,7 @@ func TestSimulateTx(t *testing.T) {
 	capKey := sdk.NewKVStoreKey("main")
 	app.MountStoresIAVL(capKey)
 	err := app.LoadLatestVersion(capKey) // needed to make stores non-nil
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	counter := 0
 	app.SetAnteHandler(func(ctx sdk.Context, tx sdk.Tx) (newCtx sdk.Context, res sdk.Result, abort bool) { return })
@@ -372,7 +362,7 @@ func TestSimulateTx(t *testing.T) {
 		// check we can see the current header
 		thisHeader := ctx.BlockHeader()
 		height := int64(counter)
-		require.Equal(t, height, thisHeader.Height)
+		assert.Equal(t, height, thisHeader.Height)
 		counter++
 		return sdk.Result{}
 	})
@@ -386,18 +376,16 @@ func TestSimulateTx(t *testing.T) {
 		return ttx, nil
 	})
 
-	app.InitChain(wrsp.RequestInitChain{})
-
 	nBlocks := 3
 	for blockN := 0; blockN < nBlocks; blockN++ {
 		// block1
 		header.Height = int64(blockN + 1)
 		app.BeginBlock(wrsp.RequestBeginBlock{Header: header})
 		result := app.Simulate(tx)
-		require.Equal(t, result.Code, sdk.WRSPCodeOK, result.Log)
+		require.Equal(t, result.Code, sdk.WRSPCodeOK)
 		require.Equal(t, int64(80), result.GasUsed)
 		counter--
-		encoded, err := app.cdc.MarshalJSON(tx)
+		encoded, err := json.Marshal(tx)
 		require.Nil(t, err)
 		query := wrsp.RequestQuery{
 			Path: "/app/simulate",
@@ -407,8 +395,8 @@ func TestSimulateTx(t *testing.T) {
 		require.Equal(t, queryResult.Code, uint32(sdk.WRSPCodeOK))
 		var res sdk.Result
 		app.cdc.MustUnmarshalBinary(queryResult.Value, &res)
-		require.Equal(t, sdk.WRSPCodeOK, res.Code, res.Log)
-		require.Equal(t, int64(160), res.GasUsed, res.Log)
+		require.Equal(t, sdk.WRSPCodeOK, res.Code)
+		require.Equal(t, int64(160), res.GasUsed)
 		app.EndBlock(wrsp.RequestEndBlock{})
 		app.Commit()
 	}
@@ -421,18 +409,18 @@ func TestRunInvalidTransaction(t *testing.T) {
 	capKey := sdk.NewKVStoreKey("main")
 	app.MountStoresIAVL(capKey)
 	err := app.LoadLatestVersion(capKey) // needed to make stores non-nil
-	require.Nil(t, err)
+	assert.Nil(t, err)
 	app.SetAnteHandler(func(ctx sdk.Context, tx sdk.Tx) (newCtx sdk.Context, res sdk.Result, abort bool) { return })
 	app.Router().AddRoute(msgType2, func(ctx sdk.Context, msg sdk.Msg) (res sdk.Result) { return })
 	app.BeginBlock(wrsp.RequestBeginBlock{})
 	// Transaction where validate fails
 	invalidTx := testTx{-1}
 	err1 := app.Deliver(invalidTx)
-	require.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeTxDecode), err1.Code)
+	assert.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeTxDecode), err1.Code)
 	// Transaction with no known route
 	unknownRouteTx := testUpdatePowerTx{}
 	err2 := app.Deliver(unknownRouteTx)
-	require.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeUnknownRequest), err2.Code)
+	assert.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeUnknownRequest), err2.Code)
 }
 
 // Test that transactions exceeding gas limits fail
@@ -445,7 +433,7 @@ func TestTxGasLimits(t *testing.T) {
 	capKey := sdk.NewKVStoreKey("main")
 	app.MountStoresIAVL(capKey)
 	err := app.LoadLatestVersion(capKey) // needed to make stores non-nil
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	app.SetAnteHandler(func(ctx sdk.Context, tx sdk.Tx) (newCtx sdk.Context, res sdk.Result, abort bool) {
 		newCtx = ctx.WithGasMeter(sdk.NewGasMeter(0))
@@ -461,7 +449,7 @@ func TestTxGasLimits(t *testing.T) {
 
 	app.BeginBlock(wrsp.RequestBeginBlock{Header: header})
 	res := app.Deliver(tx)
-	require.Equal(t, res.Code, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeOutOfGas), "Expected transaction to run out of gas")
+	assert.Equal(t, res.Code, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeOutOfGas), "Expected transaction to run out of gas")
 	app.EndBlock(wrsp.RequestEndBlock{})
 	app.Commit()
 }
@@ -474,7 +462,7 @@ func TestQuery(t *testing.T) {
 	capKey := sdk.NewKVStoreKey("main")
 	app.MountStoresIAVL(capKey)
 	err := app.LoadLatestVersion(capKey) // needed to make stores non-nil
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	key, value := []byte("hello"), []byte("goodbye")
 
@@ -492,25 +480,25 @@ func TestQuery(t *testing.T) {
 
 	// query is empty before we do anything
 	res := app.Query(query)
-	require.Equal(t, 0, len(res.Value))
+	assert.Equal(t, 0, len(res.Value))
 
 	tx := testUpdatePowerTx{} // doesn't matter
 
 	// query is still empty after a CheckTx
 	app.Check(tx)
 	res = app.Query(query)
-	require.Equal(t, 0, len(res.Value))
+	assert.Equal(t, 0, len(res.Value))
 
 	// query is still empty after a DeliverTx before we commit
 	app.BeginBlock(wrsp.RequestBeginBlock{})
 	app.Deliver(tx)
 	res = app.Query(query)
-	require.Equal(t, 0, len(res.Value))
+	assert.Equal(t, 0, len(res.Value))
 
 	// query returns correct value after Commit
 	app.Commit()
 	res = app.Query(query)
-	require.Equal(t, value, res.Value)
+	assert.Equal(t, value, res.Value)
 }
 
 // Test p2p filter queries
@@ -521,7 +509,7 @@ func TestP2PQuery(t *testing.T) {
 	capKey := sdk.NewKVStoreKey("main")
 	app.MountStoresIAVL(capKey)
 	err := app.LoadLatestVersion(capKey) // needed to make stores non-nil
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	app.SetAddrPeerFilter(func(addrport string) wrsp.ResponseQuery {
 		require.Equal(t, "1.1.1.1:8000", addrport)
@@ -558,8 +546,7 @@ type testUpdatePowerTx struct {
 const msgType = "testUpdatePowerTx"
 
 func (tx testUpdatePowerTx) Type() string                       { return msgType }
-func (tx testUpdatePowerTx) GetMemo() string                    { return "" }
-func (tx testUpdatePowerTx) GetMsgs() []sdk.Msg                 { return []sdk.Msg{tx} }
+func (tx testUpdatePowerTx) GetMsg() sdk.Msg                    { return tx }
 func (tx testUpdatePowerTx) GetSignBytes() []byte               { return nil }
 func (tx testUpdatePowerTx) ValidateBasic() sdk.Error           { return nil }
 func (tx testUpdatePowerTx) GetSigners() []sdk.Address          { return nil }
@@ -585,8 +572,8 @@ func TestValidatorChange(t *testing.T) {
 
 	// Load latest state, which should be empty.
 	err := app.LoadLatestVersion(capKey)
-	require.Nil(t, err)
-	require.Equal(t, app.LastBlockHeight(), int64(0))
+	assert.Nil(t, err)
+	assert.Equal(t, app.LastBlockHeight(), int64(0))
 
 	// Create the validators
 	var numVals = 3
@@ -611,7 +598,7 @@ func TestValidatorChange(t *testing.T) {
 		}
 		txBytes := toJSON(tx)
 		res := app.DeliverTx(txBytes)
-		require.True(t, res.IsOK(), "%#v\nWRSP log: %s", res, res.Log)
+		assert.True(t, res.IsOK(), "%#v\nWRSP log: %s", res, res.Log)
 	}
 
 	// Simulate the end of a block.
@@ -624,18 +611,18 @@ func TestValidatorChange(t *testing.T) {
 
 		pubkey, err := tmtypes.PB2TM.PubKey(val.PubKey)
 		// Sanity
-		require.Nil(t, err)
+		assert.Nil(t, err)
 
 		// Find matching update and splice it out.
 		for j := 0; j < len(valUpdates); j++ {
 			valUpdate := valUpdates[j]
 
 			updatePubkey, err := tmtypes.PB2TM.PubKey(valUpdate.PubKey)
-			require.Nil(t, err)
+			assert.Nil(t, err)
 
 			// Matched.
 			if updatePubkey.Equals(pubkey) {
-				require.Equal(t, valUpdate.Power, val.Power+1)
+				assert.Equal(t, valUpdate.Power, val.Power+1)
 				if j < len(valUpdates)-1 {
 					// Splice it out.
 					valUpdates = append(valUpdates[:j], valUpdates[j+1:]...)
@@ -646,324 +633,7 @@ func TestValidatorChange(t *testing.T) {
 			// Not matched.
 		}
 	}
-	require.Equal(t, len(valUpdates), 0, "Some validator updates were unexpected")
-}
-
-//----------------------------------------
-
-// Use burn and send msg types to test multiple msgs in one tx
-type testBurnMsg struct {
-	Addr   sdk.Address
-	Amount sdk.Coins
-}
-
-const msgType3 = "burn"
-
-func (msg testBurnMsg) Type() string { return msgType3 }
-func (msg testBurnMsg) GetSignBytes() []byte {
-	bz, _ := json.Marshal(msg)
-	return bz
-}
-func (msg testBurnMsg) ValidateBasic() sdk.Error {
-	if msg.Addr == nil {
-		return sdk.ErrInvalidAddress("Cannot use nil as Address")
-	}
-	return nil
-}
-func (msg testBurnMsg) GetSigners() []sdk.Address {
-	return []sdk.Address{msg.Addr}
-}
-
-type testSendMsg struct {
-	Sender   sdk.Address
-	Receiver sdk.Address
-	Amount   sdk.Coins
-}
-
-const msgType4 = "send"
-
-func (msg testSendMsg) Type() string { return msgType4 }
-func (msg testSendMsg) GetSignBytes() []byte {
-	bz, _ := json.Marshal(msg)
-	return bz
-}
-func (msg testSendMsg) ValidateBasic() sdk.Error {
-	if msg.Sender == nil || msg.Receiver == nil {
-		return sdk.ErrInvalidAddress("Cannot use nil as Address")
-	}
-	return nil
-}
-func (msg testSendMsg) GetSigners() []sdk.Address {
-	return []sdk.Address{msg.Sender}
-}
-
-// Simple Handlers for burn and send
-
-func newHandleBurn(keeper bank.Keeper) sdk.Handler {
-	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
-		burnMsg := msg.(testBurnMsg)
-		_, _, err := keeper.SubtractCoins(ctx, burnMsg.Addr, burnMsg.Amount)
-		if err != nil {
-			return err.Result()
-		}
-		return sdk.Result{}
-	}
-}
-
-func newHandleSpend(keeper bank.Keeper) sdk.Handler {
-	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
-		spendMsg := msg.(testSendMsg)
-		_, _, err := keeper.SubtractCoins(ctx, spendMsg.Sender, spendMsg.Amount)
-		if err != nil {
-			return err.Result()
-		}
-		_, _, err = keeper.AddCoins(ctx, spendMsg.Receiver, spendMsg.Amount)
-		if err != nil {
-			return err.Result()
-		}
-		return sdk.Result{}
-	}
-}
-
-// generate a signed transaction
-func GenTx(chainID string, msgs []sdk.Msg, accnums []int64, seq []int64, priv ...crypto.PrivKey) auth.StdTx {
-	// make the transaction free
-	fee := auth.StdFee{
-		sdk.Coins{{"foocoin", sdk.NewInt(0)}},
-		100000,
-	}
-
-	sigs := make([]auth.StdSignature, len(priv))
-	for i, p := range priv {
-		sig, err := p.Sign(auth.StdSignBytes(chainID, accnums[i], seq[i], fee, msgs, ""))
-		// TODO: replace with proper error handling:
-		if err != nil {
-			panic(err)
-		}
-		sigs[i] = auth.StdSignature{
-			PubKey:        p.PubKey(),
-			Signature:     sig,
-			AccountNumber: accnums[i],
-			Sequence:      seq[i],
-		}
-	}
-	return auth.NewStdTx(msgs, fee, sigs, "")
-}
-
-// spin up simple app for testing
-type testApp struct {
-	*BaseApp
-	accountMapper auth.AccountMapper
-	accountKeeper bank.Keeper
-}
-
-func newTestApp(name string) testApp {
-	return testApp{
-		BaseApp: newBaseApp(name),
-	}
-}
-
-func MakeCodec() *wire.Codec {
-	cdc := wire.NewCodec()
-	cdc.RegisterInterface((*sdk.Msg)(nil), nil)
-	crypto.RegisterAmino(cdc)
-	cdc.RegisterInterface((*auth.Account)(nil), nil)
-	cdc.RegisterConcrete(&auth.BaseAccount{}, "tepleton-sdk/BaseAccount", nil)
-	return cdc
-}
-
-// tests multiple msgs of same type from same address in single tx
-func TestMultipleBurn(t *testing.T) {
-	// Create app.
-	app := newTestApp(t.Name())
-	capKey := sdk.NewKVStoreKey("key")
-	app.MountStoresIAVL(capKey)
-	app.SetTxDecoder(func(txBytes []byte) (sdk.Tx, sdk.Error) {
-		var tx auth.StdTx
-		fromJSON(txBytes, &tx)
-		return tx, nil
-	})
-
-	err := app.LoadLatestVersion(capKey)
-	if err != nil {
-		panic(err)
-	}
-
-	app.accountMapper = auth.NewAccountMapper(app.cdc, capKey, &auth.BaseAccount{})
-	app.accountKeeper = bank.NewKeeper(app.accountMapper)
-
-	app.SetAnteHandler(auth.NewAnteHandler(app.accountMapper, auth.FeeCollectionKeeper{}))
-
-	app.Router().
-		AddRoute("burn", newHandleBurn(app.accountKeeper)).
-		AddRoute("send", newHandleSpend(app.accountKeeper))
-
-	app.InitChain(wrsp.RequestInitChain{})
-	app.BeginBlock(wrsp.RequestBeginBlock{})
-
-	// Set chain-id
-	app.deliverState.ctx = app.deliverState.ctx.WithChainID(t.Name())
-
-	priv := makePrivKey("my secret")
-	addr := priv.PubKey().Address()
-
-	app.accountKeeper.AddCoins(app.deliverState.ctx, addr, sdk.Coins{{"foocoin", sdk.NewInt(100)}})
-	require.Equal(t, sdk.Coins{{"foocoin", sdk.NewInt(100)}}, app.accountKeeper.GetCoins(app.deliverState.ctx, addr), "Balance did not update")
-
-	msg := testBurnMsg{addr, sdk.Coins{{"foocoin", sdk.NewInt(50)}}}
-	tx := GenTx(t.Name(), []sdk.Msg{msg, msg}, []int64{0}, []int64{0}, priv)
-
-	res := app.Deliver(tx)
-
-	require.Equal(t, true, res.IsOK(), res.Log)
-	require.Equal(t, sdk.Coins(nil), app.accountKeeper.GetCoins(app.deliverState.ctx, addr), "Double burn did not work")
-}
-
-// tests multiples msgs of same type from different addresses in single tx
-func TestBurnMultipleOwners(t *testing.T) {
-	// Create app.
-	app := newTestApp(t.Name())
-	capKey := sdk.NewKVStoreKey("key")
-	app.MountStoresIAVL(capKey)
-	app.SetTxDecoder(func(txBytes []byte) (sdk.Tx, sdk.Error) {
-		var tx auth.StdTx
-		fromJSON(txBytes, &tx)
-		return tx, nil
-	})
-
-	err := app.LoadLatestVersion(capKey)
-	if err != nil {
-		panic(err)
-	}
-
-	app.accountMapper = auth.NewAccountMapper(app.cdc, capKey, &auth.BaseAccount{})
-	app.accountKeeper = bank.NewKeeper(app.accountMapper)
-
-	app.SetAnteHandler(auth.NewAnteHandler(app.accountMapper, auth.FeeCollectionKeeper{}))
-
-	app.Router().
-		AddRoute("burn", newHandleBurn(app.accountKeeper)).
-		AddRoute("send", newHandleSpend(app.accountKeeper))
-
-	app.InitChain(wrsp.RequestInitChain{})
-	app.BeginBlock(wrsp.RequestBeginBlock{})
-
-	// Set chain-id
-	app.deliverState.ctx = app.deliverState.ctx.WithChainID(t.Name())
-
-	priv1 := makePrivKey("my secret 1")
-	addr1 := priv1.PubKey().Address()
-
-	priv2 := makePrivKey("my secret 2")
-	addr2 := priv2.PubKey().Address()
-
-	// fund accounts
-	app.accountKeeper.AddCoins(app.deliverState.ctx, addr1, sdk.Coins{{"foocoin", sdk.NewInt(100)}})
-	app.accountKeeper.AddCoins(app.deliverState.ctx, addr2, sdk.Coins{{"foocoin", sdk.NewInt(100)}})
-
-	require.Equal(t, sdk.Coins{{"foocoin", sdk.NewInt(100)}}, app.accountKeeper.GetCoins(app.deliverState.ctx, addr1), "Balance1 did not update")
-	require.Equal(t, sdk.Coins{{"foocoin", sdk.NewInt(100)}}, app.accountKeeper.GetCoins(app.deliverState.ctx, addr2), "Balance2 did not update")
-
-	msg1 := testBurnMsg{addr1, sdk.Coins{{"foocoin", sdk.NewInt(100)}}}
-	msg2 := testBurnMsg{addr2, sdk.Coins{{"foocoin", sdk.NewInt(100)}}}
-
-	// test wrong signers: Address 1 signs both messages
-	tx := GenTx(t.Name(), []sdk.Msg{msg1, msg2}, []int64{0, 0}, []int64{0, 0}, priv1, priv1)
-
-	res := app.Deliver(tx)
-	require.Equal(t, sdk.WRSPCodeType(0x10003), res.Code, "Wrong signatures passed")
-
-	require.Equal(t, sdk.Coins{{"foocoin", sdk.NewInt(100)}}, app.accountKeeper.GetCoins(app.deliverState.ctx, addr1), "Balance1 changed after invalid sig")
-	require.Equal(t, sdk.Coins{{"foocoin", sdk.NewInt(100)}}, app.accountKeeper.GetCoins(app.deliverState.ctx, addr2), "Balance2 changed after invalid sig")
-
-	// test valid tx
-	tx = GenTx(t.Name(), []sdk.Msg{msg1, msg2}, []int64{0, 1}, []int64{1, 0}, priv1, priv2)
-
-	res = app.Deliver(tx)
-	require.Equal(t, true, res.IsOK(), res.Log)
-
-	require.Equal(t, sdk.Coins(nil), app.accountKeeper.GetCoins(app.deliverState.ctx, addr1), "Balance1 did not change after valid tx")
-	require.Equal(t, sdk.Coins(nil), app.accountKeeper.GetCoins(app.deliverState.ctx, addr2), "Balance2 did not change after valid tx")
-}
-
-// tests different msg types in single tx with different addresses
-func TestSendBurn(t *testing.T) {
-	// Create app.
-	app := newTestApp(t.Name())
-	capKey := sdk.NewKVStoreKey("key")
-	app.MountStoresIAVL(capKey)
-	app.SetTxDecoder(func(txBytes []byte) (sdk.Tx, sdk.Error) {
-		var tx auth.StdTx
-		fromJSON(txBytes, &tx)
-		return tx, nil
-	})
-
-	err := app.LoadLatestVersion(capKey)
-	if err != nil {
-		panic(err)
-	}
-
-	app.accountMapper = auth.NewAccountMapper(app.cdc, capKey, &auth.BaseAccount{})
-	app.accountKeeper = bank.NewKeeper(app.accountMapper)
-
-	app.SetAnteHandler(auth.NewAnteHandler(app.accountMapper, auth.FeeCollectionKeeper{}))
-
-	app.Router().
-		AddRoute("burn", newHandleBurn(app.accountKeeper)).
-		AddRoute("send", newHandleSpend(app.accountKeeper))
-
-	app.InitChain(wrsp.RequestInitChain{})
-	app.BeginBlock(wrsp.RequestBeginBlock{})
-
-	// Set chain-id
-	app.deliverState.ctx = app.deliverState.ctx.WithChainID(t.Name())
-
-	priv1 := makePrivKey("my secret 1")
-	addr1 := priv1.PubKey().Address()
-
-	priv2 := makePrivKey("my secret 2")
-	addr2 := priv2.PubKey().Address()
-
-	// fund accounts
-	app.accountKeeper.AddCoins(app.deliverState.ctx, addr1, sdk.Coins{{"foocoin", sdk.NewInt(100)}})
-	acc := app.accountMapper.NewAccountWithAddress(app.deliverState.ctx, addr2)
-	app.accountMapper.SetAccount(app.deliverState.ctx, acc)
-
-	require.Equal(t, sdk.Coins{{"foocoin", sdk.NewInt(100)}}, app.accountKeeper.GetCoins(app.deliverState.ctx, addr1), "Balance1 did not update")
-
-	sendMsg := testSendMsg{addr1, addr2, sdk.Coins{{"foocoin", sdk.NewInt(50)}}}
-
-	msg1 := testBurnMsg{addr1, sdk.Coins{{"foocoin", sdk.NewInt(50)}}}
-	msg2 := testBurnMsg{addr2, sdk.Coins{{"foocoin", sdk.NewInt(50)}}}
-
-	// send then burn
-	tx := GenTx(t.Name(), []sdk.Msg{sendMsg, msg2, msg1}, []int64{0, 1}, []int64{0, 0}, priv1, priv2)
-
-	res := app.Deliver(tx)
-	require.Equal(t, true, res.IsOK(), res.Log)
-
-	require.Equal(t, sdk.Coins(nil), app.accountKeeper.GetCoins(app.deliverState.ctx, addr1), "Balance1 did not change after valid tx")
-	require.Equal(t, sdk.Coins(nil), app.accountKeeper.GetCoins(app.deliverState.ctx, addr2), "Balance2 did not change after valid tx")
-
-	// Check that state is only updated if all msgs in tx pass.
-	app.accountKeeper.AddCoins(app.deliverState.ctx, addr1, sdk.Coins{{"foocoin", sdk.NewInt(50)}})
-
-	// burn then send
-	tx = GenTx(t.Name(), []sdk.Msg{msg1, sendMsg}, []int64{0}, []int64{1}, priv1)
-
-	res = app.Deliver(tx)
-
-	// Double check that state is correct after Commit.
-	app.EndBlock(wrsp.RequestEndBlock{})
-	app.Commit()
-
-	app.BeginBlock(wrsp.RequestBeginBlock{})
-	app.deliverState.ctx = app.deliverState.ctx.WithChainID(t.Name())
-
-	require.Equal(t, sdk.WRSPCodeType(0x1000a), res.Code, "Allowed tx to pass with insufficient funds")
-
-	require.Equal(t, sdk.Coins{{"foocoin", sdk.NewInt(50)}}, app.accountKeeper.GetCoins(app.deliverState.ctx, addr1), "Allowed valid msg to pass in invalid tx")
-	require.Equal(t, sdk.Coins(nil), app.accountKeeper.GetCoins(app.deliverState.ctx, addr2), "Balance2 changed after invalid tx")
+	assert.Equal(t, len(valUpdates), 0, "Some validator updates were unexpected")
 }
 
 //----------------------------------------
@@ -999,15 +669,17 @@ func copyVal(val wrsp.Validator) wrsp.Validator {
 }
 
 func toJSON(o interface{}) []byte {
-	bz, err := wire.Cdc.MarshalJSON(o)
+	bz, err := json.Marshal(o)
 	if err != nil {
 		panic(err)
 	}
+	// fmt.Println(">> toJSON:", string(bz))
 	return bz
 }
 
 func fromJSON(bz []byte, ptr interface{}) {
-	err := wire.Cdc.UnmarshalJSON(bz, ptr)
+	// fmt.Println(">> fromJSON:", string(bz))
+	err := json.Unmarshal(bz, ptr)
 	if err != nil {
 		panic(err)
 	}

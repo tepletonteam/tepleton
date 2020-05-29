@@ -7,11 +7,11 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/tepleton/tepleton/wrsp/server"
-	"github.com/tepleton/tepleton/libs/cli"
-	cmn "github.com/tepleton/tepleton/libs/common"
-	dbm "github.com/tepleton/tepleton/libs/db"
-	"github.com/tepleton/tepleton/libs/log"
+	"github.com/tepleton/wrsp/server"
+	"github.com/tepleton/tmlibs/cli"
+	cmn "github.com/tepleton/tmlibs/common"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
 	bam "github.com/tepleton/tepleton-sdk/baseapp"
 	sdk "github.com/tepleton/tepleton-sdk/types"
@@ -50,23 +50,17 @@ func main() {
 	}
 
 	// Start the WRSP server
-	srv, err := server.NewServer("0.0.0.0:26658", "socket", baseApp)
+	srv, err := server.NewServer("0.0.0.0:46658", "socket", baseApp)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	err = srv.Start()
-	if err != nil {
-		cmn.Exit(err.Error())
-	}
+	srv.Start()
 
 	// Wait forever
 	cmn.TrapSignal(func() {
 		// Cleanup
-		err = srv.Stop()
-		if err != nil {
-			cmn.Exit(err.Error())
-		}
+		srv.Stop()
 	})
 	return
 }

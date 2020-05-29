@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"path/filepath"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	"github.com/tepleton/tepleton/crypto"
+	wrsp "github.com/tepleton/wrsp/types"
+	crypto "github.com/tepleton/go-crypto"
 	tmtypes "github.com/tepleton/tepleton/types"
-	dbm "github.com/tepleton/tepleton/libs/db"
-	"github.com/tepleton/tepleton/libs/log"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
 	bam "github.com/tepleton/tepleton-sdk/baseapp"
-	gc "github.com/tepleton/tepleton-sdk/server/config"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 )
@@ -125,7 +124,7 @@ func AppGenState(_ *wire.Codec, _ []json.RawMessage) (appState json.RawMessage, 
 }
 
 // Return a validator, not much else
-func AppGenTx(_ *wire.Codec, pk crypto.PubKey, genTxConfig gc.GenTx) (
+func AppGenTx(_ *wire.Codec, pk crypto.PubKey) (
 	appGenTx, cliPrint json.RawMessage, validator tmtypes.GenesisValidator, err error) {
 
 	validator = tmtypes.GenesisValidator{
