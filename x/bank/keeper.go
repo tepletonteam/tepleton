@@ -131,11 +131,7 @@ func setCoins(ctx sdk.Context, am auth.AccountMapper, addr sdk.Address, amt sdk.
 	if acc == nil {
 		acc = am.NewAccountWithAddress(ctx, addr)
 	}
-	err := acc.SetCoins(amt)
-	if err != nil {
-		// Handle w/ #870
-		panic(err)
-	}
+	acc.SetCoins(amt)
 	am.SetAccount(ctx, acc)
 	return nil
 }
