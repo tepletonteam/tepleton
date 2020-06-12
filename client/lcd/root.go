@@ -9,8 +9,8 @@ import (
 	"github.com/spf13/viper"
 	"github.com/tepleton/tepleton/libs/log"
 
-	tmserver "github.com/tepleton/tepleton/rpc/lib/server"
 	cmn "github.com/tepleton/tepleton/libs/common"
+	tmserver "github.com/tepleton/tepleton/rpc/lib/server"
 
 	client "github.com/tepleton/tepleton-sdk/client"
 	"github.com/tepleton/tepleton-sdk/client/context"
