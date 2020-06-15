@@ -3,17 +3,17 @@ package auth
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	"github.com/tepleton/tepleton/libs/log"
+	wrsp "github.com/tepleton/wrsp/types"
+	"github.com/tepleton/tmlibs/log"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
 
 func TestContextWithSigners(t *testing.T) {
 	ms, _, _ := setupMultiStore()
-	ctx := sdk.NewContext(ms, wrsp.Header{ChainID: "mychainid"}, false, log.NewNopLogger())
+	ctx := sdk.NewContext(ms, wrsp.Header{ChainID: "mychainid"}, false, nil, log.NewNopLogger())
 
 	_, _, addr1 := keyPubAddr()
 	_, _, addr2 := keyPubAddr()
@@ -24,17 +24,17 @@ func TestContextWithSigners(t *testing.T) {
 
 	// new ctx has no signers
 	signers := GetSigners(ctx)
-	require.Equal(t, 0, len(signers))
+	assert.Equal(t, 0, len(signers))
 
 	ctx2 := WithSigners(ctx, []Account{&acc1, &acc2})
 
 	// original context is unchanged
 	signers = GetSigners(ctx)
-	require.Equal(t, 0, len(signers))
+	assert.Equal(t, 0, len(signers))
 
 	// new context has signers
 	signers = GetSigners(ctx2)
-	require.Equal(t, 2, len(signers))
-	require.Equal(t, acc1, *(signers[0].(*BaseAccount)))
-	require.Equal(t, acc2, *(signers[1].(*BaseAccount)))
+	assert.Equal(t, 2, len(signers))
+	assert.Equal(t, acc1, *(signers[0].(*BaseAccount)))
+	assert.Equal(t, acc2, *(signers[1].(*BaseAccount)))
 }

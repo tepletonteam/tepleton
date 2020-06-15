@@ -8,11 +8,11 @@ import (
 	"path"
 
 	"github.com/spf13/cobra"
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	"github.com/tepleton/tepleton/crypto"
-	cmn "github.com/tepleton/tepleton/libs/common"
-	dbm "github.com/tepleton/tepleton/libs/db"
-	"github.com/tepleton/tepleton/libs/log"
+	wrsp "github.com/tepleton/wrsp/types"
+	crypto "github.com/tepleton/go-crypto"
+	cmn "github.com/tepleton/tmlibs/common"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
 	bam "github.com/tepleton/tepleton-sdk/baseapp"
 	sdk "github.com/tepleton/tepleton-sdk/types"
@@ -210,7 +210,6 @@ func (app *GaiaApp) BeginBlocker(ctx sdk.Context, req wrsp.RequestBeginBlock) wr
 }
 
 // application updates every end block
-// nolint: unparam
 func (app *GaiaApp) EndBlocker(ctx sdk.Context, req wrsp.RequestEndBlock) wrsp.ResponseEndBlock {
 	validatorUpdates := stake.EndBlocker(ctx, app.stakeKeeper)
 

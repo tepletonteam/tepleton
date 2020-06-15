@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/tepleton/tepleton/libs/cli"
+	"github.com/tepleton/tmlibs/cli"
 
 	"github.com/tepleton/tepleton-sdk/client/context"
 	sdk "github.com/tepleton/tepleton-sdk/types"
@@ -27,7 +27,7 @@ func GetCmdQuerySigningInfo(storeName string, cdc *wire.Codec) *cobra.Command {
 			}
 			key := slashing.GetValidatorSigningInfoKey(pk.Address())
 			ctx := context.NewCoreContextFromViper()
-			res, err := ctx.QueryStore(key, storeName)
+			res, err := ctx.Query(key, storeName)
 			if err != nil {
 				return err
 			}

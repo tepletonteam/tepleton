@@ -3,14 +3,15 @@ package types_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	dbm "github.com/tepleton/tepleton/libs/db"
-	"github.com/tepleton/tepleton/libs/log"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/tepleton-sdk/store"
 	"github.com/tepleton/tepleton-sdk/types"
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/wrsp/types"
 )
 
 type MockLogger struct {
@@ -42,7 +43,7 @@ func (l MockLogger) With(kvs ...interface{}) log.Logger {
 
 func TestContextGetOpShouldNeverPanic(t *testing.T) {
 	var ms types.MultiStore
-	ctx := types.NewContext(ms, wrsp.Header{}, false, log.NewNopLogger())
+	ctx := types.NewContext(ms, wrsp.Header{}, false, nil, log.NewNopLogger())
 	indices := []int64{
 		-10, 1, 0, 10, 20,
 	}
@@ -57,7 +58,7 @@ func defaultContext(key types.StoreKey) types.Context {
 	cms := store.NewCommitMultiStore(db)
 	cms.MountStoreWithDB(key, types.StoreTypeIAVL, db)
 	cms.LoadLatestVersion()
-	ctx := types.NewContext(cms, wrsp.Header{}, false, log.NewNopLogger())
+	ctx := types.NewContext(cms, wrsp.Header{}, false, nil, log.NewNopLogger())
 	return ctx
 }
 
@@ -71,21 +72,21 @@ func TestCacheContext(t *testing.T) {
 	ctx := defaultContext(key)
 	store := ctx.KVStore(key)
 	store.Set(k1, v1)
-	require.Equal(t, v1, store.Get(k1))
-	require.Nil(t, store.Get(k2))
+	assert.Equal(t, v1, store.Get(k1))
+	assert.Nil(t, store.Get(k2))
 
 	cctx, write := ctx.CacheContext()
 	cstore := cctx.KVStore(key)
-	require.Equal(t, v1, cstore.Get(k1))
-	require.Nil(t, cstore.Get(k2))
+	assert.Equal(t, v1, cstore.Get(k1))
+	assert.Nil(t, cstore.Get(k2))
 
 	cstore.Set(k2, v2)
-	require.Equal(t, v2, cstore.Get(k2))
-	require.Nil(t, store.Get(k2))
+	assert.Equal(t, v2, cstore.Get(k2))
+	assert.Nil(t, store.Get(k2))
 
 	write()
 
-	require.Equal(t, v2, store.Get(k2))
+	assert.Equal(t, v2, store.Get(k2))
 }
 
 func TestLogContext(t *testing.T) {

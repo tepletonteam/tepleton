@@ -1,8 +1,9 @@
 package client
 
 import (
-	"github.com/tepleton/tepleton-sdk/crypto/keys"
-	dbm "github.com/tepleton/tepleton/libs/db"
+	"github.com/tepleton/go-crypto/keys"
+	"github.com/tepleton/go-crypto/keys/words"
+	dbm "github.com/tepleton/tmlibs/db"
 )
 
 // GetKeyBase initializes a keybase based on the given db.
@@ -10,6 +11,7 @@ import (
 func GetKeyBase(db dbm.DB) keys.Keybase {
 	keybase := keys.New(
 		db,
+		words.MustLoadCodec("english"),
 	)
 	return keybase
 }

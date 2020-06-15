@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/tepleton/tepleton/libs/log"
+	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/tepleton-sdk/server/mock"
 	"github.com/tepleton/tepleton-sdk/wire"
@@ -31,10 +31,6 @@ func TestInitCmd(t *testing.T) {
 }
 
 func TestGenTxCmd(t *testing.T) {
-	// TODO
-}
-
-func TestTestnetFilesCmd(t *testing.T) {
 	// TODO
 }
 

@@ -3,10 +3,10 @@ package store
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	"github.com/tepleton/tepleton/crypto/merkle"
-	dbm "github.com/tepleton/tepleton/libs/db"
+	"github.com/stretchr/testify/assert"
+	wrsp "github.com/tepleton/wrsp/types"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/merkle"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
@@ -20,7 +20,7 @@ func TestMultistoreCommitLoad(t *testing.T) {
 	}
 	store := newMultiStoreWithMounts(db)
 	err := store.LoadLatestVersion()
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	// New store has empty last commit.
 	commitID := CommitID{}
@@ -28,11 +28,11 @@ func TestMultistoreCommitLoad(t *testing.T) {
 
 	// Make sure we can get stores by name.
 	s1 := store.getStoreByName("store1")
-	require.NotNil(t, s1)
+	assert.NotNil(t, s1)
 	s3 := store.getStoreByName("store3")
-	require.NotNil(t, s3)
+	assert.NotNil(t, s3)
 	s77 := store.getStoreByName("store77")
-	require.Nil(t, s77)
+	assert.Nil(t, s77)
 
 	// Make a few commits and check them.
 	nCommits := int64(3)
@@ -45,7 +45,7 @@ func TestMultistoreCommitLoad(t *testing.T) {
 	// Load the latest multistore again and check version.
 	store = newMultiStoreWithMounts(db)
 	err = store.LoadLatestVersion()
-	require.Nil(t, err)
+	assert.Nil(t, err)
 	commitID = getExpectedCommitID(store, nCommits)
 	checkStore(t, store, commitID, commitID)
 
@@ -58,7 +58,7 @@ func TestMultistoreCommitLoad(t *testing.T) {
 	ver := nCommits - 1
 	store = newMultiStoreWithMounts(db)
 	err = store.LoadVersion(ver)
-	require.Nil(t, err)
+	assert.Nil(t, err)
 	commitID = getExpectedCommitID(store, ver)
 	checkStore(t, store, commitID, commitID)
 
@@ -71,29 +71,29 @@ func TestMultistoreCommitLoad(t *testing.T) {
 	// LatestVersion
 	store = newMultiStoreWithMounts(db)
 	err = store.LoadLatestVersion()
-	require.Nil(t, err)
+	assert.Nil(t, err)
 	commitID = getExpectedCommitID(store, ver+1)
 	checkStore(t, store, commitID, commitID)
 }
 
 func TestParsePath(t *testing.T) {
 	_, _, err := parsePath("foo")
-	require.Error(t, err)
+	assert.Error(t, err)
 
 	store, subpath, err := parsePath("/foo")
-	require.NoError(t, err)
-	require.Equal(t, store, "foo")
-	require.Equal(t, subpath, "")
+	assert.NoError(t, err)
+	assert.Equal(t, store, "foo")
+	assert.Equal(t, subpath, "")
 
 	store, subpath, err = parsePath("/fizz/bang/baz")
-	require.NoError(t, err)
-	require.Equal(t, store, "fizz")
-	require.Equal(t, subpath, "/bang/baz")
+	assert.NoError(t, err)
+	assert.Equal(t, store, "fizz")
+	assert.Equal(t, subpath, "/bang/baz")
 
 	substore, subsubpath, err := parsePath(subpath)
-	require.NoError(t, err)
-	require.Equal(t, substore, "bang")
-	require.Equal(t, subsubpath, "/baz")
+	assert.NoError(t, err)
+	assert.Equal(t, substore, "bang")
+	assert.Equal(t, subsubpath, "/baz")
 
 }
 
@@ -101,7 +101,7 @@ func TestMultiStoreQuery(t *testing.T) {
 	db := dbm.NewMemDB()
 	multi := newMultiStoreWithMounts(db)
 	err := multi.LoadLatestVersion()
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	k, v := []byte("wind"), []byte("blows")
 	k2, v2 := []byte("water"), []byte("flows")
@@ -111,7 +111,7 @@ func TestMultiStoreQuery(t *testing.T) {
 
 	// Make sure we can get by name.
 	garbage := multi.getStoreByName("bad-name")
-	require.Nil(t, garbage)
+	assert.Nil(t, garbage)
 
 	// Set and commit data in one store.
 	store1 := multi.getStoreByName("store1").(KVStore)
@@ -128,35 +128,35 @@ func TestMultiStoreQuery(t *testing.T) {
 	// Test bad path.
 	query := wrsp.RequestQuery{Path: "/key", Data: k, Height: ver}
 	qres := multi.Query(query)
-	require.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeUnknownRequest), sdk.WRSPCodeType(qres.Code))
+	assert.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeUnknownRequest), sdk.WRSPCodeType(qres.Code))
 
 	query.Path = "h897fy32890rf63296r92"
 	qres = multi.Query(query)
-	require.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeUnknownRequest), sdk.WRSPCodeType(qres.Code))
+	assert.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeUnknownRequest), sdk.WRSPCodeType(qres.Code))
 
 	// Test invalid store name.
 	query.Path = "/garbage/key"
 	qres = multi.Query(query)
-	require.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeUnknownRequest), sdk.WRSPCodeType(qres.Code))
+	assert.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeUnknownRequest), sdk.WRSPCodeType(qres.Code))
 
 	// Test valid query with data.
 	query.Path = "/store1/key"
 	qres = multi.Query(query)
-	require.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeOK), sdk.WRSPCodeType(qres.Code))
-	require.Equal(t, v, qres.Value)
+	assert.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeOK), sdk.WRSPCodeType(qres.Code))
+	assert.Equal(t, v, qres.Value)
 
 	// Test valid but empty query.
 	query.Path = "/store2/key"
 	query.Prove = true
 	qres = multi.Query(query)
-	require.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeOK), sdk.WRSPCodeType(qres.Code))
-	require.Nil(t, qres.Value)
+	assert.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeOK), sdk.WRSPCodeType(qres.Code))
+	assert.Nil(t, qres.Value)
 
 	// Test store2 data.
 	query.Data = k2
 	qres = multi.Query(query)
-	require.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeOK), sdk.WRSPCodeType(qres.Code))
-	require.Equal(t, v2, qres.Value)
+	assert.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeOK), sdk.WRSPCodeType(qres.Code))
+	assert.Equal(t, v2, qres.Value)
 }
 
 //-----------------------------------------------------------------------
@@ -174,8 +174,8 @@ func newMultiStoreWithMounts(db dbm.DB) *rootMultiStore {
 }
 
 func checkStore(t *testing.T, store *rootMultiStore, expect, got CommitID) {
-	require.Equal(t, expect, got)
-	require.Equal(t, expect, store.LastCommitID())
+	assert.Equal(t, expect, got)
+	assert.Equal(t, expect, store.LastCommitID())
 
 }
 

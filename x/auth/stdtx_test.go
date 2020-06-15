@@ -3,9 +3,9 @@ package auth
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 
-	"github.com/tepleton/tepleton/crypto"
+	crypto "github.com/tepleton/go-crypto"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
@@ -19,14 +19,14 @@ import (
 func TestStdTx(t *testing.T) {
 	priv := crypto.GenPrivKeyEd25519()
 	addr := priv.PubKey().Address()
-	msgs := []sdk.Msg{sdk.NewTestMsg(addr)}
+	msg := sdk.NewTestMsg(addr)
 	fee := newStdFee()
 	sigs := []StdSignature{}
 
-	tx := NewStdTx(msgs, fee, sigs, "")
-	require.Equal(t, msgs, tx.GetMsgs())
-	require.Equal(t, sigs, tx.GetSignatures())
+	tx := NewStdTx(msg, fee, sigs)
+	assert.Equal(t, msg, tx.GetMsg())
+	assert.Equal(t, sigs, tx.GetSignatures())
 
 	feePayer := FeePayer(tx)
-	require.Equal(t, addr, feePayer)
+	assert.Equal(t, addr, feePayer)
 }
