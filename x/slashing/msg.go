@@ -38,7 +38,7 @@ func (msg MsgUnrevoke) GetSignBytes() []byte {
 	if err != nil {
 		panic(err)
 	}
-	return sdk.MustSortJSON(b)
+	return b
 }
 
 // quick validity check

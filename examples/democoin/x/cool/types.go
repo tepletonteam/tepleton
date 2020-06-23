@@ -58,7 +58,7 @@ func (msg MsgSetTrend) GetSignBytes() []byte {
 	if err != nil {
 		panic(err)
 	}
-	return sdk.MustSortJSON(b)
+	return b
 }
 
 //_______________________________________________________________________
@@ -102,5 +102,5 @@ func (msg MsgQuiz) GetSignBytes() []byte {
 	if err != nil {
 		panic(err)
 	}
-	return sdk.MustSortJSON(b)
+	return b
 }
