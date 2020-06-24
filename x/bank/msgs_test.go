@@ -187,7 +187,7 @@ func TestMsgSendGetSignBytes(t *testing.T) {
 	}
 	res := msg.GetSignBytes()
 
-	expected := `{"inputs":[{"address":"tepletonaccaddr1d9h8qat5e4ehc5","coins":[{"amount":"10","denom":"atom"}]}],"outputs":[{"address":"tepletonaccaddr1da6hgur4wse3jx32","coins":[{"amount":"10","denom":"atom"}]}]}`
+	expected := `{"inputs":[{"address":"tepletonaccaddr1d9h8qat5e4ehc5","coins":[{"denom":"atom","amount":"10"}]}],"outputs":[{"address":"tepletonaccaddr1da6hgur4wse3jx32","coins":[{"denom":"atom","amount":"10"}]}]}`
 	require.Equal(t, expected, string(res))
 }
 
@@ -257,7 +257,7 @@ func TestMsgIssueGetSignBytes(t *testing.T) {
 	}
 	res := msg.GetSignBytes()
 
-	expected := `{"banker":"tepletonaccaddr1d9h8qat5e4ehc5","outputs":[{"address":"tepletonaccaddr1d3hkzm3dveex7mfdvfsku6cwsauqd","coins":[{"amount":"10","denom":"atom"}]}]}`
+	expected := `{"banker":"tepletonaccaddr1d9h8qat5e4ehc5","outputs":[{"address":"tepletonaccaddr1d3hkzm3dveex7mfdvfsku6cwsauqd","coins":[{"denom":"atom","amount":"10"}]}]}`
 	require.Equal(t, expected, string(res))
 }
 
