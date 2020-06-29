@@ -76,5 +76,5 @@ func (msg MsgMine) GetSignBytes() []byte {
 	if err != nil {
 		panic(err)
 	}
-	return sdk.MustSortJSON(b)
+	return b
 }
