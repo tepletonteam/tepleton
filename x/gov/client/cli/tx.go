@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/tepleton/tepleton-sdk/client"
 	"github.com/tepleton/tepleton-sdk/client/context"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
@@ -65,10 +64,12 @@ func GetCmdSubmitProposal(cdc *wire.Codec) *cobra.Command {
 			// build and sign the transaction, then broadcast to Tendermint
 			ctx := context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(cdc))
 
-			err = ctx.EnsureSignBuildBroadcast(ctx.FromAddressName, []sdk.Msg{msg}, cdc, viper.GetBool(client.FlagAsync), true)
+			res, err := ctx.EnsureSignBuildBroadcast(ctx.FromAddressName, []sdk.Msg{msg}, cdc)
 			if err != nil {
 				return err
 			}
+
+			fmt.Printf("Committed at block:%d. Hash:%s.Response:%+v \n", res.Height, res.Hash.String(), res.DeliverTx)
 			return nil
 		},
 	}
@@ -112,10 +113,11 @@ func GetCmdDeposit(cdc *wire.Codec) *cobra.Command {
 			// build and sign the transaction, then broadcast to Tendermint
 			ctx := context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(cdc))
 
-			err = ctx.EnsureSignBuildBroadcast(ctx.FromAddressName, []sdk.Msg{msg}, cdc, viper.GetBool(client.FlagAsync), false)
+			res, err := ctx.EnsureSignBuildBroadcast(ctx.FromAddressName, []sdk.Msg{msg}, cdc)
 			if err != nil {
 				return err
 			}
+			fmt.Printf("Committed at block %d. Hash: %s\n", res.Height, res.Hash.String())
 			return nil
 		},
 	}
@@ -162,10 +164,11 @@ func GetCmdVote(cdc *wire.Codec) *cobra.Command {
 			// build and sign the transaction, then broadcast to Tendermint
 			ctx := context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(cdc))
 
-			err = ctx.EnsureSignBuildBroadcast(ctx.FromAddressName, []sdk.Msg{msg}, cdc, viper.GetBool(client.FlagAsync), false)
+			res, err := ctx.EnsureSignBuildBroadcast(ctx.FromAddressName, []sdk.Msg{msg}, cdc)
 			if err != nil {
 				return err
 			}
+			fmt.Printf("Committed at block %d. Hash: %s\n", res.Height, res.Hash.String())
 			return nil
 		},
 	}

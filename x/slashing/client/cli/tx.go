@@ -1,10 +1,10 @@
 package cli
 
 import (
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+	"fmt"
 
-	"github.com/tepleton/tepleton-sdk/client"
+	"github.com/spf13/cobra"
+
 	"github.com/tepleton/tepleton-sdk/client/context"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
@@ -29,10 +29,12 @@ func GetCmdUnrevoke(cdc *wire.Codec) *cobra.Command {
 			msg := slashing.NewMsgUnrevoke(validatorAddr)
 
 			// build and sign the transaction, then broadcast to Tendermint
-			err = ctx.EnsureSignBuildBroadcast(ctx.FromAddressName, []sdk.Msg{msg}, cdc, viper.GetBool(client.FlagAsync), false)
+			res, err := ctx.EnsureSignBuildBroadcast(ctx.FromAddressName, []sdk.Msg{msg}, cdc)
 			if err != nil {
 				return err
 			}
+
+			fmt.Printf("Committed at block %d. Hash: %s\n", res.Height, res.Hash.String())
 			return nil
 		},
 	}

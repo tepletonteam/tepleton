@@ -15,7 +15,6 @@ const (
 	FlagSequence      = "sequence"
 	FlagMemo          = "memo"
 	FlagFee           = "fee"
-	FlagAsync         = "async"
 )
 
 // LineBreak can be included in a command list to provide a blank line
@@ -47,7 +46,6 @@ func PostCommands(cmds ...*cobra.Command) []*cobra.Command {
 		c.Flags().String(FlagNode, "tcp://localhost:26657", "<host>:<port> to tepleton rpc interface for this chain")
 		c.Flags().Bool(FlagUseLedger, false, "Use a connected Ledger device")
 		c.Flags().Int64(FlagGas, 200000, "gas limit to set per-transaction")
-		c.Flags().Bool(FlagAsync, false, "broadcast transactions asynchronously")
 	}
 	return cmds
 }
