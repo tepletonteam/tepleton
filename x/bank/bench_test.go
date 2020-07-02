@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/x/auth"
-	"github.com/tepleton/tepleton-sdk/x/mock"
+	"github.com/tepleton/tepleton-sdk/x/auth/mock"
 
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
 )

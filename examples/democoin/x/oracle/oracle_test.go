@@ -48,8 +48,6 @@ func makeCodec() *wire.Codec {
 	cdc.RegisterInterface((*Payload)(nil), nil)
 	cdc.RegisterConcrete(seqOracle{}, "test/oracle/seqOracle", nil)
 
-	cdc.Seal()
-
 	return cdc
 }
 

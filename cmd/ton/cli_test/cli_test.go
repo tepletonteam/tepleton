@@ -3,7 +3,6 @@ package clitest
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -22,44 +21,37 @@ import (
 	"github.com/tepleton/tepleton-sdk/x/stake"
 )
 
-var (
-	pass        = "1234567890"
-	tondHome   = ""
-	toncliHome = ""
-)
-
-func init() {
-	tondHome, toncliHome = getTestingHomeDirs()
-}
-
 func TestGaiaCLISend(t *testing.T) {
-	tests.ExecuteT(t, fmt.Sprintf("tond --home=%s unsafe_reset_all", tondHome))
-	executeWrite(t, fmt.Sprintf("toncli keys delete --home=%s foo", toncliHome), pass)
-	executeWrite(t, fmt.Sprintf("toncli keys delete --home=%s bar", toncliHome), pass)
-	chainID := executeInit(t, fmt.Sprintf("tond init -o --name=foo --home=%s --home-client=%s", tondHome, toncliHome))
-	executeWrite(t, fmt.Sprintf("toncli keys add --home=%s bar", toncliHome), pass)
+
+	tests.ExecuteT(t, "tond unsafe_reset_all")
+	pass := "1234567890"
+	executeWrite(t, "toncli keys delete foo", pass)
+	executeWrite(t, "toncli keys delete bar", pass)
+	chainID := executeInit(t, "tond init -o --name=foo")
+	executeWrite(t, "toncli keys add bar", pass)
 
 	// get a free port, also setup some common flags
 	servAddr, port, err := server.FreeTCPAddr()
 	require.NoError(t, err)
-	flags := fmt.Sprintf("--home=%s --node=%v --chain-id=%v", toncliHome, servAddr, chainID)
+	flags := fmt.Sprintf("--node=%v --chain-id=%v", servAddr, chainID)
 
 	// start tond server
-	proc := tests.GoExecuteTWithStdout(t, fmt.Sprintf("tond start --home=%s --rpc.laddr=%v", tondHome, servAddr))
-
+	proc := tests.GoExecuteTWithStdout(t, fmt.Sprintf("tond start --rpc.laddr=%v", servAddr))
 	defer proc.Stop(false)
 	tests.WaitForTMStart(port)
 	tests.WaitForNextHeightTM(port)
 
-	fooAddr, _ := executeGetAddrPK(t, fmt.Sprintf("toncli keys show foo --output=json --home=%s", toncliHome))
-	fooCech := sdk.MustBech32ifyAcc(fooAddr)
-	barAddr, _ := executeGetAddrPK(t, fmt.Sprintf("toncli keys show bar --output=json --home=%s", toncliHome))
-	barCech := sdk.MustBech32ifyAcc(barAddr)
+	fooAddr, _ := executeGetAddrPK(t, "toncli keys show foo --output=json")
+	fooCech, err := sdk.Bech32ifyAcc(fooAddr)
+	require.NoError(t, err)
+	barAddr, _ := executeGetAddrPK(t, "toncli keys show bar --output=json")
+	barCech, err := sdk.Bech32ifyAcc(barAddr)
+	require.NoError(t, err)
 
 	fooAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooCech, flags))
 	require.Equal(t, int64(50), fooAcc.GetCoins().AmountOf("steak").Int64())
 
-	executeWrite(t, fmt.Sprintf("toncli send %v --amount=10steak --to=%v --from=foo", flags, barCech), pass)
+	executeWrite(t, fmt.Sprintf("toncli send %v --amount=10steak --to=%v --name=foo", flags, barCech), pass)
 	tests.WaitForNextHeightTM(port)
 
 	barAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barCech, flags))
@@ -68,7 +60,7 @@ func TestGaiaCLISend(t *testing.T) {
 	require.Equal(t, int64(40), fooAcc.GetCoins().AmountOf("steak").Int64())
 
 	// test autosequencing
-	executeWrite(t, fmt.Sprintf("toncli send %v --amount=10steak --to=%v --from=foo", flags, barCech), pass)
+	executeWrite(t, fmt.Sprintf("toncli send %v --amount=10steak --to=%v --name=foo", flags, barCech), pass)
 	tests.WaitForNextHeightTM(port)
 
 	barAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barCech, flags))
@@ -77,7 +69,7 @@ func TestGaiaCLISend(t *testing.T) {
 	require.Equal(t, int64(30), fooAcc.GetCoins().AmountOf("steak").Int64())
 
 	// test memo
-	executeWrite(t, fmt.Sprintf("toncli send %v --amount=10steak --to=%v --from=foo --memo 'testmemo'", flags, barCech), pass)
+	executeWrite(t, fmt.Sprintf("toncli send %v --amount=10steak --to=%v --name=foo --memo 'testmemo'", flags, barCech), pass)
 	tests.WaitForNextHeightTM(port)
 
 	barAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barCech, flags))
@@ -87,31 +79,35 @@ func TestGaiaCLISend(t *testing.T) {
 }
 
 func TestGaiaCLICreateValidator(t *testing.T) {
-	tests.ExecuteT(t, fmt.Sprintf("tond --home=%s unsafe_reset_all", tondHome))
-	executeWrite(t, fmt.Sprintf("toncli keys delete --home=%s foo", toncliHome), pass)
-	executeWrite(t, fmt.Sprintf("toncli keys delete --home=%s bar", toncliHome), pass)
-	chainID := executeInit(t, fmt.Sprintf("tond init -o --name=foo --home=%s --home-client=%s", tondHome, toncliHome))
-	executeWrite(t, fmt.Sprintf("toncli keys add --home=%s bar", toncliHome), pass)
+
+	tests.ExecuteT(t, "tond unsafe_reset_all")
+	pass := "1234567890"
+	executeWrite(t, "toncli keys delete foo", pass)
+	executeWrite(t, "toncli keys delete bar", pass)
+	chainID := executeInit(t, "tond init -o --name=foo")
+	executeWrite(t, "toncli keys add bar", pass)
 
 	// get a free port, also setup some common flags
 	servAddr, port, err := server.FreeTCPAddr()
 	require.NoError(t, err)
-	flags := fmt.Sprintf("--home=%s --node=%v --chain-id=%v", toncliHome, servAddr, chainID)
+	flags := fmt.Sprintf("--node=%v --chain-id=%v", servAddr, chainID)
 
 	// start tond server
-	proc := tests.GoExecuteTWithStdout(t, fmt.Sprintf("tond start --home=%s --rpc.laddr=%v", tondHome, servAddr))
-
+	proc := tests.GoExecuteTWithStdout(t, fmt.Sprintf("tond start --rpc.laddr=%v", servAddr))
 	defer proc.Stop(false)
 	tests.WaitForTMStart(port)
 	tests.WaitForNextHeightTM(port)
 
-	fooAddr, _ := executeGetAddrPK(t, fmt.Sprintf("toncli keys show foo --output=json --home=%s", toncliHome))
-	fooCech := sdk.MustBech32ifyAcc(fooAddr)
-	barAddr, barPubKey := executeGetAddrPK(t, fmt.Sprintf("toncli keys show bar --output=json --home=%s", toncliHome))
-	barCech := sdk.MustBech32ifyAcc(barAddr)
-	barCeshPubKey := sdk.MustBech32ifyValPub(barPubKey)
+	fooAddr, _ := executeGetAddrPK(t, "toncli keys show foo --output=json")
+	fooCech, err := sdk.Bech32ifyAcc(fooAddr)
+	require.NoError(t, err)
+	barAddr, barPubKey := executeGetAddrPK(t, "toncli keys show bar --output=json")
+	barCech, err := sdk.Bech32ifyAcc(barAddr)
+	require.NoError(t, err)
+	barCeshPubKey, err := sdk.Bech32ifyValPub(barPubKey)
+	require.NoError(t, err)
 
-	executeWrite(t, fmt.Sprintf("toncli send %v --amount=10steak --to=%v --from=foo", flags, barCech), pass)
+	executeWrite(t, fmt.Sprintf("toncli send %v --amount=10steak --to=%v --name=foo", flags, barCech), pass)
 	tests.WaitForNextHeightTM(port)
 
 	barAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", barCech, flags))
@@ -121,7 +117,7 @@ func TestGaiaCLICreateValidator(t *testing.T) {
 
 	// create validator
 	cvStr := fmt.Sprintf("toncli stake create-validator %v", flags)
-	cvStr += fmt.Sprintf(" --from=%v", "bar")
+	cvStr += fmt.Sprintf(" --name=%v", "bar")
 	cvStr += fmt.Sprintf(" --address-validator=%v", barCech)
 	cvStr += fmt.Sprintf(" --pubkey=%v", barCeshPubKey)
 	cvStr += fmt.Sprintf(" --amount=%v", "2steak")
@@ -139,7 +135,7 @@ func TestGaiaCLICreateValidator(t *testing.T) {
 
 	// unbond a single share
 	unbondStr := fmt.Sprintf("toncli stake unbond begin %v", flags)
-	unbondStr += fmt.Sprintf(" --from=%v", "bar")
+	unbondStr += fmt.Sprintf(" --name=%v", "bar")
 	unbondStr += fmt.Sprintf(" --address-validator=%v", barCech)
 	unbondStr += fmt.Sprintf(" --address-delegator=%v", barCech)
 	unbondStr += fmt.Sprintf(" --shares-amount=%v", "1")
@@ -157,31 +153,33 @@ func TestGaiaCLICreateValidator(t *testing.T) {
 }
 
 func TestGaiaCLISubmitProposal(t *testing.T) {
-	tests.ExecuteT(t, fmt.Sprintf("tond --home=%s unsafe_reset_all", tondHome))
-	executeWrite(t, fmt.Sprintf("toncli keys delete --home=%s foo", toncliHome), pass)
-	executeWrite(t, fmt.Sprintf("toncli keys delete --home=%s bar", toncliHome), pass)
-	chainID := executeInit(t, fmt.Sprintf("tond init -o --name=foo --home=%s --home-client=%s", tondHome, toncliHome))
-	executeWrite(t, fmt.Sprintf("toncli keys add --home=%s bar", toncliHome), pass)
+
+	tests.ExecuteT(t, "tond unsafe_reset_all")
+	pass := "1234567890"
+	executeWrite(t, "toncli keys delete foo", pass)
+	executeWrite(t, "toncli keys delete bar", pass)
+	chainID := executeInit(t, "tond init -o --name=foo")
+	executeWrite(t, "toncli keys add bar", pass)
 
 	// get a free port, also setup some common flags
 	servAddr, port, err := server.FreeTCPAddr()
 	require.NoError(t, err)
-	flags := fmt.Sprintf("--home=%s --node=%v --chain-id=%v", toncliHome, servAddr, chainID)
+	flags := fmt.Sprintf("--node=%v --chain-id=%v", servAddr, chainID)
 
 	// start tond server
-	proc := tests.GoExecuteTWithStdout(t, fmt.Sprintf("tond start --home=%s --rpc.laddr=%v", tondHome, servAddr))
-
+	proc := tests.GoExecuteTWithStdout(t, fmt.Sprintf("tond start --rpc.laddr=%v", servAddr))
 	defer proc.Stop(false)
 	tests.WaitForTMStart(port)
 	tests.WaitForNextHeightTM(port)
 
-	fooAddr, _ := executeGetAddrPK(t, fmt.Sprintf("toncli keys show foo --output=json --home=%s", toncliHome))
-	fooCech := sdk.MustBech32ifyAcc(fooAddr)
+	fooAddr, _ := executeGetAddrPK(t, "toncli keys show foo --output=json")
+	fooCech, err := sdk.Bech32ifyAcc(fooAddr)
+	require.NoError(t, err)
 
 	fooAcc := executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooCech, flags))
 	require.Equal(t, int64(50), fooAcc.GetCoins().AmountOf("steak").Int64())
 
-	executeWrite(t, fmt.Sprintf("toncli gov submit-proposal %v --proposer=%v --deposit=5steak --type=Text --title=Test --description=test --from=foo", flags, fooCech), pass)
+	executeWrite(t, fmt.Sprintf("toncli gov submitproposal %v --proposer=%v --deposit=5steak --type=Text --title=Test --description=test --name=foo", flags, fooCech), pass)
 	tests.WaitForNextHeightTM(port)
 
 	fooAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooCech, flags))
@@ -191,7 +189,7 @@ func TestGaiaCLISubmitProposal(t *testing.T) {
 	require.Equal(t, int64(1), proposal1.ProposalID)
 	require.Equal(t, gov.StatusToString(gov.StatusDepositPeriod), proposal1.Status)
 
-	executeWrite(t, fmt.Sprintf("toncli gov deposit %v --depositer=%v --deposit=10steak --proposalID=1 --from=foo", flags, fooCech), pass)
+	executeWrite(t, fmt.Sprintf("toncli gov deposit %v --depositer=%v --deposit=10steak --proposalID=1 --name=foo", flags, fooCech), pass)
 	tests.WaitForNextHeightTM(port)
 
 	fooAcc = executeGetAccount(t, fmt.Sprintf("toncli account %v %v", fooCech, flags))
@@ -200,22 +198,12 @@ func TestGaiaCLISubmitProposal(t *testing.T) {
 	require.Equal(t, int64(1), proposal1.ProposalID)
 	require.Equal(t, gov.StatusToString(gov.StatusVotingPeriod), proposal1.Status)
 
-	executeWrite(t, fmt.Sprintf("toncli gov vote %v --proposalID=1 --voter=%v --option=Yes --from=foo", flags, fooCech), pass)
+	executeWrite(t, fmt.Sprintf("toncli gov vote %v --proposalID=1 --voter=%v --option=Yes --name=foo", flags, fooCech), pass)
 	tests.WaitForNextHeightTM(port)
 
 	vote := executeGetVote(t, fmt.Sprintf("toncli gov query-vote  --proposalID=1 --voter=%v --output=json %v", fooCech, flags))
 	require.Equal(t, int64(1), vote.ProposalID)
 	require.Equal(t, gov.VoteOptionToString(gov.OptionYes), vote.Option)
-}
-
-//___________________________________________________________________________________
-// helper methods
-
-func getTestingHomeDirs() (string, string) {
-	tmpDir := os.TempDir()
-	tondHome := fmt.Sprintf("%s%s.test_tond", tmpDir, string(os.PathSeparator))
-	toncliHome := fmt.Sprintf("%s%s.test_toncli", tmpDir, string(os.PathSeparator))
-	return tondHome, toncliHome
 }
 
 //___________________________________________________________________________________

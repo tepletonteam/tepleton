@@ -53,8 +53,6 @@ func makeCodec() *wire.Codec {
 	cdc.RegisterConcrete(&auth.BaseAccount{}, "test/ibc/Account", nil)
 	wire.RegisterCrypto(cdc)
 
-	cdc.Seal()
-
 	return cdc
 }
 

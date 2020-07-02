@@ -44,5 +44,6 @@ var Cdc *Codec
 func init() {
 	cdc := NewCodec()
 	RegisterCrypto(cdc)
-	Cdc = cdc.Seal()
+	Cdc = cdc
+	//Cdc = cdc.Seal() // TODO uncomment once amino upgraded to 0.9.10
 }
