@@ -18,7 +18,7 @@ func (msg Msg) GetSignBytes() []byte {
 	if err != nil {
 		panic(err)
 	}
-	return sdk.MustSortJSON(bz)
+	return bz
 }
 
 // GetSigners implements sdk.Msg

@@ -3,10 +3,9 @@ package mock
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	wrsp "github.com/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/tepleton/wrsp/types"
 )
 
 // TestInitApp makes sure we can initialize this thing without an error
@@ -38,7 +37,7 @@ func TestInitApp(t *testing.T) {
 	}
 	qres := app.Query(query)
 	require.Equal(t, uint32(0), qres.Code, qres.Log)
-	assert.Equal(t, []byte("bar"), qres.Value)
+	require.Equal(t, []byte("bar"), qres.Value)
 }
 
 // TextDeliverTx ensures we can write a tx
@@ -74,5 +73,5 @@ func TestDeliverTx(t *testing.T) {
 	}
 	qres := app.Query(query)
 	require.Equal(t, uint32(0), qres.Code, qres.Log)
-	assert.Equal(t, []byte(value), qres.Value)
+	require.Equal(t, []byte(value), qres.Value)
 }
