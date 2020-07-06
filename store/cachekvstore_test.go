@@ -3,9 +3,10 @@ package store
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	cmn "github.com/tepleton/tepleton/libs/common"
-	dbm "github.com/tepleton/tepleton/libs/db"
+	cmn "github.com/tepleton/tmlibs/common"
+	dbm "github.com/tepleton/tmlibs/db"
 )
 
 func newCacheKVStore() CacheKVStore {
@@ -102,11 +103,11 @@ func TestCacheKVIteratorBounds(t *testing.T) {
 	var i = 0
 	for ; itr.Valid(); itr.Next() {
 		k, v := itr.Key(), itr.Value()
-		require.Equal(t, keyFmt(i), k)
-		require.Equal(t, valFmt(i), v)
+		assert.Equal(t, keyFmt(i), k)
+		assert.Equal(t, valFmt(i), v)
 		i++
 	}
-	require.Equal(t, nItems, i)
+	assert.Equal(t, nItems, i)
 
 	// iterate over none
 	itr = st.Iterator(bz("money"), nil)
@@ -114,29 +115,29 @@ func TestCacheKVIteratorBounds(t *testing.T) {
 	for ; itr.Valid(); itr.Next() {
 		i++
 	}
-	require.Equal(t, 0, i)
+	assert.Equal(t, 0, i)
 
 	// iterate over lower
 	itr = st.Iterator(keyFmt(0), keyFmt(3))
 	i = 0
 	for ; itr.Valid(); itr.Next() {
 		k, v := itr.Key(), itr.Value()
-		require.Equal(t, keyFmt(i), k)
-		require.Equal(t, valFmt(i), v)
+		assert.Equal(t, keyFmt(i), k)
+		assert.Equal(t, valFmt(i), v)
 		i++
 	}
-	require.Equal(t, 3, i)
+	assert.Equal(t, 3, i)
 
 	// iterate over upper
 	itr = st.Iterator(keyFmt(2), keyFmt(4))
 	i = 2
 	for ; itr.Valid(); itr.Next() {
 		k, v := itr.Key(), itr.Value()
-		require.Equal(t, keyFmt(i), k)
-		require.Equal(t, valFmt(i), v)
+		assert.Equal(t, keyFmt(i), k)
+		assert.Equal(t, valFmt(i), v)
 		i++
 	}
-	require.Equal(t, 4, i)
+	assert.Equal(t, 4, i)
 }
 
 func TestCacheKVMergeIteratorBasics(t *testing.T) {
@@ -366,11 +367,11 @@ func assertIterateDomain(t *testing.T, st KVStore, expectedN int) {
 	var i = 0
 	for ; itr.Valid(); itr.Next() {
 		k, v := itr.Key(), itr.Value()
-		require.Equal(t, keyFmt(i), k)
-		require.Equal(t, valFmt(i), v)
+		assert.Equal(t, keyFmt(i), k)
+		assert.Equal(t, valFmt(i), v)
 		i++
 	}
-	require.Equal(t, expectedN, i)
+	assert.Equal(t, expectedN, i)
 }
 
 func assertIterateDomainCheck(t *testing.T, st KVStore, mem dbm.DB, r []keyRange) {
@@ -382,25 +383,25 @@ func assertIterateDomainCheck(t *testing.T, st KVStore, mem dbm.DB, r []keyRange
 	i := 0
 
 	for ; krc.valid(); krc.next() {
-		require.True(t, itr.Valid())
-		require.True(t, itr2.Valid())
+		assert.True(t, itr.Valid())
+		assert.True(t, itr2.Valid())
 
 		// check the key/val matches the ground truth
 		k, v := itr.Key(), itr.Value()
 		k2, v2 := itr2.Key(), itr2.Value()
-		require.Equal(t, k, k2)
-		require.Equal(t, v, v2)
+		assert.Equal(t, k, k2)
+		assert.Equal(t, v, v2)
 
 		// check they match the counter
-		require.Equal(t, k, keyFmt(krc.key()))
+		assert.Equal(t, k, keyFmt(krc.key()))
 
 		itr.Next()
 		itr2.Next()
 		i++
 	}
 
-	require.False(t, itr.Valid())
-	require.False(t, itr2.Valid())
+	assert.False(t, itr.Valid())
+	assert.False(t, itr2.Valid())
 }
 
 func assertIterateDomainCompare(t *testing.T, st KVStore, mem dbm.DB) {
@@ -413,15 +414,15 @@ func assertIterateDomainCompare(t *testing.T, st KVStore, mem dbm.DB) {
 
 func checkIterators(t *testing.T, itr, itr2 Iterator) {
 	for ; itr.Valid(); itr.Next() {
-		require.True(t, itr2.Valid())
+		assert.True(t, itr2.Valid())
 		k, v := itr.Key(), itr.Value()
 		k2, v2 := itr2.Key(), itr2.Value()
-		require.Equal(t, k, k2)
-		require.Equal(t, v, v2)
+		assert.Equal(t, k, k2)
+		assert.Equal(t, v, v2)
 		itr2.Next()
 	}
-	require.False(t, itr.Valid())
-	require.False(t, itr2.Valid())
+	assert.False(t, itr.Valid())
+	assert.False(t, itr2.Valid())
 }
 
 //--------------------------------------------------------

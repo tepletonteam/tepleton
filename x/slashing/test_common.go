@@ -7,10 +7,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	"github.com/tepleton/tepleton/crypto"
-	dbm "github.com/tepleton/tepleton/libs/db"
-	"github.com/tepleton/tepleton/libs/log"
+	wrsp "github.com/tepleton/wrsp/types"
+	crypto "github.com/tepleton/go-crypto"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/tepleton-sdk/store"
 	sdk "github.com/tepleton/tepleton-sdk/types"
@@ -20,20 +20,18 @@ import (
 	"github.com/tepleton/tepleton-sdk/x/stake"
 )
 
-// TODO remove dependencies on staking (should only refer to validator set type from sdk)
-
 var (
+	addrs = []sdk.Address{
+		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6160"),
+		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6161"),
+		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6162"),
+	}
 	pks = []crypto.PubKey{
 		newPubKey("0B485CFC0EECC619440448436F8FC9DF40566F2369E72400281454CB552AFB50"),
 		newPubKey("0B485CFC0EECC619440448436F8FC9DF40566F2369E72400281454CB552AFB51"),
 		newPubKey("0B485CFC0EECC619440448436F8FC9DF40566F2369E72400281454CB552AFB52"),
 	}
-	addrs = []sdk.Address{
-		pks[0].Address(),
-		pks[1].Address(),
-		pks[2].Address(),
-	}
-	initCoins sdk.Int = sdk.NewInt(200)
+	initCoins int64 = 200
 )
 
 func createTestCodec() *wire.Codec {
@@ -57,20 +55,19 @@ func createTestInput(t *testing.T) (sdk.Context, bank.Keeper, stake.Keeper, Keep
 	ms.MountStoreWithDB(keySlashing, sdk.StoreTypeIAVL, db)
 	err := ms.LoadLatestVersion()
 	require.Nil(t, err)
-	ctx := sdk.NewContext(ms, wrsp.Header{}, false, log.NewTMLogger(os.Stdout))
+	ctx := sdk.NewContext(ms, wrsp.Header{}, false, nil, log.NewTMLogger(os.Stdout))
 	cdc := createTestCodec()
 	accountMapper := auth.NewAccountMapper(cdc, keyAcc, &auth.BaseAccount{})
 	ck := bank.NewKeeper(accountMapper)
 	sk := stake.NewKeeper(cdc, keyStake, ck, stake.DefaultCodespace)
 	genesis := stake.DefaultGenesisState()
-	genesis.Pool.LooseTokens = initCoins.MulRaw(int64(len(addrs))).Int64()
+	genesis.Pool.LooseUnbondedTokens = initCoins * int64(len(addrs))
 	stake.InitGenesis(ctx, sk, genesis)
 	for _, addr := range addrs {
-		_, _, err = ck.AddCoins(ctx, addr, sdk.Coins{
+		ck.AddCoins(ctx, addr, sdk.Coins{
 			{sk.GetParams(ctx).BondDenom, initCoins},
 		})
 	}
-	require.Nil(t, err)
 	keeper := NewKeeper(cdc, keySlashing, sk, DefaultCodespace)
 	return ctx, ck, sk, keeper
 }
@@ -90,11 +87,11 @@ func testAddr(addr string) sdk.Address {
 	return res
 }
 
-func newTestMsgCreateValidator(address sdk.Address, pubKey crypto.PubKey, amt sdk.Int) stake.MsgCreateValidator {
+func newTestMsgCreateValidator(address sdk.Address, pubKey crypto.PubKey, amt int64) stake.MsgCreateValidator {
 	return stake.MsgCreateValidator{
-		Description:    stake.Description{},
-		ValidatorAddr:  address,
-		PubKey:         pubKey,
-		SelfDelegation: sdk.Coin{"steak", amt},
+		Description:   stake.Description{},
+		ValidatorAddr: address,
+		PubKey:        pubKey,
+		Bond:          sdk.Coin{"steak", amt},
 	}
 }

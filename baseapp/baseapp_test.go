@@ -1,6 +1,7 @@
 package baseapp
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
@@ -8,12 +9,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	"github.com/tepleton/tepleton/crypto"
-	cmn "github.com/tepleton/tepleton/libs/common"
-	dbm "github.com/tepleton/tepleton/libs/db"
-	"github.com/tepleton/tepleton/libs/log"
+	wrsp "github.com/tepleton/wrsp/types"
+	crypto "github.com/tepleton/go-crypto"
 	tmtypes "github.com/tepleton/tepleton/types"
+	cmn "github.com/tepleton/tmlibs/common"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
@@ -28,33 +29,33 @@ func newBaseApp(name string) *BaseApp {
 	logger := defaultLogger()
 	db := dbm.NewMemDB()
 	codec := wire.NewCodec()
-	auth.RegisterBaseAccount(codec)
+	wire.RegisterCrypto(codec)
 	return NewBaseApp(name, codec, logger, db)
 }
 
 func TestMountStores(t *testing.T) {
 	name := t.Name()
 	app := newBaseApp(name)
-	require.Equal(t, name, app.Name())
+	assert.Equal(t, name, app.Name())
 
 	// make some cap keys
 	capKey1 := sdk.NewKVStoreKey("key1")
 	capKey2 := sdk.NewKVStoreKey("key2")
 
 	// no stores are mounted
-	require.Panics(t, func() { app.LoadLatestVersion(capKey1) })
+	assert.Panics(t, func() { app.LoadLatestVersion(capKey1) })
 
 	app.MountStoresIAVL(capKey1, capKey2)
 
 	// stores are mounted
 	err := app.LoadLatestVersion(capKey1)
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	// check both stores
 	store1 := app.cms.GetCommitKVStore(capKey1)
-	require.NotNil(t, store1)
+	assert.NotNil(t, store1)
 	store2 := app.cms.GetCommitKVStore(capKey2)
-	require.NotNil(t, store2)
+	assert.NotNil(t, store2)
 }
 
 // Test that we can make commits and then reload old versions.
@@ -69,14 +70,14 @@ func TestLoadVersion(t *testing.T) {
 	capKey := sdk.NewKVStoreKey("main")
 	app.MountStoresIAVL(capKey)
 	err := app.LoadLatestVersion(capKey) // needed to make stores non-nil
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	emptyCommitID := sdk.CommitID{}
 
 	lastHeight := app.LastBlockHeight()
 	lastID := app.LastCommitID()
-	require.Equal(t, int64(0), lastHeight)
-	require.Equal(t, emptyCommitID, lastID)
+	assert.Equal(t, int64(0), lastHeight)
+	assert.Equal(t, emptyCommitID, lastID)
 
 	// execute some blocks
 	header := wrsp.Header{Height: 1}
@@ -92,7 +93,7 @@ func TestLoadVersion(t *testing.T) {
 	app = NewBaseApp(name, nil, logger, db)
 	app.MountStoresIAVL(capKey)
 	err = app.LoadLatestVersion(capKey)
-	require.Nil(t, err)
+	assert.Nil(t, err)
 	testLoadVersionHelper(t, app, int64(2), commitID2)
 
 	// reload with LoadVersion, see if you can commit the same block and get
@@ -100,7 +101,7 @@ func TestLoadVersion(t *testing.T) {
 	app = NewBaseApp(name, nil, logger, db)
 	app.MountStoresIAVL(capKey)
 	err = app.LoadVersion(1, capKey)
-	require.Nil(t, err)
+	assert.Nil(t, err)
 	testLoadVersionHelper(t, app, int64(1), commitID1)
 	app.BeginBlock(wrsp.RequestBeginBlock{Header: header})
 	app.Commit()
@@ -110,8 +111,8 @@ func TestLoadVersion(t *testing.T) {
 func testLoadVersionHelper(t *testing.T, app *BaseApp, expectedHeight int64, expectedID sdk.CommitID) {
 	lastHeight := app.LastBlockHeight()
 	lastID := app.LastCommitID()
-	require.Equal(t, expectedHeight, lastHeight)
-	require.Equal(t, expectedID, lastID)
+	assert.Equal(t, expectedHeight, lastHeight)
+	assert.Equal(t, expectedID, lastID)
 }
 
 // Test that the app hash is static
@@ -123,7 +124,7 @@ func testLoadVersionHelper(t *testing.T, app *BaseApp, expectedHeight int64, exp
 	capKey := sdk.NewKVStoreKey("main")
 	app.MountStoresIAVL(capKey)
 	err := app.LoadLatestVersion(capKey) // needed to make stores non-nil
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	// execute some blocks
 	header := wrsp.Header{Height: 1}
@@ -136,7 +137,7 @@ func testLoadVersionHelper(t *testing.T, app *BaseApp, expectedHeight int64, exp
 	res = app.Commit()
 	commitID2 := sdk.CommitID{2, res.Data}
 
-	require.Equal(t, commitID1.Hash, commitID2.Hash)
+	assert.Equal(t, commitID1.Hash, commitID2.Hash)
 }
 */
 
@@ -158,7 +159,7 @@ func TestInfo(t *testing.T) {
 	assert.Equal(t, "", res.Version)
 	assert.Equal(t, t.Name(), res.GetData())
 	assert.Equal(t, int64(0), res.LastBlockHeight)
-	require.Equal(t, []uint8(nil), res.LastBlockAppHash)
+	assert.Equal(t, []uint8(nil), res.LastBlockAppHash)
 
 	// ----- test a proper response -------
 	// TODO
@@ -177,7 +178,7 @@ func TestInitChainer(t *testing.T) {
 	capKey2 := sdk.NewKVStoreKey("key2")
 	app.MountStoresIAVL(capKey, capKey2)
 	err := app.LoadLatestVersion(capKey) // needed to make stores non-nil
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	key, value := []byte("hello"), []byte("goodbye")
 
@@ -196,39 +197,31 @@ func TestInitChainer(t *testing.T) {
 	// initChainer is nil - nothing happens
 	app.InitChain(wrsp.RequestInitChain{})
 	res := app.Query(query)
-	require.Equal(t, 0, len(res.Value))
+	assert.Equal(t, 0, len(res.Value))
 
 	// set initChainer and try again - should see the value
 	app.SetInitChainer(initChainer)
-	app.InitChain(wrsp.RequestInitChain{AppStateBytes: []byte("{}"), ChainId: "test-chain-id"}) // must have valid JSON genesis file, even if empty
-
-	// assert that chainID is set correctly in InitChain
-	chainID := app.deliverState.ctx.ChainID()
-	require.Equal(t, "test-chain-id", chainID, "ChainID in deliverState not set correctly in InitChain")
-
-	chainID = app.checkState.ctx.ChainID()
-	require.Equal(t, "test-chain-id", chainID, "ChainID in checkState not set correctly in InitChain")
-
+	app.InitChain(wrsp.RequestInitChain{AppStateBytes: []byte("{}")}) // must have valid JSON genesis file, even if empty
 	app.Commit()
 	res = app.Query(query)
-	require.Equal(t, value, res.Value)
+	assert.Equal(t, value, res.Value)
 
 	// reload app
 	app = NewBaseApp(name, nil, logger, db)
 	app.MountStoresIAVL(capKey, capKey2)
 	err = app.LoadLatestVersion(capKey) // needed to make stores non-nil
-	require.Nil(t, err)
+	assert.Nil(t, err)
 	app.SetInitChainer(initChainer)
 
 	// ensure we can still query after reloading
 	res = app.Query(query)
-	require.Equal(t, value, res.Value)
+	assert.Equal(t, value, res.Value)
 
 	// commit and ensure we can still query
 	app.BeginBlock(wrsp.RequestBeginBlock{})
 	app.Commit()
 	res = app.Query(query)
-	require.Equal(t, value, res.Value)
+	assert.Equal(t, value, res.Value)
 }
 
 func getStateCheckingHandler(t *testing.T, capKey *sdk.KVStoreKey, txPerHeight int, checkHeader bool) func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
@@ -241,7 +234,7 @@ func getStateCheckingHandler(t *testing.T, capKey *sdk.KVStoreKey, txPerHeight i
 			// check previous value in store
 			counterBytes := []byte{byte(counter - 1)}
 			prevBytes := store.Get(counterBytes)
-			require.Equal(t, counterBytes, prevBytes)
+			assert.Equal(t, counterBytes, prevBytes)
 		}
 
 		// set the current counter in the store
@@ -253,7 +246,7 @@ func getStateCheckingHandler(t *testing.T, capKey *sdk.KVStoreKey, txPerHeight i
 		if checkHeader {
 			thisHeader := ctx.BlockHeader()
 			height := int64((counter / txPerHeight) + 1)
-			require.Equal(t, height, thisHeader.Height)
+			assert.Equal(t, height, thisHeader.Height)
 		}
 
 		counter++
@@ -269,8 +262,7 @@ type testTx struct {
 const msgType2 = "testTx"
 
 func (tx testTx) Type() string                       { return msgType2 }
-func (tx testTx) GetMemo() string                    { return "" }
-func (tx testTx) GetMsgs() []sdk.Msg                 { return []sdk.Msg{tx} }
+func (tx testTx) GetMsg() sdk.Msg                    { return tx }
 func (tx testTx) GetSignBytes() []byte               { return nil }
 func (tx testTx) GetSigners() []sdk.Address          { return nil }
 func (tx testTx) GetSignatures() []auth.StdSignature { return nil }
@@ -291,7 +283,7 @@ func TestCheckTx(t *testing.T) {
 	capKey := sdk.NewKVStoreKey("main")
 	app.MountStoresIAVL(capKey)
 	err := app.LoadLatestVersion(capKey) // needed to make stores non-nil
-	require.Nil(t, err)
+	assert.Nil(t, err)
 	app.SetAnteHandler(func(ctx sdk.Context, tx sdk.Tx) (newCtx sdk.Context, res sdk.Result, abort bool) { return })
 
 	txPerHeight := 3
@@ -315,7 +307,7 @@ func TestCheckTx(t *testing.T) {
 	checkStateStore := app.checkState.ctx.KVStore(capKey)
 	for i := 0; i < txPerHeight; i++ {
 		storedValue := checkStateStore.Get([]byte{byte(i)})
-		require.Nil(t, storedValue)
+		assert.Nil(t, storedValue)
 	}
 }
 
@@ -328,7 +320,7 @@ func TestDeliverTx(t *testing.T) {
 	capKey := sdk.NewKVStoreKey("main")
 	app.MountStoresIAVL(capKey)
 	err := app.LoadLatestVersion(capKey) // needed to make stores non-nil
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	txPerHeight := 2
 	app.SetAnteHandler(func(ctx sdk.Context, tx sdk.Tx) (newCtx sdk.Context, res sdk.Result, abort bool) { return })
@@ -357,7 +349,7 @@ func TestSimulateTx(t *testing.T) {
 	capKey := sdk.NewKVStoreKey("main")
 	app.MountStoresIAVL(capKey)
 	err := app.LoadLatestVersion(capKey) // needed to make stores non-nil
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	counter := 0
 	app.SetAnteHandler(func(ctx sdk.Context, tx sdk.Tx) (newCtx sdk.Context, res sdk.Result, abort bool) { return })
@@ -370,7 +362,7 @@ func TestSimulateTx(t *testing.T) {
 		// check we can see the current header
 		thisHeader := ctx.BlockHeader()
 		height := int64(counter)
-		require.Equal(t, height, thisHeader.Height)
+		assert.Equal(t, height, thisHeader.Height)
 		counter++
 		return sdk.Result{}
 	})
@@ -384,18 +376,16 @@ func TestSimulateTx(t *testing.T) {
 		return ttx, nil
 	})
 
-	app.InitChain(wrsp.RequestInitChain{})
-
 	nBlocks := 3
 	for blockN := 0; blockN < nBlocks; blockN++ {
 		// block1
 		header.Height = int64(blockN + 1)
 		app.BeginBlock(wrsp.RequestBeginBlock{Header: header})
 		result := app.Simulate(tx)
-		require.Equal(t, result.Code, sdk.WRSPCodeOK, result.Log)
+		require.Equal(t, result.Code, sdk.WRSPCodeOK)
 		require.Equal(t, int64(80), result.GasUsed)
 		counter--
-		encoded, err := app.cdc.MarshalJSON(tx)
+		encoded, err := json.Marshal(tx)
 		require.Nil(t, err)
 		query := wrsp.RequestQuery{
 			Path: "/app/simulate",
@@ -405,8 +395,8 @@ func TestSimulateTx(t *testing.T) {
 		require.Equal(t, queryResult.Code, uint32(sdk.WRSPCodeOK))
 		var res sdk.Result
 		app.cdc.MustUnmarshalBinary(queryResult.Value, &res)
-		require.Equal(t, sdk.WRSPCodeOK, res.Code, res.Log)
-		require.Equal(t, int64(160), res.GasUsed, res.Log)
+		require.Equal(t, sdk.WRSPCodeOK, res.Code)
+		require.Equal(t, int64(160), res.GasUsed)
 		app.EndBlock(wrsp.RequestEndBlock{})
 		app.Commit()
 	}
@@ -419,18 +409,18 @@ func TestRunInvalidTransaction(t *testing.T) {
 	capKey := sdk.NewKVStoreKey("main")
 	app.MountStoresIAVL(capKey)
 	err := app.LoadLatestVersion(capKey) // needed to make stores non-nil
-	require.Nil(t, err)
+	assert.Nil(t, err)
 	app.SetAnteHandler(func(ctx sdk.Context, tx sdk.Tx) (newCtx sdk.Context, res sdk.Result, abort bool) { return })
 	app.Router().AddRoute(msgType2, func(ctx sdk.Context, msg sdk.Msg) (res sdk.Result) { return })
 	app.BeginBlock(wrsp.RequestBeginBlock{})
 	// Transaction where validate fails
 	invalidTx := testTx{-1}
 	err1 := app.Deliver(invalidTx)
-	require.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeTxDecode), err1.Code)
+	assert.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeTxDecode), err1.Code)
 	// Transaction with no known route
 	unknownRouteTx := testUpdatePowerTx{}
 	err2 := app.Deliver(unknownRouteTx)
-	require.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeUnknownRequest), err2.Code)
+	assert.Equal(t, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeUnknownRequest), err2.Code)
 }
 
 // Test that transactions exceeding gas limits fail
@@ -443,7 +433,7 @@ func TestTxGasLimits(t *testing.T) {
 	capKey := sdk.NewKVStoreKey("main")
 	app.MountStoresIAVL(capKey)
 	err := app.LoadLatestVersion(capKey) // needed to make stores non-nil
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	app.SetAnteHandler(func(ctx sdk.Context, tx sdk.Tx) (newCtx sdk.Context, res sdk.Result, abort bool) {
 		newCtx = ctx.WithGasMeter(sdk.NewGasMeter(0))
@@ -459,7 +449,7 @@ func TestTxGasLimits(t *testing.T) {
 
 	app.BeginBlock(wrsp.RequestBeginBlock{Header: header})
 	res := app.Deliver(tx)
-	require.Equal(t, res.Code, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeOutOfGas), "Expected transaction to run out of gas")
+	assert.Equal(t, res.Code, sdk.ToWRSPCode(sdk.CodespaceRoot, sdk.CodeOutOfGas), "Expected transaction to run out of gas")
 	app.EndBlock(wrsp.RequestEndBlock{})
 	app.Commit()
 }
@@ -472,7 +462,7 @@ func TestQuery(t *testing.T) {
 	capKey := sdk.NewKVStoreKey("main")
 	app.MountStoresIAVL(capKey)
 	err := app.LoadLatestVersion(capKey) // needed to make stores non-nil
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	key, value := []byte("hello"), []byte("goodbye")
 
@@ -490,25 +480,25 @@ func TestQuery(t *testing.T) {
 
 	// query is empty before we do anything
 	res := app.Query(query)
-	require.Equal(t, 0, len(res.Value))
+	assert.Equal(t, 0, len(res.Value))
 
 	tx := testUpdatePowerTx{} // doesn't matter
 
 	// query is still empty after a CheckTx
 	app.Check(tx)
 	res = app.Query(query)
-	require.Equal(t, 0, len(res.Value))
+	assert.Equal(t, 0, len(res.Value))
 
 	// query is still empty after a DeliverTx before we commit
 	app.BeginBlock(wrsp.RequestBeginBlock{})
 	app.Deliver(tx)
 	res = app.Query(query)
-	require.Equal(t, 0, len(res.Value))
+	assert.Equal(t, 0, len(res.Value))
 
 	// query returns correct value after Commit
 	app.Commit()
 	res = app.Query(query)
-	require.Equal(t, value, res.Value)
+	assert.Equal(t, value, res.Value)
 }
 
 // Test p2p filter queries
@@ -519,7 +509,7 @@ func TestP2PQuery(t *testing.T) {
 	capKey := sdk.NewKVStoreKey("main")
 	app.MountStoresIAVL(capKey)
 	err := app.LoadLatestVersion(capKey) // needed to make stores non-nil
-	require.Nil(t, err)
+	assert.Nil(t, err)
 
 	app.SetAddrPeerFilter(func(addrport string) wrsp.ResponseQuery {
 		require.Equal(t, "1.1.1.1:8000", addrport)
@@ -556,8 +546,7 @@ type testUpdatePowerTx struct {
 const msgType = "testUpdatePowerTx"
 
 func (tx testUpdatePowerTx) Type() string                       { return msgType }
-func (tx testUpdatePowerTx) GetMemo() string                    { return "" }
-func (tx testUpdatePowerTx) GetMsgs() []sdk.Msg                 { return []sdk.Msg{tx} }
+func (tx testUpdatePowerTx) GetMsg() sdk.Msg                    { return tx }
 func (tx testUpdatePowerTx) GetSignBytes() []byte               { return nil }
 func (tx testUpdatePowerTx) ValidateBasic() sdk.Error           { return nil }
 func (tx testUpdatePowerTx) GetSigners() []sdk.Address          { return nil }
@@ -583,8 +572,8 @@ func TestValidatorChange(t *testing.T) {
 
 	// Load latest state, which should be empty.
 	err := app.LoadLatestVersion(capKey)
-	require.Nil(t, err)
-	require.Equal(t, app.LastBlockHeight(), int64(0))
+	assert.Nil(t, err)
+	assert.Equal(t, app.LastBlockHeight(), int64(0))
 
 	// Create the validators
 	var numVals = 3
@@ -609,7 +598,7 @@ func TestValidatorChange(t *testing.T) {
 		}
 		txBytes := toJSON(tx)
 		res := app.DeliverTx(txBytes)
-		require.True(t, res.IsOK(), "%#v\nWRSP log: %s", res, res.Log)
+		assert.True(t, res.IsOK(), "%#v\nWRSP log: %s", res, res.Log)
 	}
 
 	// Simulate the end of a block.
@@ -622,18 +611,18 @@ func TestValidatorChange(t *testing.T) {
 
 		pubkey, err := tmtypes.PB2TM.PubKey(val.PubKey)
 		// Sanity
-		require.Nil(t, err)
+		assert.Nil(t, err)
 
 		// Find matching update and splice it out.
 		for j := 0; j < len(valUpdates); j++ {
 			valUpdate := valUpdates[j]
 
 			updatePubkey, err := tmtypes.PB2TM.PubKey(valUpdate.PubKey)
-			require.Nil(t, err)
+			assert.Nil(t, err)
 
 			// Matched.
 			if updatePubkey.Equals(pubkey) {
-				require.Equal(t, valUpdate.Power, val.Power+1)
+				assert.Equal(t, valUpdate.Power, val.Power+1)
 				if j < len(valUpdates)-1 {
 					// Splice it out.
 					valUpdates = append(valUpdates[:j], valUpdates[j+1:]...)
@@ -644,7 +633,7 @@ func TestValidatorChange(t *testing.T) {
 			// Not matched.
 		}
 	}
-	require.Equal(t, len(valUpdates), 0, "Some validator updates were unexpected")
+	assert.Equal(t, len(valUpdates), 0, "Some validator updates were unexpected")
 }
 
 //----------------------------------------
@@ -680,15 +669,17 @@ func copyVal(val wrsp.Validator) wrsp.Validator {
 }
 
 func toJSON(o interface{}) []byte {
-	bz, err := wire.Cdc.MarshalJSON(o)
+	bz, err := json.Marshal(o)
 	if err != nil {
 		panic(err)
 	}
+	// fmt.Println(">> toJSON:", string(bz))
 	return bz
 }
 
 func fromJSON(bz []byte, ptr interface{}) {
-	err := wire.Cdc.UnmarshalJSON(bz, ptr)
+	// fmt.Println(">> fromJSON:", string(bz))
+	err := json.Unmarshal(bz, ptr)
 	if err != nil {
 		panic(err)
 	}

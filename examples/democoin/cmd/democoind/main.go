@@ -6,11 +6,11 @@ import (
 
 	"github.com/spf13/cobra"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	"github.com/tepleton/tepleton/libs/cli"
-	dbm "github.com/tepleton/tepleton/libs/db"
-	"github.com/tepleton/tepleton/libs/log"
+	wrsp "github.com/tepleton/wrsp/types"
 	tmtypes "github.com/tepleton/tepleton/types"
+	"github.com/tepleton/tmlibs/cli"
+	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/tepleton-sdk/examples/democoin/app"
 	"github.com/tepleton/tepleton-sdk/server"
@@ -29,24 +29,17 @@ func CoolAppGenState(cdc *wire.Codec, appGenTxs []json.RawMessage) (appState jso
 	if err != nil {
 		return
 	}
-
 	key := "cool"
 	value := json.RawMessage(`{
         "trend": "ice-cold"
       }`)
-
-	appState, err = server.InsertKeyJSON(cdc, appState, key, value)
-	if err != nil {
-		return
-	}
-
+	appState, err = server.AppendJSON(cdc, appState, key, value)
 	key = "pow"
 	value = json.RawMessage(`{
         "difficulty": 1,
         "count": 0
       }`)
-
-	appState, err = server.InsertKeyJSON(cdc, appState, key, value)
+	appState, err = server.AppendJSON(cdc, appState, key, value)
 	return
 }
 
@@ -76,9 +69,5 @@ func main() {
 	// prepare and add flags
 	rootDir := os.ExpandEnv("$HOME/.democoind")
 	executor := cli.PrepareBaseCmd(rootCmd, "BC", rootDir)
-	err := executor.Execute()
-	if err != nil {
-		// handle with #870
-		panic(err)
-	}
+	executor.Execute()
 }

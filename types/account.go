@@ -5,20 +5,16 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/tepleton/tepleton/crypto"
-	"github.com/tepleton/tepleton/libs/bech32"
-	cmn "github.com/tepleton/tepleton/libs/common"
+	crypto "github.com/tepleton/go-crypto"
+	"github.com/tepleton/tmlibs/bech32"
+	cmn "github.com/tepleton/tmlibs/common"
 )
 
 //Address is a go crypto-style Address
 type Address = cmn.HexBytes
 
-// nolint
+// Bech32 prefixes
 const (
-	// expected address length
-	AddrLen = 20
-
-	// Bech32 prefixes
 	Bech32PrefixAccAddr = "tepletonaccaddr"
 	Bech32PrefixAccPub  = "tepletonaccpub"
 	Bech32PrefixValAddr = "tepletonvaladdr"
@@ -84,7 +80,7 @@ func MustBech32ifyValPub(pub crypto.PubKey) string {
 // create an Address from a string
 func GetAccAddressHex(address string) (addr Address, err error) {
 	if len(address) == 0 {
-		return addr, errors.New("decoding bech32 address failed: must provide an address")
+		return addr, errors.New("must use provide address")
 	}
 	bz, err := hex.DecodeString(address)
 	if err != nil {
@@ -120,7 +116,7 @@ func GetAccPubKeyBech32(address string) (pk crypto.PubKey, err error) {
 // create an Address from a hex string
 func GetValAddressHex(address string) (addr Address, err error) {
 	if len(address) == 0 {
-		return addr, errors.New("decoding bech32 address failed: must provide an address")
+		return addr, errors.New("must use provide address")
 	}
 	bz, err := hex.DecodeString(address)
 	if err != nil {
@@ -156,7 +152,7 @@ func GetValPubKeyBech32(pubkey string) (pk crypto.PubKey, err error) {
 // decode a bytestring from a bech32-encoded string
 func GetFromBech32(bech32str, prefix string) ([]byte, error) {
 	if len(bech32str) == 0 {
-		return nil, errors.New("decoding bech32 address failed: must provide an address")
+		return nil, errors.New("must provide non-empty string")
 	}
 	hrp, bz, err := bech32.DecodeAndConvert(bech32str)
 	if err != nil {
@@ -164,7 +160,7 @@ func GetFromBech32(bech32str, prefix string) ([]byte, error) {
 	}
 
 	if hrp != prefix {
-		return nil, fmt.Errorf("invalid bech32 prefix. Expected %s, Got %s", prefix, hrp)
+		return nil, fmt.Errorf("Invalid bech32 prefix. Expected %s, Got %s", prefix, hrp)
 	}
 
 	return bz, nil

@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/tepleton/tepleton-sdk/client"
-	keys "github.com/tepleton/tepleton-sdk/crypto/keys"
 	"github.com/gorilla/mux"
+	keys "github.com/tepleton/go-crypto/keys"
 
 	"github.com/spf13/cobra"
 )
@@ -25,19 +25,14 @@ func deleteKeyCommand() *cobra.Command {
 func runDeleteCmd(cmd *cobra.Command, args []string) error {
 	name := args[0]
 
-	kb, err := GetKeyBase()
-	if err != nil {
-		return err
-	}
-
-	_, err = kb.Get(name)
-	if err != nil {
-		return err
-	}
-
 	buf := client.BufferStdin()
 	oldpass, err := client.GetPassword(
 		"DANGER - enter password to permanently delete key:", buf)
+	if err != nil {
+		return err
+	}
+
+	kb, err := GetKeyBase()
 	if err != nil {
 		return err
 	}

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net"
 	"os"
-	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -15,9 +14,9 @@ import (
 	"github.com/tepleton/tepleton-sdk/wire"
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
 	cfg "github.com/tepleton/tepleton/config"
-	"github.com/tepleton/tepleton/libs/cli"
-	tmflags "github.com/tepleton/tepleton/libs/cli/flags"
-	"github.com/tepleton/tepleton/libs/log"
+	"github.com/tepleton/tmlibs/cli"
+	tmflags "github.com/tepleton/tmlibs/cli/flags"
+	"github.com/tepleton/tmlibs/log"
 )
 
 // server context
@@ -47,7 +46,7 @@ func PersistentPreRunEFn(context *Context) func(*cobra.Command, []string) error 
 		if cmd.Name() == version.VersionCmd.Name() {
 			return nil
 		}
-		config, err := interceptLoadConfig()
+		config, err := tcmd.ParseConfig()
 		if err != nil {
 			return err
 		}
@@ -64,30 +63,6 @@ func PersistentPreRunEFn(context *Context) func(*cobra.Command, []string) error 
 		context.Logger = logger
 		return nil
 	}
-}
-
-// If a new config is created, change some of the default tepleton settings
-func interceptLoadConfig() (conf *cfg.Config, err error) {
-	tmpConf := cfg.DefaultConfig()
-	err = viper.Unmarshal(tmpConf)
-	if err != nil {
-		// TODO: Handle with #870
-		panic(err)
-	}
-	rootDir := tmpConf.RootDir
-	configFilePath := filepath.Join(rootDir, "config/config.toml")
-	// Intercept only if the file doesn't already exist
-	if _, err := os.Stat(configFilePath); os.IsNotExist(err) {
-		// the following parse config is needed to create directories
-		sdkDefaultConfig, _ := tcmd.ParseConfig()
-		sdkDefaultConfig.ProfListenAddress = "prof_laddr=localhost:6060"
-		sdkDefaultConfig.P2P.RecvRate = 5120000
-		sdkDefaultConfig.P2P.SendRate = 5120000
-		cfg.WriteConfigFile(configFilePath, sdkDefaultConfig)
-		// Fall through, just so that its parsed into memory.
-	}
-	conf, err = tcmd.ParseConfig()
-	return
 }
 
 // add server commands
@@ -110,7 +85,6 @@ func AddCommands(
 
 	rootCmd.AddCommand(
 		InitCmd(ctx, cdc, appInit),
-		TestnetFilesCmd(ctx, cdc, appInit),
 		StartCmd(ctx, appCreator),
 		UnsafeResetAllCmd(ctx),
 		client.LineBreak,
@@ -123,21 +97,15 @@ func AddCommands(
 
 //___________________________________________________________________________________
 
-// InsertKeyJSON inserts a new JSON field/key with a given value to an existing
-// JSON message. An error is returned if any serialization operation fails.
-//
-// NOTE: The ordering of the keys returned as the resulting JSON message is
-// non-deterministic, so the client should not rely on key ordering.
-func InsertKeyJSON(cdc *wire.Codec, baseJSON []byte, key string, value json.RawMessage) ([]byte, error) {
+// append a new json field to existing json message
+func AppendJSON(cdc *wire.Codec, baseJSON []byte, key string, value json.RawMessage) (appended []byte, err error) {
 	var jsonMap map[string]json.RawMessage
-
-	if err := cdc.UnmarshalJSON(baseJSON, &jsonMap); err != nil {
+	err = cdc.UnmarshalJSON(baseJSON, &jsonMap)
+	if err != nil {
 		return nil, err
 	}
-
 	jsonMap[key] = value
 	bz, err := wire.MarshalJSONIndent(cdc, jsonMap)
-
 	return json.RawMessage(bz), err
 }
 

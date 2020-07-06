@@ -2,16 +2,15 @@ package tx
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 
-	"github.com/tepleton/tepleton/libs/common"
-
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	wrsp "github.com/tepleton/wrsp/types"
 	ctypes "github.com/tepleton/tepleton/rpc/core/types"
 
 	"github.com/tepleton/tepleton-sdk/client"
@@ -43,7 +42,7 @@ func QueryTxCmd(cdc *wire.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringP(client.FlagNode, "n", "tcp://localhost:26657", "Node to connect to")
+	cmd.Flags().StringP(client.FlagNode, "n", "tcp://localhost:46657", "Node to connect to")
 
 	// TODO: change this to false when we can
 	cmd.Flags().Bool(client.FlagTrustNode, true, "Don't verify proofs for responses")
@@ -71,7 +70,7 @@ func queryTx(cdc *wire.Codec, ctx context.CoreContext, hashHexStr string, trustN
 		return nil, err
 	}
 
-	return wire.MarshalJSONIndent(cdc, info)
+	return json.MarshalIndent(info, "", "  ")
 }
 
 func formatTxResult(cdc *wire.Codec, res *ctypes.ResultTx) (txInfo, error) {
@@ -82,7 +81,6 @@ func formatTxResult(cdc *wire.Codec, res *ctypes.ResultTx) (txInfo, error) {
 	}
 
 	info := txInfo{
-		Hash:   res.Hash,
 		Height: res.Height,
 		Tx:     tx,
 		Result: res.TxResult,
@@ -92,7 +90,6 @@ func formatTxResult(cdc *wire.Codec, res *ctypes.ResultTx) (txInfo, error) {
 
 // txInfo is used to prepare info to display
 type txInfo struct {
-	Hash   common.HexBytes        `json:"hash"`
 	Height int64                  `json:"height"`
 	Tx     sdk.Tx                 `json:"tx"`
 	Result wrsp.ResponseDeliverTx `json:"result"`

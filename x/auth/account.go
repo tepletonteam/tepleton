@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
-	"github.com/tepleton/tepleton/crypto"
+	crypto "github.com/tepleton/go-crypto"
 )
 
 // Account is a standard account using a sequence number for replay protection

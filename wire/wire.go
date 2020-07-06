@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 
-	amino "github.com/tepleton/go-amino"
-	"github.com/tepleton/tepleton/crypto"
+	"github.com/tepleton/go-amino"
+	"github.com/tepleton/go-crypto"
 )
 
 // amino codec to marshal/unmarshal
@@ -34,15 +34,4 @@ func MarshalJSONIndent(cdc *Codec, obj interface{}) ([]byte, error) {
 		return nil, err
 	}
 	return out.Bytes(), nil
-}
-
-//__________________________________________________________________
-
-// generic sealed codec to be used throughout sdk
-var Cdc *Codec
-
-func init() {
-	cdc := NewCodec()
-	RegisterCrypto(cdc)
-	Cdc = cdc.Seal()
 }

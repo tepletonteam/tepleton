@@ -1,7 +1,7 @@
 package types
 
 import (
-	cmn "github.com/tepleton/tepleton/libs/common"
+	cmn "github.com/tepleton/tmlibs/common"
 )
 
 // Type synonym for convenience
@@ -21,8 +21,8 @@ func (t Tags) AppendTag(k string, v []byte) Tags {
 }
 
 // Append two lists of tags
-func (t Tags) AppendTags(tags Tags) Tags {
-	return append(t, tags...)
+func (t Tags) AppendTags(a Tags) Tags {
+	return append(t, a...)
 }
 
 // Turn tags into KVPair list
@@ -51,13 +51,3 @@ func NewTags(tags ...interface{}) Tags {
 func MakeTag(k string, v []byte) Tag {
 	return Tag{Key: []byte(k), Value: v}
 }
-
-//__________________________________________________
-
-// common tags
-var (
-	TagAction       = "action"
-	TagSrcValidator = "source-validator"
-	TagDstValidator = "destination-validator"
-	TagDelegator    = "delegator"
-)

@@ -3,15 +3,15 @@ package ibc
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/x/auth"
+	"github.com/tepleton/tepleton-sdk/x/auth/mock"
 	"github.com/tepleton/tepleton-sdk/x/bank"
-	"github.com/tepleton/tepleton-sdk/x/mock"
 
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	"github.com/tepleton/tepleton/crypto"
+	wrsp "github.com/tepleton/wrsp/types"
+	crypto "github.com/tepleton/go-crypto"
 )
 
 // initialize the mock application for this module
@@ -24,7 +24,7 @@ func getMockApp(t *testing.T) *mock.App {
 	coinKeeper := bank.NewKeeper(mapp.AccountMapper)
 	mapp.Router().AddRoute("ibc", NewHandler(ibcMapper, coinKeeper))
 
-	require.NoError(t, mapp.CompleteSetup([]*sdk.KVStoreKey{keyIBC}))
+	mapp.CompleteSetup(t, []*sdk.KVStoreKey{keyIBC})
 	return mapp
 }
 
@@ -36,7 +36,7 @@ func TestIBCMsgs(t *testing.T) {
 
 	priv1 := crypto.GenPrivKeyEd25519()
 	addr1 := priv1.PubKey().Address()
-	coins := sdk.Coins{sdk.NewCoin("foocoin", 10)}
+	coins := sdk.Coins{{"foocoin", 10}}
 	var emptyCoins sdk.Coins
 
 	acc := &auth.BaseAccount{
@@ -50,7 +50,7 @@ func TestIBCMsgs(t *testing.T) {
 	// A checkTx context (true)
 	ctxCheck := mapp.BaseApp.NewContext(true, wrsp.Header{})
 	res1 := mapp.AccountMapper.GetAccount(ctxCheck, addr1)
-	require.Equal(t, acc, res1)
+	assert.Equal(t, acc, res1)
 
 	packet := IBCPacket{
 		SrcAddr:   addr1,
@@ -70,10 +70,10 @@ func TestIBCMsgs(t *testing.T) {
 		Sequence:  0,
 	}
 
-	mock.SignCheckDeliver(t, mapp.BaseApp, []sdk.Msg{transferMsg}, []int64{0}, []int64{0}, true, priv1)
+	mock.SignCheckDeliver(t, mapp.BaseApp, transferMsg, []int64{0},[]int64{0}, true, priv1)
 	mock.CheckBalance(t, mapp, addr1, emptyCoins)
-	mock.SignCheckDeliver(t, mapp.BaseApp, []sdk.Msg{transferMsg}, []int64{0}, []int64{1}, false, priv1)
-	mock.SignCheckDeliver(t, mapp.BaseApp, []sdk.Msg{receiveMsg}, []int64{0}, []int64{2}, true, priv1)
+	mock.SignCheckDeliver(t, mapp.BaseApp, transferMsg, []int64{0}, []int64{1}, false, priv1)
+	mock.SignCheckDeliver(t, mapp.BaseApp, receiveMsg, []int64{0}, []int64{2}, true, priv1)
 	mock.CheckBalance(t, mapp, addr1, coins)
-	mock.SignCheckDeliver(t, mapp.BaseApp, []sdk.Msg{receiveMsg}, []int64{0}, []int64{2}, false, priv1)
+	mock.SignCheckDeliver(t, mapp.BaseApp, receiveMsg, []int64{0}, []int64{3}, false, priv1)
 }

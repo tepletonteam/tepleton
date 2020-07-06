@@ -8,7 +8,7 @@ import (
 	"math"
 	"strconv"
 
-	"github.com/tepleton/tepleton/crypto"
+	crypto "github.com/tepleton/go-crypto"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
@@ -76,5 +76,5 @@ func (msg MsgMine) GetSignBytes() []byte {
 	if err != nil {
 		panic(err)
 	}
-	return sdk.MustSortJSON(b)
+	return b
 }
