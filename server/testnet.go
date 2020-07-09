@@ -14,7 +14,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/spf13/viper"
 	cfg "github.com/tepleton/tepleton/config"
-	cmn "github.com/tepleton/tmlibs/common"
+	cmn "github.com/tepleton/tepleton/libs/common"
 )
 
 var (
