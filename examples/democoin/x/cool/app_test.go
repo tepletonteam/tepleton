@@ -3,15 +3,13 @@ package cool
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
-	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	"github.com/tepleton/tepleton/crypto"
-
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/x/auth"
-	"github.com/tepleton/tepleton-sdk/x/auth/mock"
 	bank "github.com/tepleton/tepleton-sdk/x/bank"
+	"github.com/tepleton/tepleton-sdk/x/mock"
+	"github.com/stretchr/testify/require"
+	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	"github.com/tepleton/tepleton/crypto"
 )
 
 var (

@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"encoding/binary"
-	"fmt"
 
 	"github.com/tepleton/tepleton/crypto"
 
@@ -53,10 +52,9 @@ func GetValidatorsBondedIndexKey(ownerAddr sdk.Address) []byte {
 	return append(ValidatorsBondedIndexKey, ownerAddr.Bytes()...)
 }
 
-// rearrange the ValBondedIndexKey to get the ValidatorKey
-func GetValKeyFromValBondedIndexKey(IndexKey []byte) []byte {
-	addr := IndexKey[1:] // remove prefix bytes
-	return GetValidatorKey(addr)
+// Get the validator owner address from ValBondedIndexKey
+func GetAddressFromValBondedIndexKey(IndexKey []byte) []byte {
+	return IndexKey[1:] // remove prefix bytes
 }
 
 // get the validator by power index. power index is the key used in the power-store,
@@ -86,22 +84,19 @@ func getValidatorPowerRank(validator types.Validator, pool types.Pool) []byte {
 	counterBytes := make([]byte, 2)
 	binary.BigEndian.PutUint16(counterBytes, ^uint16(validator.BondIntraTxCounter)) // invert counter (first txns have priority)
 
-	return append(ValidatorsByPowerIndexKey,
-		append(revokedBytes,
-			append(powerBytes,
-				append(heightBytes, counterBytes...)...)...)...)
+	return append(append(append(append(
+		ValidatorsByPowerIndexKey,
+		revokedBytes...),
+		powerBytes...),
+		heightBytes...),
+		counterBytes...)
 }
 
 // get the key for the accumulated update validators.
-// VALUE: none (key rearrangement used)
+// VALUE: wrsp.Validator
+// note records using these keys should never persist between blocks
 func GetTendermintUpdatesKey(ownerAddr sdk.Address) []byte {
 	return append(TendermintUpdatesKey, ownerAddr.Bytes()...)
-}
-
-// rearrange the ValBondedIndexKey to get the ValidatorKey
-func GetValKeyFromTUIndexKey(IndexKey []byte) []byte {
-	addr := IndexKey[1:] // remove prefix bytes
-	return GetValidatorKey(addr)
 }
 
 //________________________________________________________________________________
@@ -122,7 +117,9 @@ func GetDelegationsKey(delegatorAddr sdk.Address) []byte {
 // get the key for an unbonding delegation by delegator and validator addr.
 // VALUE: stake/types.UnbondingDelegation
 func GetUBDKey(delegatorAddr, validatorAddr sdk.Address) []byte {
-	return append(GetUBDsKey(delegatorAddr), validatorAddr.Bytes()...)
+	return append(
+		GetUBDsKey(delegatorAddr.Bytes()),
+		validatorAddr.Bytes()...)
 }
 
 // get the index-key for an unbonding delegation, stored by validator-index
@@ -134,12 +131,11 @@ func GetUBDByValIndexKey(delegatorAddr, validatorAddr sdk.Address) []byte {
 // rearrange the ValIndexKey to get the UBDKey
 func GetUBDKeyFromValIndexKey(IndexKey []byte) []byte {
 	addrs := IndexKey[1:] // remove prefix bytes
-	split := len(addrs) / 2
-	if (len(addrs) % 2) != 0 {
-		panic("key length not even")
+	if len(addrs) != 2*sdk.AddrLen {
+		panic("unexpected key length")
 	}
-	valAddr := addrs[:split]
-	delAddr := addrs[split:]
+	valAddr := addrs[:sdk.AddrLen]
+	delAddr := addrs[sdk.AddrLen:]
 	return GetUBDKey(delAddr, valAddr)
 }
 
@@ -162,12 +158,10 @@ func GetUBDsByValIndexKey(validatorAddr sdk.Address) []byte {
 func GetREDKey(delegatorAddr, validatorSrcAddr,
 	validatorDstAddr sdk.Address) []byte {
 
-	return append(
-		GetREDsKey(delegatorAddr),
-		append(
-			validatorSrcAddr.Bytes(),
-			validatorDstAddr.Bytes()...)...,
-	)
+	return append(append(
+		GetREDsKey(delegatorAddr.Bytes()),
+		validatorSrcAddr.Bytes()...),
+		validatorDstAddr.Bytes()...)
 }
 
 // get the index-key for a redelegation, stored by source-validator-index
@@ -175,12 +169,10 @@ func GetREDKey(delegatorAddr, validatorSrcAddr,
 func GetREDByValSrcIndexKey(delegatorAddr, validatorSrcAddr,
 	validatorDstAddr sdk.Address) []byte {
 
-	return append(
+	return append(append(
 		GetREDsFromValSrcIndexKey(validatorSrcAddr),
-		append(
-			delegatorAddr.Bytes(),
-			validatorDstAddr.Bytes()...)...,
-	)
+		delegatorAddr.Bytes()...),
+		validatorDstAddr.Bytes()...)
 }
 
 // get the index-key for a redelegation, stored by destination-validator-index
@@ -188,40 +180,34 @@ func GetREDByValSrcIndexKey(delegatorAddr, validatorSrcAddr,
 func GetREDByValDstIndexKey(delegatorAddr, validatorSrcAddr,
 	validatorDstAddr sdk.Address) []byte {
 
-	return append(
+	return append(append(
 		GetREDsToValDstIndexKey(validatorDstAddr),
-		append(
-			delegatorAddr.Bytes(),
-			validatorSrcAddr.Bytes()...)...,
-	)
+		delegatorAddr.Bytes()...),
+		validatorSrcAddr.Bytes()...)
 }
 
 // rearrange the ValSrcIndexKey to get the REDKey
 func GetREDKeyFromValSrcIndexKey(IndexKey []byte) []byte {
 	addrs := IndexKey[1:] // remove prefix bytes
-	split := len(addrs) / 3
-	if (len(addrs) % 3) != 0 {
+	if len(addrs) != 3*sdk.AddrLen {
 		panic("unexpected key length")
 	}
-	valSrcAddr := addrs[:split]
-	delAddr := addrs[split : 2*split]
-	valDstAddr := addrs[2*split:]
-	fmt.Printf("debug delAddr: %v\n", delAddr)
-	fmt.Printf("debug valSrcAddr: %v\n", valSrcAddr)
-	fmt.Printf("debug valDstAddr: %v\n", valDstAddr)
+	valSrcAddr := addrs[:sdk.AddrLen]
+	delAddr := addrs[sdk.AddrLen : 2*sdk.AddrLen]
+	valDstAddr := addrs[2*sdk.AddrLen:]
+
 	return GetREDKey(delAddr, valSrcAddr, valDstAddr)
 }
 
 // rearrange the ValDstIndexKey to get the REDKey
 func GetREDKeyFromValDstIndexKey(IndexKey []byte) []byte {
 	addrs := IndexKey[1:] // remove prefix bytes
-	split := len(addrs) / 3
-	if (len(addrs) % 3) != 0 {
+	if len(addrs) != 3*sdk.AddrLen {
 		panic("unexpected key length")
 	}
-	valDstAddr := addrs[:split]
-	delAddr := addrs[split : 2*split]
-	valSrcAddr := addrs[2*split:]
+	valDstAddr := addrs[:sdk.AddrLen]
+	delAddr := addrs[sdk.AddrLen : 2*sdk.AddrLen]
+	valSrcAddr := addrs[2*sdk.AddrLen:]
 	return GetREDKey(delAddr, valSrcAddr, valDstAddr)
 }
 
@@ -246,6 +232,7 @@ func GetREDsToValDstIndexKey(validatorDstAddr sdk.Address) []byte {
 // from a particular delegator
 func GetREDsByDelToValDstIndexKey(delegatorAddr sdk.Address,
 	validatorDstAddr sdk.Address) []byte {
+
 	return append(
 		GetREDsToValDstIndexKey(validatorDstAddr),
 		delegatorAddr.Bytes()...)

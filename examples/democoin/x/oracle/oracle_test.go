@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	dbm "github.com/tepleton/tmlibs/db"
+	dbm "github.com/tepleton/tepleton/libs/db"
 
 	"github.com/tepleton/tepleton-sdk/examples/democoin/mock"
 	"github.com/tepleton/tepleton-sdk/store"
@@ -47,6 +47,8 @@ func makeCodec() *wire.Codec {
 
 	cdc.RegisterInterface((*Payload)(nil), nil)
 	cdc.RegisterConcrete(seqOracle{}, "test/oracle/seqOracle", nil)
+
+	cdc.Seal()
 
 	return cdc
 }

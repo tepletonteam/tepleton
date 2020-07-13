@@ -11,10 +11,10 @@ import (
 
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
 	"github.com/tepleton/tepleton/crypto"
+	cmn "github.com/tepleton/tepleton/libs/common"
+	dbm "github.com/tepleton/tepleton/libs/db"
+	"github.com/tepleton/tepleton/libs/log"
 	tmtypes "github.com/tepleton/tepleton/types"
-	cmn "github.com/tepleton/tmlibs/common"
-	dbm "github.com/tepleton/tmlibs/db"
-	"github.com/tepleton/tmlibs/log"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
@@ -662,7 +662,7 @@ const msgType3 = "burn"
 func (msg testBurnMsg) Type() string { return msgType3 }
 func (msg testBurnMsg) GetSignBytes() []byte {
 	bz, _ := json.Marshal(msg)
-	return bz
+	return sdk.MustSortJSON(bz)
 }
 func (msg testBurnMsg) ValidateBasic() sdk.Error {
 	if msg.Addr == nil {
@@ -685,7 +685,7 @@ const msgType4 = "send"
 func (msg testSendMsg) Type() string { return msgType4 }
 func (msg testSendMsg) GetSignBytes() []byte {
 	bz, _ := json.Marshal(msg)
-	return bz
+	return sdk.MustSortJSON(bz)
 }
 func (msg testSendMsg) ValidateBasic() sdk.Error {
 	if msg.Sender == nil || msg.Receiver == nil {
@@ -769,6 +769,7 @@ func MakeCodec() *wire.Codec {
 	crypto.RegisterAmino(cdc)
 	cdc.RegisterInterface((*auth.Account)(nil), nil)
 	cdc.RegisterConcrete(&auth.BaseAccount{}, "tepleton-sdk/BaseAccount", nil)
+	cdc.Seal()
 	return cdc
 }
 

@@ -8,10 +8,10 @@ import (
 	"github.com/tepleton/tepleton/wrsp/server"
 
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
+	cmn "github.com/tepleton/tepleton/libs/common"
 	"github.com/tepleton/tepleton/node"
 	pvm "github.com/tepleton/tepleton/privval"
 	"github.com/tepleton/tepleton/proxy"
-	cmn "github.com/tepleton/tmlibs/common"
 )
 
 const (
@@ -31,7 +31,8 @@ func StartCmd(ctx *Context, appCreator AppCreator) *cobra.Command {
 				return startStandAlone(ctx, appCreator)
 			}
 			ctx.Logger.Info("Starting WRSP with Tendermint")
-			return startInProcess(ctx, appCreator)
+			_, err := startInProcess(ctx, appCreator)
+			return err
 		},
 	}
 
@@ -74,12 +75,12 @@ func startStandAlone(ctx *Context, appCreator AppCreator) error {
 	return nil
 }
 
-func startInProcess(ctx *Context, appCreator AppCreator) error {
+func startInProcess(ctx *Context, appCreator AppCreator) (*node.Node, error) {
 	cfg := ctx.Config
 	home := cfg.RootDir
 	app, err := appCreator(home, ctx.Logger)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Create & start tepleton node
@@ -91,15 +92,15 @@ func startInProcess(ctx *Context, appCreator AppCreator) error {
 		node.DefaultMetricsProvider,
 		ctx.Logger.With("module", "node"))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = n.Start()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Trap signal, run forever.
 	n.RunForever()
-	return nil
+	return n, nil
 }

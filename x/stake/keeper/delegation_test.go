@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"fmt"
 	"testing"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
@@ -180,7 +179,7 @@ func TestUnbondDelegation(t *testing.T) {
 	require.Equal(t, int64(4), pool.BondedTokens)
 }
 
-// tests Get/Set/Remove/Has UnbondingDelegation
+// Make sure that that the retrieving the delegations doesn't affect the state
 func TestGetRedelegationsFromValidator(t *testing.T) {
 	ctx, _, keeper := CreateTestInput(t, false, 0)
 
@@ -198,20 +197,16 @@ func TestGetRedelegationsFromValidator(t *testing.T) {
 	keeper.SetRedelegation(ctx, rd)
 	resBond, found := keeper.GetRedelegation(ctx, addrDels[0], addrVals[0], addrVals[1])
 	require.True(t, found)
-	fmt.Printf("debug addrDels[0]: %v\n", addrDels[0])
-	fmt.Printf("debug addrVals[0]: %v\n", addrVals[0])
-	fmt.Printf("debug addrVals[1]: %v\n", addrVals[1])
 
-	fmt.Println("zoo0")
+	// get the redelegations one time
 	redelegations := keeper.GetRedelegationsFromValidator(ctx, addrVals[0])
 	require.Equal(t, 1, len(redelegations))
 	require.True(t, redelegations[0].Equal(resBond))
 
-	fmt.Println("zoo1")
+	// get the redelegations a second time, should be exactly the same
 	redelegations = keeper.GetRedelegationsFromValidator(ctx, addrVals[0])
 	require.Equal(t, 1, len(redelegations))
 	require.True(t, redelegations[0].Equal(resBond))
-	fmt.Println("zoo2")
 }
 
 // tests Get/Set/Remove/Has UnbondingDelegation
@@ -248,7 +243,6 @@ func TestRedelegation(t *testing.T) {
 	// modify a records, save, and retrieve
 	rd.SharesSrc = sdk.NewRat(21)
 	rd.SharesDst = sdk.NewRat(21)
-
 	keeper.SetRedelegation(ctx, rd)
 
 	resBond, found = keeper.GetRedelegation(ctx, addrDels[0], addrVals[0], addrVals[1])

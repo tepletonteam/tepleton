@@ -10,9 +10,9 @@ import (
 	"github.com/spf13/cobra"
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
 	"github.com/tepleton/tepleton/crypto"
-	cmn "github.com/tepleton/tmlibs/common"
-	dbm "github.com/tepleton/tmlibs/db"
-	"github.com/tepleton/tmlibs/log"
+	cmn "github.com/tepleton/tepleton/libs/common"
+	dbm "github.com/tepleton/tepleton/libs/db"
+	"github.com/tepleton/tepleton/libs/log"
 
 	bam "github.com/tepleton/tepleton-sdk/baseapp"
 	sdk "github.com/tepleton/tepleton-sdk/types"
@@ -197,6 +197,7 @@ func MakeCodec() *wire.Codec {
 	auth.RegisterWire(cdc)
 	sdk.RegisterWire(cdc)
 	wire.RegisterCrypto(cdc)
+	cdc.Seal()
 	return cdc
 }
 

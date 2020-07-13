@@ -19,14 +19,14 @@ import (
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
 	tmcfg "github.com/tepleton/tepleton/config"
 	"github.com/tepleton/tepleton/crypto"
+	"github.com/tepleton/tepleton/libs/cli"
+	dbm "github.com/tepleton/tepleton/libs/db"
+	"github.com/tepleton/tepleton/libs/log"
 	nm "github.com/tepleton/tepleton/node"
 	pvm "github.com/tepleton/tepleton/privval"
 	"github.com/tepleton/tepleton/proxy"
 	tmrpc "github.com/tepleton/tepleton/rpc/lib/server"
 	tmtypes "github.com/tepleton/tepleton/types"
-	"github.com/tepleton/tmlibs/cli"
-	dbm "github.com/tepleton/tmlibs/db"
-	"github.com/tepleton/tmlibs/log"
 
 	"github.com/tepleton/tepleton-sdk/client"
 	keys "github.com/tepleton/tepleton-sdk/client/keys"
@@ -169,7 +169,7 @@ func InitializeTestLCD(t *testing.T, nValidators int, initAddrs []sdk.Address) (
 
 	//time.Sleep(time.Second)
 	//tests.WaitForHeight(2, port)
-	tests.WaitForStart(port)
+	tests.WaitForLCDStart(port)
 	tests.WaitForHeight(1, port)
 
 	// for use in defer

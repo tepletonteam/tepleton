@@ -9,8 +9,8 @@ import (
 
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
 	"github.com/tepleton/tepleton/crypto"
-	dbm "github.com/tepleton/tmlibs/db"
-	"github.com/tepleton/tmlibs/log"
+	dbm "github.com/tepleton/tepleton/libs/db"
+	"github.com/tepleton/tepleton/libs/log"
 
 	"github.com/tepleton/tepleton-sdk/store"
 	sdk "github.com/tepleton/tepleton-sdk/types"
@@ -23,15 +23,15 @@ import (
 // TODO remove dependencies on staking (should only refer to validator set type from sdk)
 
 var (
-	addrs = []sdk.Address{
-		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6160"),
-		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6161"),
-		testAddr("A58856F0FD53BF058B4909A21AEC019107BA6162"),
-	}
 	pks = []crypto.PubKey{
 		newPubKey("0B485CFC0EECC619440448436F8FC9DF40566F2369E72400281454CB552AFB50"),
 		newPubKey("0B485CFC0EECC619440448436F8FC9DF40566F2369E72400281454CB552AFB51"),
 		newPubKey("0B485CFC0EECC619440448436F8FC9DF40566F2369E72400281454CB552AFB52"),
+	}
+	addrs = []sdk.Address{
+		pks[0].Address(),
+		pks[1].Address(),
+		pks[2].Address(),
 	}
 	initCoins sdk.Int = sdk.NewInt(200)
 )

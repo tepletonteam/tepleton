@@ -6,15 +6,19 @@ import (
 	"fmt"
 
 	"github.com/tepleton/tepleton/crypto"
-	"github.com/tepleton/tmlibs/bech32"
-	cmn "github.com/tepleton/tmlibs/common"
+	"github.com/tepleton/tepleton/libs/bech32"
+	cmn "github.com/tepleton/tepleton/libs/common"
 )
 
 //Address is a go crypto-style Address
 type Address = cmn.HexBytes
 
-// Bech32 prefixes
+// nolint
 const (
+	// expected address length
+	AddrLen = 20
+
+	// Bech32 prefixes
 	Bech32PrefixAccAddr = "tepletonaccaddr"
 	Bech32PrefixAccPub  = "tepletonaccpub"
 	Bech32PrefixValAddr = "tepletonvaladdr"

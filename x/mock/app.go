@@ -1,7 +1,6 @@
 package mock
 
 import (
-	"math/rand"
 	"os"
 
 	bam "github.com/tepleton/tepleton-sdk/baseapp"
@@ -16,9 +15,7 @@ import (
 
 const chainID = ""
 
-// App extends an WRSP application, but with most of its parameters exported.
-// They are exported for convenience in creating helper functions, as object
-// capabilities aren't needed for testing.
+// App extends an WRSP application.
 type App struct {
 	*bam.BaseApp
 	Cdc        *wire.Codec // Cdc is public since the codec is passed into the module anyways
@@ -29,8 +26,7 @@ type App struct {
 	AccountMapper       auth.AccountMapper
 	FeeCollectionKeeper auth.FeeCollectionKeeper
 
-	GenesisAccounts  []auth.Account
-	TotalCoinsSupply sdk.Coins
+	GenesisAccounts []auth.Account
 }
 
 // NewApp partially constructs a new app on the memstore for module and genesis
@@ -47,11 +43,10 @@ func NewApp() *App {
 
 	// Create your application object
 	app := &App{
-		BaseApp:          bam.NewBaseApp("mock", cdc, logger, db),
-		Cdc:              cdc,
-		KeyMain:          sdk.NewKVStoreKey("main"),
-		KeyAccount:       sdk.NewKVStoreKey("acc"),
-		TotalCoinsSupply: sdk.Coins{},
+		BaseApp:    bam.NewBaseApp("mock", cdc, logger, db),
+		Cdc:        cdc,
+		KeyMain:    sdk.NewKVStoreKey("main"),
+		KeyAccount: sdk.NewKVStoreKey("acc"),
 	}
 
 	// Define the accountMapper
@@ -129,8 +124,8 @@ func SetGenesis(app *App, accs []auth.Account) {
 func GenTx(msgs []sdk.Msg, accnums []int64, seq []int64, priv ...crypto.PrivKey) auth.StdTx {
 	// Make the transaction free
 	fee := auth.StdFee{
-		Amount: sdk.Coins{sdk.NewCoin("foocoin", 0)},
-		Gas:    100000,
+		sdk.Coins{sdk.NewCoin("foocoin", 0)},
+		100000,
 	}
 
 	sigs := make([]auth.StdSignature, len(priv))
@@ -151,70 +146,6 @@ func GenTx(msgs []sdk.Msg, accnums []int64, seq []int64, priv ...crypto.PrivKey)
 	}
 
 	return auth.NewStdTx(msgs, fee, sigs, memo)
-}
-
-// GeneratePrivKeys generates a total n Ed25519 private keys.
-func GeneratePrivKeys(n int) (keys []crypto.PrivKey) {
-	// TODO: Randomize this between ed25519 and secp256k1
-	keys = make([]crypto.PrivKey, n, n)
-	for i := 0; i < n; i++ {
-		keys[i] = crypto.GenPrivKeyEd25519()
-	}
-
-	return
-}
-
-// GeneratePrivKeyAddressPairs generates a total of n private key, address
-// pairs.
-func GeneratePrivKeyAddressPairs(n int) (keys []crypto.PrivKey, addrs []sdk.Address) {
-	keys = make([]crypto.PrivKey, n, n)
-	addrs = make([]sdk.Address, n, n)
-	for i := 0; i < n; i++ {
-		keys[i] = crypto.GenPrivKeyEd25519()
-		addrs[i] = keys[i].PubKey().Address()
-	}
-	return
-}
-
-// RandomSetGenesis set genesis accounts with random coin values using the
-// provided addresses and coin denominations.
-func RandomSetGenesis(r *rand.Rand, app *App, addrs []sdk.Address, denoms []string) {
-	accts := make([]auth.Account, len(addrs), len(addrs))
-	randCoinIntervals := []BigInterval{
-		{sdk.NewIntWithDecimal(1, 0), sdk.NewIntWithDecimal(1, 1)},
-		{sdk.NewIntWithDecimal(1, 2), sdk.NewIntWithDecimal(1, 3)},
-		{sdk.NewIntWithDecimal(1, 40), sdk.NewIntWithDecimal(1, 50)},
-	}
-
-	for i := 0; i < len(accts); i++ {
-		coins := make([]sdk.Coin, len(denoms), len(denoms))
-
-		// generate a random coin for each denomination
-		for j := 0; j < len(denoms); j++ {
-			coins[j] = sdk.Coin{Denom: denoms[j],
-				Amount: RandFromBigInterval(r, randCoinIntervals),
-			}
-		}
-
-		app.TotalCoinsSupply = app.TotalCoinsSupply.Plus(coins)
-		baseAcc := auth.NewBaseAccountWithAddress(addrs[i])
-
-		(&baseAcc).SetCoins(coins)
-		accts[i] = &baseAcc
-	}
-
-	SetGenesis(app, accts)
-}
-
-// GetAllAccounts returns all accounts in the accountMapper.
-func GetAllAccounts(mapper auth.AccountMapper, ctx sdk.Context) []auth.Account {
-	accounts := []auth.Account{}
-	appendAccount := func(acc auth.Account) (stop bool) {
-		accounts = append(accounts, acc)
-		return false
-	}
-	mapper.IterateAccounts(ctx, appendAccount)
-	return accounts
 }
 
 // GenSequenceOfTxs generates a set of signed transactions of messages, such

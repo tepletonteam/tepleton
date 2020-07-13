@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	cmn "github.com/tepleton/tepleton/libs/common"
+	dbm "github.com/tepleton/tepleton/libs/db"
+	"github.com/tepleton/tepleton/libs/log"
 	tmtypes "github.com/tepleton/tepleton/types"
-	cmn "github.com/tepleton/tmlibs/common"
-	dbm "github.com/tepleton/tmlibs/db"
-	"github.com/tepleton/tmlibs/log"
 
 	bam "github.com/tepleton/tepleton-sdk/baseapp"
 	sdk "github.com/tepleton/tepleton-sdk/types"
@@ -113,6 +113,9 @@ func MakeCodec() *wire.Codec {
 	// Register AppAccount
 	cdc.RegisterInterface((*auth.Account)(nil), nil)
 	cdc.RegisterConcrete(&types.AppAccount{}, "democoin/Account", nil)
+
+	cdc.Seal()
+
 	return cdc
 }
 
