@@ -72,7 +72,7 @@ func (msg MsgSend) GetSignBytes() []byte {
 	if err != nil {
 		panic(err)
 	}
-	return sdk.MustSortJSON(b)
+	return b
 }
 
 // Implements Msg.
@@ -133,7 +133,7 @@ func (msg MsgIssue) GetSignBytes() []byte {
 	if err != nil {
 		panic(err)
 	}
-	return sdk.MustSortJSON(b)
+	return b
 }
 
 // Implements Msg.
@@ -162,7 +162,7 @@ func (in Input) GetSignBytes() []byte {
 	if err != nil {
 		panic(err)
 	}
-	return sdk.MustSortJSON(bin)
+	return bin
 }
 
 // ValidateBasic - validate transaction input
@@ -209,7 +209,7 @@ func (out Output) GetSignBytes() []byte {
 	if err != nil {
 		panic(err)
 	}
-	return sdk.MustSortJSON(bin)
+	return bin
 }
 
 // ValidateBasic - validate transaction output
