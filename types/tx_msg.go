@@ -60,7 +60,7 @@ func (msg *TestMsg) GetSignBytes() []byte {
 	if err != nil {
 		panic(err)
 	}
-	return MustSortJSON(bz)
+	return bz
 }
 func (msg *TestMsg) ValidateBasic() Error { return nil }
 func (msg *TestMsg) GetSigners() []Address {
