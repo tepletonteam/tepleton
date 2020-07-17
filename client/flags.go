@@ -17,6 +17,8 @@ const (
 	FlagMemo          = "memo"
 	FlagFee           = "fee"
 	FlagAsync         = "async"
+	FlagJson          = "json"
+	FlagPrintResponse = "print-response"
 )
 
 // LineBreak can be included in a command list to provide a blank line
@@ -50,6 +52,8 @@ func PostCommands(cmds ...*cobra.Command) []*cobra.Command {
 		c.Flags().Bool(FlagUseLedger, false, "Use a connected Ledger device")
 		c.Flags().Int64(FlagGas, 200000, "gas limit to set per-transaction")
 		c.Flags().Bool(FlagAsync, false, "broadcast transactions asynchronously")
+		c.Flags().Bool(FlagJson, false, "return output in json format")
+		c.Flags().Bool(FlagPrintResponse, false, "return tx response (only works with async = false)")
 	}
 	return cmds
 }

@@ -50,6 +50,8 @@ func NewCoreContextFromViper() CoreContext {
 		AccountStore:    "acc",
 		UseLedger:       viper.GetBool(client.FlagUseLedger),
 		Async:           viper.GetBool(client.FlagAsync),
+		JSON:            viper.GetBool(client.FlagJson),
+		PrintResponse:   viper.GetBool(client.FlagPrintResponse),
 	}
 }
 

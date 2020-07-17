@@ -23,6 +23,8 @@ type CoreContext struct {
 	AccountStore    string
 	UseLedger       bool
 	Async           bool
+	JSON            bool
+	PrintResponse   bool
 }
 
 // WithChainID - return a copy of the context with an updated chainID
