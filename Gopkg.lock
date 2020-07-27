@@ -241,7 +241,7 @@
     "nfs",
     "xfs"
   ]
-  revision = "ae68e2d4c00fed4943b5f6698d504a5fe083da8a"
+  revision = "40f013a808ec4fa79def444a1a56de4d1727efcb"
 
 [[projects]]
   branch = "master"
@@ -334,9 +334,12 @@
 
 [[projects]]
   name = "github.com/tepleton/iavl"
-  packages = ["."]
-  revision = "9e5dc3e61f70b285bb25414452d47aca1ff34c1d"
-  version = "v0.8.2-rc0"
+  packages = [
+    ".",
+    "sha256truncated"
+  ]
+  revision = "2de525d09cca7c45c3f43d178817947a6cfa242c"
+  version = "v0.8.1"
 
 [[projects]]
   name = "github.com/tepleton/tepleton"
@@ -356,7 +359,6 @@
     "crypto/tmhash",
     "evidence",
     "libs/autofile",
-    "libs/bech32",
     "libs/cli",
     "libs/cli/flags",
     "libs/clist",
@@ -399,6 +401,21 @@
   version = "v0.22.0-rc2"
 
 [[projects]]
+  name = "github.com/tepleton/tmlibs"
+  packages = [
+    "bech32",
+    "cli",
+    "cli/flags",
+    "common",
+    "db",
+    "log",
+    "merkle",
+    "merkle/tmhash"
+  ]
+  revision = "49596e0a1f48866603813df843c9409fc19805c6"
+  version = "v0.9.0"
+
+[[projects]]
   name = "github.com/zondax/ledger-goclient"
   packages = ["."]
   revision = "065cbf938a16f20335c40cfe180f9cd4955c6a5a"
@@ -434,13 +451,13 @@
     "netutil",
     "trace"
   ]
-  revision = "ed29d75add3d7c4bf7ca65aac0c6df3d1420216f"
+  revision = "4cb1c02c05b0e749b0365f61ae859a8e0cfceed9"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "151529c776cdc58ddbe7963ba9af779f3577b419"
+  revision = "7138fd3d9dc8335c567ca206f4333fb75eb05d56"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -507,6 +524,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "13ad2a57b6942729e2d08b5c37810d62108aa64a335a4822fcff1ad992c0662b"
+  inputs-digest = "e0adc07b8fcd9a48957baaa58a97b3bf1c72af18d06c7943b719794746ded31e"
   solver-name = "gps-cdcl"
   solver-version = 1

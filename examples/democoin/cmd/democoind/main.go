@@ -7,10 +7,10 @@ import (
 	"github.com/spf13/cobra"
 
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	tmtypes "github.com/tepleton/tepleton/types"
 	"github.com/tepleton/tepleton/libs/cli"
 	dbm "github.com/tepleton/tepleton/libs/db"
 	"github.com/tepleton/tepleton/libs/log"
-	tmtypes "github.com/tepleton/tepleton/types"
 
 	"github.com/tepleton/tepleton-sdk/examples/democoin/app"
 	"github.com/tepleton/tepleton-sdk/server"
@@ -29,24 +29,20 @@ func CoolAppGenState(cdc *wire.Codec, appGenTxs []json.RawMessage) (appState jso
 	if err != nil {
 		return
 	}
-
 	key := "cool"
 	value := json.RawMessage(`{
         "trend": "ice-cold"
       }`)
-
-	appState, err = server.InsertKeyJSON(cdc, appState, key, value)
+	appState, err = server.AppendJSON(cdc, appState, key, value)
 	if err != nil {
 		return
 	}
-
 	key = "pow"
 	value = json.RawMessage(`{
         "difficulty": 1,
         "count": 0
       }`)
-
-	appState, err = server.InsertKeyJSON(cdc, appState, key, value)
+	appState, err = server.AppendJSON(cdc, appState, key, value)
 	return
 }
 

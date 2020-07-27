@@ -5,10 +5,10 @@ import (
 	"os"
 
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
+	tmtypes "github.com/tepleton/tepleton/types"
 	cmn "github.com/tepleton/tepleton/libs/common"
 	dbm "github.com/tepleton/tepleton/libs/db"
 	"github.com/tepleton/tepleton/libs/log"
-	tmtypes "github.com/tepleton/tepleton/types"
 
 	bam "github.com/tepleton/tepleton-sdk/baseapp"
 	sdk "github.com/tepleton/tepleton-sdk/types"
@@ -37,13 +37,12 @@ type GaiaApp struct {
 	cdc *wire.Codec
 
 	// keys to access the substores
-	keyMain          *sdk.KVStoreKey
-	keyAccount       *sdk.KVStoreKey
-	keyIBC           *sdk.KVStoreKey
-	keyStake         *sdk.KVStoreKey
-	keySlashing      *sdk.KVStoreKey
-	keyGov           *sdk.KVStoreKey
-	keyFeeCollection *sdk.KVStoreKey
+	keyMain     *sdk.KVStoreKey
+	keyAccount  *sdk.KVStoreKey
+	keyIBC      *sdk.KVStoreKey
+	keyStake    *sdk.KVStoreKey
+	keySlashing *sdk.KVStoreKey
+	keyGov      *sdk.KVStoreKey
 
 	// Manage getting and setting accounts
 	accountMapper       auth.AccountMapper
@@ -60,15 +59,14 @@ func NewGaiaApp(logger log.Logger, db dbm.DB) *GaiaApp {
 
 	// create your application object
 	var app = &GaiaApp{
-		BaseApp:          bam.NewBaseApp(appName, cdc, logger, db),
-		cdc:              cdc,
-		keyMain:          sdk.NewKVStoreKey("main"),
-		keyAccount:       sdk.NewKVStoreKey("acc"),
-		keyIBC:           sdk.NewKVStoreKey("ibc"),
-		keyStake:         sdk.NewKVStoreKey("stake"),
-		keySlashing:      sdk.NewKVStoreKey("slashing"),
-		keyGov:           sdk.NewKVStoreKey("gov"),
-		keyFeeCollection: sdk.NewKVStoreKey("fee"),
+		BaseApp:     bam.NewBaseApp(appName, cdc, logger, db),
+		cdc:         cdc,
+		keyMain:     sdk.NewKVStoreKey("main"),
+		keyAccount:  sdk.NewKVStoreKey("acc"),
+		keyIBC:      sdk.NewKVStoreKey("ibc"),
+		keyStake:    sdk.NewKVStoreKey("stake"),
+		keySlashing: sdk.NewKVStoreKey("slashing"),
+		keyGov:      sdk.NewKVStoreKey("gov"),
 	}
 
 	// define the accountMapper
@@ -84,7 +82,6 @@ func NewGaiaApp(logger log.Logger, db dbm.DB) *GaiaApp {
 	app.stakeKeeper = stake.NewKeeper(app.cdc, app.keyStake, app.coinKeeper, app.RegisterCodespace(stake.DefaultCodespace))
 	app.slashingKeeper = slashing.NewKeeper(app.cdc, app.keySlashing, app.stakeKeeper, app.RegisterCodespace(slashing.DefaultCodespace))
 	app.govKeeper = gov.NewKeeper(app.cdc, app.keyGov, app.coinKeeper, app.stakeKeeper, app.RegisterCodespace(gov.DefaultCodespace))
-	app.feeCollectionKeeper = auth.NewFeeCollectionKeeper(app.cdc, app.keyFeeCollection)
 
 	// register message routes
 	app.Router().
@@ -99,7 +96,7 @@ func NewGaiaApp(logger log.Logger, db dbm.DB) *GaiaApp {
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetEndBlocker(app.EndBlocker)
 	app.SetAnteHandler(auth.NewAnteHandler(app.accountMapper, app.feeCollectionKeeper))
-	app.MountStoresIAVL(app.keyMain, app.keyAccount, app.keyIBC, app.keyStake, app.keySlashing, app.keyGov, app.keyFeeCollection)
+	app.MountStoresIAVL(app.keyMain, app.keyAccount, app.keyIBC, app.keyStake, app.keySlashing, app.keyGov)
 	err := app.LoadLatestVersion(app.keyMain)
 	if err != nil {
 		cmn.Exit(err.Error())

@@ -18,12 +18,12 @@ import (
 	"github.com/tepleton/tepleton/crypto"
 
 	cfg "github.com/tepleton/tepleton/config"
-	tmcli "github.com/tepleton/tepleton/libs/cli"
-	cmn "github.com/tepleton/tepleton/libs/common"
-	dbm "github.com/tepleton/tepleton/libs/db"
 	"github.com/tepleton/tepleton/p2p"
 	pvm "github.com/tepleton/tepleton/privval"
 	tmtypes "github.com/tepleton/tepleton/types"
+	tmcli "github.com/tepleton/tepleton/libs/cli"
+	cmn "github.com/tepleton/tepleton/libs/common"
+	dbm "github.com/tepleton/tepleton/libs/db"
 
 	clkeys "github.com/tepleton/tepleton-sdk/client/keys"
 	serverconfig "github.com/tepleton/tepleton-sdk/server/config"
@@ -332,20 +332,32 @@ func readOrCreatePrivValidator(tmConfig *cfg.Config) crypto.PubKey {
 	return privValidator.GetPubKey()
 }
 
-// writeGenesisFile creates and writes the genesis configuration to disk. An
-// error is returned if building or writing the configuration to file fails.
+// create the genesis file
 func writeGenesisFile(cdc *wire.Codec, genesisFile, chainID string, validators []tmtypes.GenesisValidator, appState json.RawMessage) error {
 	genDoc := tmtypes.GenesisDoc{
-		ChainID:      chainID,
-		Validators:   validators,
-		AppStateJSON: appState,
+		ChainID:    chainID,
+		Validators: validators,
 	}
-
 	if err := genDoc.ValidateAndComplete(); err != nil {
 		return err
 	}
+	if err := genDoc.SaveAs(genesisFile); err != nil {
+		return err
+	}
+	return addAppStateToGenesis(cdc, genesisFile, appState)
+}
 
-	return genDoc.SaveAs(genesisFile)
+// Add one line to the genesis file
+func addAppStateToGenesis(cdc *wire.Codec, genesisConfigPath string, appState json.RawMessage) error {
+	bz, err := ioutil.ReadFile(genesisConfigPath)
+	if err != nil {
+		return err
+	}
+	out, err := AppendJSON(cdc, bz, "app_state", appState)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(genesisConfigPath, out, 0600)
 }
 
 //_____________________________________________________________________
@@ -432,7 +444,7 @@ func SimpleAppGenState(cdc *wire.Codec, appGenTxs []json.RawMessage) (appState j
     "coins": [
       {
         "denom": "mycoin",
-        "amount": "9007199254740992"
+        "amount": 9007199254740992
       }
     ]
   }]

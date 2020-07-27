@@ -4,12 +4,14 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/tepleton/tepleton-sdk/examples/democoin/types"
 	"github.com/tepleton/tepleton-sdk/examples/democoin/x/cool"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/auth"
-	"github.com/stretchr/testify/require"
+
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
 	"github.com/tepleton/tepleton/crypto"
 	dbm "github.com/tepleton/tepleton/libs/db"

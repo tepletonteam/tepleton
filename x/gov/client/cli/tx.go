@@ -29,7 +29,7 @@ const (
 // submit a proposal tx
 func GetCmdSubmitProposal(cdc *wire.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "submit-proposal",
+		Use:   "submitproposal",
 		Short: "Submit a proposal along with an initial deposit",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			title := viper.GetString(flagTitle)

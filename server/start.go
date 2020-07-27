@@ -8,10 +8,10 @@ import (
 	"github.com/tepleton/tepleton/wrsp/server"
 
 	tcmd "github.com/tepleton/tepleton/cmd/tepleton/commands"
-	cmn "github.com/tepleton/tepleton/libs/common"
 	"github.com/tepleton/tepleton/node"
 	pvm "github.com/tepleton/tepleton/privval"
 	"github.com/tepleton/tepleton/proxy"
+	cmn "github.com/tepleton/tepleton/libs/common"
 )
 
 const (
