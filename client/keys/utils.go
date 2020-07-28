@@ -7,8 +7,8 @@ import (
 	"github.com/spf13/viper"
 
 	keys "github.com/tepleton/tepleton-sdk/crypto/keys"
-	"github.com/tepleton/tmlibs/cli"
-	dbm "github.com/tepleton/tmlibs/db"
+	"github.com/tepleton/tepleton/libs/cli"
+	dbm "github.com/tepleton/tepleton/libs/db"
 
 	"github.com/tepleton/tepleton-sdk/client"
 
