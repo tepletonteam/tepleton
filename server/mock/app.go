@@ -8,8 +8,8 @@ import (
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
 	"github.com/tepleton/tepleton/crypto"
 	tmtypes "github.com/tepleton/tepleton/types"
-	dbm "github.com/tepleton/tmlibs/db"
-	"github.com/tepleton/tmlibs/log"
+	dbm "github.com/tepleton/tepleton/libs/db"
+	"github.com/tepleton/tepleton/libs/log"
 
 	bam "github.com/tepleton/tepleton-sdk/baseapp"
 	gc "github.com/tepleton/tepleton-sdk/server/config"
