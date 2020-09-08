@@ -1,7 +1,7 @@
 package mock
 
 import (
-	dbm "github.com/tepleton/tepleton/libs/db"
+	dbm "github.com/tepleton/tmlibs/db"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 )
