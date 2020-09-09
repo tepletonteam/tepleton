@@ -15,7 +15,7 @@ import (
 	ccrypto "github.com/tepleton/tepleton-sdk/crypto"
 	"github.com/tepleton/tepleton-sdk/crypto/keys"
 
-	"github.com/tepleton/tmlibs/cli"
+	"github.com/tepleton/tepleton/libs/cli"
 )
 
 const (
