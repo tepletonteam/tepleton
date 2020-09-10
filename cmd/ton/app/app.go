@@ -5,10 +5,10 @@ import (
 	"os"
 
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
-	tmtypes "github.com/tepleton/tepleton/types"
 	cmn "github.com/tepleton/tepleton/libs/common"
 	dbm "github.com/tepleton/tepleton/libs/db"
 	"github.com/tepleton/tepleton/libs/log"
+	tmtypes "github.com/tepleton/tepleton/types"
 
 	bam "github.com/tepleton/tepleton-sdk/baseapp"
 	sdk "github.com/tepleton/tepleton-sdk/types"
@@ -68,7 +68,7 @@ func NewGaiaApp(logger log.Logger, db dbm.DB) *GaiaApp {
 		keyStake:         sdk.NewKVStoreKey("stake"),
 		keySlashing:      sdk.NewKVStoreKey("slashing"),
 		keyGov:           sdk.NewKVStoreKey("gov"),
-		keyFeeCollection: sdk.NewKVStoreKey("feeCollection"),
+		keyFeeCollection: sdk.NewKVStoreKey("fee"),
 	}
 
 	// define the accountMapper
