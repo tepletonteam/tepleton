@@ -106,7 +106,7 @@ func TestSlashingMsgs(t *testing.T) {
 	// no signing info yet
 	checkValidatorSigningInfo(t, mapp, keeper, addr1, false)
 
-	// unrevoke should fail with validator not revoked
+	// unrevoke should fail with unknown validator
 	res := mock.SignCheck(mapp.BaseApp, []sdk.Msg{unrevokeMsg}, []int64{0}, []int64{1}, priv1)
-	require.Equal(t, sdk.ToWRSPCode(DefaultCodespace, CodeValidatorNotRevoked), res.Code)
+	require.Equal(t, sdk.ToWRSPCode(DefaultCodespace, CodeInvalidValidator), res.Code)
 }

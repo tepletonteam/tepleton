@@ -11,10 +11,10 @@ import (
 
 	wrsp "github.com/tepleton/tepleton/wrsp/types"
 	"github.com/tepleton/tepleton/crypto"
+	tmtypes "github.com/tepleton/tepleton/types"
 	cmn "github.com/tepleton/tepleton/libs/common"
 	dbm "github.com/tepleton/tepleton/libs/db"
 	"github.com/tepleton/tepleton/libs/log"
-	tmtypes "github.com/tepleton/tepleton/types"
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
