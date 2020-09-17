@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/spf13/viper"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	cryptoKeys "github.com/tepleton/tepleton-sdk/crypto/keys"
@@ -58,11 +59,9 @@ func TestKeys(t *testing.T) {
 	require.Equal(t, http.StatusOK, res.StatusCode, body)
 	var resp keys.NewKeyResponse
 	err = wire.Cdc.UnmarshalJSON([]byte(body), &resp)
-	require.Nil(t, err, body)
-
-	addr2Bech32 := resp.Address
-	_, err = sdk.GetAccAddressBech32(addr2Bech32)
-	require.NoError(t, err, "Failed to return a correct bech32 address")
+	require.Nil(t, err)
+	addr2 := resp.Address
+	assert.Len(t, addr2, 40, "Returned address has wrong format", addr2)
 
 	// existing keys
 	res, body = Request(t, port, "GET", "/keys", nil)
@@ -71,6 +70,9 @@ func TestKeys(t *testing.T) {
 	err = cdc.UnmarshalJSON([]byte(body), &m)
 	require.Nil(t, err)
 
+	addr2Acc, err := sdk.GetAccAddressHex(addr2)
+	require.Nil(t, err)
+	addr2Bech32 := sdk.MustBech32ifyAcc(addr2Acc)
 	addrBech32 := sdk.MustBech32ifyAcc(addr)
 
 	require.Equal(t, name, m[0].Name, "Did not serve keys name correctly")
