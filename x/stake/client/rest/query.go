@@ -9,9 +9,7 @@ import (
 	"github.com/tepleton/tepleton-sdk/client/context"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
-
 	"github.com/tepleton/tepleton-sdk/x/stake"
-	"github.com/tepleton/tepleton-sdk/x/stake/types"
 )
 
 const storeName = "stake"
@@ -62,7 +60,7 @@ func delegationHandlerFn(ctx context.CoreContext, cdc *wire.Codec) http.HandlerF
 			return
 		}
 
-		key := stake.GetDelegationKey(delegatorAddr, validatorAddr)
+		key := stake.GetDelegationKey(delegatorAddr, validatorAddr, cdc)
 
 		res, err := ctx.QueryStore(key, storeName)
 		if err != nil {
@@ -77,7 +75,13 @@ func delegationHandlerFn(ctx context.CoreContext, cdc *wire.Codec) http.HandlerF
 			return
 		}
 
-		delegation := types.UnmarshalDelegation(cdc, key, res)
+		var delegation stake.Delegation
+		err = cdc.UnmarshalBinary(res, &delegation)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(fmt.Sprintf("couldn't decode delegation. Error: %s", err.Error())))
+			return
+		}
 
 		output, err := cdc.MarshalJSON(delegation)
 		if err != nil {
@@ -113,7 +117,7 @@ func ubdHandlerFn(ctx context.CoreContext, cdc *wire.Codec) http.HandlerFunc {
 			return
 		}
 
-		key := stake.GetUBDKey(delegatorAddr, validatorAddr)
+		key := stake.GetUBDKey(delegatorAddr, validatorAddr, cdc)
 
 		res, err := ctx.QueryStore(key, storeName)
 		if err != nil {
@@ -178,7 +182,7 @@ func redHandlerFn(ctx context.CoreContext, cdc *wire.Codec) http.HandlerFunc {
 			return
 		}
 
-		key := stake.GetREDKey(delegatorAddr, validatorSrcAddr, validatorDstAddr)
+		key := stake.GetREDKey(delegatorAddr, validatorSrcAddr, validatorDstAddr, cdc)
 
 		res, err := ctx.QueryStore(key, storeName)
 		if err != nil {

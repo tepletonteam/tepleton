@@ -11,7 +11,6 @@ import (
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
 	"github.com/tepleton/tepleton-sdk/x/stake"
-	"github.com/tepleton/tepleton-sdk/x/stake/types"
 )
 
 // get the command to query a validator
@@ -123,7 +122,7 @@ func GetCmdQueryDelegation(storeName string, cdc *wire.Codec) *cobra.Command {
 				return err
 			}
 
-			key := stake.GetDelegationKey(delAddr, valAddr)
+			key := stake.GetDelegationKey(delAddr, valAddr, cdc)
 			ctx := context.NewCoreContextFromViper()
 			res, err := ctx.QueryStore(key, storeName)
 			if err != nil {
@@ -131,7 +130,7 @@ func GetCmdQueryDelegation(storeName string, cdc *wire.Codec) *cobra.Command {
 			}
 
 			// parse out the delegation
-			delegation := types.UnmarshalDelegation(cdc, key, res)
+			delegation := new(stake.Delegation)
 
 			switch viper.Get(cli.OutputFlag) {
 			case "text":
@@ -141,6 +140,7 @@ func GetCmdQueryDelegation(storeName string, cdc *wire.Codec) *cobra.Command {
 				}
 				fmt.Println(resp)
 			case "json":
+				cdc.MustUnmarshalBinary(res, delegation)
 				output, err := wire.MarshalJSONIndent(cdc, delegation)
 				if err != nil {
 					return err
@@ -169,7 +169,7 @@ func GetCmdQueryDelegations(storeName string, cdc *wire.Codec) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			key := stake.GetDelegationsKey(delegatorAddr)
+			key := stake.GetDelegationsKey(delegatorAddr, cdc)
 			ctx := context.NewCoreContextFromViper()
 			resKVs, err := ctx.QuerySubspace(cdc, key, storeName)
 			if err != nil {
@@ -179,7 +179,8 @@ func GetCmdQueryDelegations(storeName string, cdc *wire.Codec) *cobra.Command {
 			// parse out the validators
 			var delegations []stake.Delegation
 			for _, KV := range resKVs {
-				delegation := types.UnmarshalDelegation(cdc, KV.Key, KV.Value)
+				var delegation stake.Delegation
+				cdc.MustUnmarshalBinary(KV.Value, &delegation)
 				delegations = append(delegations, delegation)
 			}
 
@@ -213,7 +214,7 @@ func GetCmdQueryUnbondingDelegation(storeName string, cdc *wire.Codec) *cobra.Co
 				return err
 			}
 
-			key := stake.GetUBDKey(delAddr, valAddr)
+			key := stake.GetUBDKey(delAddr, valAddr, cdc)
 			ctx := context.NewCoreContextFromViper()
 			res, err := ctx.QueryStore(key, storeName)
 			if err != nil {
@@ -260,7 +261,7 @@ func GetCmdQueryUnbondingDelegations(storeName string, cdc *wire.Codec) *cobra.C
 			if err != nil {
 				return err
 			}
-			key := stake.GetUBDsKey(delegatorAddr)
+			key := stake.GetUBDsKey(delegatorAddr, cdc)
 			ctx := context.NewCoreContextFromViper()
 			resKVs, err := ctx.QuerySubspace(cdc, key, storeName)
 			if err != nil {
@@ -308,7 +309,7 @@ func GetCmdQueryRedelegation(storeName string, cdc *wire.Codec) *cobra.Command {
 				return err
 			}
 
-			key := stake.GetREDKey(delAddr, valSrcAddr, valDstAddr)
+			key := stake.GetREDKey(delAddr, valSrcAddr, valDstAddr, cdc)
 			ctx := context.NewCoreContextFromViper()
 			res, err := ctx.QueryStore(key, storeName)
 			if err != nil {
@@ -355,7 +356,7 @@ func GetCmdQueryRedelegations(storeName string, cdc *wire.Codec) *cobra.Command 
 			if err != nil {
 				return err
 			}
-			key := stake.GetREDsKey(delegatorAddr)
+			key := stake.GetREDsKey(delegatorAddr, cdc)
 			ctx := context.NewCoreContextFromViper()
 			resKVs, err := ctx.QuerySubspace(cdc, key, storeName)
 			if err != nil {
