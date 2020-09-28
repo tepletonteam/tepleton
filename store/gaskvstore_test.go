@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/stretchr/testify/require"
-	dbm "github.com/tepleton/tmlibs/db"
+	dbm "github.com/tepleton/tepleton/libs/db"
 )
 
 func newGasKVStore() KVStore {
