@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/tepleton/tepleton-sdk/client"
 	"github.com/tepleton/tepleton-sdk/client/context"
 	sdk "github.com/tepleton/tepleton-sdk/types"
 	"github.com/tepleton/tepleton-sdk/wire"
@@ -155,10 +154,9 @@ func GetCmdRedelegate(storeName string, cdc *wire.Codec) *cobra.Command {
 		Short: "redelegate illiquid tokens from one validator to another",
 	}
 	cmd.AddCommand(
-		client.PostCommands(
-			GetCmdBeginRedelegate(storeName, cdc),
-			GetCmdCompleteRedelegate(cdc),
-		)...)
+		GetCmdBeginRedelegate(storeName, cdc),
+		GetCmdCompleteRedelegate(cdc),
+	)
 	return cmd
 }
 
@@ -240,7 +238,7 @@ func getShares(storeName string, cdc *wire.Codec, sharesAmountStr, sharesPercent
 		}
 
 		// make a query to get the existing delegation shares
-		key := stake.GetDelegationKey(delegatorAddr, validatorAddr, cdc)
+		key := stake.GetDelegationKey(delegatorAddr, validatorAddr)
 		ctx := context.NewCoreContextFromViper()
 		resQuery, err := ctx.QueryStore(key, storeName)
 		if err != nil {
@@ -303,10 +301,9 @@ func GetCmdUnbond(storeName string, cdc *wire.Codec) *cobra.Command {
 		Short: "begin or complete unbonding shares from a validator",
 	}
 	cmd.AddCommand(
-		client.PostCommands(
-			GetCmdBeginUnbonding(storeName, cdc),
-			GetCmdCompleteUnbonding(cdc),
-		)...)
+		GetCmdBeginUnbonding(storeName, cdc),
+		GetCmdCompleteUnbonding(cdc),
+	)
 	return cmd
 }
 
