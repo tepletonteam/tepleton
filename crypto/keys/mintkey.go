@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	cmn "github.com/tepleton/tepleton/libs/common"
+	cmn "github.com/tepleton/tmlibs/common"
 
 	"github.com/tepleton/tepleton-sdk/crypto/keys/bcrypt"
 	"github.com/tepleton/tepleton/crypto"
